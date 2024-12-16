@@ -1615,11 +1615,6 @@ void DpctGlobalInfo::buildReplacements() {
     }
   }
 
-  for (auto &Repls : WrapperRegisterMap) {
-    addReplacement(Repls.second.first);
-    addReplacement(Repls.second.second);
-  }
-
   for (auto &File : FileMap)
     File.second->buildReplacements();
 
@@ -2508,9 +2503,6 @@ std::unordered_map<std::string, std::unordered_map<clang::tooling::UnifiedPath,
 std::unordered_map<clang::tooling::UnifiedPath,
                    std::vector<clang::tooling::UnifiedPath>>
     DpctGlobalInfo::MainSourceFileMap;
-std::unordered_map<std::string, std::pair<std::shared_ptr<ExtReplacement>,
-                                          std::shared_ptr<ExtReplacement>>>
-    DpctGlobalInfo::WrapperRegisterMap;
 std::unordered_map<std::string, bool> DpctGlobalInfo::MallocHostInfoMap;
 std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
@@ -5384,8 +5376,7 @@ DeviceFunctionInfo::DeviceFunctionInfo(size_t ParamsNum,
 }
 
 void DeviceFunctionInfo::collectInfoForWrapper(const FunctionDecl *FD) {
-  if (!WrapperInfoCollected) {
-    WrapperInfoCollected = true;
+  if (!DFInfoForWrapper) {
     DFInfoForWrapper = std::make_shared<DeviceFunctionInfoForWrapper>();
     auto LocInfo = DpctGlobalInfo::getLocInfo(FD->getBeginLoc());
     auto &TemplateParametersInfo = DFInfoForWrapper->TemplateParametersInfo;
@@ -6175,7 +6166,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       CE);
   Kernel->buildNeedBracesInfo(CE);
   const FunctionDecl *FD = nullptr;
-  if (auto Callee = getAddressedRef(CE->getArg(0), &FD)) {
+  if (auto Callee = getAddressedRef(CE->getArg(0), true, &FD)) {
     Kernel->buildCalleeInfo(Callee, std::nullopt);
     auto FuncInfo = Kernel->getFuncInfo();
     if (FD && FuncInfo) {

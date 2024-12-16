@@ -4442,38 +4442,112 @@ void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                 this);
 }
 
+std::string KernelCallRefRule::getTypeRepl(const Expr *E) {
+  std::string TypeRef;
+  if (auto BO = DpctGlobalInfo::findParent<BinaryOperator, Expr,
+                                           ImplicitCastExpr, ParenExpr>(E)) {
+    TypeRef = "decltype(" + ExprAnalysis::ref(BO->getLHS()) + ")";
+  } else if (auto VD =
+                 DpctGlobalInfo::findParent<VarDecl, Expr, ImplicitCastExpr,
+                                            ParenExpr>(E)) {
+    TypeRef = "decltype(" + VD->getNameAsString() + ")";
+  } else if (auto RS =
+                 DpctGlobalInfo::findParent<ReturnStmt, Expr, ImplicitCastExpr,
+                                            ParenExpr>(E)) {
+    auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(RS);
+    TypeRef =
+        getStmtSpelling(FD->getReturnTypeSourceRange(), FD->getSourceRange());
+  } else if (auto CE =
+                 DpctGlobalInfo::findParent<CallExpr, Expr, ImplicitCastExpr,
+                                            ParenExpr>(E)) {
+    size_t N = 0;
+    for (auto Arg : CE->arguments()) {
+      if (Arg == E) {
+        break;
+      }
+      N++;
+    }
+    TypeRef = "typename " + MapNames::getDpctNamespace() +
+              "nth_argument_type<decltype(" +
+              ExprAnalysis::ref(CE->getCallee()) + "), " + std::to_string(N) +
+              ">::type";
+  }
+  if (!TypeRef.empty()) {
+    return "<" + TypeRef + ">";
+  }
+  return TypeRef;
+}
+
+template <typename T>
+void KernelCallRefRule::insertWrapperPostfix(const T *Node,
+                                             std::string &&TypeRepl,
+                                             bool isInsertWrapperRegister) {
+  auto NLoc = DpctGlobalInfo::getSourceManager().getSpellingLoc(
+      Node->getNameInfo().getBeginLoc());
+  emplaceTransformation(new InsertText(
+      NLoc.getLocWithOffset(Node->getNameInfo().getAsString().length()),
+      "_wrapper"));
+
+  if (!isInsertWrapperRegister) {
+    return;
+  }
+  const Expr *E = Node;
+  if (auto UO = DpctGlobalInfo::findParent<UnaryOperator, T, ImplicitCastExpr,
+                                           ParenExpr>(Node)) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      E = UO;
+    }
+  } else if (auto COC = DpctGlobalInfo::findParent<CXXOperatorCallExpr, T,
+                                                   ImplicitCastExpr, ParenExpr>(
+                 Node)) {
+    if (COC->getOperator() == clang::OO_Amp) {
+      E = COC;
+    }
+  }
+  emplaceTransformation(new InsertBeforeStmt(
+      E, MapNames::getDpctNamespace() + "wrapper_register" + TypeRepl + "("));
+  emplaceTransformation(new InsertAfterStmt(E, ")"));
+}
+
 void KernelCallRefRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto DRE = getAssistNodeAsType<DeclRefExpr>(Result, "kernelRef")) {
-    if (auto ParentCE = dpct::DpctGlobalInfo::findAncestor<CallExpr>(DRE)) {
+    if (auto ParentCE = DpctGlobalInfo::findAncestor<CallExpr>(DRE)) {
       if (auto Callee = ParentCE->getDirectCallee()) {
         if (dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc())) {
           return;
         }
       }
     }
-    if (auto FD = dyn_cast<FunctionDecl>(DRE->getDecl())) {
+    const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl());
+    bool IsTemplateRelated = false;
+    int TemplateParamNum = 0;
+    if (FD) {
+      if (FD->getTemplatedKind() !=
+          FunctionDecl::TemplatedKind::TK_NonTemplate) {
+        IsTemplateRelated = true;
+      }
+
       if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD)) {
         DFI->collectInfoForWrapper(FD);
       }
     }
-
-    auto NLoc = DpctGlobalInfo::getSourceManager().getSpellingLoc(
-        DRE->getNameInfo().getBeginLoc());
-    emplaceTransformation(new InsertText(
-        NLoc.getLocWithOffset(DRE->getNameInfo().getAsString().length()),
-        "_wrapper"));
-    if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto &Map = DpctGlobalInfo::getWrapperRegisterMap();
-      auto Key = getStrFromLoc(SM.getSpellingLoc(DRE->getBeginLoc()));
-      if (!Map.count(Key)) {
-        Map.insert({getStrFromLoc(SM.getSpellingLoc(DRE->getBeginLoc())),
-                    {InsertBeforeStmt(DRE, MapNames::getDpctNamespace() +
-                                               "wrapper_register(")
-                         .getReplacement(DpctGlobalInfo::getContext()),
-                     InsertAfterStmt(DRE, ").get()")
-                         .getReplacement(DpctGlobalInfo::getContext())}});
+    std::cout << IsTemplateRelated << std::endl;
+    std::cout <<DRE->hasExplicitTemplateArgs() << std::endl;
+    if (auto *OuterFD = DpctGlobalInfo::findAncestor<FunctionDecl>(DRE)) {
+      if ((OuterFD->getTemplatedKind() ==
+           FunctionDecl::TemplatedKind::TK_NonTemplate) ||
+          (OuterFD->getTemplatedKind() ==
+           FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
+        std::string TypeRepl;
+        if (DpctGlobalInfo::isCVersionCUDALaunchUsed() && IsTemplateRelated &&
+            !DRE->hasExplicitTemplateArgs()) {
+          TypeRepl = getTypeRepl(DRE);
+        }
+        std::cout << TypeRepl << std::endl;
+        insertWrapperPostfix<DeclRefExpr>(
+            DRE, std::move(TypeRepl),
+            DpctGlobalInfo::isCVersionCUDALaunchUsed());
       }
     }
   }
@@ -4513,39 +4587,7 @@ void KernelCallRefRule::runRule(
         }
       }
     }
-    std::string TypeRef;
-    if (auto BO = DpctGlobalInfo::findParent<BinaryOperator>(ULE)) {
-      TypeRef = "decltype(" + ExprAnalysis::ref(BO->getLHS()) + ")";
-    } else if (auto VD = DpctGlobalInfo::findParent<VarDecl>(ULE)) {
-      TypeRef = "decltype(" + VD->getNameAsString() + ")";
-    } else if (auto RS = DpctGlobalInfo::findParent<ReturnStmt>(ULE)) {
-      auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(RS);
-      TypeRef =
-          getStmtSpelling(FD->getReturnTypeSourceRange(), FD->getSourceRange());
-    } else if (auto CE = DpctGlobalInfo::findParent<CallExpr>(ULE)) {
-      size_t N = 0;
-      for (auto Arg : CE->arguments()) {
-        if (Arg == ULE) {
-          break;
-        }
-        N++;
-      }
-      TypeRef = "typename " + MapNames::getDpctNamespace() +
-                "nth_argument_type<decltype(" +
-                ExprAnalysis::ref(CE->getCallee()) + "), " + std::to_string(N) +
-                ">::type";
-    }
-    if (!TypeRef.empty()) {
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto &Map = DpctGlobalInfo::getWrapperRegisterMap();
-      Map.insert(
-          {getStrFromLoc(SM.getSpellingLoc(ULE->getBeginLoc())),
-           {InsertBeforeStmt(ULE, MapNames::getDpctNamespace() +
-                                      "wrapper_register<" + TypeRef + ">(")
-                .getReplacement(DpctGlobalInfo::getContext()),
-            InsertAfterStmt(ULE, ").get()")
-                .getReplacement(DpctGlobalInfo::getContext())}});
-    }
+    insertWrapperPostfix<UnresolvedLookupExpr>(ULE, getTypeRepl(ULE), true);
   }
 }
 
@@ -4679,6 +4721,8 @@ void KernelCallRule::runRule(
           if (auto Arg = KCall->getArg(i)) {
             if (!Arg->isDefaultArgument()) {
               OS << ", " << ExprAnalysis::ref(Arg);
+            } else {
+              break;
             }
           }
         }
@@ -4775,18 +4819,18 @@ void KernelCallRule::runRule(
     const Expr *CalleeDRE = LaunchKernelCall->getArg(0);
     bool IsFuncTypeErased = true;
     auto QT = CalleeDRE->getType();
+
+    if (QT->isPointerType()) {
+      QT = QT->getPointeeType();
+    }
     if (QT->isFunctionType()) {
       IsFuncTypeErased = false;
-    } else if (QT->isPointerType()) {
-      const Type *PointeeType = QT->getPointeeType().getTypePtr();
-      if (PointeeType->isFunctionType()) {
-        IsFuncTypeErased = false;
-      }
     }
-    if (IsFuncTypeErased) {
-      DpctGlobalInfo::setCVersionCUDALaunchUsed();
-    }
+
     if (!getAddressedRef(CalleeDRE)) {
+      if (IsFuncTypeErased) {
+        DpctGlobalInfo::setCVersionCUDALaunchUsed();
+      }
       std::string ReplStr;
       llvm::raw_string_ostream OS(ReplStr);
       if (IsAssigned) {
@@ -4797,7 +4841,7 @@ void KernelCallRule::runRule(
       for (size_t i = 0; i < ArgsNum; i++) {
         if (auto Arg = LaunchKernelCall->getArg(i)) {
           if (i == 0) {
-            if (auto E = getAddressedRef(CalleeDRE, nullptr, false)) {
+            if (auto E = getAddressedRef(CalleeDRE, false, nullptr)) {
               OS << ExprAnalysis::ref(E);
             } else {
               OS << ExprAnalysis::ref(Arg);

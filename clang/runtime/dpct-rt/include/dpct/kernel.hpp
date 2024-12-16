@@ -446,7 +446,7 @@ static inline void invoke_kernel_function(dpct::kernel_function &function,
 
 class kernel_launch {
   template <typename FuncT, typename ArgSelector, std::size_t... Index>
-  static void launch_helper(FuncT *func, ArgSelector &selector,
+  static void launch_helper(FuncT &&func, ArgSelector &selector,
                             std::index_sequence<Index...>) {
     func(selector.template get<Index>()...);
   }
@@ -467,7 +467,7 @@ public:
   static inline thread_local sycl::queue *_que = nullptr;
   static inline thread_local sycl::nd_range<3> _nr = sycl::nd_range<3>();
   static inline thread_local unsigned int _local_mem_size = 0;
-  static inline thread_local std::map<
+  static inline std::map<
       const void *,
       std::function<void(dim3, dim3, void **, unsigned int, queue_ptr)>>
       wrapper_map = {};
@@ -476,7 +476,7 @@ public:
       const void *func,
       std::function<void(dim3, dim3, void **, unsigned int, queue_ptr)>
           launcher) {
-    wrapper_map[func] = launcher;
+    wrapper_map[func] = std::move(launcher);
   }
 
   template <typename FuncT, typename... ArgsT>
@@ -517,8 +517,8 @@ public:
     kernel_launch::launch(func, group_range, local_range, args, local_mem_size,
                           que);
   }
-  FT &get() { return func; }
-  operator FT() { return func; }
+  const FT &get() const noexcept { return func; }
+  operator FT() const noexcept { return func; }
 };
 template <typename Ret, typename... Args>
 wrapper_register(Ret (*)(Args...)) -> wrapper_register<Ret (*)(Args...)>;

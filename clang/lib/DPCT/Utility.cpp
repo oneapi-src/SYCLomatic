@@ -4998,8 +4998,8 @@ int isArgumentInitialized(
 
   return DeclsRequireInit.empty();
 }
-const Expr *getAddressedRef(const Expr *E, const FunctionDecl **FuncDecl,
-                            bool IsCheckFunctionDecl) {
+const Expr *getAddressedRef(const Expr *E, bool IsCheckFunctionDecl,
+                            const FunctionDecl **FuncDecl) {
   E = E->IgnoreImplicitAsWritten();
   if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
     if (IsCheckFunctionDecl) {
@@ -5033,17 +5033,17 @@ const Expr *getAddressedRef(const Expr *E, const FunctionDecl **FuncDecl,
       return ULE;
     }
   } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
-    return getAddressedRef(Paren->getSubExpr(), FuncDecl, IsCheckFunctionDecl);
+    return getAddressedRef(Paren->getSubExpr(), IsCheckFunctionDecl, FuncDecl);
   } else if (auto Cast = dyn_cast<CastExpr>(E)) {
-    return getAddressedRef(Cast->getSubExprAsWritten(), FuncDecl,
-                           IsCheckFunctionDecl);
+    return getAddressedRef(Cast->getSubExprAsWritten(), IsCheckFunctionDecl,
+                           FuncDecl);
   } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
     if (UO->getOpcode() == UO_AddrOf) {
-      return getAddressedRef(UO->getSubExpr(), FuncDecl, IsCheckFunctionDecl);
+      return getAddressedRef(UO->getSubExpr(), IsCheckFunctionDecl, FuncDecl);
     }
   } else if (auto COC = dyn_cast<CXXOperatorCallExpr>(E)) {
     if (COC->getOperator() == clang::OO_Amp) {
-      return getAddressedRef(COC->getArg(0), FuncDecl, IsCheckFunctionDecl);
+      return getAddressedRef(COC->getArg(0), IsCheckFunctionDecl, FuncDecl);
     }
   }
   if (FuncDecl) {

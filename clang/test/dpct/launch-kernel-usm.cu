@@ -76,13 +76,13 @@ int main() {
   // CHECK-NEXT:      });
   // CHECK-NEXT:  });
   cudaLaunchKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
-  // CHECK: void *kernel_func = (void *)&dpct::wrapper_register(kernel_wrapper).get();
+  // CHECK: void *kernel_func = (void *)dpct::wrapper_register(&kernel_wrapper);
   void *kernel_func = (void *)&kernel;
   // CHECK: dpct::kernel_launch::launch(kernel_func, dpct::dim3(16), dpct::dim3(16), args, 0, 0);
   cudaLaunchKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   void *kernel_array[100];
-  // CHECK: kernel_array[10] = (void *)&dpct::wrapper_register(kernel_wrapper).get();
+  // CHECK: kernel_array[10] = (void *)dpct::wrapper_register(&kernel_wrapper);
   kernel_array[10] = (void *)&kernel;
   // CHECK: dpct::kernel_launch::launch(kernel_array[10], dpct::dim3(16), dpct::dim3(16), args, 0, 0);
   cudaLaunchKernel(kernel_array[10], dim3(16), dim3(16), args, 0, 0);

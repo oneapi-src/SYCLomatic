@@ -1005,10 +1005,14 @@ public:
       return Cur.get<TargetTy>();
     });
   }
-  template <class TargetTy, class NodeTy>
+  template <class TargetTy, class NodeTy, class... SkipNodeTy>
   static auto findParent(const NodeTy *Node) {
-    return findAncestor<TargetTy>(
-        Node, [](const DynTypedNode &Cur) -> bool { return true; });
+    return findAncestor<TargetTy>(Node, [](const DynTypedNode &Cur) -> bool {
+      if ((... || Cur.get<SkipNodeTy>())) {
+        return false;
+      }
+      return true;
+    });
   }
 
   template <typename TargetTy, typename NodeTy>
@@ -1466,7 +1470,6 @@ public:
     return ConstantReplProcessedFlagMap;
   }
   static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
-  static auto &getWrapperRegisterMap() { return WrapperRegisterMap; }
   static auto &getCodePinTypeInfoVec() { return CodePinTypeInfoMap; }
   static auto &getCodePinTemplateTypeInfoVec() {
     return CodePinTemplateTypeInfoMap;
@@ -1691,10 +1694,6 @@ private:
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
   static IncludeMapSetTy IncludeMapSet;
-  static std::unordered_map<std::string,
-                            std::pair<std::shared_ptr<ExtReplacement>,
-                                      std::shared_ptr<ExtReplacement>>>
-      WrapperRegisterMap;
   static std::vector<std::pair<std::string, VarInfoForCodePin>>
       CodePinTypeInfoMap;
   static std::vector<std::pair<std::string, VarInfoForCodePin>>
@@ -2772,9 +2771,8 @@ private:
   bool CallGroupFunctionInControlFlow = false;
   bool HasCheckedCallGroupFunctionInControlFlow = false;
   OverloadedOperatorKind OO_Kind = OverloadedOperatorKind::OO_None;
-  bool WrapperInfoCollected = false;
   bool ModuleUsed = false;
-  std::shared_ptr<DeviceFunctionInfoForWrapper> DFInfoForWrapper;
+  std::shared_ptr<DeviceFunctionInfoForWrapper> DFInfoForWrapper = nullptr;
 };
 
 class KernelCallExpr : public CallFunctionExpr {

@@ -172,6 +172,8 @@ void goo(fpt<T> p) {
 
 template <typename T>
 void hoo() {
+    // CHECK: fpt<int> a = dpct::wrapper_register<decltype(a)>(vectorTemplateAdd_wrapper);
+  fpt<int> a = vectorTemplateAdd;
   // CHECK:  goo<T>(dpct::wrapper_register<typename dpct::nth_argument_type<decltype(goo<T>), 0>::type>(vectorTemplateAdd_wrapper).get());
   goo<T>(vectorTemplateAdd);
 }

@@ -450,6 +450,11 @@ public:
 };
 
 class KernelCallRefRule : public NamedMigrationRule<KernelCallRefRule> {
+  std::string getTypeRepl(const Expr *E);
+  template <typename T>
+  void insertWrapperPostfix(const T *Node, std::string &&TypeRepl,
+                            bool isInsertWrapperRegister);
+
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
