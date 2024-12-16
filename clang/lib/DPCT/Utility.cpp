@@ -2212,19 +2212,28 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
         // and the loc is another macro expand,
         // recursively search for a more precise range.
         do {
-          auto IterSecondBeginFileEntry =
-              dpct::DpctGlobalInfo::getFileManager().getFile(
+          auto IterSecondBeginFileEntryRef =
+              dpct::DpctGlobalInfo::getFileManager().getFileRef(
                   It->second.first.first.getCanonicalPath());
-          auto IterSecondEndFileEntry =
-              dpct::DpctGlobalInfo::getFileManager().getFile(
-                  It->second.second.first.getCanonicalPath());
-          if (!IterSecondBeginFileEntry || !IterSecondEndFileEntry)
+          if (!IterSecondBeginFileEntryRef) {
+            llvm::consumeError(
+                std::move(IterSecondBeginFileEntryRef.takeError()));
             break;
+          }
+
+          auto IterSecondEndFileEntryRef =
+              dpct::DpctGlobalInfo::getFileManager().getFileRef(
+                  It->second.second.first.getCanonicalPath());
+          if (!IterSecondEndFileEntryRef) {
+            llvm::consumeError(
+                std::move(IterSecondEndFileEntryRef.takeError()));
+            break;
+          }
 
           auto IterSecondBeginFileID =
-              SM.translateFile(IterSecondBeginFileEntry.get());
+              SM.translateFile(*IterSecondBeginFileEntryRef);
           auto IterSecondEndFileID =
-              SM.translateFile(IterSecondEndFileEntry.get());
+              SM.translateFile(*IterSecondEndFileEntryRef);
           auto IterSecondBegin =
               SM.getComposedLoc(IterSecondBeginFileID, It->second.first.second);
           auto IterSecondEnd =
