@@ -200,7 +200,8 @@ void IncludesCallbacks::InclusionDirective(
         DpctGlobalInfo::getIncludeMapSet().push_back({IncludedFile, Repl});
       }
     }
-    return;
+    if (Global.isInRoot(IncludedFile))
+      return;
   }
 
   if (!Global.isInAnalysisScope(LocInfo.first) &&
