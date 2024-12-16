@@ -50,8 +50,7 @@ REGIST_INCLUSION("curand_kernel.h", FullMatch, Rng, Replace, false,
 REGIST_INCLUSION("cusparse.h", FullMatch, Sparse, Replace, false,
                  HeaderType::HT_DPCT_SPBLAS_Utils)
 REGIST_INCLUSION("cusparse_v2.h", FullMatch, Sparse, Replace, false,
-                 HeaderType::HT_DPCT_SPBLAS_Utils,
-                 HeaderType::HT_DPCT_BLAS_Utils)
+                 HeaderType::HT_DPCT_SPBLAS_Utils)
 
 REGIST_INCLUSION("cufft.h", FullMatch, FFT, Replace, false,
                  HeaderType::HT_DPCT_FFT_Utils)
