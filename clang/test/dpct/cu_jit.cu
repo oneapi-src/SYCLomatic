@@ -122,3 +122,61 @@ int main() {
 //CHECK:a[27] = CU_JIT_NOT_A_CUDA_OPTION;
   a[27] = CU_JIT_NOT_A_CUDA_OPTION;
 }
+
+//CHECK: int foo(int &type) {
+CUjitInputType foo(CUjitInputType &type) {
+  //CHECK: int targets[19];
+  CUjit_target targets[19];
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_30 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[0] = 0;
+  targets[0] = CU_TARGET_COMPUTE_30;
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_32 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[1] = 0;
+  targets[1] = CU_TARGET_COMPUTE_32;
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_35 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[2] = 0;
+  targets[2] = CU_TARGET_COMPUTE_35;
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_37 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[3] = 0;
+  targets[3] = CU_TARGET_COMPUTE_37;
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_50 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[4] = 0;
+  targets[4] = CU_TARGET_COMPUTE_50;
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_52 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[5] = 0;
+  targets[5] = CU_TARGET_COMPUTE_52;
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_53 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[6] = 0;
+  targets[6] = CU_TARGET_COMPUTE_53;
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_60 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[7] = 0;
+  targets[7] = CU_TARGET_COMPUTE_60;
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_61 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[8] = 0;
+  targets[8] = CU_TARGET_COMPUTE_61;
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_62 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[9] = 0;
+  targets[9] = CU_TARGET_COMPUTE_62;
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_70 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[10] = 0;
+  targets[10] = CU_TARGET_COMPUTE_70;
+
+
+  //CHECK:DPCT1048:{{[0-9]+}}: The original value CU_TARGET_COMPUTE_75 is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
+  //CHECK: targets[12] = 0;
+  targets[12] = CU_TARGET_COMPUTE_75;
+
+
+  return type;
+}

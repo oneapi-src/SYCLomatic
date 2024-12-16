@@ -50,11 +50,13 @@ public:
     int fieldC;
     int methodA(int i, int j){return 0;};
 };
+ClassA getClassA() { return ClassA(); };
 class ClassB{
 public:
   int fieldB;
   int methodB(int i){return 0;};
 };
+ClassB getClassB() { return ClassB(); };
 
 enum Fruit{
   apple,
@@ -80,12 +82,14 @@ void foo2(){
   //CHECK: ClassB a;
   //CHECK-NEXT: a.fieldD = 3;
   //CHECK-NEXT: a.methodB(2);
+  //CHECK-NEXT: getClassB().methodB(2);
   //CHECK-NEXT: a.set_a(3);
   //CHECK-NEXT: int k = a.get_a();
   //CHECK-NEXT: Fruit f = pineapple;
   ClassA a;
   a.fieldC = 3;
   a.methodA(1,2);
+  getClassA().methodA(1,2);
   a.fieldA = 3;
   int k = a.fieldA;
   Fruit f = Fruit::apple;

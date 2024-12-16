@@ -340,10 +340,10 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "CUDA_ARRAY_DESCRIPTOR", "CUDA_ARRAY3D_DESCRIPTOR",
               "cublasLtHandle_t", "cublasLtMatmulDesc_t", "cublasLtOrder_t",
               "cublasLtPointerMode_t", "cublasLtMatrixLayout_t",
-              "cublasLtMatrixLayoutAttribute_t",
+              "cublasLtMatrixLayoutAttribute_t", "CUjitInputType",
               "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t",
               "cublasLtEpilogue_t", "cublasLtMatmulPreference_t",
-              "cublasLtMatmulHeuristicResult_t",
+              "cublasLtMatmulHeuristicResult_t", "CUjit_target",
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
               "cudaGraphicsRegisterFlags"))))))
           .bind("cudaTypeDef"),
@@ -2066,12 +2066,11 @@ void ErrorConstantsRule::runRule(const MatchFinder::MatchResult &Result) {
 
 // Rule for CU_JIT enums.
 void CU_JITEnumsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      declRefExpr(
-          to(enumConstantDecl(matchesName(
-              "(CU_JIT_*)"))))
-          .bind("CU_JITConstants"),
-      this);
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(
+                                anyOf(matchesName("(CU_JIT_*)"),
+                                      matchesName("(CU_TARGET_COMPUTE_*)")))))
+                    .bind("CU_JITConstants"),
+                this);
 }
 
 void CU_JITEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -8319,6 +8318,13 @@ void DriverDeviceAPIRule::runRule(
     auto SecArg = CE->getArg(1);
     if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
       auto AttributeName = DRE->getNameInfo().getAsString();
+      if (AttributeName ==
+              "CU_DEVICE_ATTRIBUTE_VIRTUAL_MEMORY_MANAGEMENT_SUPPORTED" &&
+          !DpctGlobalInfo::useExpVirtualMemory()) {
+        report(CE->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               AttributeName, "--use-experimental-features=virtual_mem");
+        return;
+      }
       auto Search = MapNames::EnumNamesMap.find(AttributeName);
       if (Search == MapNames::EnumNamesMap.end()) {
         report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,

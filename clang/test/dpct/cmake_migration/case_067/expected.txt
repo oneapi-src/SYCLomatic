@@ -1,0 +1,2 @@
+## target_precompile_headers is removed from the CMakeLists.txt file
+

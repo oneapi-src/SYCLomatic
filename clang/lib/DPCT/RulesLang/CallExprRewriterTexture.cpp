@@ -139,6 +139,9 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
       TAI = TAL[0];
     }
     std::string VecTypeName = "float";
+    if(Source.find("surf") != std::string::npos) {
+      VecTypeName = "int";
+    }
     if (getDim() != 1)
       VecTypeName =
           MapNames::getClNamespace() + VecTypeName + std::to_string(getDim());

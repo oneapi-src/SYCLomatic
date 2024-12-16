@@ -3176,3 +3176,10 @@
       MatchMode: Full
       In: \${CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_SHARED}
       Out: ""
+
+- Rule: rule_target_precompile_headers
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_precompile_headers
+  In: target_precompile_headers${empty}(${args})
+  Out: |

@@ -68,6 +68,11 @@
       Out: $method_base methodB($2)
     - In: methodC
       Out: methodD
+- Rule: rule_getClassA
+  Kind: API
+  Priority: Takeover
+  In: getClassA
+  Out: getClassB()
 - Rule: rule_Fruit
   Kind: Enum
   Priority: Takeover

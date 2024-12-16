@@ -42,6 +42,7 @@ enum class epilogue_t {
   gelu_bias,
   gelu_aux,
   gelu_aux_bias,
+  dgelu,
   bgradb
 };
 
@@ -142,7 +143,7 @@ public:
   enum class attribute {
     compute_type,
     scale_type,
-    bias_type,
+    bias_data_type,
     bias_pointer,
     pointer_mode,
     trans_a,
@@ -184,7 +185,7 @@ private:
     switch (attr) {
       CASE(compute_type)
       CASE(scale_type)
-      CASE(bias_type)
+      CASE(bias_data_type)
       CASE(bias_pointer)
       CASE(pointer_mode)
       CASE(trans_a)
@@ -206,7 +207,7 @@ private:
 
   compute_type _compute_type;
   library_data_t _scale_type;
-  library_data_t _bias_type = library_data_t::real_float;
+  library_data_t _bias_data_type = library_data_t::real_float;
   pointer_mode_t _pointer_mode = pointer_mode_t::host;
   oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
@@ -232,60 +233,107 @@ private:
 
 namespace detail {
 /// Sacling each row of matrix D with the corresponding element of vector alpha.
-template <class T, class Talpha>
-sycl::event scale_d_with_vector_alpha_impl(::dpct::cs::queue_ptr q_ptr,
-                                           int rows, int cols, T *d,
-                                           const Talpha *alpha,
-                                           std::vector<sycl::event> deps) {
-  return q_ptr->submit([&](sycl::handler &cgh) {
+template <class T, class Tscale>
+sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
+                             void *a_ptr, const void *alpha_ptr,
+                             bool vector_alpha, bool device_alpha,
+                             const void *a_scale_ptr, const void *b_scale_ptr,
+                             const std::vector<sycl::event> &dependencies) {
+  std::vector<sycl::event> deps = dependencies;
+  T *a = (T *)a_ptr;
+  Tscale *alpha = (Tscale *)alpha_ptr;
+  Tscale *a_scale = (Tscale *)a_scale_ptr;
+  Tscale *b_scale = (Tscale *)b_scale_ptr;
+
+  if (!device_alpha) {
+    Tscale *alpha_host = alpha;
+    alpha = (Tscale *)::dpct::cs::malloc(sizeof(Tscale), *q_ptr);
+    deps.push_back(
+        ::dpct::cs::memcpy(*q_ptr, alpha, alpha_host, sizeof(Tscale)));
+  }
+  if (!a_scale_ptr) {
+    a_scale = (Tscale *)::dpct::cs::malloc(sizeof(Tscale), *q_ptr);
+    deps.push_back(::dpct::cs::fill<Tscale>(*q_ptr, a_scale, 1.0, 1));
+  }
+  if (!b_scale_ptr) {
+    b_scale = (Tscale *)::dpct::cs::malloc(sizeof(Tscale), *q_ptr);
+    deps.push_back(::dpct::cs::fill<Tscale>(*q_ptr, b_scale, 1.0, 1));
+  }
+
+  sycl::event e = q_ptr->submit([&](sycl::handler &cgh) {
     cgh.depends_on(deps);
 #ifdef DPCT_USM_LEVEL_NONE
-    access_wrapper<T *> d_acc(d, cgh);
-    access_wrapper<const Talpha *> alpha_acc(alpha, cgh);
+    access_wrapper<T *> a_acc(a, cgh);
+    access_wrapper<Tscale *> alpha_acc(alpha, cgh);
+    access_wrapper<Tscale *> a_scale_acc(a_scale, cgh);
+    access_wrapper<Tscale *> b_scale_acc(b_scale, cgh);
 #endif
     cgh.parallel_for<
-        ::dpct::cs::kernel_name<class scale_with_vector_alpha, T, Talpha>>(
+        ::dpct::cs::kernel_name<class scale_with_alpha, T, Tscale>>(
         sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
 #ifdef DPCT_USM_LEVEL_NONE
-          auto d_data = d_acc.get_raw_pointer();
-          auto alpha_data = alpha_acc.get_raw_pointer();
+          T *a_data = a_acc.get_raw_pointer();
+          Tscale *alpha_data = alpha_acc.get_raw_pointer();
+          Tscale *a_scale_data = a_scale_acc.get_raw_pointer();
+          Tscale *b_scale_data = b_scale_acc.get_raw_pointer();
 #else
-            auto d_data = d;
-            auto alpha_data = alpha;
+          T *a_data = a;
+          const Tscale *alpha_data = alpha;
+          const Tscale *a_scale_data = a_scale;
+          const Tscale *b_scale_data = b_scale;
 #endif
           size_t row_idx = index.get(0);
           size_t col_idx = index.get(1);
           size_t idx = rows * col_idx + row_idx;
-          d_data[idx] = d_data[idx] * alpha_data[row_idx];
+
+          Tscale ab_scale = a_scale_data[0] * b_scale_data[0];
+
+          if (vector_alpha)
+            a_data[idx] = a_data[idx] * alpha_data[row_idx] * ab_scale;
+          else
+            a_data[idx] = a_data[idx] * alpha_data[0] * ab_scale;
         });
+  });
+  return q_ptr->submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      if (!device_alpha)
+        ::dpct::cs::free(alpha, *q_ptr);
+      if (!a_scale_ptr)
+        ::dpct::cs::free(a_scale, *q_ptr);
+      if (!b_scale_ptr)
+        ::dpct::cs::free(b_scale, *q_ptr);
+    });
   });
 }
 
 // a is col major without padding
-inline sycl::event scale_a_with_vector_alpha(::dpct::cs::queue_ptr q_ptr,
-                                             int rows, int cols, void *a,
-                                             library_data_t a_type,
-                                             const void *alpha,
-                                             library_data_t alpha_type,
-                                             std::vector<sycl::event> deps) {
-  std::uint64_t key = dpct::detail::get_type_combination_id(a_type, alpha_type);
+inline sycl::event scale_new_a(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
+                               void *a, library_data_t a_type,
+                               const void *alpha, library_data_t scale_type,
+                               bool vector_alpha, bool device_alpha,
+                               const void *a_scale, const void *b_scale,
+                               const std::vector<sycl::event> &deps) {
+  std::uint64_t key = dpct::detail::get_type_combination_id(a_type, scale_type);
   sycl::event e;
   switch (key) {
-  case dpct::detail::get_type_combination_id(library_data_t::real_int8,
-                                             library_data_t::real_float): {
-    e = scale_d_with_vector_alpha_impl<std::int8_t, float>(
-        q_ptr, rows, cols, (std::int8_t *)a, (const float *)alpha, deps);
-    break;
+#define __SCALE_NEW_A_IMPL_CASE(A_TYPE_ENUM, SCALE_TYPE_ENUM, A_TYPE,          \
+                                SCALE_TYPE)                                    \
+  case dpct::detail::get_type_combination_id(                                  \
+      library_data_t::A_TYPE_ENUM, library_data_t::SCALE_TYPE_ENUM): {         \
+    e = scale_new_a_impl<A_TYPE, SCALE_TYPE>(q_ptr, rows, cols, a, alpha,      \
+                                             vector_alpha, device_alpha,       \
+                                             a_scale, b_scale, deps);          \
+    break;                                                                     \
   }
-  case dpct::detail::get_type_combination_id(library_data_t::real_int32,
-                                             library_data_t::real_float): {
-    e = scale_d_with_vector_alpha_impl<int, float>(q_ptr, rows, cols, (int *)a,
-                                                   (const float *)alpha, deps);
-    break;
-  }
+    __SCALE_NEW_A_IMPL_CASE(real_int8, real_float, std::int8_t, float)
+    __SCALE_NEW_A_IMPL_CASE(real_int32, real_float, int, float)
+    __SCALE_NEW_A_IMPL_CASE(real_int8, real_int32, std::int8_t, int)
+    __SCALE_NEW_A_IMPL_CASE(real_float, real_float, float, float)
+#undef __SCALE_NEW_A_IMPL_CASE
   default:
-    throw std::runtime_error("dpct::blas_gemm::experimental::detail::scale_d_"
-                             "with_vector_alpha() does not support the data "
+    throw std::runtime_error("dpct::blas_gemm::experimental::detail::scale_new_"
+                             "a_impl() does not support the data "
                              "type combination currently.");
   }
   return e;
@@ -452,73 +500,7 @@ template <typename T> struct matrix_transform_impl {
   }
 };
 
-// Convert an integer to an float.
-// The integer may on the host or the device, the float is on the device.
 #ifdef DPCT_USM_LEVEL_NONE
-inline sycl::event int2float(::dpct::cs::queue_ptr q_ptr, void *int_ptr,
-                             bool is_host_ptr,
-                             sycl::buffer<float, 1> float_buffer) {
-  if (is_host_ptr) {
-    int alpha_host = *reinterpret_cast<int *>(int_ptr);
-    return q_ptr->submit([&](sycl::handler &cgh) {
-      sycl::accessor float_acc(float_buffer, cgh, sycl::write_only,
-                               sycl::no_init);
-      cgh.single_task<::dpct::cs::kernel_name<class inthost2float>>(
-          [=]() { float_acc[0] = alpha_host; });
-    });
-  } else {
-    return q_ptr->submit([&](sycl::handler &cgh) {
-      access_wrapper<int *> int_acc(int_ptr, cgh);
-      sycl::accessor float_acc(float_buffer, cgh, sycl::write_only,
-                               sycl::no_init);
-      cgh.single_task<::dpct::cs::kernel_name<class intdevice2float>>([=]() {
-        auto int_data = int_acc.get_raw_pointer();
-        float_acc[0] = int_data[0];
-      });
-    });
-  }
-}
-
-inline sycl::event multiply_impl(::dpct::cs::queue_ptr q_ptr,
-                                 ::dnnl::memory *dnnl_memory, const void *a,
-                                 const void *b, std::vector<sycl::event> deps) {
-  auto result = ::dnnl::sycl_interop::get_buffer<float, 1>(*dnnl_memory);
-  if (a && b)
-    return q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.depends_on(deps);
-      sycl::accessor result_acc(result, cgh);
-      access_wrapper<const float *> a_acc(a, cgh);
-      access_wrapper<const float *> b_acc(b, cgh);
-      cgh.single_task<::dpct::cs::kernel_name<class multiply_a_b>>([=]() {
-        auto a_ptr = a_acc.get_raw_pointer();
-        auto b_ptr = b_acc.get_raw_pointer();
-        result_acc[0] = result_acc[0] * a_ptr[0] * b_ptr[0];
-      });
-    });
-  else if (a)
-    return q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.depends_on(deps);
-      sycl::accessor result_acc(result, cgh);
-      access_wrapper<const float *> a_acc(a, cgh);
-      cgh.single_task<::dpct::cs::kernel_name<class multiply_a>>([=]() {
-        auto a_ptr = a_acc.get_raw_pointer();
-        result_acc[0] = result_acc[0] * a_ptr[0];
-      });
-    });
-  else if (b)
-    return q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.depends_on(deps);
-      sycl::accessor result_acc(result, cgh);
-      access_wrapper<const float *> b_acc(b, cgh);
-      cgh.single_task<::dpct::cs::kernel_name<class multiply_b>>([=]() {
-        auto b_ptr = b_acc.get_raw_pointer();
-        result_acc[0] = result_acc[0] * b_ptr[0];
-      });
-    });
-  else
-    return sycl::event();
-}
-
 template <typename T> struct scale_d_impl {
   sycl::event operator()(const void *d_scale_ptr, void *d, size_t ld,
                          size_t rows, size_t cols, ::dpct::cs::queue_ptr q_ptr,
@@ -573,47 +555,6 @@ template <typename T> struct set_buffer_impl {
   }
 };
 #else
-inline sycl::event int2float(::dpct::cs::queue_ptr q_ptr, void *int_ptr,
-                             bool is_host_ptr, void *float_ptr) {
-  if (is_host_ptr) {
-    int alpha_host = *reinterpret_cast<int *>(int_ptr);
-    return q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.single_task<::dpct::cs::kernel_name<class inthost2float>>([=]() {
-        auto float_data = (float *)float_ptr;
-        float_data[0] = alpha_host;
-      });
-    });
-  } else {
-    return q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.single_task<::dpct::cs::kernel_name<class intdevice2float>>([=]() {
-        auto int_data = (int *)int_ptr;
-        auto float_data = (float *)float_ptr;
-        float_data[0] = int_data[0];
-      });
-    });
-  }
-}
-
-inline sycl::event multiply_impl(::dpct::cs::queue_ptr q_ptr,
-                                 ::dnnl::memory *dnnl_memory, const void *a,
-                                 const void *b, std::vector<sycl::event> deps) {
-  auto result_T = (float *)(dnnl_memory->get_data_handle());
-  auto a_T = (const float *)a;
-  auto b_T = (const float *)b;
-  if (a_T || b_T)
-    return q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.depends_on(deps);
-      cgh.single_task<::dpct::cs::kernel_name<class multiply>>([=]() {
-        if (a_T)
-          result_T[0] = result_T[0] * a_T[0];
-        if (b_T)
-          result_T[0] = result_T[0] * b_T[0];
-      });
-    });
-  else
-    return sycl::event();
-}
-
 template <typename T> struct scale_d_impl {
   sycl::event operator()(const void *d_scale_ptr, void *d, size_t ld,
                          size_t rows, size_t cols, ::dpct::cs::queue_ptr q_ptr,
@@ -728,7 +669,7 @@ template <typename T> struct absmax_impl {
 ///   scale_type==float && a_type==float && b_type==float && c_type==float.
 /// Currently, this function only supports beta==0 or beta==1.
 /// Currently, this function only supports the relu, bias, gelu, gelu_bias,
-/// gelu_aux and gelu_aux_bias epilogue.
+/// gelu_aux, gelu_aux_bias and dgelu epilogue.
 /// NOTE: Non-col-major matrix will be converted to col-major matrix before.
 /// TODO: Impl row-major matmul without layout conversion.
 /// multiplication and converted back after multiplication.
@@ -769,12 +710,16 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     q_ptr = &::dpct::cs::get_default_queue();
   handle->init(q_ptr);
   bool vector_alpha = false;
+  bool device_alpha = false;
   if (compute_desc->_pointer_mode == pointer_mode_t::device_vector ||
       compute_desc->_pointer_mode ==
           pointer_mode_t::alpha_device_vector_beta_zero ||
       compute_desc->_pointer_mode ==
           pointer_mode_t::alpha_device_vector_beta_host) {
     vector_alpha = true;
+    device_alpha = true;
+  } else if (compute_desc->_pointer_mode == pointer_mode_t::device) {
+    device_alpha = true;
   }
 
   bool beta_is_zero = true;
@@ -796,10 +741,11 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       compute_desc->_epilogue != epilogue_t::gelu &&
       compute_desc->_epilogue != epilogue_t::gelu_bias &&
       compute_desc->_epilogue != epilogue_t::gelu_aux &&
-      compute_desc->_epilogue != epilogue_t::gelu_aux_bias) {
+      compute_desc->_epilogue != epilogue_t::gelu_aux_bias &&
+      compute_desc->_epilogue != epilogue_t::dgelu) {
     throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-                             "supports relu, bias, gelu, gelu_bias, gelu_aux "
-                             "and gelu_aux_bias epilogue currently.");
+                             "supports relu, bias, gelu, gelu_bias, gelu_aux, "
+                             "gelu_aux_bias and dgelu epilogue currently.");
   }
 
   if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
@@ -833,50 +779,39 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   const void *new_b = b;
   const void *new_c = c;
   void *new_d = d;
-  bool new_a_allocated = false;
   bool new_b_allocated = false;
   bool new_c_allocated = false;
   bool new_d_allocated = false;
   size_t new_lda = a_desc->_ld, new_ldb = b_desc->_ld, new_ldc = c_desc->_ld,
          new_ldd = d_desc->_ld;
   std::vector<sycl::event> transform_events;
-  if (a_desc->_order != order_t::col) {
+
+  if (a_desc->_order != order_t::col)
     new_lda = a_desc->_rows;
-    size_t size_of_element =
-        dpct::detail::library_data_size[static_cast<unsigned int>(
-            a_desc->_type)] /
-        8;
-    new_a =
-        ::dpct::cs::malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
-    new_a_allocated = true;
-    sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
+  size_t size_of_element =
+      dpct::detail::library_data_size[static_cast<unsigned int>(
+          a_desc->_type)] /
+      8;
+  new_a = ::dpct::cs::malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
+  sycl::event e_init;
+  if (a_desc->_order != order_t::col)
+    e_init = detail::type_dispatch<detail::matrix_transform_impl>(
         a_desc->_type, q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld,
         a_desc->_order, (const std::int8_t *)a, new_lda, order_t::col,
         (std::int8_t *)new_a, std::vector<sycl::event>{});
-    transform_events.push_back(e);
+  else
+    e_init = ::dpct::cs::memcpy(*q_ptr, (void *)new_a, a,
+                                size_of_element * a_desc->_cols * new_lda,
+                                ::dpct::cs::memcpy_direction::device_to_device);
 
-    if (vector_alpha) {
-      sycl::event e_scale_d_with_vec_alpha;
-      e_scale_d_with_vec_alpha = detail::scale_a_with_vector_alpha(
-          q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, {e});
-      transform_events.push_back(e_scale_d_with_vec_alpha);
-    }
-  } else if (vector_alpha) {
-    size_t size_of_element =
-        dpct::detail::library_data_size[static_cast<unsigned int>(
-            a_desc->_type)] /
-        8;
-    new_a =
-        ::dpct::cs::malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
-    new_a_allocated = true;
-    sycl::event e_cp = ::dpct::cs::memcpy(
-        *q_ptr, (void *)new_a, a, size_of_element * a_desc->_cols * new_lda,
-        ::dpct::cs::memcpy_direction::device_to_device);
-    sycl::event e_scale_d_with_vec_alpha;
-    e_scale_d_with_vec_alpha = detail::scale_a_with_vector_alpha(
-        q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, {e_cp});
-    transform_events.push_back(e_scale_d_with_vec_alpha);
-  }
+  // alpha = alpha * scale_a * scale_b
+  sycl::event e_scale_new_a = detail::scale_new_a(
+      q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
+      device_alpha, compute_desc->_a_scale_pointer,
+      compute_desc->_b_scale_pointer, {e_init});
+
+  transform_events.push_back(e_scale_new_a);
+
   if (b_desc->_order != order_t::col) {
     new_ldb = b_desc->_rows;
     size_t size_of_element =
@@ -985,60 +920,6 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   matmul_args.insert({DNNL_ARG_WEIGHTS, *weights_mem});
   matmul_args.insert({DNNL_ARG_DST, *dst_mem});
   ::dnnl::primitive_attr matmul_attr;
-  ::dnnl::memory *scales_alpha = nullptr;
-  if (!vector_alpha) {
-    matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 0);
-    scales_alpha = new ::dnnl::memory(
-        {{1}, ::dnnl::memory::data_type::f32, {1}}, handle->get_engine());
-#ifdef DPCT_USM_LEVEL_NONE
-    *scales_alpha = ::dnnl::sycl_interop::make_memory(
-        {{1}, ::dnnl::memory::data_type::f32, {1}}, handle->get_engine(),
-        ::dnnl::sycl_interop::memory_kind::buffer);
-#endif
-    sycl::event scalar_alpha_e;
-    if (scale_type != library_data_t::real_float) {
-      scalar_alpha_e = detail::int2float(
-          q_ptr, const_cast<void *>(alpha),
-          compute_desc->_pointer_mode == pointer_mode_t::host,
-#ifdef DPCT_USM_LEVEL_NONE
-          ::dnnl::sycl_interop::get_buffer<float, 1>(*scales_alpha)
-#else
-          scales_alpha->get_data_handle()
-#endif
-      );
-    } else {
-#ifdef DPCT_USM_LEVEL_NONE
-      auto buf = ::dnnl::sycl_interop::get_buffer<float, 1>(*scales_alpha);
-      if (dpct::is_device_ptr(alpha)) {
-        scalar_alpha_e = q_ptr->submit([&](sycl::handler &cgh) {
-          access_wrapper<const float *> alpha_acc(alpha, cgh);
-          sycl::accessor acc(buf, cgh, sycl::write_only, sycl::no_init);
-          cgh.single_task<::dpct::cs::kernel_name<class copy_alpha_dev_ptr>>(
-              [=]() { acc[0] = alpha_acc.get_raw_pointer()[0]; });
-        });
-      } else {
-        float alpha_host = *static_cast<const float *>(alpha);
-        scalar_alpha_e = q_ptr->submit([&](sycl::handler &cgh) {
-          sycl::accessor acc(buf, cgh, sycl::write_only, sycl::no_init);
-          cgh.single_task<::dpct::cs::kernel_name<class copy_alpha_host_ptr>>(
-              [=]() { acc[0] = alpha_host; });
-        });
-      }
-#else
-      scalar_alpha_e =
-          q_ptr->memcpy(scales_alpha->get_data_handle(), alpha, sizeof(float));
-#endif
-    }
-    // alpha = alpha * scale_a * scale_b
-    sycl::event multiply_impl_e = detail::multiply_impl(
-        q_ptr, scales_alpha, compute_desc->_a_scale_pointer,
-        compute_desc->_b_scale_pointer,
-        std::vector<sycl::event>{scalar_alpha_e});
-    transform_events.push_back(multiply_impl_e);
-    transform_events.push_back(scalar_alpha_e);
-    matmul_args.insert(
-        {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
-  }
 
   ::dnnl::post_ops matmul_ops;
   if (!beta_is_zero) {
@@ -1049,10 +930,11 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   }
 
   ::dnnl::memory *po_bias_mem = nullptr;
-  auto po_bias_md = ::dnnl::memory::desc(
-      ::dnnl::memory::dims{M, 1},
-      dpct::dnnl::memory_desc_ext::to_dnnl_data_type(compute_desc->_bias_type),
-      ::dnnl::memory::dims{1, M});
+  auto po_bias_md =
+      ::dnnl::memory::desc(::dnnl::memory::dims{M, 1},
+                           dpct::dnnl::memory_desc_ext::to_dnnl_data_type(
+                               compute_desc->_bias_data_type),
+                           ::dnnl::memory::dims{1, M});
   if (compute_desc->_epilogue == epilogue_t::bias ||
       compute_desc->_epilogue == epilogue_t::gelu_bias ||
       compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
@@ -1060,9 +942,29 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         new ::dnnl::memory(po_bias_md, handle->get_engine(), DNNL_MEMORY_NONE);
 #ifdef DPCT_USM_LEVEL_NONE
     detail::type_dispatch<detail::set_buffer_impl>(
-        compute_desc->_bias_type, po_bias_mem, compute_desc->_bias_pointer);
+        compute_desc->_bias_data_type, po_bias_mem,
+        compute_desc->_bias_pointer);
 #else
     po_bias_mem->set_data_handle(compute_desc->_bias_pointer);
+#endif
+  }
+
+  ::dnnl::memory *po_aux_mem = nullptr;
+  auto po_aux_md = ::dnnl::memory::desc(
+      ::dnnl::memory::dims{M, N},
+      dpct::dnnl::memory_desc_ext::to_dnnl_data_type(
+          compute_desc->_epilogue_aux_data_type),
+      ::dnnl::memory::dims{1,
+                           static_cast<long>(compute_desc->_epilogue_aux_ld)});
+  if (compute_desc->_epilogue == epilogue_t::dgelu) {
+    po_aux_mem =
+        new ::dnnl::memory(po_aux_md, handle->get_engine(), DNNL_MEMORY_NONE);
+#ifdef DPCT_USM_LEVEL_NONE
+    detail::type_dispatch<detail::set_buffer_impl>(
+        compute_desc->_epilogue_aux_data_type, po_aux_mem,
+        compute_desc->_epilogue_aux_pointer);
+#else
+    po_aux_mem->set_data_handle(compute_desc->_epilogue_aux_pointer);
 #endif
   }
 
@@ -1131,6 +1033,21 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     gelu_args.insert({DNNL_ARG_DST, *dst_mem});
     post_op_prim_event = ::dnnl::sycl_interop::execute(
         gelu_prim, handle->get_engine_stream(), gelu_args, {copy_e});
+  } else if (compute_desc->_epilogue == epilogue_t::dgelu) {
+    auto gelu_pd = ::dnnl::eltwise_forward::primitive_desc(
+        handle->get_engine(), ::dnnl::prop_kind::forward_training,
+        ::dnnl::algorithm::eltwise_gelu_tanh, po_aux_md, po_aux_md);
+    auto dgelu_pd = ::dnnl::eltwise_backward::primitive_desc(
+        handle->get_engine(), ::dnnl::algorithm::eltwise_gelu_tanh, dst_md,
+        dst_md, po_aux_md, gelu_pd);
+    auto dgelu_prim = ::dnnl::eltwise_backward(dgelu_pd);
+    std::unordered_map<int, ::dnnl::memory> dgelu_args;
+    dgelu_args.insert({DNNL_ARG_SRC, *po_aux_mem});
+    dgelu_args.insert({DNNL_ARG_DIFF_DST, *dst_mem});
+    dgelu_args.insert({DNNL_ARG_DIFF_SRC, *dst_mem});
+    post_op_prim_event =
+        ::dnnl::sycl_interop::execute(dgelu_prim, handle->get_engine_stream(),
+                                      dgelu_args, {matmul_prim_event});
   }
 
   // end of calling oneDNN
@@ -1170,10 +1087,9 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       delete dst_mem;
       if (po_bias_mem)
         delete po_bias_mem;
-      if (!vector_alpha)
-        delete scales_alpha;
-      if (new_a_allocated)
-        ::dpct::cs::free((void *)new_a, *q_ptr);
+      if (po_aux_mem)
+        delete po_aux_mem;
+      ::dpct::cs::free((void *)new_a, *q_ptr);
       if (new_b_allocated)
         ::dpct::cs::free((void *)new_b, *q_ptr);
       if (new_c_allocated)
