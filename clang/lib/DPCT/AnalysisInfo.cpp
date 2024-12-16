@@ -4927,13 +4927,6 @@ void DeviceFunctionDecl::emplaceReplacement() {
     if (Obj) {
       Obj->merge(FuncInfo->getTextureObject((Obj->getParamIdx())));
       if (DpctGlobalInfo::useExtBindlessImages()) {
-        DpctGlobalInfo::getInstance().addReplacement(
-            std::make_shared<ExtReplacement>(
-                Obj->getFilePath(), Obj->getOffset(),
-                strlen("cudaTextureObject_t"),
-                MapNames::getClNamespace() +
-                    "ext::oneapi::experimental::sampled_image_handle",
-                nullptr));
         continue;
       }
       if (!Obj->getType()) {

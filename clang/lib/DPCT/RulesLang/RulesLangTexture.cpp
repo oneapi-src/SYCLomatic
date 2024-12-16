@@ -502,10 +502,6 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
               "cudaTextureObject_t", "cudaSurfaceObject_t", "CUtexObject"))))))
           .bind("texObj"),
       this);
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(typedefDecl(hasAnyName(
-                            "cudaTextureObject_t", "CUtexObject"))))))
-                    .bind("texObj"),
-                this);
   MF.addMatcher(
       memberExpr(
           hasObjectExpression(hasType(type(hasUnqualifiedDesugaredType(
@@ -560,6 +556,10 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "tex1Dfetch",
       "tex1DLayered",
       "tex2DLayered",
+      "surf1Dwrite",
+      "surf2Dwrite",
+      "surf3Dwrite",
+      "surf2DLayeredwrite",
       "surf1Dread",
       "surf2Dread",
       "surf3Dread",
@@ -986,20 +986,15 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
     if (auto FD = DpctGlobalInfo::getParentFunction(TL)) {
-      if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
-        return;
-      }
-    } else if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
-      if (!VD->hasGlobalStorage()) {
+      if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
+          !DpctGlobalInfo::useExtBindlessImages()) {
         return;
       }
     }
-    emplaceTransformation(new ReplaceToken(
-        TL->getBeginLoc(), TL->getEndLoc(),
-        DpctGlobalInfo::useExtBindlessImages()
-            ? MapNames::getClNamespace() +
-                  "ext::oneapi::experimental::sampled_image_handle"
-            : MapNames::getDpctNamespace() + "image_wrapper_base_p"));
+    ExprAnalysis A;
+    A.analyze(*TL);
+    emplaceTransformation(A.getReplacement());
+    A.applyAllSubExprRepl();
     requestFeature(HelperFeatureEnum::device_ext);
   }
 }

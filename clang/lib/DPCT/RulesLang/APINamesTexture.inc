@@ -343,11 +343,73 @@ FEATURE_REQUEST_FACTORY(
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("surf1Dwrite",
+                       CALL(MapNames::getClNamespace() +
+                                "ext::oneapi::experimental::write_image",
+                            ARG(1),
+                            BO(BinaryOperatorKind::BO_Div, CALL("int", ARG(2)),
+                               CALL("sizeof", ARG(0))),
+                            ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("surf1Dwrite",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("surf1Dwrite"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("surf2Dwrite",
+                       CALL(MapNames::getClNamespace() +
+                                "ext::oneapi::experimental::write_image",
+                            ARG(1),
+                            CALL(MapNames::getClNamespace() + "int2",
+                                 BO(BinaryOperatorKind::BO_Div, ARG(2),
+                                    CALL("sizeof", ARG(0))),
+                                 ARG(3)),
+                            ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("surf2Dwrite",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("surf2Dwrite"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("surf2DLayeredwrite",
+                       CALL(MapNames::getClNamespace() +
+                                "ext::oneapi::experimental::write_image_array",
+                            ARG(1),
+                            CALL(MapNames::getClNamespace() + "int2",
+                                 BO(BinaryOperatorKind::BO_Div, ARG(2),
+                                    CALL("sizeof", ARG(0))),
+                                 ARG(3)),
+                            ARG(4), ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("surf2DLayeredwrite",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("surf2DLayeredwrite"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("surf3Dwrite",
+                       CALL(MapNames::getClNamespace() +
+                                "ext::oneapi::experimental::write_image",
+                            ARG(1),
+                            CALL(MapNames::getClNamespace() + "int3",
+                                 BO(BinaryOperatorKind::BO_Div, ARG(2),
+                                    CALL("sizeof", ARG(0))),
+                                 ARG(3), ARG(4)),
+                            ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("surf3Dwrite",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("surf3Dwrite"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
         ENTRY_TEXTURE("surf1Dread", 0x01,
                       MapNames::getLibraryHelperNamespace() +
-                          "experimental::sample_image_by_byte",
+                          "experimental::fetch_image_by_byte",
                       1)),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ENTRY_TEXTURE("surf1Dread", 0x01, "read_byte", 1)))
@@ -358,7 +420,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HelperFeatureEnum::device_ext,
         ENTRY_TEXTURE("surf2Dread", 0x02,
                       MapNames::getLibraryHelperNamespace() +
-                          "experimental::sample_image_by_byte",
+                          "experimental::fetch_image_by_byte",
                       1, 2)),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ENTRY_TEXTURE("surf2Dread", 0x02, "read_byte", 1,
@@ -369,7 +431,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HelperFeatureEnum::device_ext,
         ENTRY_TEXTURE("surf3Dread", 0x03,
                       MapNames::getLibraryHelperNamespace() +
-                          "experimental::sample_image_by_byte",
+                          "experimental::fetch_image_by_byte",
                       1, 2, 3)),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ENTRY_TEXTURE("surf3Dread", 0x03, "read_byte", 1, 2,

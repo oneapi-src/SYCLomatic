@@ -40,3 +40,29 @@
   Priority: Takeover
   In: get_in_order_queue
   Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
+
+- Rule: rule_process_is_cuda
+  Kind: PatternRewriter
+  Priority: Takeover
+  In: is_cuda
+  Out: is_xpu
+
+- Rule: rule_getCurrentCUDAStream
+  Kind: PatternRewriter
+  Priority: Takeover
+  In: at::cuda::getCurrentCUDAStream()
+  Out: |
+       &static_cast<sycl::queue &>(c10::xpu::getCurrentXPUStream())
+
+- Rule: rule_remove_AT_CUDA_CHECK
+  Kind: PatternRewriter
+  Priority: Takeover
+  In: AT_CUDA_CHECK(${args});
+  Out: ${args};
+
+- Rule: rule_CUDAContext_h
+  Kind: Header
+  Priority: Takeover
+  In: ATen/cuda/CUDAContext.h
+  Out: c10/xpu/XPUStream.h
+  Includes: []

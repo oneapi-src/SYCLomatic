@@ -182,6 +182,7 @@ add_clang_library(DPCT
   RulesDNN/CallExprRewriterCUDNN.cpp
   RulesLang/CallExprRewriterErrorHandling.cpp
   RulesLangLib/CallExprRewriterLIBCU.cpp
+  RulesLangLib/CallExprRewriterNvtx.cpp
   RulesLang/CallExprRewriterEvent.cpp
   RulesLang/CallExprRewriterCG.cpp
   RulesLang/CallExprRewriterWmma.cpp
@@ -232,6 +233,7 @@ add_clang_library(DPCT
   RulesAsm/Parser/AsmIdentifierTable.cpp
   RulesAsm/Parser/AsmTokenKinds.cpp
   RulesLangLib/LIBCUAPIMigration.cpp
+  RulesLangLib/NvtxAPIMigration.cpp
   RulesLangLib/CUBAPIMigration.cpp
   RuleInfra/MemberExprRewriter.cpp
   MigrationRuleManager.cpp

@@ -133,11 +133,11 @@
   In: BuildExtension
   Out: DpcppBuildExtension
 
-- Rule: rule_cpp_file
+- Rule: rule_cpp_file_in_func
   Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
-  PythonSyntax: cpp_file
+  PythonSyntax: cpp_file_in_func
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
@@ -146,13 +146,39 @@
       In: ${arg}.cpp
       Out: ${arg}.${rewrite_extention_name}
 
-- Rule: rule_cu_file
+- Rule: rule_cpp_file_in_list
   Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
-  PythonSyntax: cu_file
+  PythonSyntax: cpp_file_in_list
+  In: "[${value}]"
+  Out: "[${value}]"
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cpp
+      Out: ${arg}.${rewrite_extention_name}
+
+- Rule: rule_cu_file_in_func
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cu_file_in_func
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.${rewrite_extention_name}
+
+- Rule: rule_cu_file_in_list
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cu_file_in_list
+  In: "[${value}]"
+  Out: "[${value}]"
   Subrules:
     value:
       MatchMode: Full

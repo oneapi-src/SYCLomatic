@@ -197,17 +197,17 @@ public:
 // The general Option Category (used as default category).
 OptionCategory &getGeneralCategory();
 #ifdef SYCLomatic_CUSTOMIZATION
-OptionCategory &getDPCTCategory();
-OptionCategory &getDPCTBasicCategory();
-OptionCategory &getDPCTAdvancedCategory();
-OptionCategory &getDPCTCodeGenCategory();
-OptionCategory &getDPCTReportGenCategory();
-OptionCategory &getDPCTBuildScriptCategory();
-OptionCategory &getDPCTQueryAPICategory();
-OptionCategory &getDPCTWarningsCategory();
-OptionCategory &getDPCTHelpInfoCategory();
-OptionCategory &getDPCTInterceptBuildCategory();
-OptionCategory &getDPCTExamplesCategory();
+OptionCategory &getCtHelpCat();
+OptionCategory &getCtHelpCatBasic();
+OptionCategory &getCtHelpCatAdvanced();
+OptionCategory &getCtHelpCatCodeGen();
+OptionCategory &getCtHelpCatReportGen();
+OptionCategory &getCtHelpCatBuildScript();
+OptionCategory &getCtHelpCatQueryAPI();
+OptionCategory &getCtHelpCatWarnings();
+OptionCategory &getCtHelpCatHelpInfo();
+OptionCategory &getCtHelpCatInterceptBuild();
+OptionCategory &getCtExamplesCategory();
 #endif // SYCLomatic_CUSTOMIZATION
 
 //===----------------------------------------------------------------------===//

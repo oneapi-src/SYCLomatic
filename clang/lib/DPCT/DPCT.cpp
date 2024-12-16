@@ -78,6 +78,8 @@ using namespace clang::tooling;
 
 using namespace llvm::cl;
 
+extern bool isDPCT;
+
 namespace clang {
 namespace tooling {
 UnifiedPath getFormatSearchPath();
@@ -87,19 +89,19 @@ extern UnifiedPath VcxprojFilePath;
 #endif
 } // namespace tooling
 namespace dpct {
-llvm::cl::OptionCategory &DPCTCat = llvm::cl::getDPCTCategory();
-llvm::cl::OptionCategory &DPCTBasicCat = llvm::cl::getDPCTBasicCategory();
-llvm::cl::OptionCategory &DPCTAdvancedCat = llvm::cl::getDPCTAdvancedCategory();
-llvm::cl::OptionCategory &DPCTCodeGenCat = llvm::cl::getDPCTCodeGenCategory();
-llvm::cl::OptionCategory &DPCTReportGenCat =
-    llvm::cl::getDPCTReportGenCategory();
-llvm::cl::OptionCategory &DPCTBuildScriptCat =
-    llvm::cl::getDPCTBuildScriptCategory();
-llvm::cl::OptionCategory &DPCTQueryAPICat = llvm::cl::getDPCTQueryAPICategory();
-llvm::cl::OptionCategory &DPCTWarningsCat = llvm::cl::getDPCTWarningsCategory();
-llvm::cl::OptionCategory &DPCTHelpInfoCat = llvm::cl::getDPCTHelpInfoCategory();
-llvm::cl::OptionCategory &DPCTInterceptBuildCat =
-    llvm::cl::getDPCTInterceptBuildCategory();
+llvm::cl::OptionCategory &CtHelpCatAll = llvm::cl::getCtHelpCat();
+llvm::cl::OptionCategory &CtHelpCatBasic = llvm::cl::getCtHelpCatBasic();
+llvm::cl::OptionCategory &CtHelpCatAdvanced = llvm::cl::getCtHelpCatAdvanced();
+llvm::cl::OptionCategory &CtHelpCatCodeGen = llvm::cl::getCtHelpCatCodeGen();
+llvm::cl::OptionCategory &CtHelpCatReportGen =
+    llvm::cl::getCtHelpCatReportGen();
+llvm::cl::OptionCategory &CtHelpCatBuildScript =
+    llvm::cl::getCtHelpCatBuildScript();
+llvm::cl::OptionCategory &CtHelpCatQueryAPI = llvm::cl::getCtHelpCatQueryAPI();
+llvm::cl::OptionCategory &CtHelpCatWarnings = llvm::cl::getCtHelpCatWarnings();
+llvm::cl::OptionCategory &CtHelpCatHelpInfo = llvm::cl::getCtHelpCatHelpInfo();
+llvm::cl::OptionCategory &CtHelpCatInterceptBuild =
+    llvm::cl::getCtHelpCatInterceptBuild();
 void initWarningIDs();
 } // namespace dpct
 } // namespace clang
@@ -138,7 +140,7 @@ static std::string SuppressWarningsMessage = "A comma separated list of migratio
 static AutoCompletePrinter AutoCompletePrinterInstance;
 static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> AutoComplete(
   "autocomplete", llvm::cl::desc("List all options or enums which have the specified prefix.\n"),
-  llvm::cl::cat(DPCTCat), llvm::cl::ReallyHidden, llvm::cl::location(AutoCompletePrinterInstance));
+  llvm::cl::cat(CtHelpCatAll), llvm::cl::ReallyHidden, llvm::cl::location(AutoCompletePrinterInstance));
 #endif
 // clang-format on
 
@@ -666,6 +668,7 @@ int showAPIMapping(std::string SrcAPI, std::string Option,
 }
 
 int runDPCT(int argc, const char **argv) {
+  isDPCT = true;
 
   if (argc < 2) {
     std::cout << CtHelpHint;
@@ -693,8 +696,8 @@ int runDPCT(int argc, const char **argv) {
 #endif
   llvm::cl::SetVersionPrinter(
       [](llvm::raw_ostream &OS) { OS << printCTVersion() << "\n"; });
-  auto OptParser =
-      CommonOptionsParser::create(argc, argv, DPCTCat, llvm::cl::OneOrMore);
+  auto OptParser = CommonOptionsParser::create(argc, argv, CtHelpCatAll,
+                                               llvm::cl::OneOrMore);
   if (!OptParser) {
     if (OptParser.errorIsA<DPCTError>()) {
       llvm::Error NewE =
