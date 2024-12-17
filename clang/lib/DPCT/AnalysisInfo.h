@@ -1333,8 +1333,8 @@ public:
   static bool useExpVirtualMemory() {
     return getUsingExperimental<ExperimentalFeatures::Exp_VirtualMemory>();
   }
-  static bool useExpInOrderQueueEvent() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_InOrderQueueEvent>();
+  static bool useExpInOrderQueueEvents() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_InOrderQueueEvents>();
   }
   static bool useExpNonStandardSYCLBuiltins() {
     return getUsingExperimental<

@@ -5723,7 +5723,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (isDefaultStream()) {
     SubmitStmts.DefaultStreamFlag = true;
   }
-  if (DpctGlobalInfo::useExpInOrderQueueEvent() &&
+  if (DpctGlobalInfo::useExpInOrderQueueEvents() &&
       (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)) {
     SubmitStmts.ImplicitSyncFlag = true;
   }
@@ -6526,8 +6526,13 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
             "ranges to define ND iteration space for the kernel");
   printList(Printer, CommandGroupList, "helper variables defined");
   if (ImplicitSyncFlag) {
-    Printer.line("cgh.depends_on(dpct::get_current_device().get_last_events()",
-                 (DefaultStreamFlag ? "" : "[0]"), ");");
+    if (DefaultStreamFlag) {
+      Printer.line(
+          "cgh.depends_on(dpct::get_current_device().get_last_events());");
+    } else {
+      Printer.line("cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_"
+                   "last_event());");
+    }
     Printer.newLine();
   }
   return Printer;

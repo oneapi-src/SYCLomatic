@@ -801,8 +801,8 @@ DPCT_ENUM_OPTION(
             "multiple allocations of physical memory.",
             false),
         DPCT_OPTION_ENUM_VALUE(
-            "in_order_queue_event",
-            int(ExperimentalFeatures::Exp_InOrderQueueEvent),
+            "in_order_queue_events",
+            int(ExperimentalFeatures::Exp_InOrderQueueEvents),
             "Experimental extension that allows get the event from the "
             "last command submission into the queue and set an external "
             "event as an implicit dependence on the next command submitted to "

@@ -97,7 +97,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_NonUniformGroups,
   Exp_DeviceGlobal,
   Exp_VirtualMemory,
-  Exp_InOrderQueueEvent,
+  Exp_InOrderQueueEvents,
   Exp_ExperimentalFeaturesEnumSize,
   Exp_NonStandardSYCLBuiltins,
   Exp_All
