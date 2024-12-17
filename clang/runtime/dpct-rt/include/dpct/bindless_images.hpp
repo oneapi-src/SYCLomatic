@@ -146,7 +146,7 @@ private:
   image_mem_wrapper *_sub_wrappers{nullptr};
 };
 
-/// @brief  The wrapper structure for external memory handle desc
+/// The wrapper structure for external memory handle desc
 class external_mem_handle_desc {
 #ifdef _WIN32
   void *handle;
@@ -173,90 +173,64 @@ public:
   }
 
 #ifdef _WIN32
-  /// @brief handle setter
-  /// @param win32_handle
+  /// handle setter
+  /// \param [in] win32_handle The win32 NT handle of the external resource
   void set_win32_handle(void *win32_handle) { handle = win32_handle; }
 
-  /// @brief name setter
-  /// @param win32_obj_name
+  /// name setter
+  /// \param [in] win32_obj_name The object of the external resource
   void set_win32_obj_name(const void *win32_obj_name) { name = win32_obj_name; }
 #else
-  /// @brief fd setter
-  /// @param fd file descriptor
+  /// fd setter
+  /// \param [in] fd The file descriptor of the external resource
   void set_fd_handle(int fd) { handle = fd; }
 #endif // _WIN32
 
-  /// @brief handle_type setter
-  /// @param type
+  /// handle_type setter
+  /// \param [in] type The type of the external resource handle
   void set_handle_type(
       sycl::ext::oneapi::experimental::external_mem_handle_type type) {
     handle_type = type;
   }
 
-  /// @brief size setter
-  /// @param size
+  /// size setter
+  /// \param [in] size The size (in bytes) of the external resource
   void set_res_size(unsigned long long size) { size_in_bytes = size; }
 
-  /// @brief flags setter
-  /// @param flags
+  /// flags setter
+  /// \param [in] flags The flags used to handle importing of external resource
   void set_flags(int flags) { this->flags = flags; }
 
 #ifdef _WIN32
-  /// @brief handle getter
-  /// @return handle
+  /// handle getter
+  /// \param [out] handle The win32 NT handle of the external resource
   void *get_win32_handle() { return handle; }
 
-  /// @brief name getter
-  /// @return name
+  /// name getter
+  /// \param [out] name The object of the external resource
   const void *get_win32_obj_name() { return name; }
 #else
-  /// @brief fd getter
-  /// @return fd
+  /// fd getter
+  /// \param [out] fd The file descriptor of the external resource
   int get_fd_handle() { return handle; }
 #endif // _WIN32
 
-  /// @brief handle_type getter
-  /// @return handle_type
+  /// handle_type getter
+  /// \param [out] handle_type The type of the external resource handle
   sycl::ext::oneapi::experimental::external_mem_handle_type get_handle_type() {
     return handle_type;
   }
 
-  /// @brief size getter
-  /// @return size
+  /// size getter
+  /// \param [out] size The size (in bytes) of the external resource
   unsigned long long get_res_size() { return size_in_bytes; }
 
-  /// @brief flags getter
-  /// @return flags
+  /// flags getter
+  /// \param [out] flags The flags used to handle importing of external resource
   int get_flags() { return flags; }
-
-#ifdef _WIN32
-  /// @brief win32 handle external_mem_descriptor getter
-  /// @return external_mem_descriptor made from win32 handle resource
-  auto get_ext_res_win32_handle_desc() {
-    return sycl::ext::oneapi::experimental::external_mem_descriptor<
-        sycl::ext::oneapi::experimental::resource_win32_handle>{
-        {get_win32_handle()}, get_handle_type(), get_res_size()};
-  }
-
-  /// @brief win32 obj name external_mem_descriptor getter
-  /// @return external_mem_descriptor made from win32 obj name resource
-  auto get_ext_res_win32_name_desc() {
-    return sycl::ext::oneapi::experimental::external_mem_descriptor<
-        sycl::ext::oneapi::experimental::resource_win32_name>{
-        {get_win32_obj_name()}, get_handle_type(), get_res_size()};
-  }
-#else
-  /// @brief fd external_mem_descriptor getter
-  /// @return external_mem_descriptor made from fd resource
-  auto get_ext_res_fd_desc() {
-    return sycl::ext::oneapi::experimental::external_mem_descriptor<
-        sycl::ext::oneapi::experimental::resource_fd>{
-        {get_fd_handle()}, get_handle_type(), get_res_size()};
-  }
-#endif // _WIN32
 };
 
-/// @brief  The wrapper structure for external image memory desc
+/// The wrapper structure for external image memory desc
 class external_mem_img_desc {
   sycl::range<3> size;
   image_channel channel;
@@ -271,42 +245,42 @@ public:
     type = sycl::ext::oneapi::experimental::image_type::standard;
   }
 
-  /// @brief size setter
-  /// @param img_dims image dimensions
+  /// size setter
+  /// \param [in] img_dims The dimensions of the imported image resource
   void set_size(sycl::range<3> img_dims) { size = img_dims; }
 
-  /// @brief image_channel setter
-  /// @param img_ch image channel values
+  /// image_channel setter
+  /// \param [in] img_ch The channel info of the imported image resource
   void set_image_channel(image_channel img_ch) { channel = img_ch; }
 
-  /// @brief num_levels setter
-  /// @param numLevels number of levels in mimap image
+  /// num_levels setter
+  /// \param [in] numLevels The no. of levels in the imported image resource
   void set_num_levels(unsigned int numLevels) { num_levels = numLevels; }
 
-  /// @brief type setter
-  /// @param img_type type of the image
+  /// type setter
+  /// \param [in] img_type The type of the imported image resource
   void set_image_type(sycl::ext::oneapi::experimental::image_type img_type) {
     type = img_type;
   }
 
-  /// @brief size getter
-  /// @return size
+  /// size getter
+  /// \param [out] size The dimensions of the imported image resource
   sycl::range<3> get_size() { return size; }
 
-  /// @brief image_channel getter
-  /// @return image_channel
+  /// image_channel getter
+  /// \param [out] image_channel The channel info of the imported image resource
   image_channel get_image_channel() { return channel; }
 
-  /// @brief num_levels getter
-  /// @return num_levels
+  /// num_levels getter
+  /// \param [out] num_levels The no. of levels in the imported image resource
   unsigned int get_num_levels() { return num_levels; }
 
-  /// @brief type getter
-  /// @return type
+  /// type getter
+  /// \param [out] type The image type of the imported image resource
   sycl::ext::oneapi::experimental::image_type get_image_type() { return type; }
 
-  /// @brief generate sycl image_descriptor
-  /// @return image_descriptor
+  /// generate sycl image_descriptor
+  /// \param [out] image_descriptor The img desc of the imported image resource
   sycl::ext::oneapi::experimental::image_descriptor get_sycl_obj() {
     unsigned int array_size = 1;
 
@@ -317,7 +291,7 @@ public:
   }
 };
 
-/// @brief  The wrapper structure for external buffer memory desc
+/// The wrapper structure for external buffer memory desc
 class external_mem_buf_desc {
   uint64_t size_in_bytes;
   uint64_t offset;
@@ -330,28 +304,28 @@ public:
     flags = 0;
   }
 
-  /// @brief size setter
-  /// @param size buffer size in bytes
+  /// size setter
+  /// \param [in] size The size (in bytes) of the external buffer resource
   void set_res_size(uint64_t size) { size_in_bytes = size; }
 
-  /// @brief offset setter
-  /// @param offset memory offset
+  /// offset setter
+  /// \param [in] offset The memory offset of the external buffer resource
   void set_mem_offset(uint64_t offset) { this->offset = offset; }
 
-  /// @brief flags setter
-  /// @param flags buffer creation flags
+  /// flags setter
+  /// \param [in] flags The flags used to import external buffer resource
   void set_flags(unsigned int flags) { this->flags = flags; }
 
-  /// @brief size getter
-  /// @return size_in_bytes
+  /// size getter
+  /// \param [out] size_in_bytes The size (in bytes) of the external buffer res
   uint64_t get_res_size() { return size_in_bytes; }
 
-  /// @brief offset getter
-  /// @return offset
+  /// offset getter
+  /// \param [out] offset The memory offset of the external buffer resource
   uint64_t get_mem_offset() { return offset; }
 
-  /// @brief flags getter
-  /// @return flags
+  /// flags getter
+  /// \param [out] flags The flags used to import external buffer resource
   unsigned int get_flags() { return flags; }
 };
 
@@ -1065,25 +1039,40 @@ inline void unmap_resources(int count, external_mem_wrapper **handles,
 }
 #endif // _WIN32
 
-/// @brief Imports external memory into a SYCL external memory object.
-/// @param extMem Pointer to the SYCL external memory object to be initialized.
-/// @param memHandleDesc Pointer to the external memory handle description.
-/// @throws std::runtime_error If no valid external memory handle is provided.
+/// Imports external memory into a SYCL external memory object.
+/// \param [in] extMem SYCL external memory object ptr to be initialized.
+/// \param [in] memHandleDesc Pointer to the external memory handle descriptor.
+/// \throws std::runtime_error If no valid external memory handle is provided.
 inline void
 import_external_memory(sycl::ext::oneapi::experimental::external_mem *extMem,
                        external_mem_handle_desc *memHandleDesc) {
 #ifdef _WIN32
   if (memHandleDesc->get_win32_handle()) {
     *extMem = sycl::ext::oneapi::experimental::import_external_memory(
-        memHandleDesc->get_ext_res_win32_handle_desc(), get_default_queue());
+        sycl::ext::oneapi::experimental::external_mem_descriptor<
+            sycl::ext::oneapi::experimental::resource_win32_handle>{
+            {memHandleDesc->get_win32_handle()},
+            memHandleDesc->get_handle_type(),
+            memHandleDesc->get_res_size()},
+        get_default_queue());
   } else if (memHandleDesc->get_win32_obj_name()) {
     *extMem = sycl::ext::oneapi::experimental::import_external_memory(
-        memHandleDesc->get_ext_res_win32_name_desc(), get_default_queue());
+        sycl::ext::oneapi::experimental::external_mem_descriptor<
+            sycl::ext::oneapi::experimental::resource_win32_name>{
+            {memHandleDesc->get_win32_obj_name()},
+            memHandleDesc->get_handle_type(),
+            memHandleDesc->get_res_size()},
+        get_default_queue());
   }
 #else
   if (memHandleDesc->get_fd_handle() != -1) {
     *extMem = sycl::ext::oneapi::experimental::import_external_memory(
-        memHandleDesc->get_ext_res_fd_desc(), get_default_queue());
+        sycl::ext::oneapi::experimental::external_mem_descriptor<
+            sycl::ext::oneapi::experimental::resource_fd>{
+            {memHandleDesc->get_fd_handle()},
+            memHandleDesc->get_handle_type(),
+            memHandleDesc->get_res_size()},
+        get_default_queue());
   }
 #endif // _WIN32
   else {
