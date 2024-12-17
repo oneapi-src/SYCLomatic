@@ -21,131 +21,6 @@ namespace experimental {
 
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
 
-/// The wrapper class of bindless image memory handle.
-class image_mem_wrapper {
-public:
-  /// Create bindless image memory wrapper.
-  /// \tparam dimensions The dimensions of image memory.
-  /// \param [in] channel The image channel used to create bindless image
-  /// \param [in] range The sizes of each dimension of bindless image memory.
-  /// memory.
-  template <int dimensions = 3>
-  image_mem_wrapper(image_channel channel, sycl::range<dimensions> range,
-                    sycl::ext::oneapi::experimental::image_type type =
-                        sycl::ext::oneapi::experimental::image_type::standard,
-                    unsigned int num_levels = 1)
-      : _channel(channel) {
-    unsigned array_size = 1;
-    if (type == sycl::ext::oneapi::experimental::image_type::array) {
-      assert(dimensions == 3);
-      array_size = range[2];
-      range[2] = 0;
-    }
-    _desc = sycl::ext::oneapi::experimental::image_descriptor(
-        range, _channel.get_channel_num(), _channel.get_channel_type(), type,
-        num_levels, array_size);
-    auto q = get_default_queue();
-    _handle = alloc_image_mem(_desc, q);
-    init_mip_level_wrappers(q);
-  }
-  /// Create bindless image memory wrapper.
-  /// \param [in] channel The image channel used to create bindless image
-  /// \param [in] width The width of bindless image memory.
-  /// \param [in] height The height of bindless image memory.
-  /// \param [in] depth The depth of bindless image memory.
-  image_mem_wrapper(image_channel channel, size_t width, size_t height = 0,
-                    size_t depth = 0)
-      : image_mem_wrapper(channel, {width, height, depth}) {}
-  /// Create bindless image memory wrapper.
-  /// \param [in] desc The image descriptor used to create bindless image
-  image_mem_wrapper(
-      const sycl::ext::oneapi::experimental::image_descriptor *desc)
-      : _desc(*desc) {
-    _channel.set_channel_type(desc->channel_type);
-    _channel.set_channel_num(desc->num_channels);
-    auto q = get_default_queue();
-    _handle = alloc_image_mem(_desc, q);
-  }
-  /// Create bindless image memory wrapper.
-  /// \param [in] desc The image descriptor of bindless image.
-  /// \param [in] img_mem_handle The memory handle of bindless image.
-  image_mem_wrapper(
-      sycl::ext::oneapi::experimental::image_descriptor desc,
-      sycl::ext::oneapi::experimental::image_mem_handle img_mem_handle)
-      : _desc(desc), _handle(img_mem_handle) {
-    _channel.set_channel_type(_desc.channel_type);
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240725)
-    _channel.set_channel_num(_desc.num_channels);
-#endif
-    auto q = get_default_queue();
-    init_mip_level_wrappers(q);
-  }
-  image_mem_wrapper(const image_mem_wrapper &) = delete;
-  image_mem_wrapper &operator=(const image_mem_wrapper &) = delete;
-  /// Destroy bindless image memory wrapper.
-  ~image_mem_wrapper() {
-    if (_sub_wrappers) {
-      std::destroy_n(_sub_wrappers, _desc.num_levels);
-      std::free(_sub_wrappers);
-    }
-    free_image_mem(_handle, _desc.type, get_default_queue());
-  }
-  /// Get the image channel of the bindless image memory.
-  /// \returns The image channel of bindless image memory.
-  image_channel get_channel() const noexcept { return _channel; }
-  /// Get the sizes of each dimension of the bindless image memory.
-  /// \returns The sizes of each dimension of bindless image memory.
-  sycl::range<3> get_range() const {
-    return {_desc.width, _desc.height, _desc.depth};
-  }
-  /// Get the image descriptor of the bindless image memory.
-  /// \returns The image descriptor of bindless image memory.
-  const sycl::ext::oneapi::experimental::image_descriptor &
-  get_desc() const noexcept {
-    return _desc;
-  }
-  /// Get the image handle of the bindless image memory.
-  /// \returns The image handle of bindless image memory.
-  sycl::ext::oneapi::experimental::image_mem_handle
-  get_handle() const noexcept {
-    return _handle;
-  }
-  /// Get the image mip level of the bindless image memory.
-  /// \returns The image mip level of the bindless image memory.
-  image_mem_wrapper *get_mip_level(unsigned int level) {
-    assert(_desc.type == sycl::ext::oneapi::experimental::image_type::mipmap);
-    return _sub_wrappers + level;
-  }
-
-private:
-  image_mem_wrapper(
-      const image_channel &channel,
-      const sycl::ext::oneapi::experimental::image_descriptor &desc,
-      const sycl::ext::oneapi::experimental::image_mem_handle &handle)
-      : _channel(channel), _desc(desc), _handle(handle) {}
-
-  /// Initialize image mem wrappers for all the levels of mipmap image
-  /// \param [in] q The Queue to be used to query the mip levels
-  void init_mip_level_wrappers(sycl::queue q) {
-    auto num_levels = _desc.num_levels;
-    if (_desc.type == sycl::ext::oneapi::experimental::image_type::mipmap) {
-      assert(num_levels > 1);
-      _sub_wrappers = (image_mem_wrapper *)std::malloc(
-          sizeof(image_mem_wrapper) * num_levels);
-      for (unsigned i = 0; i < num_levels; ++i)
-        new (_sub_wrappers + i) image_mem_wrapper(
-            _channel, _desc.get_mip_level_desc(i),
-            sycl::ext::oneapi::experimental::get_mip_level_mem_handle(
-                _handle, i, q.get_device(), q.get_context()));
-    }
-  }
-
-  image_channel _channel;
-  sycl::ext::oneapi::experimental::image_descriptor _desc;
-  sycl::ext::oneapi::experimental::image_mem_handle _handle;
-  image_mem_wrapper *_sub_wrappers{nullptr};
-};
-
 /// The wrapper structure for external memory handle desc
 class external_mem_handle_desc {
 #ifdef _WIN32
@@ -278,17 +153,6 @@ public:
   /// type getter
   /// \param [out] type The image type of the imported image resource
   sycl::ext::oneapi::experimental::image_type get_image_type() { return type; }
-
-  /// generate sycl image_descriptor
-  /// \param [out] image_descriptor The img desc of the imported image resource
-  sycl::ext::oneapi::experimental::image_descriptor get_sycl_obj() {
-    unsigned int array_size = 1;
-
-    return sycl::ext::oneapi::experimental::image_descriptor(
-        get_size(), get_image_channel().get_channel_num(),
-        get_image_channel().get_channel_type(), get_image_type(),
-        get_num_levels(), array_size);
-  }
 };
 
 /// The wrapper structure for external buffer memory desc
@@ -327,6 +191,149 @@ public:
   /// flags getter
   /// \param [out] flags The flags used to import external buffer resource
   unsigned int get_flags() { return flags; }
+};
+
+/// The wrapper class of bindless image memory handle.
+class image_mem_wrapper {
+public:
+  /// Create bindless image memory wrapper.
+  /// \tparam dimensions The dimensions of image memory.
+  /// \param [in] channel The image channel used to create bindless image
+  /// \param [in] range The sizes of each dimension of bindless image memory.
+  /// memory.
+  template <int dimensions = 3>
+  image_mem_wrapper(image_channel channel, sycl::range<dimensions> range,
+                    sycl::ext::oneapi::experimental::image_type type =
+                        sycl::ext::oneapi::experimental::image_type::standard,
+                    unsigned int num_levels = 1)
+      : _channel(channel) {
+    unsigned array_size = 1;
+    if (type == sycl::ext::oneapi::experimental::image_type::array) {
+      assert(dimensions == 3);
+      array_size = range[2];
+      range[2] = 0;
+    }
+    _desc = sycl::ext::oneapi::experimental::image_descriptor(
+        range, _channel.get_channel_num(), _channel.get_channel_type(), type,
+        num_levels, array_size);
+    auto q = get_default_queue();
+    _handle = alloc_image_mem(_desc, q);
+    init_mip_level_wrappers(q);
+  }
+  /// Create bindless image memory wrapper.
+  /// \param [in] channel The image channel used to create bindless image
+  /// \param [in] width The width of bindless image memory.
+  /// \param [in] height The height of bindless image memory.
+  /// \param [in] depth The depth of bindless image memory.
+  image_mem_wrapper(image_channel channel, size_t width, size_t height = 0,
+                    size_t depth = 0)
+      : image_mem_wrapper(channel, {width, height, depth}) {}
+  /// Create bindless image memory wrapper.
+  /// \param [in] desc The image descriptor used to create bindless image
+  image_mem_wrapper(
+      const sycl::ext::oneapi::experimental::image_descriptor *desc)
+      : _desc(*desc) {
+    _channel.set_channel_type(desc->channel_type);
+    _channel.set_channel_num(desc->num_channels);
+    auto q = get_default_queue();
+    _handle = alloc_image_mem(_desc, q);
+  }
+  /// Create bindless image memory wrapper.
+  /// \param [in] desc The image descriptor of bindless image.
+  /// \param [in] img_mem_handle The memory handle of bindless image.
+  image_mem_wrapper(
+      sycl::ext::oneapi::experimental::image_descriptor desc,
+      sycl::ext::oneapi::experimental::image_mem_handle img_mem_handle)
+      : _desc(desc), _handle(img_mem_handle) {
+    _channel.set_channel_type(_desc.channel_type);
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240725)
+    _channel.set_channel_num(_desc.num_channels);
+#endif
+    auto q = get_default_queue();
+    init_mip_level_wrappers(q);
+  }
+  /// Create bindless image memory wrapper.
+  /// \param [in] extMem SYCL external memory object.
+  /// \param [in] ext_img_mem_desc The img desc of the imported image resource.
+  image_mem_wrapper(sycl::ext::oneapi::experimental::external_mem extMem,
+                    external_mem_img_desc *ext_img_mem_desc) {
+    auto q = get_default_queue();
+    unsigned int array_size = 1;
+
+    _channel = ext_img_mem_desc->get_image_channel();
+    _desc = sycl::ext::oneapi::experimental::image_descriptor(
+        ext_img_mem_desc->get_size(), _channel.get_channel_num(),
+        _channel.get_channel_type(), ext_img_mem_desc->get_image_type(),
+        ext_img_mem_desc->get_num_levels(), array_size);
+    _handle = sycl::ext::oneapi::experimental::map_external_image_memory(
+        extMem, _desc, q);
+
+    init_mip_level_wrappers(q);
+  }
+  image_mem_wrapper(const image_mem_wrapper &) = delete;
+  image_mem_wrapper &operator=(const image_mem_wrapper &) = delete;
+  /// Destroy bindless image memory wrapper.
+  ~image_mem_wrapper() {
+    if (_sub_wrappers) {
+      std::destroy_n(_sub_wrappers, _desc.num_levels);
+      std::free(_sub_wrappers);
+    }
+    free_image_mem(_handle, _desc.type, get_default_queue());
+  }
+  /// Get the image channel of the bindless image memory.
+  /// \returns The image channel of bindless image memory.
+  image_channel get_channel() const noexcept { return _channel; }
+  /// Get the sizes of each dimension of the bindless image memory.
+  /// \returns The sizes of each dimension of bindless image memory.
+  sycl::range<3> get_range() const {
+    return {_desc.width, _desc.height, _desc.depth};
+  }
+  /// Get the image descriptor of the bindless image memory.
+  /// \returns The image descriptor of bindless image memory.
+  const sycl::ext::oneapi::experimental::image_descriptor &
+  get_desc() const noexcept {
+    return _desc;
+  }
+  /// Get the image handle of the bindless image memory.
+  /// \returns The image handle of bindless image memory.
+  sycl::ext::oneapi::experimental::image_mem_handle
+  get_handle() const noexcept {
+    return _handle;
+  }
+  /// Get the image mip level of the bindless image memory.
+  /// \returns The image mip level of the bindless image memory.
+  image_mem_wrapper *get_mip_level(unsigned int level) {
+    assert(_desc.type == sycl::ext::oneapi::experimental::image_type::mipmap);
+    return _sub_wrappers + level;
+  }
+
+private:
+  image_mem_wrapper(
+      const image_channel &channel,
+      const sycl::ext::oneapi::experimental::image_descriptor &desc,
+      const sycl::ext::oneapi::experimental::image_mem_handle &handle)
+      : _channel(channel), _desc(desc), _handle(handle) {}
+
+  /// Initialize image mem wrappers for all the levels of mipmap image
+  /// \param [in] q The Queue to be used to query the mip levels
+  void init_mip_level_wrappers(sycl::queue q) {
+    auto num_levels = _desc.num_levels;
+    if (_desc.type == sycl::ext::oneapi::experimental::image_type::mipmap) {
+      assert(num_levels > 1);
+      _sub_wrappers = (image_mem_wrapper *)std::malloc(
+          sizeof(image_mem_wrapper) * num_levels);
+      for (unsigned i = 0; i < num_levels; ++i)
+        new (_sub_wrappers + i) image_mem_wrapper(
+            _channel, _desc.get_mip_level_desc(i),
+            sycl::ext::oneapi::experimental::get_mip_level_mem_handle(
+                _handle, i, q.get_device(), q.get_context()));
+    }
+  }
+
+  image_channel _channel;
+  sycl::ext::oneapi::experimental::image_descriptor _desc;
+  sycl::ext::oneapi::experimental::image_mem_handle _handle;
+  image_mem_wrapper *_sub_wrappers{nullptr};
 };
 
 /// The base wrapper class of external memory handle.
@@ -1223,14 +1230,10 @@ static inline void destroy_bindless_image(T handle,
   sycl::ext::oneapi::experimental::destroy_image_handle(handle, q);
 }
 
-
-
 /// Get the image data according to sampled image handle.
 /// \param [in] handle The bindless image handle.
 /// \returns The image data of sampled image.
-template <class T>
-static inline image_data
-get_data(const T handle) {
+template <class T> static inline image_data get_data(const T handle) {
   return detail::get_img_info_map(handle).first;
 }
 

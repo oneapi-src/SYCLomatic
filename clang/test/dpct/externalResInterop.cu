@@ -172,7 +172,7 @@ int main() {
 
   /// calls
   // CHECK: dpct::experimental::import_external_memory(&extMem, &memHandleDesc);
-  // CHECK-NEXT: mipmap = new dpct::experimental::image_mem_wrapper((&mipmappedArrDesc)->get_sycl_obj(), sycl::ext::oneapi::experimental::map_external_image_memory(extMem, (&mipmappedArrDesc)->get_sycl_obj(), q_ct1));
+  // CHECK-NEXT: mipmap = new dpct::experimental::image_mem_wrapper(extMem, &mipmappedArrDesc);
   // CHECK-NEXT: devPtr = sycl::ext::oneapi::experimental::map_external_linear_memory(extMem, (&bufferDesc)->get_res_size(), (&bufferDesc)->get_mem_offset(), q_ct1);
   // CHECK-NEXT: sycl::ext::oneapi::experimental::release_external_memory(extMem, q_ct1);
   cudaImportExternalMemory(&extMem, &memHandleDesc);

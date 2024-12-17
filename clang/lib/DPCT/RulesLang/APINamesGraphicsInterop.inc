@@ -120,9 +120,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaExternalMemoryGetMappedMipmappedArray", DEREF(0),
         NEW(MapNames::getDpctNamespace() + "experimental::image_mem_wrapper",
-            MEMBER_CALL(ARG(2), true, "get_sycl_obj"),
-            CALL(MapNames::getClNamespace() + "ext::oneapi::experimental::map_external_image_memory",
-                 ARG(1), MEMBER_CALL(ARG(2), true, "get_sycl_obj"), QUEUESTR)))),
+            ARG(1), ARG(2)))),
     UNSUPPORT_FACTORY_ENTRY("cudaExternalMemoryGetMappedMipmappedArray", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaExternalMemoryGetMappedMipmappedArray"),
                             ARG("--use-experimental-features=bindless_images")))
