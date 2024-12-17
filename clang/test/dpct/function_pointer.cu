@@ -67,7 +67,7 @@ void foo() {
     cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
 
-// CHECK:  fpt<int> fp = dpct::wrapper_register(vectorAdd_wrapper).get();
+// CHECK:  fpt<int> fp = dpct::wrapper_register(vectorAdd_wrapper);
 // CHECK:  dpct::kernel_launch::launch(fp, 1, 10, 0, 0, d_A, d_B, d_C, N);
     fpt<int> fp = vectorAdd;
     fp<<<1, 10>>>(d_A, d_B, d_C, N);
@@ -174,7 +174,7 @@ template <typename T>
 void hoo() {
     // CHECK: fpt<int> a = dpct::wrapper_register<decltype(a)>(vectorTemplateAdd_wrapper);
   fpt<int> a = vectorTemplateAdd;
-  // CHECK:  goo<T>(dpct::wrapper_register<typename dpct::nth_argument_type<decltype(goo<T>), 0>::type>(vectorTemplateAdd_wrapper).get());
+  // CHECK:  goo<T>(dpct::wrapper_register<typename dpct::nth_argument_type<decltype(goo<T>), 0>::type>(vectorTemplateAdd_wrapper));
   goo<T>(vectorTemplateAdd);
 }
 

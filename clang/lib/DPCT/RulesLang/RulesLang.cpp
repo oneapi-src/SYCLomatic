@@ -4521,30 +4521,34 @@ void KernelCallRefRule::runRule(
     }
     const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl());
     bool IsTemplateRelated = false;
-    int TemplateParamNum = 0;
+    size_t TemplateParamNum = 0;
     if (FD) {
       if (FD->getTemplatedKind() !=
           FunctionDecl::TemplatedKind::TK_NonTemplate) {
         IsTemplateRelated = true;
       }
-
+      if (auto FTD = FD->getPrimaryTemplate()) {
+        if (auto TP = FTD->getTemplateParameters())
+          TemplateParamNum = TP->size();
+      }
       if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD)) {
         DFI->collectInfoForWrapper(FD);
       }
     }
-    std::cout << IsTemplateRelated << std::endl;
-    std::cout <<DRE->hasExplicitTemplateArgs() << std::endl;
     if (auto *OuterFD = DpctGlobalInfo::findAncestor<FunctionDecl>(DRE)) {
       if ((OuterFD->getTemplatedKind() ==
            FunctionDecl::TemplatedKind::TK_NonTemplate) ||
           (OuterFD->getTemplatedKind() ==
            FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
         std::string TypeRepl;
-        if (DpctGlobalInfo::isCVersionCUDALaunchUsed() && IsTemplateRelated &&
-            !DRE->hasExplicitTemplateArgs()) {
-          TypeRepl = getTypeRepl(DRE);
+        if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
+          if ((IsTemplateRelated &&
+               (!DRE->hasExplicitTemplateArgs() ||
+                (DRE->getNumTemplateArgs() <= TemplateParamNum))) ||
+              DRE->hadMultipleCandidates()) {
+            TypeRepl = getTypeRepl(DRE);
+          }
         }
-        std::cout << TypeRepl << std::endl;
         insertWrapperPostfix<DeclRefExpr>(
             DRE, std::move(TypeRepl),
             DpctGlobalInfo::isCVersionCUDALaunchUsed());
