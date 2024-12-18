@@ -588,7 +588,9 @@ public:
     std::vector<std::shared_ptr<sycl::queue>> current_queues(_queues);
     lock.unlock();
     for (const auto &q : current_queues) {
-      last_events.push_back(q->ext_oneapi_get_last_event());
+      if (q->is_in_order()) {
+        last_events.push_back(q->ext_oneapi_get_last_event());
+      }
     }
     // Guard the destruct of current_queues to make sure the ref count is safe.
     lock.lock();
