@@ -5215,6 +5215,8 @@ void DeviceFunctionDecl::insertWrapper() {
               << "nd_range<3> &nr, unsigned int localMemSize, void "
                  "**kernelParams, void **extra)";
     } else {
+      Printer.line("// Auto generated SYCL kernel wrapper used to migration "
+                   "kernel function pointer.");
       if (!TParamsInfo.empty()) {
         Printer << "template<";
         for (size_t i = 0; i < TParamsInfo.size(); i++) {

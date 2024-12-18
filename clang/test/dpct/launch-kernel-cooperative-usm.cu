@@ -23,7 +23,7 @@ __global__ void kernel(int *d, cudaTextureObject_t tex) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
   tex1D(d + gtid, tex, gtid);
 }
-
+// CHECK: // Auto generated SYCL kernel wrapper used to migration kernel function pointer.
 // CHECK: void kernel_wrapper(int * d ,dpct::image_wrapper_base_p tex) {
 // CHECK:   sycl::queue queue = *dpct::kernel_launch::_que;
 // CHECK:   unsigned int localMemSize = dpct::kernel_launch::_local_mem_size;
@@ -97,7 +97,7 @@ int main() {
   // CHECK-NEXT:  });
   cudaLaunchCooperativeKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
 
-  // CHECK: void *kernel_func = (void *)dpct::wrapper_register(&kernel_wrapper);
+  // CHECK: void *kernel_func = (void *)dpct::wrapper_register(&kernel_wrapper).get();
   void *kernel_func = (void *)&kernel;
 
   // CHECK: dpct::kernel_launch::launch(kernel_func, dpct::dim3(16), dpct::dim3(16), args, 0, 0);

@@ -449,6 +449,14 @@ public:
                                       SourceLocation &EpilogLocation);
 };
 
+/// Migration rule for kernel function references.
+/// This rule handles kernel functions that are used as function pointers.
+/// For such kernel functions, a wrapper is generated with a `_wrapper`
+/// postfix added to the kernel function name. Additionally, if the kernel
+/// function pointer is used in a context where its original type information is
+/// erased (e.g., raw pointer usage), an extra wrapper registration is required.
+/// This ensures that the raw pointer is associated with the appropriate wrapper
+/// and retains the necessary type information.
 class KernelCallRefRule : public NamedMigrationRule<KernelCallRefRule> {
   std::string getTypeRepl(const Expr *E);
   template <typename T>

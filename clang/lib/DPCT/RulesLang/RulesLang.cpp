@@ -4513,7 +4513,7 @@ void KernelCallRefRule::insertWrapperPostfix(const T *Node,
   }
   emplaceTransformation(new InsertBeforeStmt(
       E, MapNames::getDpctNamespace() + "wrapper_register" + TypeRepl + "("));
-  emplaceTransformation(new InsertAfterStmt(E, ")"));
+  emplaceTransformation(new InsertAfterStmt(E, ").get()"));
 }
 
 void KernelCallRefRule::runRule(
