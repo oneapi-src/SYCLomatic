@@ -72,6 +72,14 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                             ARG(0), QUEUESTR)),
     DELETER_FACTORY_ENTRY("cudaDestroySurfaceObject", ARG(0))))
 
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("cuSurfObjectDestroy",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::destroy_bindless_image",
+                            ARG(0), QUEUESTR)),
+    DELETER_FACTORY_ENTRY("cuSurfObjectDestroy", ARG(0))))
+
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
@@ -120,6 +128,17 @@ CONDITIONAL_FACTORY_ENTRY(
                             ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                                 "cudaGetSurfaceObjectResourceDesc", DEREF(0),
                                 MEMBER_CALL(ARG(1), true, "get_data")))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuSurfObjectGetResourceDesc", DEREF(0),
+        CALL(MapNames::getDpctNamespace() + "experimental::get_data", ARG(1)))),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                "cuSurfObjectGetResourceDesc", DEREF(0),
+                                MEMBER_CALL(ARG(1), true, "get_data")))))
+
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     FEATURE_REQUEST_FACTORY(
@@ -256,6 +275,16 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudaCreateSurfaceObject", DEREF(0),
+                            CALL(DpctGlobalInfo::useExtBindlessImages()
+                                     ? MapNames::getDpctNamespace() +
+                                           "experimental::create_bindless_image"
+                                     : MapNames::getDpctNamespace() +
+                                           "create_image_wrapper",
+                                 DEREF(1)))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cuSurfObjectCreate", DEREF(0),
                             CALL(DpctGlobalInfo::useExtBindlessImages()
                                      ? MapNames::getDpctNamespace() +
                                            "experimental::create_bindless_image"

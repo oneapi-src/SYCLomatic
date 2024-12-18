@@ -550,7 +550,7 @@ template <typename T> struct scale_d_impl {
 
 template <typename T> struct set_buffer_impl {
   void operator()(::dnnl::memory *dnnl_memory, const void *ptr) {
-    auto buf = get_buffer<std::int8_t>(ptr);
+    auto buf = get_buffer<T>(ptr);
     ::dnnl::sycl_interop::set_buffer(*dnnl_memory, buf);
   }
 };
@@ -774,331 +774,377 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         "&& b_type==float && c_type==float.");
   }
 
-  // For non-col_major matrix, convert it to col_major.
-  const void *new_a = a;
-  const void *new_b = b;
-  const void *new_c = c;
-  void *new_d = d;
-  bool new_b_allocated = false;
-  bool new_c_allocated = false;
-  bool new_d_allocated = false;
-  size_t new_lda = a_desc->_ld, new_ldb = b_desc->_ld, new_ldc = c_desc->_ld,
-         new_ldd = d_desc->_ld;
-  std::vector<sycl::event> transform_events;
-
-  if (a_desc->_order != order_t::col)
-    new_lda = a_desc->_rows;
-  size_t size_of_element =
-      dpct::detail::library_data_size[static_cast<unsigned int>(
-          a_desc->_type)] /
-      8;
-  new_a = ::dpct::cs::malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
-  sycl::event e_init;
-  if (a_desc->_order != order_t::col)
-    e_init = detail::type_dispatch<detail::matrix_transform_impl>(
-        a_desc->_type, q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld,
-        a_desc->_order, (const std::int8_t *)a, new_lda, order_t::col,
-        (std::int8_t *)new_a, std::vector<sycl::event>{});
-  else
-    e_init = ::dpct::cs::memcpy(*q_ptr, (void *)new_a, a,
-                                size_of_element * a_desc->_cols * new_lda,
-                                ::dpct::cs::memcpy_direction::device_to_device);
-
-  // alpha = alpha * scale_a * scale_b
-  sycl::event e_scale_new_a = detail::scale_new_a(
-      q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
-      device_alpha, compute_desc->_a_scale_pointer,
-      compute_desc->_b_scale_pointer, {e_init});
-
-  transform_events.push_back(e_scale_new_a);
-
-  if (b_desc->_order != order_t::col) {
-    new_ldb = b_desc->_rows;
-    size_t size_of_element =
-        dpct::detail::library_data_size[static_cast<unsigned int>(
-            b_desc->_type)] /
-        8;
-    new_b =
-        ::dpct::cs::malloc(size_of_element * b_desc->_cols * new_ldb, *q_ptr);
-    new_b_allocated = true;
-    sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
-        b_desc->_type, q_ptr, b_desc->_rows, b_desc->_cols, b_desc->_ld,
-        b_desc->_order, b, new_ldb, order_t::col, const_cast<void *>(new_b),
-        std::vector<sycl::event>{});
-    transform_events.push_back(e);
+  if (a_desc->_batch_count != b_desc->_batch_count ||
+      a_desc->_batch_count != c_desc->_batch_count ||
+      a_desc->_batch_count != d_desc->_batch_count) {
+    throw std::runtime_error("dpct::blas_gemm::experimental::matmul() does not "
+                             "support different batch count.");
   }
-
-  if (!beta_is_zero && c_desc->_order != order_t::col) {
-    new_ldc = c_desc->_rows;
-    size_t size_of_element =
-        dpct::detail::library_data_size[static_cast<unsigned int>(
-            c_desc->_type)] /
-        8;
-    new_c =
-        ::dpct::cs::malloc(size_of_element * c_desc->_cols * new_ldc, *q_ptr);
-    new_c_allocated = true;
-    sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
-        c_desc->_type, q_ptr, c_desc->_rows, c_desc->_cols, c_desc->_ld,
-        c_desc->_order, c, new_ldc, order_t::col, const_cast<void *>(new_c),
-        std::vector<sycl::event>{});
-    transform_events.push_back(e);
-  }
-
-  if (d_desc->_order != order_t::col) {
-    new_ldd = d_desc->_rows;
-    size_t size_of_element =
-        dpct::detail::library_data_size[static_cast<unsigned int>(
-            d_desc->_type)] /
-        8;
-    new_d =
-        ::dpct::cs::malloc(size_of_element * d_desc->_cols * new_ldd, *q_ptr);
-    new_d_allocated = true;
-  }
-
-  // start to call oneDNN matmul primitive
-  // a,d are col_major, b is row_major
-  const ::dnnl::memory::dim M = m;
-  const ::dnnl::memory::dim N = n;
-  const ::dnnl::memory::dim K = k;
-
-  ::dnnl::memory::dims src_dims = {M, K};
-  ::dnnl::memory::dims weights_dims = {K, N};
-  ::dnnl::memory::dims bias_dims = {M, N};
-  ::dnnl::memory::dims dst_dims = {M, N};
-
-  const ::dnnl::memory::dims src_strides =
-      compute_desc->_trans_a == oneapi::mkl::transpose::nontrans
-          ? ::dnnl::memory::dims{1, static_cast<long>(new_lda)}
-          : ::dnnl::memory::dims{static_cast<long>(new_lda), 1};
-  const ::dnnl::memory::dims weights_strides =
-      compute_desc->_trans_b == oneapi::mkl::transpose::nontrans
-          ? ::dnnl::memory::dims{1, static_cast<long>(new_ldb)}
-          : ::dnnl::memory::dims{static_cast<long>(new_ldb), 1};
-  const ::dnnl::memory::dims bias_strides =
-      ::dnnl::memory::dims{1, static_cast<long>(new_ldc)};
-  const ::dnnl::memory::dims dst_strides =
-      ::dnnl::memory::dims{1, static_cast<long>(new_ldd)};
-
-  auto src_md = ::dnnl::memory::desc(
-      src_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(a_type),
-      src_strides);
-  auto weights_md = ::dnnl::memory::desc(
-      weights_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(b_type),
-      weights_strides);
-  auto bias_md = ::dnnl::memory::desc(
-      bias_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(c_type),
-      bias_strides);
-  auto dst_md = ::dnnl::memory::desc(
-      dst_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(d_type),
-      dst_strides);
-
-  auto *src_mem =
-      new ::dnnl::memory(src_md, handle->get_engine(), DNNL_MEMORY_NONE);
-  auto *weights_mem =
-      new ::dnnl::memory(weights_md, handle->get_engine(), DNNL_MEMORY_NONE);
-  auto *bias_mem =
-      new ::dnnl::memory(bias_md, handle->get_engine(), DNNL_MEMORY_NONE);
-  auto *dst_mem =
-      new ::dnnl::memory(dst_md, handle->get_engine(), DNNL_MEMORY_NONE);
 
 #ifdef DPCT_USM_LEVEL_NONE
-  detail::type_dispatch<detail::set_buffer_impl>(a_type, src_mem, new_a);
-  detail::type_dispatch<detail::set_buffer_impl>(b_type, weights_mem, new_b);
-  if (!beta_is_zero)
-    detail::type_dispatch<detail::set_buffer_impl>(c_type, bias_mem, new_c);
-  detail::type_dispatch<detail::set_buffer_impl>(d_type, dst_mem, new_d);
-#else
-  src_mem->set_data_handle(const_cast<void *>(new_a));
-  weights_mem->set_data_handle(const_cast<void *>(new_b));
-  if (!beta_is_zero)
-    bias_mem->set_data_handle(const_cast<void *>(new_c));
-  dst_mem->set_data_handle(new_d);
+  if (a_desc->_batch_count != 1) {
+    throw std::runtime_error(
+        "dpct::blas_gemm::experimental::matmul() only supports "
+        "batch mode with USM enabled.");
+  }
 #endif
 
-  std::unordered_map<int, ::dnnl::memory> matmul_args;
-  matmul_args.insert({DNNL_ARG_SRC, *src_mem});
-  matmul_args.insert({DNNL_ARG_WEIGHTS, *weights_mem});
-  matmul_args.insert({DNNL_ARG_DST, *dst_mem});
-  ::dnnl::primitive_attr matmul_attr;
+  size_t a_elm_size = dpct::detail::library_data_size[static_cast<unsigned int>(
+                          a_desc->_type)] /
+                      8;
+  size_t b_elm_size = dpct::detail::library_data_size[static_cast<unsigned int>(
+                          b_desc->_type)] /
+                      8;
+  size_t c_elm_size = dpct::detail::library_data_size[static_cast<unsigned int>(
+                          c_desc->_type)] /
+                      8;
+  size_t d_elm_size = dpct::detail::library_data_size[static_cast<unsigned int>(
+                          d_desc->_type)] /
+                      8;
 
-  ::dnnl::post_ops matmul_ops;
-  if (!beta_is_zero) {
-    matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
-    matmul_args.insert(
-        {DNNL_ARG_ATTR_MULTIPLE_POST_OP(matmul_ops.len() - 1) | DNNL_ARG_SRC_1,
-         *bias_mem});
-  }
+  static const auto matmul_single =
+      [](descriptor_ptr handle, matmul_desc_ptr compute_desc, const void *alpha,
+         const void *a, matrix_layout_ptr a_desc, const void *b,
+         matrix_layout_ptr b_desc, const void *beta, const void *c,
+         matrix_layout_ptr c_desc, void *d, matrix_layout_ptr d_desc,
+         ::dpct::cs::queue_ptr q_ptr, const size_t m, const size_t n,
+         const size_t k, const library_data_t a_type,
+         const library_data_t b_type, const library_data_t c_type,
+         const library_data_t d_type, const library_data_t scale_type,
+         bool vector_alpha, bool device_alpha, bool beta_is_zero,
+         size_t a_elm_size, size_t b_elm_size, size_t c_elm_size,
+         size_t d_elm_size) -> sycl::event {
+    // For non-col_major matrix, convert it to col_major.
+    const void *new_a = a;
+    const void *new_b = b;
+    const void *new_c = c;
+    void *new_d = d;
+    bool new_b_allocated = false;
+    bool new_c_allocated = false;
+    bool new_d_allocated = false;
+    size_t new_lda = a_desc->_ld, new_ldb = b_desc->_ld, new_ldc = c_desc->_ld,
+           new_ldd = d_desc->_ld;
+    std::vector<sycl::event> transform_events;
 
-  ::dnnl::memory *po_bias_mem = nullptr;
-  auto po_bias_md =
-      ::dnnl::memory::desc(::dnnl::memory::dims{M, 1},
-                           dpct::dnnl::memory_desc_ext::to_dnnl_data_type(
-                               compute_desc->_bias_data_type),
-                           ::dnnl::memory::dims{1, M});
-  if (compute_desc->_epilogue == epilogue_t::bias ||
-      compute_desc->_epilogue == epilogue_t::gelu_bias ||
-      compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
-    po_bias_mem =
-        new ::dnnl::memory(po_bias_md, handle->get_engine(), DNNL_MEMORY_NONE);
-#ifdef DPCT_USM_LEVEL_NONE
-    detail::type_dispatch<detail::set_buffer_impl>(
-        compute_desc->_bias_data_type, po_bias_mem,
-        compute_desc->_bias_pointer);
-#else
-    po_bias_mem->set_data_handle(compute_desc->_bias_pointer);
-#endif
-  }
+    if (a_desc->_order != order_t::col)
+      new_lda = a_desc->_rows;
+    new_a = ::dpct::cs::malloc(a_elm_size * a_desc->_cols * new_lda, *q_ptr);
+    sycl::event e_init;
+    if (a_desc->_order != order_t::col)
+      e_init = detail::type_dispatch<detail::matrix_transform_impl>(
+          a_desc->_type, q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld,
+          a_desc->_order, (const std::int8_t *)a, new_lda, order_t::col,
+          (std::int8_t *)new_a, std::vector<sycl::event>{});
+    else
+      e_init = ::dpct::cs::memcpy(
+          *q_ptr, (void *)new_a, a, a_elm_size * a_desc->_cols * new_lda,
+          ::dpct::cs::memcpy_direction::device_to_device);
 
-  ::dnnl::memory *po_aux_mem = nullptr;
-  auto po_aux_md = ::dnnl::memory::desc(
-      ::dnnl::memory::dims{M, N},
-      dpct::dnnl::memory_desc_ext::to_dnnl_data_type(
-          compute_desc->_epilogue_aux_data_type),
-      ::dnnl::memory::dims{1,
-                           static_cast<long>(compute_desc->_epilogue_aux_ld)});
-  if (compute_desc->_epilogue == epilogue_t::dgelu) {
-    po_aux_mem =
-        new ::dnnl::memory(po_aux_md, handle->get_engine(), DNNL_MEMORY_NONE);
-#ifdef DPCT_USM_LEVEL_NONE
-    detail::type_dispatch<detail::set_buffer_impl>(
-        compute_desc->_epilogue_aux_data_type, po_aux_mem,
-        compute_desc->_epilogue_aux_pointer);
-#else
-    po_aux_mem->set_data_handle(compute_desc->_epilogue_aux_pointer);
-#endif
-  }
+    // alpha = alpha * scale_a * scale_b
+    sycl::event e_scale_new_a = detail::scale_new_a(
+        q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
+        device_alpha, compute_desc->_a_scale_pointer,
+        compute_desc->_b_scale_pointer, {e_init});
 
-  switch (compute_desc->_epilogue) {
-  case epilogue_t::relu:
-    matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
-    break;
-  case epilogue_t::bias:
-  case epilogue_t::gelu_bias: {
-    matmul_ops.append_binary(::dnnl::algorithm::binary_add, po_bias_md);
-    matmul_args.insert(
-        {DNNL_ARG_ATTR_MULTIPLE_POST_OP(matmul_ops.len() - 1) | DNNL_ARG_SRC_1,
-         *po_bias_mem});
-    if (compute_desc->_epilogue == epilogue_t::gelu_bias)
-      matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_tanh, 0.f, 0.f);
-    break;
-  }
-  case epilogue_t::gelu:
-    matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_tanh, 0.f, 0.f);
-    break;
-  default:
-    break;
-  }
+    transform_events.push_back(e_scale_new_a);
 
-  matmul_attr.set_post_ops(matmul_ops);
-
-  auto matmul_pd = ::dnnl::matmul::primitive_desc(
-      handle->get_engine(), src_md, weights_md, dst_md, matmul_attr);
-  auto matmul_prim = ::dnnl::matmul(matmul_pd);
-  sycl::event matmul_prim_event = ::dnnl::sycl_interop::execute(
-      matmul_prim, handle->get_engine_stream(), matmul_args, transform_events);
-
-  // post-op implemented by separate primitives
-  sycl::event post_op_prim_event;
-  if (compute_desc->_epilogue == epilogue_t::gelu_aux ||
-      compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
-    sycl::event prev_event = matmul_prim_event;
-    if (compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
-      auto po_bias_pd = ::dnnl::binary::primitive_desc(
-          handle->get_engine(), ::dnnl::algorithm::binary_add, dst_md,
-          po_bias_md, dst_md);
-      auto po_bias_prim = ::dnnl::binary(po_bias_pd);
-      std::unordered_map<int, ::dnnl::memory> po_bias_args;
-      po_bias_args.insert({DNNL_ARG_SRC_0, *dst_mem});
-      po_bias_args.insert({DNNL_ARG_SRC_1, *po_bias_mem});
-      po_bias_args.insert({DNNL_ARG_DST, *dst_mem});
-      sycl::event prev_event = ::dnnl::sycl_interop::execute(
-          po_bias_prim, handle->get_engine_stream(), po_bias_args,
-          {matmul_prim_event});
+    if (b_desc->_order != order_t::col) {
+      new_ldb = b_desc->_rows;
+      new_b = ::dpct::cs::malloc(b_elm_size * b_desc->_cols * new_ldb, *q_ptr);
+      new_b_allocated = true;
+      sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
+          b_desc->_type, q_ptr, b_desc->_rows, b_desc->_cols, b_desc->_ld,
+          b_desc->_order, b, new_ldb, order_t::col, const_cast<void *>(new_b),
+          std::vector<sycl::event>{});
+      transform_events.push_back(e);
     }
-    size_t size_of_element =
-        dpct::detail::library_data_size[static_cast<unsigned int>(
-            d_desc->_type)] /
-        8;
-    sycl::event copy_e = dpct::blas::matrix_mem_copy_async(
-        compute_desc->_epilogue_aux_pointer, new_d,
-        compute_desc->_epilogue_aux_ld, d_desc->_ld, m, n, size_of_element,
-        ::dpct::cs::memcpy_direction::automatic, *q_ptr, {prev_event});
 
-    auto gelu_pd = ::dnnl::eltwise_forward::primitive_desc(
-        handle->get_engine(), ::dnnl::prop_kind::forward_training,
-        ::dnnl::algorithm::eltwise_gelu_tanh, dst_md, dst_md);
-    auto gelu_prim = ::dnnl::eltwise_forward(gelu_pd);
-    std::unordered_map<int, ::dnnl::memory> gelu_args;
-    gelu_args.insert({DNNL_ARG_SRC, *dst_mem});
-    gelu_args.insert({DNNL_ARG_DST, *dst_mem});
-    post_op_prim_event = ::dnnl::sycl_interop::execute(
-        gelu_prim, handle->get_engine_stream(), gelu_args, {copy_e});
-  } else if (compute_desc->_epilogue == epilogue_t::dgelu) {
-    auto gelu_pd = ::dnnl::eltwise_forward::primitive_desc(
-        handle->get_engine(), ::dnnl::prop_kind::forward_training,
-        ::dnnl::algorithm::eltwise_gelu_tanh, po_aux_md, po_aux_md);
-    auto dgelu_pd = ::dnnl::eltwise_backward::primitive_desc(
-        handle->get_engine(), ::dnnl::algorithm::eltwise_gelu_tanh, dst_md,
-        dst_md, po_aux_md, gelu_pd);
-    auto dgelu_prim = ::dnnl::eltwise_backward(dgelu_pd);
-    std::unordered_map<int, ::dnnl::memory> dgelu_args;
-    dgelu_args.insert({DNNL_ARG_SRC, *po_aux_mem});
-    dgelu_args.insert({DNNL_ARG_DIFF_DST, *dst_mem});
-    dgelu_args.insert({DNNL_ARG_DIFF_SRC, *dst_mem});
-    post_op_prim_event =
-        ::dnnl::sycl_interop::execute(dgelu_prim, handle->get_engine_stream(),
-                                      dgelu_args, {matmul_prim_event});
-  }
+    if (!beta_is_zero && c_desc->_order != order_t::col) {
+      new_ldc = c_desc->_rows;
+      new_c = ::dpct::cs::malloc(c_elm_size * c_desc->_cols * new_ldc, *q_ptr);
+      new_c_allocated = true;
+      sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
+          c_desc->_type, q_ptr, c_desc->_rows, c_desc->_cols, c_desc->_ld,
+          c_desc->_order, c, new_ldc, order_t::col, const_cast<void *>(new_c),
+          std::vector<sycl::event>{});
+      transform_events.push_back(e);
+    }
 
-  // end of calling oneDNN
+    if (d_desc->_order != order_t::col) {
+      new_ldd = d_desc->_rows;
+      new_d = ::dpct::cs::malloc(d_elm_size * d_desc->_cols * new_ldd, *q_ptr);
+      new_d_allocated = true;
+    }
 
-  sycl::event absmax_d_event;
-  if (auto absmax_ptr = compute_desc->_absmax_d_pointer) {
-    absmax_d_event = detail::type_dispatch<detail::absmax_impl>(
-        d_desc->_type, absmax_ptr, new_d, new_ldd, d_desc->_rows, d_desc->_cols,
-        q_ptr, std::vector<sycl::event>{matmul_prim_event, post_op_prim_event});
-  }
+    // start to call oneDNN matmul primitive
+    // a,d are col_major, b is row_major
+    const ::dnnl::memory::dim M = m;
+    const ::dnnl::memory::dim N = n;
+    const ::dnnl::memory::dim K = k;
 
-  sycl::event scale_d_event;
-  if (auto d_scale_ptr = compute_desc->_d_scale_pointer) {
-    scale_d_event = detail::type_dispatch<detail::scale_d_impl>(
-        d_desc->_type, d_scale_ptr, new_d, new_ldd, d_desc->_rows,
-        d_desc->_cols, q_ptr, compute_desc->_scale_type,
-        std::vector<sycl::event>{matmul_prim_event, absmax_d_event,
-                                 post_op_prim_event});
-  }
+    ::dnnl::memory::dims src_dims = {M, K};
+    ::dnnl::memory::dims weights_dims = {K, N};
+    ::dnnl::memory::dims bias_dims = {M, N};
+    ::dnnl::memory::dims dst_dims = {M, N};
 
-  sycl::event transform_d_event;
-  if (d_desc->_order != order_t::col) {
-    detail::type_dispatch<detail::matrix_transform_impl>(
-        d_desc->_type, q_ptr, d_desc->_rows, d_desc->_cols, new_ldd,
-        order_t::col, new_d, d_desc->_ld, d_desc->_order, d,
-        std::vector<sycl::event>{matmul_prim_event, absmax_d_event,
-                                 post_op_prim_event});
-  }
+    const ::dnnl::memory::dims src_strides =
+        compute_desc->_trans_a == oneapi::mkl::transpose::nontrans
+            ? ::dnnl::memory::dims{1, static_cast<long>(new_lda)}
+            : ::dnnl::memory::dims{static_cast<long>(new_lda), 1};
+    const ::dnnl::memory::dims weights_strides =
+        compute_desc->_trans_b == oneapi::mkl::transpose::nontrans
+            ? ::dnnl::memory::dims{1, static_cast<long>(new_ldb)}
+            : ::dnnl::memory::dims{static_cast<long>(new_ldb), 1};
+    const ::dnnl::memory::dims bias_strides =
+        ::dnnl::memory::dims{1, static_cast<long>(new_ldc)};
+    const ::dnnl::memory::dims dst_strides =
+        ::dnnl::memory::dims{1, static_cast<long>(new_ldd)};
 
-  sycl::event free_event = q_ptr->submit([&](sycl::handler &cgh) {
-    cgh.depends_on({transform_d_event, matmul_prim_event, absmax_d_event,
-                    post_op_prim_event});
-    cgh.host_task([=] {
-      delete src_mem;
-      delete weights_mem;
-      delete bias_mem;
-      delete dst_mem;
-      if (po_bias_mem)
-        delete po_bias_mem;
-      if (po_aux_mem)
-        delete po_aux_mem;
-      ::dpct::cs::free((void *)new_a, *q_ptr);
-      if (new_b_allocated)
-        ::dpct::cs::free((void *)new_b, *q_ptr);
-      if (new_c_allocated)
-        ::dpct::cs::free((void *)new_c, *q_ptr);
-      if (new_d_allocated)
-        ::dpct::cs::free((void *)new_d, *q_ptr);
+    auto src_md = ::dnnl::memory::desc(
+        src_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(a_type),
+        src_strides);
+    auto weights_md = ::dnnl::memory::desc(
+        weights_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(b_type),
+        weights_strides);
+    auto bias_md = ::dnnl::memory::desc(
+        bias_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(c_type),
+        bias_strides);
+    auto dst_md = ::dnnl::memory::desc(
+        dst_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(d_type),
+        dst_strides);
+
+    auto *src_mem =
+        new ::dnnl::memory(src_md, handle->get_engine(), DNNL_MEMORY_NONE);
+    auto *weights_mem =
+        new ::dnnl::memory(weights_md, handle->get_engine(), DNNL_MEMORY_NONE);
+    auto *bias_mem =
+        new ::dnnl::memory(bias_md, handle->get_engine(), DNNL_MEMORY_NONE);
+    auto *dst_mem =
+        new ::dnnl::memory(dst_md, handle->get_engine(), DNNL_MEMORY_NONE);
+
+#ifdef DPCT_USM_LEVEL_NONE
+    detail::type_dispatch<detail::set_buffer_impl>(a_type, src_mem, new_a);
+    detail::type_dispatch<detail::set_buffer_impl>(b_type, weights_mem, new_b);
+    if (!beta_is_zero)
+      detail::type_dispatch<detail::set_buffer_impl>(c_type, bias_mem, new_c);
+    detail::type_dispatch<detail::set_buffer_impl>(d_type, dst_mem, new_d);
+#else
+    src_mem->set_data_handle(const_cast<void *>(new_a));
+    weights_mem->set_data_handle(const_cast<void *>(new_b));
+    if (!beta_is_zero)
+      bias_mem->set_data_handle(const_cast<void *>(new_c));
+    dst_mem->set_data_handle(new_d);
+#endif
+
+    std::unordered_map<int, ::dnnl::memory> matmul_args;
+    matmul_args.insert({DNNL_ARG_SRC, *src_mem});
+    matmul_args.insert({DNNL_ARG_WEIGHTS, *weights_mem});
+    matmul_args.insert({DNNL_ARG_DST, *dst_mem});
+    ::dnnl::primitive_attr matmul_attr;
+
+    ::dnnl::post_ops matmul_ops;
+    if (!beta_is_zero) {
+      matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
+      matmul_args.insert({DNNL_ARG_ATTR_MULTIPLE_POST_OP(matmul_ops.len() - 1) |
+                              DNNL_ARG_SRC_1,
+                          *bias_mem});
+    }
+
+    ::dnnl::memory *po_bias_mem = nullptr;
+    auto po_bias_md =
+        ::dnnl::memory::desc(::dnnl::memory::dims{M, 1},
+                             dpct::dnnl::memory_desc_ext::to_dnnl_data_type(
+                                 compute_desc->_bias_data_type),
+                             ::dnnl::memory::dims{1, M});
+    if (compute_desc->_epilogue == epilogue_t::bias ||
+        compute_desc->_epilogue == epilogue_t::gelu_bias ||
+        compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
+      po_bias_mem = new ::dnnl::memory(po_bias_md, handle->get_engine(),
+                                       DNNL_MEMORY_NONE);
+#ifdef DPCT_USM_LEVEL_NONE
+      detail::type_dispatch<detail::set_buffer_impl>(
+          compute_desc->_bias_data_type, po_bias_mem,
+          compute_desc->_bias_pointer);
+#else
+      po_bias_mem->set_data_handle(compute_desc->_bias_pointer);
+#endif
+    }
+
+    ::dnnl::memory *po_aux_mem = nullptr;
+    auto po_aux_md = ::dnnl::memory::desc(
+        ::dnnl::memory::dims{M, N},
+        dpct::dnnl::memory_desc_ext::to_dnnl_data_type(
+            compute_desc->_epilogue_aux_data_type),
+        ::dnnl::memory::dims{
+            1, static_cast<long>(compute_desc->_epilogue_aux_ld)});
+    if (compute_desc->_epilogue == epilogue_t::dgelu) {
+      po_aux_mem =
+          new ::dnnl::memory(po_aux_md, handle->get_engine(), DNNL_MEMORY_NONE);
+#ifdef DPCT_USM_LEVEL_NONE
+      detail::type_dispatch<detail::set_buffer_impl>(
+          compute_desc->_epilogue_aux_data_type, po_aux_mem,
+          compute_desc->_epilogue_aux_pointer);
+#else
+      po_aux_mem->set_data_handle(compute_desc->_epilogue_aux_pointer);
+#endif
+    }
+
+    switch (compute_desc->_epilogue) {
+    case epilogue_t::relu:
+      matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
+      break;
+    case epilogue_t::bias:
+    case epilogue_t::gelu_bias: {
+      matmul_ops.append_binary(::dnnl::algorithm::binary_add, po_bias_md);
+      matmul_args.insert({DNNL_ARG_ATTR_MULTIPLE_POST_OP(matmul_ops.len() - 1) |
+                              DNNL_ARG_SRC_1,
+                          *po_bias_mem});
+      if (compute_desc->_epilogue == epilogue_t::gelu_bias)
+        matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_tanh, 0.f,
+                                  0.f);
+      break;
+    }
+    case epilogue_t::gelu:
+      matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_tanh, 0.f, 0.f);
+      break;
+    default:
+      break;
+    }
+
+    matmul_attr.set_post_ops(matmul_ops);
+
+    auto matmul_pd = ::dnnl::matmul::primitive_desc(
+        handle->get_engine(), src_md, weights_md, dst_md, matmul_attr);
+    auto matmul_prim = ::dnnl::matmul(matmul_pd);
+    sycl::event matmul_prim_event =
+        ::dnnl::sycl_interop::execute(matmul_prim, handle->get_engine_stream(),
+                                      matmul_args, transform_events);
+
+    // post-op implemented by separate primitives
+    sycl::event post_op_prim_event;
+    if (compute_desc->_epilogue == epilogue_t::gelu_aux ||
+        compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
+      sycl::event prev_event = matmul_prim_event;
+      if (compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
+        auto po_bias_pd = ::dnnl::binary::primitive_desc(
+            handle->get_engine(), ::dnnl::algorithm::binary_add, dst_md,
+            po_bias_md, dst_md);
+        auto po_bias_prim = ::dnnl::binary(po_bias_pd);
+        std::unordered_map<int, ::dnnl::memory> po_bias_args;
+        po_bias_args.insert({DNNL_ARG_SRC_0, *dst_mem});
+        po_bias_args.insert({DNNL_ARG_SRC_1, *po_bias_mem});
+        po_bias_args.insert({DNNL_ARG_DST, *dst_mem});
+        sycl::event prev_event = ::dnnl::sycl_interop::execute(
+            po_bias_prim, handle->get_engine_stream(), po_bias_args,
+            {matmul_prim_event});
+      }
+      size_t size_of_element =
+          dpct::detail::library_data_size[static_cast<unsigned int>(
+              d_desc->_type)] /
+          8;
+      sycl::event copy_e = dpct::blas::matrix_mem_copy_async(
+          compute_desc->_epilogue_aux_pointer, new_d,
+          compute_desc->_epilogue_aux_ld, d_desc->_ld, m, n, size_of_element,
+          ::dpct::cs::memcpy_direction::automatic, *q_ptr, {prev_event});
+
+      auto gelu_pd = ::dnnl::eltwise_forward::primitive_desc(
+          handle->get_engine(), ::dnnl::prop_kind::forward_training,
+          ::dnnl::algorithm::eltwise_gelu_tanh, dst_md, dst_md);
+      auto gelu_prim = ::dnnl::eltwise_forward(gelu_pd);
+      std::unordered_map<int, ::dnnl::memory> gelu_args;
+      gelu_args.insert({DNNL_ARG_SRC, *dst_mem});
+      gelu_args.insert({DNNL_ARG_DST, *dst_mem});
+      post_op_prim_event = ::dnnl::sycl_interop::execute(
+          gelu_prim, handle->get_engine_stream(), gelu_args, {copy_e});
+    } else if (compute_desc->_epilogue == epilogue_t::dgelu) {
+      auto gelu_pd = ::dnnl::eltwise_forward::primitive_desc(
+          handle->get_engine(), ::dnnl::prop_kind::forward_training,
+          ::dnnl::algorithm::eltwise_gelu_tanh, po_aux_md, po_aux_md);
+      auto dgelu_pd = ::dnnl::eltwise_backward::primitive_desc(
+          handle->get_engine(), ::dnnl::algorithm::eltwise_gelu_tanh, dst_md,
+          dst_md, po_aux_md, gelu_pd);
+      auto dgelu_prim = ::dnnl::eltwise_backward(dgelu_pd);
+      std::unordered_map<int, ::dnnl::memory> dgelu_args;
+      dgelu_args.insert({DNNL_ARG_SRC, *po_aux_mem});
+      dgelu_args.insert({DNNL_ARG_DIFF_DST, *dst_mem});
+      dgelu_args.insert({DNNL_ARG_DIFF_SRC, *dst_mem});
+      post_op_prim_event =
+          ::dnnl::sycl_interop::execute(dgelu_prim, handle->get_engine_stream(),
+                                        dgelu_args, {matmul_prim_event});
+    }
+
+    // end of calling oneDNN
+
+    sycl::event absmax_d_event;
+    if (auto absmax_ptr = compute_desc->_absmax_d_pointer) {
+      absmax_d_event = detail::type_dispatch<detail::absmax_impl>(
+          d_desc->_type, absmax_ptr, new_d, new_ldd, d_desc->_rows,
+          d_desc->_cols, q_ptr,
+          std::vector<sycl::event>{matmul_prim_event, post_op_prim_event});
+    }
+
+    sycl::event scale_d_event;
+    if (auto d_scale_ptr = compute_desc->_d_scale_pointer) {
+      scale_d_event = detail::type_dispatch<detail::scale_d_impl>(
+          d_desc->_type, d_scale_ptr, new_d, new_ldd, d_desc->_rows,
+          d_desc->_cols, q_ptr, compute_desc->_scale_type,
+          std::vector<sycl::event>{matmul_prim_event, absmax_d_event,
+                                   post_op_prim_event});
+    }
+
+    sycl::event transform_d_event;
+    if (d_desc->_order != order_t::col) {
+      detail::type_dispatch<detail::matrix_transform_impl>(
+          d_desc->_type, q_ptr, d_desc->_rows, d_desc->_cols, new_ldd,
+          order_t::col, new_d, d_desc->_ld, d_desc->_order, d,
+          std::vector<sycl::event>{matmul_prim_event, absmax_d_event,
+                                   post_op_prim_event});
+    }
+
+    sycl::event free_event = q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.depends_on({transform_d_event, matmul_prim_event, absmax_d_event,
+                      post_op_prim_event});
+      cgh.host_task([=] {
+        delete src_mem;
+        delete weights_mem;
+        delete bias_mem;
+        delete dst_mem;
+        if (po_bias_mem)
+          delete po_bias_mem;
+        if (po_aux_mem)
+          delete po_aux_mem;
+        ::dpct::cs::free((void *)new_a, *q_ptr);
+        if (new_b_allocated)
+          ::dpct::cs::free((void *)new_b, *q_ptr);
+        if (new_c_allocated)
+          ::dpct::cs::free((void *)new_c, *q_ptr);
+        if (new_d_allocated)
+          ::dpct::cs::free((void *)new_d, *q_ptr);
+      });
     });
-  });
-  return free_event;
+    return free_event;
+  };
+
+  std::vector<sycl::event> events;
+  const std::byte *offsetted_a = static_cast<const std::byte *>(a);
+  const std::byte *offsetted_b = static_cast<const std::byte *>(b);
+  const std::byte *offsetted_c = static_cast<const std::byte *>(c);
+  std::byte *offsetted_d = static_cast<std::byte *>(d);
+  for (std::uint64_t i = 0; i < a_desc->_batch_count; i++) {
+    sycl::event e = matmul_single(
+        handle, compute_desc, alpha, offsetted_a, a_desc, offsetted_b, b_desc,
+        beta, offsetted_c, c_desc, offsetted_d, d_desc, q_ptr, m, n, k, a_type,
+        b_type, c_type, d_type, scale_type, vector_alpha, device_alpha,
+        beta_is_zero, a_elm_size, b_elm_size, c_elm_size, d_elm_size);
+    events.push_back(e);
+
+    offsetted_a += a_elm_size * a_desc->_strided_batch_offset;
+    offsetted_b += b_elm_size * b_desc->_strided_batch_offset;
+    offsetted_c += c_elm_size * c_desc->_strided_batch_offset;
+    offsetted_d += d_elm_size * d_desc->_strided_batch_offset;
+  }
+
+  return q_ptr->single_task(events, [] {});
 }
 
 class transform_desc_t {

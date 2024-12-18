@@ -8,15 +8,17 @@
 #include <iostream>
 #include <stdexcept>
 
-// CHECK: #include "c10/xpu/XPUStream.h"
+// CHECK: #include "ATen/xpu/XPUContext.h"
 #include "ATen/cuda/CUDAContext.h"
 
-class TensorStub {
+namespace torch {
+class Tensor {
 public:
   bool is_cuda() const {
     return true;
   }
 };
+} // namespace torch
 
 #define MY_CHECK(condition, message)                              \
   do {                                                            \
@@ -25,9 +27,8 @@ public:
     }                                                             \
   } while (0)
 
-int main() {
-  TensorStub x;
-  // CHECK: MY_CHECK(x.is_xpu(), "x must reside on device");
+void foo(torch::Tensor x) {
+  // CHECK: MY_CHECK(x. is_xpu(), "x must reside on device");
   MY_CHECK(x.is_cuda(), "x must reside on device");
 
   return 0;

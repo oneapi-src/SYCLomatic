@@ -496,12 +496,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
           )
           .bind("tex"),
       this);
-  MF.addMatcher(
-      typeLoc(
-          loc(qualType(hasDeclaration(typedefDecl(hasAnyName(
-              "cudaTextureObject_t", "cudaSurfaceObject_t", "CUtexObject"))))))
-          .bind("texObj"),
-      this);
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(typedefDecl(hasAnyName(
+                            "cudaTextureObject_t", "cudaSurfaceObject_t",
+                            "CUsurfObject", "CUtexObject"))))))
+                    .bind("texObj"),
+                this);
   MF.addMatcher(
       memberExpr(
           hasObjectExpression(hasType(type(hasUnqualifiedDesugaredType(
@@ -516,13 +515,13 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
           loc(qualType(hasDeclaration(namedDecl(hasAnyName(
               "cudaChannelFormatDesc", "cudaChannelFormatKind",
               "cudaTextureDesc", "cudaResourceDesc", "cudaResourceType",
-              "cudaTextureAddressMode", "cudaTextureFilterMode", "cudaArray",
-              "cudaArray_t", "CUarray_st", "CUarray", "CUarray_format",
-              "CUarray_format_enum", "CUresourcetype", "CUresourcetype_enum",
-              "CUaddress_mode", "CUaddress_mode_enum", "CUfilter_mode",
-              "CUfilter_mode_enum", "CUDA_RESOURCE_DESC", "CUDA_TEXTURE_DESC",
-              "CUtexref", "textureReference", "cudaMipmappedArray",
-              "cudaMipmappedArray_t"))))))
+              "CUDA_RESOURCE_DESC", "cudaTextureAddressMode",
+              "cudaTextureFilterMode", "cudaArray", "cudaArray_t", "CUarray_st",
+              "CUarray", "CUarray_format", "CUarray_format_enum",
+              "CUresourcetype", "CUresourcetype_enum", "CUaddress_mode",
+              "CUaddress_mode_enum", "CUfilter_mode", "CUfilter_mode_enum",
+              "CUDA_TEXTURE_DESC", "CUtexref", "textureReference",
+              "cudaMipmappedArray", "cudaMipmappedArray_t"))))))
           .bind("texType"),
       this);
 
@@ -571,6 +570,9 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaCreateSurfaceObject",
       "cudaDestroySurfaceObject",
       "cudaGetSurfaceObjectResourceDesc",
+      "cuSurfObjectCreate",
+      "cuSurfObjectGetResourceDesc",
+      "cuSurfObjectDestroy",
       "cuArray3DCreate_v2",
       "cuArrayCreate_v2",
       "cuArrayDestroy",

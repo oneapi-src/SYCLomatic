@@ -246,7 +246,8 @@ std::shared_ptr<TargetType> makeTextureObjectInfo(const ValueDecl *D,
     if (auto VD = dyn_cast<VarDecl>(D)) {
       return std::make_shared<TargetType>(VD);
     }
-  } else if (auto PVD = dyn_cast<ParmVarDecl>(D)) {
+  } else if (const auto *PVD = dyn_cast<ParmVarDecl>(D);
+             PVD && PVD->getTypeSourceInfo()) {
     return std::make_shared<TargetType>(PVD);
   }
   return std::shared_ptr<TargetType>();
@@ -5043,7 +5044,7 @@ void DeviceFunctionDecl::buildTextureObjectParamsInfo(
     std::string ParamName =
         DpctGlobalInfo::getUnqualifiedTypeName(Param->getType());
     if (ParamName == "cudaTextureObject_t" ||
-        ParamName == "cudaSurfaceObject_t") {
+        ParamName == "cudaSurfaceObject_t" || ParamName == "CUsurfObject") {
       TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
     }
   }

@@ -524,6 +524,13 @@ void MapNames::setExplicitNamespaceMap(
                      "ext::oneapi::experimental::unsampled_image_handle"
                : getDpctNamespace() + "image_wrapper_base_p",
            HelperFeatureEnum::device_ext)},
+      {"CUsurfObject",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::unsampled_image_handle"
+               : getDpctNamespace() + "image_wrapper_base_p",
+           HelperFeatureEnum::device_ext)},
       {"textureReference",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_wrapper_base",
                                       HelperFeatureEnum::device_ext)},

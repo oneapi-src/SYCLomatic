@@ -40,29 +40,42 @@
   Priority: Takeover
   In: get_in_order_queue
   Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
+  Includes: ["c10/xpu/XPUStream.h"]
 
-- Rule: rule_process_is_cuda
-  Kind: PatternRewriter
+- Rule: rule_torch_Tensor
+  Kind: Class
   Priority: Takeover
-  In: is_cuda
-  Out: is_xpu
+  In: torch::Tensor
+  Out: torch::Tensor
+  Methods:
+    - In: is_cuda
+      Out: $method_base is_xpu()
 
 - Rule: rule_getCurrentCUDAStream
-  Kind: PatternRewriter
+  Kind: API
   Priority: Takeover
-  In: at::cuda::getCurrentCUDAStream()
-  Out: |
-       &static_cast<sycl::queue &>(c10::xpu::getCurrentXPUStream())
+  In: at::cuda::getCurrentCUDAStream
+  Out: c10::xpu::getCurrentXPUStream($1)
+  Includes: ["c10/xpu/XPUStream.h"]
+
+- Rule: rule_CUDAStream
+  Kind: Class
+  Priority: Takeover
+  In: c10::cuda::CUDAStream
+  Out: c10::xpu::XPUStream
+  Methods:
+    - In: stream
+      Out: \&static_cast<sycl::queue &>($method_base queue())
 
 - Rule: rule_remove_AT_CUDA_CHECK
-  Kind: PatternRewriter
+  Kind: Macro
   Priority: Takeover
-  In: AT_CUDA_CHECK(${args});
-  Out: ${args};
+  In: AT_CUDA_CHECK
+  Out: |
 
 - Rule: rule_CUDAContext_h
   Kind: Header
   Priority: Takeover
   In: ATen/cuda/CUDAContext.h
-  Out: c10/xpu/XPUStream.h
+  Out: ATen/xpu/XPUContext.h
   Includes: []

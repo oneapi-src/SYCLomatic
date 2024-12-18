@@ -1082,6 +1082,13 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         }
         Str = Itr->second;
       }
+    } else if (llvm::StringRef(TypeStr).starts_with("cublas")) {
+      // In most cases, we do not need to insert blas_utils.hpp manually since
+      // the cublas_v2.h will be migrated. However, when the include directive
+      // of cublas_v2.h is not in the in-root, the migrated code cannot be
+      // built successfully.
+      DpctGlobalInfo::getInstance().insertHeader(
+          TL->getBeginLoc(), HeaderType::HT_DPCT_BLAS_Utils);
     }
 
     // Add '#include <complex>' directive to the file only once

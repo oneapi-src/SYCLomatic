@@ -6,12 +6,26 @@
 
 #define AT_CUDA_CHECK(stmt)  (stmt)
 
-namespace at {
+namespace c10 {
+using DeviceIndex = int8_t;
 namespace cuda {
-cudaStream_t getCurrentCUDAStream() {
-  return nullptr; // Return a dummy stream
+class CUDAStream {
+public:
+  CUDAStream() {}
+  cudaStream_t stream() { return 0; }
+  operator cudaStream_t() const {
+    return stream();
+  }
+  cudaStream_t stream() const;
+};
+CUDAStream getCurrentCUDAStream(DeviceIndex device_index = -1) {
+  return CUDAStream();
 }
 } // namespace cuda
+} // namespace c10
+
+namespace at {
+using namespace c10;
 } // namespace at
 
 __global__ void kernel() {}
@@ -21,15 +35,19 @@ int main() {
   dim3 blockSize(8, 8, 1);
   void *args[] = {nullptr}; 
 
-  // CHECK: [&](){
-  // CHECK-NEXT:  &static_cast<sycl::queue &>(c10::xpu::getCurrentXPUStream())->parallel_for(
+  //      CHECK:([&](){
+  // CHECK-NEXT:  ((sycl::queue*)(c10::xpu::getCurrentXPUStream()))->parallel_for(
   // CHECK-NEXT:    sycl::nd_range<3>(gridSize * blockSize, blockSize),
   // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:      kernel();
   // CHECK-NEXT:    });
   // CHECK-NEXT:  return 0;
-  // CHECK-NEXT:}();
+  // CHECK-NEXT:}());
   AT_CUDA_CHECK(cudaLaunchKernel((const void *)kernel, gridSize, blockSize, args, 0, at::cuda::getCurrentCUDAStream()));
-
+  at::DeviceIndex d = 1;
+  // CHECK: c10::xpu::getCurrentXPUStream(d);
+  at::cuda::getCurrentCUDAStream(d);
+  // CHECK: dpct::queue_ptr s = &static_cast<sycl::queue &>(c10::xpu::getCurrentXPUStream(). queue());
+  cudaStream_t s = at::cuda::getCurrentCUDAStream().stream();
   return 0;
 }
