@@ -16,7 +16,7 @@ int main() {
 
 // CHECK:  q_ct1.submit(
 // CHECK:      [&](sycl::handler &cgh) {
-// CHECK:        cgh.depends_on(dpct::get_current_device().get_last_events());
+// CHECK:        cgh.depends_on(dpct::get_current_device().get_in_order_queues_last_events());
 // CHECK:        cgh.parallel_for(
 // CHECK:          sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK:          [=](sycl::nd_item<3> item_ct1) {

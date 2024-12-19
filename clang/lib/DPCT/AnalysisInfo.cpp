@@ -6527,8 +6527,8 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
   printList(Printer, CommandGroupList, "helper variables defined");
   if (ImplicitSyncFlag) {
     if (DefaultStreamFlag) {
-      Printer.line(
-          "cgh.depends_on(dpct::get_current_device().get_last_events());");
+      Printer.line("cgh.depends_on(dpct::get_current_device().get_in_order_"
+                   "queues_last_events());");
     } else {
       Printer.line("cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_"
                    "last_event());");

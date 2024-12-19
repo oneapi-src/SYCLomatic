@@ -582,7 +582,7 @@ public:
     lock.lock();
   }
 
-  std::vector<sycl::event> get_last_events() {
+  std::vector<sycl::event> get_in_order_queues_last_events() {
     std::unique_lock<mutex_type> lock(m_mutex);
     std::vector<sycl::event> last_events;
     std::vector<std::shared_ptr<sycl::queue>> current_queues(_queues);
