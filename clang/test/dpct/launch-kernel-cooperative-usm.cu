@@ -25,9 +25,9 @@ __global__ void kernel(int *d, cudaTextureObject_t tex) {
 }
 // CHECK: // Auto generated SYCL kernel wrapper used to migration kernel function pointer.
 // CHECK: void kernel_wrapper(int * d ,dpct::image_wrapper_base_p tex) {
-// CHECK:   sycl::queue queue = *dpct::kernel_launch::_que;
-// CHECK:   unsigned int localMemSize = dpct::kernel_launch::_local_mem_size;
-// CHECK:   sycl::nd_range<3> nr = dpct::kernel_launch::_nr;
+// CHECK:   sycl::queue queue = *dpct::kernel_launcher::_que;
+// CHECK:   unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
+// CHECK:   sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
 // CHECK:     static_cast<dpct::image_wrapper<int, 1> *>(tex)->create_image(queue);
 // CHECK:     queue.submit(
 // CHECK:       [&](sycl::handler &cgh) {
@@ -100,7 +100,7 @@ int main() {
   // CHECK: void *kernel_func = (void *)dpct::wrapper_register(&kernel_wrapper).get();
   void *kernel_func = (void *)&kernel;
 
-  // CHECK: dpct::kernel_launch::launch(kernel_func, dpct::dim3(16), dpct::dim3(16), args, 0, 0);
+  // CHECK: dpct::kernel_launcher::launch(kernel_func, dpct::dim3(16), dpct::dim3(16), args, 0, 0);
   cudaLaunchCooperativeKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);

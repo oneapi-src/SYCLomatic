@@ -16,4 +16,4 @@
 // CUDALAUNCHCOOPERATIVEKERNEL-NEXT:                               blockDim /*dim3*/, args /*void ***/,
 // CUDALAUNCHCOOPERATIVEKERNEL-NEXT:                               sharedMem /*size_t*/, s /*cudaStream_t*/);
 // CUDALAUNCHCOOPERATIVEKERNEL-NEXT: Is migrated to:
-// CUDALAUNCHCOOPERATIVEKERNEL-NEXT:   dpct::kernel_launch::launch(f, gridDim, blockDim, args, sharedMem, s);
+// CUDALAUNCHCOOPERATIVEKERNEL-NEXT:   dpct::kernel_launcher::launch(f, gridDim, blockDim, args, sharedMem, s);

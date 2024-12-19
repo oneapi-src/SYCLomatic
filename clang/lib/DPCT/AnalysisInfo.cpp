@@ -5270,12 +5270,12 @@ void DeviceFunctionDecl::insertWrapper() {
           auto BodyBlock = Printer.block();
           Printer.newLine();
           Printer.line(MapNames::getClNamespace() + "queue queue = *" +
-                       MapNames::getDpctNamespace() + "kernel_launch::_que;");
+                       MapNames::getDpctNamespace() + "kernel_launcher::_que;");
           Printer.line(
               "unsigned int localMemSize = " + MapNames::getDpctNamespace() +
-              "kernel_launch::_local_mem_size;");
+              "kernel_launcher::_local_mem_size;");
           Printer.line(MapNames::getClNamespace() + "nd_range<3> nr = " +
-                       MapNames::getDpctNamespace() + "kernel_launch::_nr;");
+                       MapNames::getDpctNamespace() + "kernel_launcher::_nr;");
           Printer.newLine();
           (InfoForWrapper->KernelForWrapper)->buildInfo();
           Printer.line((InfoForWrapper->KernelForWrapper)->getReplacement());

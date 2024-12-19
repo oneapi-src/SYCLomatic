@@ -4710,7 +4710,7 @@ void KernelCallRule::runRule(
       IsDirectCall = false;
       std::string ReplStr;
       llvm::raw_string_ostream OS(ReplStr);
-      OS << MapNames::getDpctNamespace() + "kernel_launch::launch("
+      OS << MapNames::getDpctNamespace() + "kernel_launcher::launch("
          << ExprAnalysis::ref(KCall->getCallee());
       if (const CallExpr *Configs = KCall->getConfig()) {
         size_t ConfigArgsNum = Configs->getNumArgs();
@@ -4847,7 +4847,7 @@ void KernelCallRule::runRule(
       if (IsAssigned) {
         OS << MapNames::getCheckErrorMacroName() << "(";
       }
-      OS << MapNames::getDpctNamespace() << "kernel_launch::launch(";
+      OS << MapNames::getDpctNamespace() << "kernel_launcher::launch(";
       size_t ArgsNum = LaunchKernelCall->getNumArgs();
       for (size_t i = 0; i < ArgsNum; i++) {
         if (auto Arg = LaunchKernelCall->getArg(i)) {

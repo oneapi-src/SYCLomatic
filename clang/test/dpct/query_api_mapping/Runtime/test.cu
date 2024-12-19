@@ -351,7 +351,7 @@
 // CUDALAUNCHKERNEL-NEXT:   cudaLaunchKernel(f /*cudaError_t*/, gridDim /*dim3*/, blockDim /*dim3*/,
 // CUDALAUNCHKERNEL-NEXT:                    args /*void ***/, sharedMem /*size_t*/, s /*cudaStream_t*/);
 // CUDALAUNCHKERNEL-NEXT: Is migrated to:
-// CUDALAUNCHKERNEL-NEXT:   dpct::kernel_launch::launch(f, gridDim, blockDim, args, sharedMem, s);
+// CUDALAUNCHKERNEL-NEXT:   dpct::kernel_launcher::launch(f, gridDim, blockDim, args, sharedMem, s);
 
 /// Occupancy
 

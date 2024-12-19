@@ -81,7 +81,7 @@ int main() {
   // CHECK: void *kernel_func = (void *)dpct::wrapper_register(&kernel_wrapper).get();
   void *kernel_func = (void *)&kernel;
 
-  // CHECK: dpct::kernel_launch::launch(kernel_func, dpct::dim3(16), dpct::dim3(16), args, 0, 0);
+  // CHECK: dpct::kernel_launcher::launch(kernel_func, dpct::dim3(16), dpct::dim3(16), args, 0, 0);
   cudaLaunchCooperativeKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);

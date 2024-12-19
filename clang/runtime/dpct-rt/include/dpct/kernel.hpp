@@ -444,31 +444,32 @@ static inline void invoke_kernel_function(dpct::kernel_function &function,
            localMemSize, kernelParams, extra);
 }
 
-/// Utility class for launching SYCL kernels through auto generated kernel
+/// Utility class for launching SYCL kernels through kernel
 /// function wrapper.
 /// For example:
-/// A SYCL kernel function and auto generated wrapper:
+/// A SYCL kernel function:
 ///   void kernel_func(int *ptr, sycl::nd_item<3> item);
+/// Kernel function wrapper:
 ///   void kernel_func_wrapper(int *ptr) {
-///     sycl::queue queue = *dpct::kernel_launch::_que;
-///     unsigned int localMemSize = dpct::kernel_launch::_local_mem_size;
-///     sycl::nd_range<3> nr = dpct::kernel_launch::_nr;
+///     sycl::queue queue = *dpct::kernel_launcher::_que;
+///     unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
+///     sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
 ///     queue.parallel_for(
 ///       nr,
 ///       [=](sycl::nd_item<3> item_ct1) {
 ///         kernel_func(ptr, item_ct1);
 ///       });
 ///   }
-/// Then launch the kernel through auto generated wrapper like:
+/// Then launch the kernel through wrapper like:
 ///   typedef void(*fpt)(int *);
 ///   fpt fp = kernel_func_wrapper;
-///   dpct::kernel_launch::launch(fp, dpct::dim3(1), dpct::dim3(1), 0, 0,
+///   dpct::kernel_launcher::launch(fp, dpct::dim3(1), dpct::dim3(1), 0, 0,
 ///   device_ptr);
 /// If the origin function type is erased, then need to register it first:
-///   void *fp = (void *)wrapper_register(&kernel_func_wrapper);
-///   dpct::kernel_launch::launch(fp, dpct::dim3(1), dpct::dim3(1), args, 0,
+///   void *fp = (void *)wrapper_register(&kernel_func_wrapper).get();
+///   dpct::kernel_launcher::launch(fp, dpct::dim3(1), dpct::dim3(1), args, 0,
 ///   0);
-class kernel_launch {
+class kernel_launcher {
   template <typename FuncT, typename ArgSelector, std::size_t... Index>
   static void launch_helper(FuncT &&func, ArgSelector &selector,
                             std::index_sequence<Index...>) {
@@ -502,17 +503,17 @@ public:
   /// functor.
   /// \param [in] func Pointer to the kernel function.
   /// \param [in] launcher Functor to handle kernel invocation.
-  static void regifter_kernel_ptr(
+  static void register_kernel_ptr(
       const void *func,
       std::function<void(dim3, dim3, void **, unsigned int, queue_ptr)>
           launcher) {
     kernel_function_ptr_map[func] = std::move(launcher);
   }
   /// Launches a kernel function with arguments provided directly through
-  /// auto generated kernel function wrapper.
-  /// \tparam FuncT Type of the auto generated kernel function wrapper.
+  /// kernel function wrapper.
+  /// \tparam FuncT Type of the kernel function wrapper.
   /// \tparam ArgsT Types of kernel arguments.
-  /// \param [in] func Pointer to the auto generated kernel function wrapper.
+  /// \param [in] func Pointer to the kernel function wrapper.
   /// \param [in] group_range SYCL group range.
   /// \param [in] local_range SYCL local range.
   /// \param [in] local_mem_size The size of local memory required by the kernel
@@ -526,10 +527,8 @@ public:
     set_execution_config(group_range, local_range, local_mem_size, que);
     func(args...);
   }
-  /// Launches a kernel function through registered auto generated kernel
-  /// function wrapper.
-  /// \param [in] func Pointer to the registered auto generated kernel
-  /// function wrapper.
+  /// Launches a kernel function through registered kernel function wrapper.
+  /// \param [in] func Pointer to the registered kernel function wrapper.
   /// \param [in] group_range SYCL group range.
   /// \param [in] local_range SYCL local range.
   /// \param [in] args Array of pointers to kernel arguments.
@@ -541,10 +540,10 @@ public:
     kernel_function_ptr_map[func](group_range, local_range, args,
                                   local_mem_size, que);
   }
-  /// Launches a kernel function with packed arguments through auto generated
-  /// kernel function wrapper.
-  /// \tparam FuncT Type of the auto generated kernel function wrapper.
-  /// \param [in] func Pointer to the auto generated kernel function wrapper.
+  /// Launches a kernel function with packed arguments through kernel
+  /// function wrapper.
+  /// \tparam FuncT Type of the kernel function wrapper.
+  /// \param [in] func Pointer to the kernel function wrapper.
   /// \param [in] group_range SYCL group range.
   /// \param [in] local_range SYCL local range.
   /// \param [in] args Array of pointers to kernel arguments.
@@ -571,7 +570,7 @@ public:
   /// Constructor to register a kernel function pointer.
   /// \param [in] fp Pointer to the kernel function.
   wrapper_register(FT fp) : func(fp) {
-    kernel_launch::regifter_kernel_ptr((void *)func, *this);
+    kernel_launcher::register_kernel_ptr((void *)func, *this);
   }
   /// Invokes the kernel function through the stored kernel function wrapper.
   /// \param [in] group_range SYCL group range.
@@ -582,8 +581,8 @@ public:
   /// \param [in] que SYCL queue used to execute kernel.
   void operator()(dim3 group_range, dim3 local_range, void **args,
                   unsigned int local_mem_size, queue_ptr que) {
-    kernel_launch::launch(func, group_range, local_range, args, local_mem_size,
-                          que);
+    kernel_launcher::launch(func, group_range, local_range, args,
+                            local_mem_size, que);
   }
   /// Retrieves the original kernel function pointer.
   /// \return The original kernel function pointer.

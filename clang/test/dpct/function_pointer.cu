@@ -13,9 +13,9 @@ __global__ void vectorAdd(const int *A, int *B, int *C, int N) {
 }
 
 // CHECK:  void vectorAdd_wrapper(const int * A ,int * B ,int * C ,int N) {
-// CHECK:        sycl::queue queue = *dpct::kernel_launch::_que;
-// CHECK:        unsigned int localMemSize = dpct::kernel_launch::_local_mem_size;
-// CHECK:        sycl::nd_range<3> nr = dpct::kernel_launch::_nr;
+// CHECK:        sycl::queue queue = *dpct::kernel_launcher::_que;
+// CHECK:        unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
+// CHECK:        sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
 // CHECK:        queue.parallel_for(
 // CHECK:          nr,
 // CHECK:          [=](sycl::nd_item<3> item_ct1) {
@@ -33,9 +33,9 @@ __global__ void vectorTemplateAdd(const T *A, T *B, T *C, int N) {
 
 // CHECK:  template<typename T>
 // CHECK:  void vectorTemplateAdd_wrapper(const T * A ,T * B ,T * C ,int N) {
-// CHECK:      sycl::queue queue = *dpct::kernel_launch::_que;
-// CHECK:      unsigned int localMemSize = dpct::kernel_launch::_local_mem_size;
-// CHECK:      sycl::nd_range<3> nr = dpct::kernel_launch::_nr;
+// CHECK:      sycl::queue queue = *dpct::kernel_launcher::_que;
+// CHECK:      unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
+// CHECK:      sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
 // CHECK:      queue.parallel_for(
 // CHECK:        nr,
 // CHECK:        [=](sycl::nd_item<3> item_ct1) {
@@ -68,7 +68,7 @@ void foo() {
     cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
 
 // CHECK:  fpt<int> fp = dpct::wrapper_register(vectorAdd_wrapper).get();
-// CHECK:  dpct::kernel_launch::launch(fp, 1, 10, 0, 0, d_A, d_B, d_C, N);
+// CHECK:  dpct::kernel_launcher::launch(fp, 1, 10, 0, 0, d_A, d_B, d_C, N);
     fpt<int> fp = vectorAdd;
     fp<<<1, 10>>>(d_A, d_B, d_C, N);
 
@@ -88,7 +88,7 @@ void foo() {
     args[1] = &d_B;
     args[2] = &d_C;
     args[3] = &N;
-    // CHECK:  dpct::kernel_launch::launch(fp, 1, 10, args, 0, 0);
+    // CHECK:  dpct::kernel_launcher::launch(fp, 1, 10, args, 0, 0);
     cudaLaunchKernel((void *)fp, 1, 10, args, 0, 0);
 
     cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);
@@ -102,7 +102,7 @@ void foo() {
         std::cout << h_A[i] << " + " << h_B[i] << " = " << h_C[i] << std::endl;
     }
 
-    // CHECK:  dpct::kernel_launch::launch(fp, 1, 10, args, 0, 0);
+    // CHECK:  dpct::kernel_launcher::launch(fp, 1, 10, args, 0, 0);
     cudaLaunchKernel<void(const int*, int*, int*, int)>(fp, 1, 10, args, 0, 0);
 
     cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);
@@ -147,7 +147,7 @@ void goo(fpt<T> p) {
 
     cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
-    // CHECK:  dpct::kernel_launch::launch(p, 1, 10, 0, 0, d_A, d_B, d_C, N);
+    // CHECK:  dpct::kernel_launcher::launch(p, 1, 10, 0, 0, d_A, d_B, d_C, N);
     p<<<1, 10>>>(d_A, d_B, d_C, N);
 
     cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);
