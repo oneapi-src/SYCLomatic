@@ -12,7 +12,11 @@
 #include "compat_service.hpp"
 #include "lib_common_utils.hpp"
 
+#ifdef __INTEL_MKL__
 #include <oneapi/mkl/rng/device.hpp>
+#else
+#include <oneapi/math/rng/device.hpp>
+#endif
 
 namespace dpct {
 namespace rng {

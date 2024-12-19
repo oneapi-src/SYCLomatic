@@ -14,7 +14,11 @@
 
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
+#ifdef __INTEL_MKL__
 #include <oneapi/mkl/rng/device.hpp>
+#else
+#include <oneapi/math/rng/device.hpp>
+#endif
 
 #include <algorithm>
 #include <list>

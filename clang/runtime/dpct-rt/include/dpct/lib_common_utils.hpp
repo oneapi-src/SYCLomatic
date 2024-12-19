@@ -11,7 +11,11 @@
 
 #include "compat_service.hpp"
 
+#ifdef __INTEL_MKL__
 #include <oneapi/mkl.hpp>
+#else
+#include <oneapi/math.hpp>
+#endif
 
 namespace dpct {
 namespace detail {
