@@ -26,6 +26,10 @@ set(dpct_detail_files
 include/dpct/detail/group_utils_detail.hpp
 include/dpct/detail/math_detail.hpp
 include/dpct/detail/memory_detail.hpp
+include/dpct/detail/lib_common_utils_detail.hpp
+include/dpct/detail/blas_utils_detail.hpp
+include/dpct/detail/lapack_utils_detail.hpp
+include/dpct/detail/rng_utils_detail.hpp
 )
 
 set(dpct_rt_dpstd_files

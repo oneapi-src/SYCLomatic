@@ -118,6 +118,18 @@ const std::string MathDetailAllContentStr =
 const std::string MemoryDetailAllContentStr =
 #include "clang/DPCT/detail/memory_detail.hpp.inc"
     ;
+const std::string LibCommonUtilsDetailAllContentStr =
+#include "clang/DPCT/detail/lib_common_utils_detail.hpp.inc"
+    ;
+const std::string BlasUtilsDetailAllContentStr =
+#include "clang/DPCT/detail/blas_utils_detail.hpp.inc"
+    ;
+const std::string LapackUtilsDetailAllContentStr =
+#include "clang/DPCT/detail/lapack_utils_detail.hpp.inc"
+    ;
+const std::string RngUtilsDetailAllContentStr =
+#include "clang/DPCT/detail/rng_utils_detail.hpp.inc"
+    ;
 const std::string CodePinAllContentStr =
 #include "clang/DPCT/codepin/codepin.hpp.inc"
     ;
@@ -192,6 +204,12 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(GroupUtilsDetail, "detail", group_utils_detail.hpp)
   GENERATE_ALL_FILE_CONTENT(MathDetail, "detail", math_detail.hpp)
   GENERATE_ALL_FILE_CONTENT(MemoryDetail, "detail", memory_detail.hpp)
+  GENERATE_ALL_FILE_CONTENT(LibCommonUtilsDetail, "detail",
+                            lib_common_utils_detail.hpp)
+  GENERATE_ALL_FILE_CONTENT(BlasUtilsDetail, "detail", blas_utils_detail.hpp)
+  GENERATE_ALL_FILE_CONTENT(LapackUtilsDetail, "detail",
+                            lapack_utils_detail.hpp)
+  GENERATE_ALL_FILE_CONTENT(RngUtilsDetail, "detail", rng_utils_detail.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePin, "codepin", codepin.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePinSerializationBasic, "codepin/serialization",
                             basic.hpp)
