@@ -161,7 +161,12 @@ Expected<std::unique_ptr<InstrProfReader>> InstrProfReader::create(
   if (Error E = BufferOrError.takeError())
     return std::move(E);
   return InstrProfReader::create(std::move(BufferOrError.get()), Correlator,
+#ifdef SYCLomatic_CUSTOMIZATION
+                                 BIDFetcher, BIDFetcherCorrelatorKind,
+                                 std::move(Warn));
+#else
                                  BIDFetcher, BIDFetcherCorrelatorKind, Warn);
+#endif
 }
 
 Expected<std::unique_ptr<InstrProfReader>> InstrProfReader::create(

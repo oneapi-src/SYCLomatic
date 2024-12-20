@@ -237,7 +237,8 @@ public:
   TypeLocEmitWarningRewriterFactory(
       std::shared_ptr<TypeLocRewriterFactoryBase> InnerFactory, Diagnostics ID,
       MsgArgsT... Args)
-      : Inner(InnerFactory), MsgID(ID), MsgArgs(std::make_tuple(Args...)) {}
+      : Inner(std::move(InnerFactory)), MsgID(ID),
+        MsgArgs(std::make_tuple(Args...)) {}
   std::shared_ptr<TypeLocRewriter> create(const TypeLoc TL) const override {
     std::apply(
         [&](auto... Args) {

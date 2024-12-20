@@ -387,7 +387,11 @@ static std::string getDeviceArg(const ArgStringList &CmdArgs) {
   return DeviceArg;
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+static bool checkPVCDevice(const std::string &SingleArg, std::string &DevArg) {
+#else
 static bool checkPVCDevice(std::string SingleArg, std::string &DevArg) {
+#endif
   // Handle shortened versions.
   bool CheckShortVersion = true;
   for (auto Char : SingleArg) {

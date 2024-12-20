@@ -607,8 +607,8 @@ int migratePythonScript(const clang::tooling::UnifiedPath &InRoot,
 }
 
 // print APIMapping of Query
-int showAPIMapping(std::string SrcAPI, std::string Option,
-                   RefactoringTool &Tool, ReplTy &ReplSYCL) {
+int showAPIMapping(StringRef SrcAPI, StringRef Option, RefactoringTool &Tool,
+                   ReplTy &ReplSYCL) {
   llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN << SrcAPI
                << llvm::raw_ostream::RESET;
   DiagnosticsEngine Diagnostics(

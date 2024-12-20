@@ -174,7 +174,6 @@ void GenCodePinHeaderRule::processCodePinTypeMemberOrBase(
     }
   }
 
-  PrintPolicy.SuppressScope = true;
   PrintPolicy.SuppressScope = false;
   MemberOrBaseInfo.UserDefinedTypeFlag =
       isTypeInAnalysisScope(NextMT.getTypePtrOrNull());

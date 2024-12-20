@@ -113,7 +113,7 @@ public:
       repl.MissedArgumentIsBuffer = std::move(mab);
       repl.MissedArgumentType = std::move(mat);
       repl.MissedArgumentName = std::move(man);
-      repl.ReplName = s;
+      repl.ReplName = std::move(s);
       return repl;
     };
 
