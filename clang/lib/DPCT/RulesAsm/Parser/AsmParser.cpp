@@ -377,6 +377,12 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
     Ops.push_back(Out.get());
     Out = nullptr;
   }
+  // prefetch{.state}.{level} [%0] has only one input operand and no type.
+  if (Opcode->getTokenID() == asmtok::op_prefetch) {
+    Ops.push_back(Out.get());
+    Out = nullptr;
+    Types.push_back(Context.getBuiltinType(InlineAsmBuiltinType::voidType));
+  }
 
   return ::new (Context) InlineAsmInstruction(Opcode, StateSpace, Attrs, Types,
                                               Out.get(), Pred.get(), Ops);

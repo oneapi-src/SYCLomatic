@@ -536,6 +536,7 @@ bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
   case InlineAsmBuiltinType::u16x2:  OS() << MapNames::getClNamespace() + "ushort2"; break;
   case InlineAsmBuiltinType::bf16:   OS() << MapNames::getClNamespace() + "ext::oneapi::bfloat16"; break;
   case InlineAsmBuiltinType::f16x2:  OS() << MapNames::getClNamespace() + "half2"; break;
+  case InlineAsmBuiltinType::voidType:  OS() << "void"; break;
   case InlineAsmBuiltinType::e4m3:
   case InlineAsmBuiltinType::e5m2:
   case InlineAsmBuiltinType::tf32:
@@ -588,8 +589,9 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVarDecl *D) {
 }
 
 bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
-  // Address expression only support ld/st instructions.
-  if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom))
+  // Address expression only support ld/st & atom instructions.
+  if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom,
+                                 asmtok::op_prefetch))
     return SYCLGenError();
   std::string Type;
   if (tryEmitType(Type, CurrInst->getType(0)))
@@ -617,7 +619,7 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     std::string Reg;
     if (tryEmitStmt(Reg, Dst->getSymbol()))
       return SYCLGenSuccess();
-    if (CanSuppressCast(Dst->getSymbol()))
+    if (CurrInst->is(asmtok::op_prefetch) || CanSuppressCast(Dst->getSymbol()))
       OS() << llvm::formatv("{0}", Reg);
     else
       OS() << llvm::formatv("(({0} *)(uintptr_t){1})", Type, Reg);
@@ -1277,6 +1279,43 @@ protected:
     }
 
     OS() << ')';
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_prefetch(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+
+    AsmStateSpace SS = Inst->getStateSpace();
+    if (SS != AsmStateSpace::S_global && SS != AsmStateSpace::none)
+      return SYCLGenError();
+
+    if (!(Inst->hasAttr(InstAttr::L1) || Inst->hasAttr(InstAttr::L2)))
+      return SYCLGenError();
+
+    std::string PrefetchHint;
+    if (Inst->hasAttr(InstAttr::L1))
+      PrefetchHint = "L1";
+    else if (Inst->hasAttr(InstAttr::L2))
+      PrefetchHint = "L2";
+    else
+      return SYCLGenError();
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+    const auto *Src =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getInputOperand(0));
+    if (!Src)
+      return false;
+
+    OS() << MapNames::getExpNamespace() << "prefetch(";
+    if (emitStmt(Src))
+      return SYCLGenError();
+    OS() << ", ";
+    OS() << MapNames::getExpNamespace() << "properties{";
+    OS() << MapNames::getExpNamespace() << "prefetch_hint_" << PrefetchHint;
+    OS() << "})";
     endstmt();
     return SYCLGenSuccess();
   }
