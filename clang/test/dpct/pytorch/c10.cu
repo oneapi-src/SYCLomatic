@@ -11,14 +11,36 @@
 
 #ifndef NO_BUILD_TEST
 #include <iostream>
-// CHECK: #include <c10/xpu/XPUStream.h>
-#include <c10/cuda/CUDAStream.h>
 // CHECK: #include <c10/core/DeviceGuard.h>
 #include <c10/cuda/CUDAGuard.h>
+// CHECK: #include <c10/xpu/XPUStream.h>
+#include <c10/cuda/CUDAStream.h>
+// CHECK: #include <c10/xpu/XPUFunctions.h>
+#include <c10/cuda/CUDAFunctions.h>
 
 int main() {
-  std::optional<c10::Device> device;
+  // device APIs
+  // CHECK: c10::DeviceIndex num_devices = c10::xpu::device_count();
+  c10::DeviceIndex num_devices = c10::cuda::device_count();
 
+  // CHECK: c10::DeviceIndex num_devices_ensured =
+  // CHECK-NEXT:     c10::xpu::device_count_ensure_non_zero();
+  c10::DeviceIndex num_devices_ensured = c10::cuda::device_count_ensure_non_zero();
+
+  // CHECK: c10::DeviceIndex current_device = c10::xpu::current_device();
+  c10::DeviceIndex current_device = c10::cuda::current_device();
+
+  c10::DeviceIndex new_device = 1;
+  // CHECK: c10::xpu::set_device(new_device);
+  c10::cuda::set_device(new_device);
+
+  // CHECK: c10::DeviceIndex exchanged_device = c10::xpu::exchange_device(0);
+  c10::DeviceIndex exchanged_device = c10::cuda::ExchangeDevice(0);
+
+  // CHECK: c10::DeviceIndex maybe_exchanged_device = c10::xpu::maybe_exchange_device(1);
+  c10::DeviceIndex maybe_exchanged_device = c10::cuda::MaybeExchangeDevice(1);
+
+  std::optional<c10::Device> device;
   try {
     // CHECK: c10::OptionalDeviceGuard device_guard(device);
     c10::cuda::OptionalCUDAGuard device_guard(device);
@@ -27,6 +49,7 @@ int main() {
     return -1;
   }
 
+  // stream APIs
   // CHECK: auto currentStream = c10::xpu::getCurrentXPUStream();
   auto currentStream = c10::cuda::getCurrentCUDAStream();
 

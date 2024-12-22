@@ -7,6 +7,7 @@
 # The rule specified in this file can be imported with commandline option:
 # --rule-file={dpct_install_folder}/extensions/python_rules/python_build_script_migration_rule_ipex.yaml
 
+# torch import rules
 - Rule: rule_import_torch
   Kind: PythonRule
   Priority: Fallback
@@ -17,6 +18,7 @@
     import torch
     import intel_extension_for_pytorch
 
+# CPP extension rules
 - Rule: rule_from_torch_utils_import_cpp_extension_only
   Kind: PythonRule
   Priority: Fallback
@@ -51,6 +53,7 @@
     from ${mod_prefix}cpp_extension import${ws1}(${class_prefix}${class_suffix})
     from torch.utils.cpp_extension import CppExtension
 
+# CUDA_HOME rules
 - Rule: rule_CUDA_HOME
   Kind: PythonRule
   Priority: Fallback
@@ -93,6 +96,7 @@
     from ${mod_prefix}cpp_extension import${ws}(${class_prefix}${class_suffix})
     SYCL_HOME = __import__('os').environ.get('CMPLR_ROOT')
 
+# Extension rules
 - Rule: rule_CUDAExtension
   Kind: PythonRule
   Priority: Fallback
@@ -100,22 +104,6 @@
   PythonSyntax: CUDAExtension
   In: CUDAExtension
   Out: DPCPPExtension
-
-- Rule: rule_from_torch_import_cuda
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: from_torch_import_cuda
-  In: from torch import cuda
-  Out: from torch import xpu
-
-- Rule: rule_cuda_is_available
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: cuda_is_available
-  In: cuda.is_available
-  Out: xpu.is_available
 
 - Rule: rule_include_dirs
   Kind: PythonRule
@@ -133,6 +121,7 @@
   In: BuildExtension
   Out: DpcppBuildExtension
 
+# src file ext rules
 - Rule: rule_cpp_file_in_func
   Kind: PythonRule
   Priority: Fallback
@@ -185,6 +174,49 @@
       In: ${arg}.cu
       Out: ${arg}.${rewrite_extention_name}
 
+# cuda import rules
+- Rule: rule_from_torch_import_cuda
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: from_torch_import_cuda
+  In: from torch import cuda
+  Out: from torch import xpu
+
+- Rule: rule_cuda_is_available
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_is_available
+  In: cuda.is_available
+  Out: xpu.is_available
+
+- Rule: rule_version_cuda
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: version_cuda
+  In: version.cuda
+  Out: version.xpu
+
+#init rules
+- Rule: rule_cuda_init
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_init
+  In: cuda.init
+  Out: xpu.init
+
+- Rule: rule_cuda_is_initialized
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_is_initialized
+  In: cuda.is_initialized
+  Out: xpu.is_initialized
+
+# device rules
 - Rule: rule_cuda_device_count
   Kind: PythonRule
   Priority: Fallback
@@ -193,6 +225,38 @@
   In: cuda.device_count
   Out: xpu.device_count
 
+- Rule: rule_cuda_current_device
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_current_device
+  In: cuda.current_device
+  Out: xpu.current_device
+
+- Rule: rule_cuda_set_device
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_set_device
+  In: cuda.set_device
+  Out: xpu.set_device
+
+- Rule: rule_cuda_get_device_properties
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_get_device_properties
+  In: cuda.get_device_properties
+  Out: xpu.get_device_properties
+
+- Rule: rule_cuda_get_device_name
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_get_device_name
+  In: cuda.get_device_name
+  Out: xpu.get_device_name
+
 - Rule: rule_cuda_get_device_capability
   Kind: PythonRule
   Priority: Fallback
@@ -200,6 +264,14 @@
   PythonSyntax: cuda_get_device_capability
   In: cuda.get_device_capability
   Out: xpu.get_device_capability
+
+- Rule: rule_cuda_device_of
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_device_of
+  In: cuda.device_of
+  Out: xpu.device_of
 
 - Rule: rule_cuda_get_arch_list
   Kind: PythonRule
@@ -214,10 +286,43 @@
       In: torch.
       Out: ""
 
-- Rule: rule_version_cuda
+- Rule: rule_cuda_synchronize
   Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
-  PythonSyntax: version_cuda
-  In: version.cuda
-  Out: version.xpu
+  PythonSyntax: cuda_synchronize
+  In: cuda.synchronize
+  Out: xpu.synchronize
+
+# stream rules
+- Rule: rule_cuda_current_stream
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_current_stream
+  In: cuda.current_stream
+  Out: xpu.current_stream
+
+- Rule: rule_cuda_StreamContext
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_StreamContext
+  In: cuda.StreamContext
+  Out: xpu.StreamContext
+
+- Rule: rule_cuda_stream
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_stream
+  In: cuda.stream
+  Out: xpu.stream
+
+- Rule: rule_cuda_set_stream
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_set_stream
+  In: cuda.set_stream
+  Out: xpu.set_stream
