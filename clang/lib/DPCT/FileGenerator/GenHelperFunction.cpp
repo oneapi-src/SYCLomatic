@@ -133,6 +133,15 @@ const std::string RngUtilsDetailAllContentStr =
 const std::string SparseUtilsDetailAllContentStr =
 #include "clang/DPCT/detail/sparse_utils_detail.hpp.inc"
     ;
+const std::string DnnlUtilsDetailAllContentStr =
+#include "clang/DPCT/detail/dnnl_utils_detail.hpp.inc"
+    ;
+const std::string BlasGemmUtilsDetailAllContentStr =
+#include "clang/DPCT/detail/blas_gemm_utils_detail.hpp.inc"
+    ;
+const std::string CclUtilsDetailAllContentStr =
+#include "clang/DPCT/detail/ccl_utils_detail.hpp.inc"
+    ;
 const std::string CodePinAllContentStr =
 #include "clang/DPCT/codepin/codepin.hpp.inc"
     ;
@@ -215,6 +224,10 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(RngUtilsDetail, "detail", rng_utils_detail.hpp)
   GENERATE_ALL_FILE_CONTENT(SparseUtilsDetail, "detail",
                             sparse_utils_detail.hpp)
+  GENERATE_ALL_FILE_CONTENT(DnnlUtilsDetail, "detail", dnnl_utils_detail.hpp)
+  GENERATE_ALL_FILE_CONTENT(BlasGemmUtilsDetail, "detail",
+                            blas_gemm_utils_detail.hpp)
+  GENERATE_ALL_FILE_CONTENT(CclUtilsDetail, "detail", ccl_utils_detail.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePin, "codepin", codepin.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePinSerializationBasic, "codepin/serialization",
                             basic.hpp)
