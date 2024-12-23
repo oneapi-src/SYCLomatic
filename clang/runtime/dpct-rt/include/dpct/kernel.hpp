@@ -521,7 +521,7 @@ public:
   /// \param [in] que SYCL queue used to execute kernel.
   /// \param [in] args Kernel arguments.
   template <typename FuncT, typename... ArgsT>
-  static std::enable_if_t<std::is_function_v<FuncT>, void>
+  static std::enable_if_t<std::is_invocable_v<FuncT *, ArgsT...>, void>
   launch(FuncT *func, dim3 group_range, dim3 local_range,
          unsigned int local_mem_size, queue_ptr que, ArgsT... args) {
     set_execution_config(group_range, local_range, local_mem_size, que);
