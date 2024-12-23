@@ -1,47 +1,154 @@
-# Copyright (C) Intel Corporation
-# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-# See https://llvm.org/LICENSE.txt for license information.
-
-# This file will be installed to folder:
-# {dpct_install_folder}/extensions/pytorch_api_rules.
-# The rule specified in this file can be imported with commandline option:
-# --rule-file={dpct_install_folder}/extensions/pytorch_api_rules/pytorch_api.yaml
 ---
-- Rule: rule_CUDAGuard_h
+# ATen cuda rules
+- Rule: rule_ATen_core_Tensor_h
+  Kind: Header
+  Priority: Takeover
+  In: ATen/core/Tensor.h
+  Out: "<ATen/core/Tensor.h>"
+
+- Rule: rule_ATen_cuda_CUDAContext_h
+  Kind: Header
+  Priority: Takeover
+  In: ATen/cuda/CUDAContext.h
+  Out: "<ATen/xpu/XPUContext.h>"
+
+- Rule: rule_at_cuda_getCurrentCUDAStream
+  Kind: API
+  Priority: Takeover
+  In: at::cuda::getCurrentCUDAStream
+  Out: c10::xpu::getCurrentXPUStream($1)
+  Includes: [<c10/xpu/XPUStream.h>]
+
+- Rule: rule_ATen_cuda_CUDATensorMethods_cuh
+  Kind: Header
+  Priority: Takeover
+  In: ATen/cuda/CUDATensorMethods.cuh
+  Out: "<c10/util/Half.h>"
+  Includes: [<ATen/Tensor.h>]
+
+# ATen macro rules
+- Rule: rule_remove_AT_CUDA_CHECK
+  Kind: Macro
+  Priority: Takeover
+  In: AT_CUDA_CHECK
+  Out: |
+
+# c10::cuda macro rules
+- Rule: rule_c10_cuda_CUDAMacros_h
+  Kind: Header
+  Priority: Takeover
+  In: c10/cuda/CUDAMacros.h
+  Out: "<c10/xpu/XPUMacros.h>"
+
+- Rule: rule_c10_cuda_C10_CUDA_BUILD_SHARED_LIBS
+  Kind: Macro
+  Priority: Takeover
+  In: C10_CUDA_BUILD_SHARED_LIBS
+  Out: C10_XPU_BUILD_SHARED_LIBS
+
+- Rule: rule_c10_cuda_C10_CUDA_EXPORT
+  Kind: Macro
+  Priority: Takeover
+  In: C10_CUDA_EXPORT
+  Out: C10_XPU_EXPORT
+
+- Rule: rule_c10_cuda_C10_CUDA_IMPORT
+  Kind: Macro
+  Priority: Takeover
+  In: C10_CUDA_IMPORT
+  Out: C10_XPU_IMPORT
+
+- Rule: rule_c10_cuda_C10_CUDA_API
+  Kind: Macro
+  Priority: Takeover
+  In: C10_CUDA_API
+  Out: C10_XPU_API
+
+- Rule: rule_c10_cuda_C10_CUDA_BUILD_MAIN_LIB
+  Kind: Macro
+  Priority: Takeover
+  In: C10_CUDA_BUILD_MAIN_LIB
+  Out: C10_XPU_BUILD_MAIN_LIB
+
+# c10::cuda stream rules
+- Rule: rule_c10_cuda_CUDAStream_h
+  Kind: Header
+  Priority: Takeover
+  In: c10/cuda/CUDAStream.h
+  Out: <c10/xpu/XPUStream.h>
+
+- Rule: rule_c10_cuda_CUDAStream
+  Kind: Class
+  Priority: Takeover
+  In: c10::cuda::CUDAStream
+  Out: c10::xpu::XPUStream
+  Methods:
+    - In: stream
+      Out: \&static_cast<sycl::queue &>($method_base queue())
+
+- Rule: rule_c10_cuda_getCurrentCUDAStream
+  Kind: API
+  Priority: Takeover
+  In: c10::cuda::getCurrentCUDAStream
+  Out: c10::xpu::getCurrentXPUStream($1)
+
+# c10::cuda device rules
+- Rule: rule_c10_cuda_CUDAGuard_h
   Kind: Header
   Priority: Takeover
   In: c10/cuda/CUDAGuard.h
-  Out: c10/core/DeviceGuard.h
-  Includes: []
+  Out: "<c10/core/DeviceGuard.h>"
 
-- Rule: rule_OptionalCUDAGuard
+- Rule: rule_c10_cuda_OptionalCUDAGuard
   Kind: Type
   Priority: Takeover
   In: c10::cuda::OptionalCUDAGuard
   Out: c10::OptionalDeviceGuard
-  Includes: []
 
-- Rule: rule_CUDAStream_h
+# c10::cuda CUDAFunctions rules
+- Rule: rule_c10_cuda_CUDAFunctions_h
   Kind: Header
   Priority: Takeover
-  In: c10/cuda/CUDAStream.h
-  Out: c10/xpu/XPUStream.h
-  Includes: []
+  In: c10/cuda/CUDAFunctions.h
+  Out: "<c10/xpu/XPUFunctions.h>"
 
-- Rule: rule_CUDATensorMethods_cuh
-  Kind: Header
+- Rule: rule_c10_cuda_device_count
+  Kind: API
   Priority: Takeover
-  In: ATen/cuda/CUDATensorMethods.cuh
-  Out: c10/util/Half.h
-  Includes: ["ATen/Tensor.h"]
+  In: c10::cuda::device_count
+  Out: c10::xpu::device_count()
 
-- Rule: rule_default_queue
-  Kind: HelperFunction
+- Rule: rule_c10_cuda_device_count_ensure_non_zero
+  Kind: API
   Priority: Takeover
-  In: get_in_order_queue
-  Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
-  Includes: ["c10/xpu/XPUStream.h"]
+  In: c10::cuda::device_count_ensure_non_zero
+  Out: c10::xpu::device_count_ensure_non_zero()
 
+- Rule: rule_c10_cuda_current_device
+  Kind: API
+  Priority: Takeover
+  In: c10::cuda::current_device
+  Out: c10::xpu::current_device()
+
+- Rule: rule_c10_cuda_set_device
+  Kind: API
+  Priority: Takeover
+  In: c10::cuda::set_device
+  Out: c10::xpu::set_device($1)
+
+- Rule: rule_c10_cuda_exchange_device
+  Kind: API
+  Priority: Takeover
+  In: c10::cuda::ExchangeDevice
+  Out: c10::xpu::exchange_device($1)
+
+- Rule: rule_c10_cuda_maybe_exchange_device
+  Kind: API
+  Priority: Takeover
+  In: c10::cuda::MaybeExchangeDevice
+  Out: c10::xpu::maybe_exchange_device($1)
+
+# torch tensor rules
 - Rule: rule_torch_Tensor
   Kind: Class
   Priority: Takeover
@@ -51,31 +158,10 @@
     - In: is_cuda
       Out: $method_base is_xpu()
 
-- Rule: rule_getCurrentCUDAStream
-  Kind: API
+# queue rules
+- Rule: rule_default_queue
+  Kind: HelperFunction
   Priority: Takeover
-  In: at::cuda::getCurrentCUDAStream
-  Out: c10::xpu::getCurrentXPUStream($1)
-  Includes: ["c10/xpu/XPUStream.h"]
-
-- Rule: rule_CUDAStream
-  Kind: Class
-  Priority: Takeover
-  In: c10::cuda::CUDAStream
-  Out: c10::xpu::XPUStream
-  Methods:
-    - In: stream
-      Out: \&static_cast<sycl::queue &>($method_base queue())
-
-- Rule: rule_remove_AT_CUDA_CHECK
-  Kind: Macro
-  Priority: Takeover
-  In: AT_CUDA_CHECK
-  Out: |
-
-- Rule: rule_CUDAContext_h
-  Kind: Header
-  Priority: Takeover
-  In: ATen/cuda/CUDAContext.h
-  Out: ATen/xpu/XPUContext.h
-  Includes: []
+  In: get_in_order_queue
+  Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
+  Includes: [<c10/xpu/XPUStream.h>]

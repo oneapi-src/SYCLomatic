@@ -955,8 +955,12 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
       if (auto Iter = FirstIncludeOffset.find(
               DpctGlobalInfo::getInstance().getMainFile());
           Iter != FirstIncludeOffset.end())
-        insertHeader("#include \"" + File + +"\"" + getNL(), Iter->second,
-                     InsertPosition::IP_Right);
+        if (!File.empty() && File[0] == '<')
+          insertHeader("#include " + File + getNL(), Iter->second,
+                       InsertPosition::IP_Right);
+        else
+          insertHeader("#include \"" + File + "\"" + getNL(), Iter->second,
+                       InsertPosition::IP_Right);
     }
     return;
 
