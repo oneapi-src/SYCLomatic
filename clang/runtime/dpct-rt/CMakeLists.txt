@@ -30,6 +30,7 @@ include/dpct/detail/lib_common_utils_detail.hpp
 include/dpct/detail/blas_utils_detail.hpp
 include/dpct/detail/lapack_utils_detail.hpp
 include/dpct/detail/rng_utils_detail.hpp
+include/dpct/detail/sparse_utils_detail.hpp
 )
 
 set(dpct_rt_dpstd_files

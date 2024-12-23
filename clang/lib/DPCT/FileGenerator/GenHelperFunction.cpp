@@ -130,6 +130,9 @@ const std::string LapackUtilsDetailAllContentStr =
 const std::string RngUtilsDetailAllContentStr =
 #include "clang/DPCT/detail/rng_utils_detail.hpp.inc"
     ;
+const std::string SparseUtilsDetailAllContentStr =
+#include "clang/DPCT/detail/sparse_utils_detail.hpp.inc"
+    ;
 const std::string CodePinAllContentStr =
 #include "clang/DPCT/codepin/codepin.hpp.inc"
     ;
@@ -210,6 +213,8 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(LapackUtilsDetail, "detail",
                             lapack_utils_detail.hpp)
   GENERATE_ALL_FILE_CONTENT(RngUtilsDetail, "detail", rng_utils_detail.hpp)
+  GENERATE_ALL_FILE_CONTENT(SparseUtilsDetail, "detail",
+                            sparse_utils_detail.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePin, "codepin", codepin.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePinSerializationBasic, "codepin/serialization",
                             basic.hpp)

@@ -176,6 +176,11 @@
 // RUN: echo "end" >> %T/check_header_files/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
 
+// RUN: echo "begin" > %T/check_header_files/diff_res.txt
+// RUN: diff %T/check_header_files/out/include/dpct/detail/sparse_utils_detail.hpp  %S/../../runtime/dpct-rt/include/dpct/detail/sparse_utils_detail.hpp >> %T/check_header_files/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
+
 // RUN: rm -rf %T/check_header_files
 
 // CHECK: begin

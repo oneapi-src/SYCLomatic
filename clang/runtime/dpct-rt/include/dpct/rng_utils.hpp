@@ -14,8 +14,26 @@
 
 #include <oneapi/mkl/rng/device.hpp>
 
-namespace dpct {
-namespace rng {
+namespace dpct::rng {
+enum class random_mode {
+  best,
+  legacy,
+  optimal,
+};
+
+enum class random_engine_type {
+  philox4x32x10,
+  mrg32k3a,
+  mt2203,
+  mt19937,
+  sobol,
+  mcg59
+};
+} // namespace dpct::rng
+
+#include "detail/rng_utils_detail.hpp"
+
+namespace dpct::rng {
 namespace device {
 /// The random number generator on device.
 /// \tparam engine_t The device random number generator engine. It can only be
@@ -206,24 +224,7 @@ private:
 };
 } // namespace device
 
-enum class random_mode {
-  best,
-  legacy,
-  optimal,
-};
-
-enum class random_engine_type {
-  philox4x32x10,
-  mrg32k3a,
-  mt2203,
-  mt19937,
-  sobol,
-  mcg59
-};
-
-#include "detail/rng_utils_detail.hpp"
-
-typedef std::shared_ptr<rng::host::detail::rng_generator_base> host_rng_ptr;
+typedef std::shared_ptr<host::detail::rng_generator_base> host_rng_ptr;
 
 /// Create a host random number generator.
 /// \tparam work_on_cpu Whether the work is offloaded to CPU.
@@ -258,8 +259,7 @@ create_host_rng(const random_engine_type type,
 #endif
   }
 }
-} // namespace rng
-} // namespace dpct
+} // namespace dpct::rng
 
 template <class engine_t>
 struct sycl::is_device_copyable<dpct::rng::device::rng_generator<engine_t>>
