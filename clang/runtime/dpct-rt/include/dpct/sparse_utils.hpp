@@ -1110,10 +1110,6 @@ inline void spsm(sycl::queue queue, oneapi::mkl::transpose trans_a,
                                          uplo, diag, alpha, a, b, c);
 }
 
-namespace detail {
-
-} // namespace detail
-
 /// Convert a CSR sparse matrix to a CSC sparse matrix.
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
