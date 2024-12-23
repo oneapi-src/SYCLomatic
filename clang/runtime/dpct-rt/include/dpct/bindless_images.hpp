@@ -21,6 +21,178 @@ namespace experimental {
 
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
 
+/// The wrapper structure for external memory handle desc
+class external_mem_handle_desc {
+#ifdef _WIN32
+  void *handle;
+  const void *name;
+#else
+  int handle;
+#endif // _WIN32
+  sycl::ext::oneapi::experimental::external_mem_handle_type handle_type;
+  size_t size_in_bytes;
+  int flags;
+
+public:
+  external_mem_handle_desc() {
+#ifdef _WIN32
+    handle = nullptr;
+    name = nullptr;
+#else
+    handle = -1;
+#endif // _WIN32
+    handle_type =
+        sycl::ext::oneapi::experimental::external_mem_handle_type::opaque_fd;
+    size_in_bytes = 0;
+    flags = 0;
+  }
+
+#ifdef _WIN32
+  /// handle setter
+  /// \param [in] win32_handle The win32 NT handle of the external resource
+  void set_win32_handle(void *win32_handle) { handle = win32_handle; }
+
+  /// name setter
+  /// \param [in] win32_obj_name The object of the external resource
+  void set_win32_obj_name(const void *win32_obj_name) { name = win32_obj_name; }
+#else
+  /// fd setter
+  /// \param [in] fd The file descriptor of the external resource
+  void set_fd_handle(int fd) { handle = fd; }
+#endif // _WIN32
+
+  /// handle_type setter
+  /// \param [in] type The type of the external resource handle
+  void set_handle_type(
+      sycl::ext::oneapi::experimental::external_mem_handle_type type) {
+    handle_type = type;
+  }
+
+  /// size setter
+  /// \param [in] size The size (in bytes) of the external resource
+  void set_res_size(unsigned long long size) { size_in_bytes = size; }
+
+  /// flags setter
+  /// \param [in] flags The flags used to handle importing of external resource
+  void set_flags(int flags) { this->flags = flags; }
+
+#ifdef _WIN32
+  /// handle getter
+  /// \param [out] handle The win32 NT handle of the external resource
+  void *get_win32_handle() { return handle; }
+
+  /// name getter
+  /// \param [out] name The object of the external resource
+  const void *get_win32_obj_name() { return name; }
+#else
+  /// fd getter
+  /// \param [out] fd The file descriptor of the external resource
+  int get_fd_handle() { return handle; }
+#endif // _WIN32
+
+  /// handle_type getter
+  /// \param [out] handle_type The type of the external resource handle
+  sycl::ext::oneapi::experimental::external_mem_handle_type get_handle_type() {
+    return handle_type;
+  }
+
+  /// size getter
+  /// \param [out] size The size (in bytes) of the external resource
+  unsigned long long get_res_size() { return size_in_bytes; }
+
+  /// flags getter
+  /// \param [out] flags The flags used to handle importing of external resource
+  int get_flags() { return flags; }
+};
+
+/// The wrapper structure for external image memory desc
+class external_mem_img_desc {
+  sycl::range<3> size;
+  image_channel channel;
+  unsigned int num_levels;
+  sycl::ext::oneapi::experimental::image_type type;
+
+public:
+  external_mem_img_desc() {
+    size = sycl::range<3>{0, 0, 0};
+    channel = image_channel::create<float>();
+    num_levels = 1;
+    type = sycl::ext::oneapi::experimental::image_type::standard;
+  }
+
+  /// size setter
+  /// \param [in] img_dims The dimensions of the imported image resource
+  void set_size(sycl::range<3> img_dims) { size = img_dims; }
+
+  /// image_channel setter
+  /// \param [in] img_ch The channel info of the imported image resource
+  void set_image_channel(image_channel img_ch) { channel = img_ch; }
+
+  /// num_levels setter
+  /// \param [in] numLevels The no. of levels in the imported image resource
+  void set_num_levels(unsigned int numLevels) { num_levels = numLevels; }
+
+  /// type setter
+  /// \param [in] img_type The type of the imported image resource
+  void set_image_type(sycl::ext::oneapi::experimental::image_type img_type) {
+    type = img_type;
+  }
+
+  /// size getter
+  /// \param [out] size The dimensions of the imported image resource
+  sycl::range<3> get_size() { return size; }
+
+  /// image_channel getter
+  /// \param [out] image_channel The channel info of the imported image resource
+  image_channel get_image_channel() { return channel; }
+
+  /// num_levels getter
+  /// \param [out] num_levels The no. of levels in the imported image resource
+  unsigned int get_num_levels() { return num_levels; }
+
+  /// type getter
+  /// \param [out] type The image type of the imported image resource
+  sycl::ext::oneapi::experimental::image_type get_image_type() { return type; }
+};
+
+/// The wrapper structure for external buffer memory desc
+class external_mem_buf_desc {
+  uint64_t size_in_bytes;
+  uint64_t offset;
+  unsigned int flags;
+
+public:
+  external_mem_buf_desc() {
+    size_in_bytes = 0;
+    offset = 0;
+    flags = 0;
+  }
+
+  /// size setter
+  /// \param [in] size The size (in bytes) of the external buffer resource
+  void set_res_size(uint64_t size) { size_in_bytes = size; }
+
+  /// offset setter
+  /// \param [in] offset The memory offset of the external buffer resource
+  void set_mem_offset(uint64_t offset) { this->offset = offset; }
+
+  /// flags setter
+  /// \param [in] flags The flags used to import external buffer resource
+  void set_flags(unsigned int flags) { this->flags = flags; }
+
+  /// size getter
+  /// \param [out] size_in_bytes The size (in bytes) of the external buffer res
+  uint64_t get_res_size() { return size_in_bytes; }
+
+  /// offset getter
+  /// \param [out] offset The memory offset of the external buffer resource
+  uint64_t get_mem_offset() { return offset; }
+
+  /// flags getter
+  /// \param [out] flags The flags used to import external buffer resource
+  unsigned int get_flags() { return flags; }
+};
+
 /// The wrapper class of bindless image memory handle.
 class image_mem_wrapper {
 public:
@@ -78,6 +250,24 @@ public:
     _channel.set_channel_num(_desc.num_channels);
 #endif
     auto q = get_default_queue();
+    init_mip_level_wrappers(q);
+  }
+  /// Create bindless image memory wrapper.
+  /// \param [in] extMem SYCL external memory object.
+  /// \param [in] ext_img_mem_desc The img desc of the imported image resource.
+  image_mem_wrapper(sycl::ext::oneapi::experimental::external_mem extMem,
+                    external_mem_img_desc *ext_img_mem_desc) {
+    auto q = get_default_queue();
+    unsigned int array_size = 1;
+
+    _channel = ext_img_mem_desc->get_image_channel();
+    _desc = sycl::ext::oneapi::experimental::image_descriptor(
+        ext_img_mem_desc->get_size(), _channel.get_channel_num(),
+        _channel.get_channel_type(), ext_img_mem_desc->get_image_type(),
+        ext_img_mem_desc->get_num_levels(), array_size);
+    _handle = sycl::ext::oneapi::experimental::map_external_image_memory(
+        extMem, _desc, q);
+
     init_mip_level_wrappers(q);
   }
   image_mem_wrapper(const image_mem_wrapper &) = delete;
@@ -845,15 +1035,57 @@ inline void map_resources(int count, external_mem_wrapper **handles,
 /// \param [in] q The queue used to unmap the resource with.
 inline void unmap_resources(int count, external_mem_wrapper **handles,
                             queue_ptr q_ptr = &get_default_queue()) {
-  if (detail::check_duplicate_entries(count, handles) &&
-      "Duplicate handle entries found during resource unmapping!")
-    ;
+  if (detail::check_duplicate_entries(count, handles)) {
+    throw std::runtime_error(
+        "Duplicate handle entries found during resource unmapping!");
+  }
 
   for (int i = 0; i < count; i++) {
     handles[i]->unmap_resource(*q_ptr);
   }
 }
 #endif // _WIN32
+
+/// Imports external memory into a SYCL external memory object.
+/// \param [in] extMem SYCL external memory object ptr to be initialized.
+/// \param [in] memHandleDesc Pointer to the external memory handle descriptor.
+/// \throws std::runtime_error If no valid external memory handle is provided.
+inline void
+import_external_memory(sycl::ext::oneapi::experimental::external_mem *extMem,
+                       external_mem_handle_desc *memHandleDesc) {
+#ifdef _WIN32
+  if (memHandleDesc->get_win32_handle()) {
+    *extMem = sycl::ext::oneapi::experimental::import_external_memory(
+        sycl::ext::oneapi::experimental::external_mem_descriptor<
+            sycl::ext::oneapi::experimental::resource_win32_handle>{
+            {memHandleDesc->get_win32_handle()},
+            memHandleDesc->get_handle_type(),
+            memHandleDesc->get_res_size()},
+        get_default_queue());
+  } else if (memHandleDesc->get_win32_obj_name()) {
+    *extMem = sycl::ext::oneapi::experimental::import_external_memory(
+        sycl::ext::oneapi::experimental::external_mem_descriptor<
+            sycl::ext::oneapi::experimental::resource_win32_name>{
+            {memHandleDesc->get_win32_obj_name()},
+            memHandleDesc->get_handle_type(),
+            memHandleDesc->get_res_size()},
+        get_default_queue());
+  }
+#else
+  if (memHandleDesc->get_fd_handle() != -1) {
+    *extMem = sycl::ext::oneapi::experimental::import_external_memory(
+        sycl::ext::oneapi::experimental::external_mem_descriptor<
+            sycl::ext::oneapi::experimental::resource_fd>{
+            {memHandleDesc->get_fd_handle()},
+            memHandleDesc->get_handle_type(),
+            memHandleDesc->get_res_size()},
+        get_default_queue());
+  }
+#endif // _WIN32
+  else {
+    throw std::runtime_error("No external memory handle is set for importing!");
+  }
+}
 
 /// Create bindless image according to image data and sampling info.
 /// \param [in] data The image data used to create bindless image.
@@ -998,14 +1230,10 @@ static inline void destroy_bindless_image(T handle,
   sycl::ext::oneapi::experimental::destroy_image_handle(handle, q);
 }
 
-
-
 /// Get the image data according to sampled image handle.
 /// \param [in] handle The bindless image handle.
 /// \returns The image data of sampled image.
-template <class T>
-static inline image_data
-get_data(const T handle) {
+template <class T> static inline image_data get_data(const T handle) {
   return detail::get_img_info_map(handle).first;
 }
 

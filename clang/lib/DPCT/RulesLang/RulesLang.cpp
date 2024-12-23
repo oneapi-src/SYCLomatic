@@ -345,7 +345,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtEpilogue_t", "cublasLtMatmulPreference_t",
               "cublasLtMatmulHeuristicResult_t", "CUjit_target",
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
-              "cudaGraphicsRegisterFlags"))))))
+              "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -355,7 +355,10 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cooperative_groups::__v1::grid_group",
                   "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
                   "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
-                  "cudaGraphicsResource_t"))))))
+                  "cudaGraphicsResource_t", "cudaExternalMemory_t",
+                  "cudaExternalMemoryHandleDesc",
+                  "cudaExternalMemoryMipmappedArrayDesc",
+                  "cudaExternalMemoryBufferDesc"))))))
           .bind("cudaTypeDefEA"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -1971,10 +1974,18 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
   if (!E)
     return;
   std::string EnumName = E->getNameInfo().getName().getAsString();
-  if (EnumName == "cudaComputeModeDefault" ||
-      EnumName == "cudaComputeModeExclusive" ||
-      EnumName == "cudaComputeModeProhibited" ||
-      EnumName == "cudaComputeModeExclusiveProcess") {
+  if (EnumName == "cudaStreamCaptureStatusInvalidated" ||
+      EnumName == "cudaExternalMemoryHandleTypeOpaqueWin32Kmt" ||
+      EnumName == "cudaExternalMemoryHandleTypeD3D12Heap" ||
+      EnumName == "cudaExternalMemoryHandleTypeD3D11Resource" ||
+      EnumName == "cudaExternalMemoryHandleTypeD3D11ResourceKmt" ||
+      EnumName == "cudaExternalMemoryHandleTypeNvSciBuf") {
+    report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
+    return;
+  } else if (EnumName == "cudaComputeModeDefault" ||
+             EnumName == "cudaComputeModeExclusive" ||
+             EnumName == "cudaComputeModeProhibited" ||
+             EnumName == "cudaComputeModeExclusiveProcess") {
     handleComputeMode(EnumName, E);
     return;
   } else if ((EnumName == "cudaStreamCaptureStatusActive" ||
@@ -1982,9 +1993,6 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
              !DpctGlobalInfo::useExtGraph()) {
     report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
            EnumName, "--use-experimental-features=graph");
-    return;
-  } else if (EnumName == "cudaStreamCaptureStatusInvalidated") {
-    report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
     return;
   } else if (!DpctGlobalInfo::useExtBindlessImages() &&
              (EnumName == "cudaGraphicsRegisterFlagsNone" ||
@@ -1994,7 +2002,10 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
               EnumName == "cudaGraphicsRegisterFlagsTextureGather" ||
               EnumName == "cudaGraphicsMapFlagsNone" ||
               EnumName == "cudaGraphicsMapFlagsReadOnly" ||
-              EnumName == "cudaGraphicsMapFlagsWriteDiscard")) {
+              EnumName == "cudaGraphicsMapFlagsWriteDiscard" ||
+              EnumName == "cudaExternalMemoryHandleTypeOpaqueFd" ||
+              EnumName == "cudaExternalMemoryHandleTypeOpaqueWin32" ||
+              EnumName == "cudaExternalMemoryHandleTypeD3D12Resource")) {
     report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
            EnumName, "--use-experimental-features=bindless_images");
     return;
@@ -4439,6 +4450,168 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
+void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(declRefExpr(allOf(to(functionDecl(hasAttr(attr::CUDAGlobal))),
+                                  unless(hasAncestor(cudaKernelCallExpr()))))
+                    .bind("kernelRef"),
+                this);
+  MF.addMatcher(unresolvedLookupExpr(unless(hasAncestor(cudaKernelCallExpr())))
+                    .bind("unresolvedRef"),
+                this);
+}
+
+std::string KernelCallRefRule::getTypeRepl(const Expr *E) {
+  std::string TypeRef;
+  if (auto BO = DpctGlobalInfo::findParent<BinaryOperator, Expr,
+                                           ImplicitCastExpr, ParenExpr>(E)) {
+    TypeRef = "decltype(" + ExprAnalysis::ref(BO->getLHS()) + ")";
+  } else if (auto VD =
+                 DpctGlobalInfo::findParent<VarDecl, Expr, ImplicitCastExpr,
+                                            ParenExpr>(E)) {
+    TypeRef = "decltype(" + VD->getNameAsString() + ")";
+  } else if (auto RS =
+                 DpctGlobalInfo::findParent<ReturnStmt, Expr, ImplicitCastExpr,
+                                            ParenExpr>(E)) {
+    auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(RS);
+    TypeRef =
+        getStmtSpelling(FD->getReturnTypeSourceRange(), FD->getSourceRange());
+  } else if (auto CE =
+                 DpctGlobalInfo::findParent<CallExpr, Expr, ImplicitCastExpr,
+                                            ParenExpr>(E)) {
+    size_t N = 0;
+    for (auto Arg : CE->arguments()) {
+      if (Arg == E) {
+        break;
+      }
+      N++;
+    }
+    TypeRef = "typename " + MapNames::getDpctNamespace() +
+              "nth_argument_type<decltype(" +
+              ExprAnalysis::ref(CE->getCallee()) + "), " + std::to_string(N) +
+              ">::type";
+  }
+  if (!TypeRef.empty()) {
+    return "<" + TypeRef + ">";
+  }
+  return TypeRef;
+}
+
+template <typename T>
+void KernelCallRefRule::insertWrapperPostfix(const T *Node,
+                                             std::string &&TypeRepl,
+                                             bool isInsertWrapperRegister) {
+  auto NLoc = DpctGlobalInfo::getSourceManager().getSpellingLoc(
+      Node->getNameInfo().getBeginLoc());
+  emplaceTransformation(new InsertText(
+      NLoc.getLocWithOffset(Node->getNameInfo().getAsString().length()),
+      "_wrapper"));
+
+  if (!isInsertWrapperRegister) {
+    return;
+  }
+  const Expr *E = Node;
+  if (auto UO = DpctGlobalInfo::findParent<UnaryOperator, T, ImplicitCastExpr,
+                                           ParenExpr>(Node)) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      E = UO;
+    }
+  } else if (auto COC = DpctGlobalInfo::findParent<CXXOperatorCallExpr, T,
+                                                   ImplicitCastExpr, ParenExpr>(
+                 Node)) {
+    if (COC->getOperator() == clang::OO_Amp) {
+      E = COC;
+    }
+  }
+  emplaceTransformation(new InsertBeforeStmt(
+      E, MapNames::getDpctNamespace() + "wrapper_register" + TypeRepl + "("));
+  emplaceTransformation(new InsertAfterStmt(E, ").get()"));
+}
+
+void KernelCallRefRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto DRE = getAssistNodeAsType<DeclRefExpr>(Result, "kernelRef")) {
+    if (auto ParentCE = DpctGlobalInfo::findAncestor<CallExpr>(DRE)) {
+      if (auto Callee = ParentCE->getDirectCallee()) {
+        if (dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc())) {
+          return;
+        }
+      }
+    }
+    const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl());
+    bool IsTemplateRelated = false;
+    size_t TemplateParamNum = 0;
+    if (FD) {
+      if (FD->getTemplatedKind() !=
+          FunctionDecl::TemplatedKind::TK_NonTemplate) {
+        IsTemplateRelated = true;
+      }
+      if (auto FTD = FD->getPrimaryTemplate()) {
+        if (auto TP = FTD->getTemplateParameters())
+          TemplateParamNum = TP->size();
+      }
+      if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD)) {
+        DFI->collectInfoForWrapper(FD);
+      }
+    }
+    if (auto *OuterFD = DpctGlobalInfo::findAncestor<FunctionDecl>(DRE)) {
+      if ((OuterFD->getTemplatedKind() ==
+           FunctionDecl::TemplatedKind::TK_NonTemplate) ||
+          (OuterFD->getTemplatedKind() ==
+           FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
+        std::string TypeRepl;
+        if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
+          if ((IsTemplateRelated &&
+               (!DRE->hasExplicitTemplateArgs() ||
+                (DRE->getNumTemplateArgs() <= TemplateParamNum))) ||
+              DRE->hadMultipleCandidates()) {
+            TypeRepl = getTypeRepl(DRE);
+          }
+        }
+        insertWrapperPostfix<DeclRefExpr>(
+            DRE, std::move(TypeRepl),
+            DpctGlobalInfo::isCVersionCUDALaunchUsed());
+      }
+    }
+  }
+  if (auto ULE =
+          getAssistNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedRef")) {
+    if (!DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
+      return;
+    }
+    bool KernelRefFound = false;
+    for (auto *D : ULE->decls()) {
+      const FunctionDecl *FD = dyn_cast<FunctionDecl>(D);
+      if (!FD) {
+        if (const FunctionTemplateDecl *FTD =
+                dyn_cast<FunctionTemplateDecl>(D)) {
+          FD = FTD->getTemplatedDecl();
+        }
+      }
+      if (FD && FD->hasAttr<CUDAGlobalAttr>()) {
+        KernelRefFound = true;
+        break;
+      }
+    }
+    if (!KernelRefFound) {
+      return;
+    }
+    if (auto ParentCE = dpct::DpctGlobalInfo::findAncestor<CallExpr>(ULE)) {
+      if (auto Callee = ParentCE->getDirectCallee()) {
+        if (dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc())) {
+          return;
+        }
+      } else if (auto PULE =
+                     dyn_cast<UnresolvedLookupExpr>(ParentCE->getCallee())) {
+        for (auto *D : PULE->decls()) {
+          if (dpct::DpctGlobalInfo::isInCudaPath(D->getBeginLoc())) {
+            return;
+          }
+        }
+      }
+    }
+    insertWrapperPostfix<UnresolvedLookupExpr>(ULE, getTypeRepl(ULE), true);
+  }
+}
 
 // kernel call information collection
 void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -4542,6 +4715,43 @@ void KernelCallRule::runRule(
              false);
       return;
     }
+    bool IsDirectCall = true;
+    if (!KCall->getDirectCallee() &&
+        !dyn_cast<UnresolvedLookupExpr>(KCall->getCallee())) {
+      IsDirectCall = false;
+      std::string ReplStr;
+      llvm::raw_string_ostream OS(ReplStr);
+      OS << MapNames::getDpctNamespace() + "kernel_launcher::launch("
+         << ExprAnalysis::ref(KCall->getCallee());
+      if (const CallExpr *Configs = KCall->getConfig()) {
+        size_t ConfigArgsNum = Configs->getNumArgs();
+        for (size_t i = 0; i < ConfigArgsNum; i++) {
+          if (auto Config = Configs->getArg(i)) {
+            if (i == 0 || i == 1) {
+              OS << ", " << ExprAnalysis::ref(Config);
+            } else if (i == 2 || i == 3) {
+              if (Config->isDefaultArgument()) {
+                OS << ", 0";
+              } else {
+                OS << ", " << ExprAnalysis::ref(Config);
+              }
+            }
+          }
+        }
+        size_t ArgsNum = KCall->getNumArgs();
+        for (size_t i = 0; i < ArgsNum; i++) {
+          if (auto Arg = KCall->getArg(i)) {
+            if (!Arg->isDefaultArgument()) {
+              OS << ", " << ExprAnalysis::ref(Arg);
+            } else {
+              break;
+            }
+          }
+        }
+        OS << ")";
+        emplaceTransformation(new ReplaceStmt(KCall, OS.str()));
+      }
+    }
 
     const auto &SM = (*Result.Context).getSourceManager();
 
@@ -4549,17 +4759,19 @@ void KernelCallRule::runRule(
       // Report warning message
       report(KCall->getBeginLoc(), Diagnostics::KERNEL_CALLEE_MACRO_ARG, false);
     }
-
-    // Remove KCall in the original location
-    auto KCallSpellingRange = getTheLastCompleteImmediateRange(
-        KCall->getBeginLoc(), KCall->getEndLoc());
-    auto KCallLen = SM.getCharacterData(KCallSpellingRange.second) -
-                    SM.getCharacterData(KCallSpellingRange.first) +
-                    Lexer::MeasureTokenLength(KCallSpellingRange.second, SM,
-                                              Result.Context->getLangOpts());
-    emplaceTransformation(
-        new ReplaceText(KCallSpellingRange.first, KCallLen, ""));
-    auto EpilogLocation = removeTrailingSemicolon(KCall, Result);
+    if (IsDirectCall) {
+      // Remove KCall in the original location
+      auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+          KCall->getBeginLoc(), KCall->getEndLoc());
+      auto KCallLen = SM.getCharacterData(KCallSpellingRange.second) -
+                      SM.getCharacterData(KCallSpellingRange.first) +
+                      Lexer::MeasureTokenLength(KCallSpellingRange.second, SM,
+                                                Result.Context->getLangOpts());
+      emplaceTransformation(
+          new ReplaceText(KCallSpellingRange.first, KCallLen, ""));
+    }
+    auto EpilogLocation = findAndRemoveTrailingSemicolon(
+        KCall, Result, IsDirectCall ? true : false);
     if (DpctGlobalInfo::isCodePinEnabled()) {
       instrumentKernelLogsForCodePin(KCall, EpilogLocation);
     }
@@ -4579,11 +4791,11 @@ void KernelCallRule::runRule(
 
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
-    if (!FD->isTemplateInstantiation()){
+    if (IsDirectCall && !FD->isTemplateInstantiation()) {
       DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
     }
     const CallExpr *Config = KCall->getConfig();
-    if (Config) {
+    if (IsDirectCall && Config) {
       if (Config->getNumArgs() > 2) {
         const Expr *SharedMemSize = Config->getArg(2);
         if (containSizeOfType(SharedMemSize)) {
@@ -4626,8 +4838,51 @@ void KernelCallRule::runRule(
     }
     if (!LaunchKernelCall)
       return;
+    const Expr *CalleeDRE = LaunchKernelCall->getArg(0);
+    bool IsFuncTypeErased = true;
+    auto QT = CalleeDRE->getType();
+
+    if (QT->isPointerType()) {
+      QT = QT->getPointeeType();
+    }
+    if (QT->isFunctionType()) {
+      IsFuncTypeErased = false;
+    }
+
+    if (!getAddressedRef(CalleeDRE)) {
+      if (IsFuncTypeErased) {
+        DpctGlobalInfo::setCVersionCUDALaunchUsed();
+      }
+      std::string ReplStr;
+      llvm::raw_string_ostream OS(ReplStr);
+      if (IsAssigned) {
+        OS << MapNames::getCheckErrorMacroName() << "(";
+      }
+      OS << MapNames::getDpctNamespace() << "kernel_launcher::launch(";
+      size_t ArgsNum = LaunchKernelCall->getNumArgs();
+      for (size_t i = 0; i < ArgsNum; i++) {
+        if (auto Arg = LaunchKernelCall->getArg(i)) {
+          if (i == 0) {
+            if (auto E = getAddressedRef(CalleeDRE, false, nullptr)) {
+              OS << ExprAnalysis::ref(E);
+            } else {
+              OS << ExprAnalysis::ref(Arg);
+            }
+          } else {
+            OS << ", " << ExprAnalysis::ref(Arg);
+          }
+        }
+      }
+      OS << ")";
+      if (IsAssigned) {
+        OS << ")";
+      }
+      emplaceTransformation(new ReplaceStmt(LaunchKernelCall, OS.str()));
+      return;
+    }
+
     if (!IsAssigned)
-      removeTrailingSemicolon(LaunchKernelCall, Result);
+      findAndRemoveTrailingSemicolon(LaunchKernelCall, Result);
     if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall,
                                                             IsAssigned)) {
       emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true, false, ""));
@@ -4636,24 +4891,24 @@ void KernelCallRule::runRule(
 }
 
 // Find and remove the semicolon after the kernel call
-SourceLocation KernelCallRule::removeTrailingSemicolon(
-    const CallExpr *KCall,
-    const ast_matchers::MatchFinder::MatchResult &Result) {
+SourceLocation KernelCallRule::findAndRemoveTrailingSemicolon(
+    const CallExpr *KCall, const ast_matchers::MatchFinder::MatchResult &Result,
+    bool Remove) {
   const auto &SM = (*Result.Context).getSourceManager();
   auto KELoc =
       getTheLastCompleteImmediateRange(KCall->getBeginLoc(), KCall->getEndLoc())
           .second;
   auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).value();
   if (Tok.is(tok::TokenKind::semi)) {
-    emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+    if (Remove) {
+      emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+    }
     return Lexer::findNextToken(Tok.getLocation(), SM, LangOptions())
         .value()
         .getLocation();
   }
   return Tok.getLocation();
 }
-
-
 
 bool isRecursiveDeviceFuncDecl(const FunctionDecl* FD) {
   // Build call graph for FunctionDecl and look for cycles in call graph.

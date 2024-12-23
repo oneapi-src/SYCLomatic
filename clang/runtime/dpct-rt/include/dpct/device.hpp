@@ -582,6 +582,21 @@ public:
     lock.lock();
   }
 
+  std::vector<sycl::event> get_in_order_queues_last_events() {
+    std::unique_lock<mutex_type> lock(m_mutex);
+    std::vector<sycl::event> last_events;
+    std::vector<std::shared_ptr<sycl::queue>> current_queues(_queues);
+    lock.unlock();
+    for (const auto &q : current_queues) {
+      if (q->is_in_order()) {
+        last_events.push_back(q->ext_oneapi_get_last_event());
+      }
+    }
+    // Guard the destruct of current_queues to make sure the ref count is safe.
+    lock.lock();
+    return last_events;
+  }
+
   sycl::queue *create_queue(bool enable_exception_handler = false) {
 #ifdef DPCT_USM_LEVEL_NONE
     return create_out_of_order_queue(enable_exception_handler);

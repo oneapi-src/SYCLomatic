@@ -130,7 +130,7 @@ add_clang_library(DPCT
   AnalysisInfo.cpp
   RulesLang/RulesLang.cpp
   RulesLang/RulesLangGraph.cpp
-  RulesLang/RulesLangGraphInterop.cpp
+  RulesLang/RulesLangGraphicsInterop.cpp
   RulesLang/RulesLangNoneAPIAndType.cpp
   RulesLang/RulesLangAtomic.cpp
   RulesLang/RulesLangCooperativeGroups.cpp

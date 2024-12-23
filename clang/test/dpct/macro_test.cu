@@ -1332,7 +1332,7 @@ void foo38() {
   //CHECK-NEXT: sycl::nd_range<3>(sycl::range<3>(z, y, x) * sycl::range<3>(1, 1, block),
   //CHECK-NEXT:                   sycl::range<3>(1, 1, block)),
   //CHECK-NEXT: [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:   ((void *)&kernel38<T>)();
+  //CHECK-NEXT:   kernel38<T>();
   //CHECK-NEXT: });
   //CHECK-NEXT: return 0;
   //CHECK-NEXT: }());
@@ -1342,7 +1342,7 @@ void foo38() {
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(z, y, x) * sycl::range<3>(1, 1, block),
   //CHECK-NEXT:                         sycl::range<3>(1, 1, block)),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:         ((void *)&kernel38<T>)();
+  //CHECK-NEXT:         kernel38<T>();
   //CHECK-NEXT:       });
   //CHECK-NEXT:   return 0;
   //CHECK-NEXT: }();

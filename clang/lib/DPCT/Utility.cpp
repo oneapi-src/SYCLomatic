@@ -2212,19 +2212,28 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
         // and the loc is another macro expand,
         // recursively search for a more precise range.
         do {
-          auto IterSecondBeginFileEntry =
-              dpct::DpctGlobalInfo::getFileManager().getFile(
+          auto IterSecondBeginFileEntryRef =
+              dpct::DpctGlobalInfo::getFileManager().getFileRef(
                   It->second.first.first.getCanonicalPath());
-          auto IterSecondEndFileEntry =
-              dpct::DpctGlobalInfo::getFileManager().getFile(
-                  It->second.second.first.getCanonicalPath());
-          if (!IterSecondBeginFileEntry || !IterSecondEndFileEntry)
+          if (!IterSecondBeginFileEntryRef) {
+            llvm::consumeError(
+                std::move(IterSecondBeginFileEntryRef.takeError()));
             break;
+          }
+
+          auto IterSecondEndFileEntryRef =
+              dpct::DpctGlobalInfo::getFileManager().getFileRef(
+                  It->second.second.first.getCanonicalPath());
+          if (!IterSecondEndFileEntryRef) {
+            llvm::consumeError(
+                std::move(IterSecondEndFileEntryRef.takeError()));
+            break;
+          }
 
           auto IterSecondBeginFileID =
-              SM.translateFile(IterSecondBeginFileEntry.get());
+              SM.translateFile(*IterSecondBeginFileEntryRef);
           auto IterSecondEndFileID =
-              SM.translateFile(IterSecondEndFileEntry.get());
+              SM.translateFile(*IterSecondEndFileEntryRef);
           auto IterSecondBegin =
               SM.getComposedLoc(IterSecondBeginFileID, It->second.first.second);
           auto IterSecondEnd =
@@ -4998,20 +5007,56 @@ int isArgumentInitialized(
 
   return DeclsRequireInit.empty();
 }
-const DeclRefExpr *getAddressedRef(const Expr *E) {
+const Expr *getAddressedRef(const Expr *E, bool IsCheckFunctionDecl,
+                            const FunctionDecl **FuncDecl) {
   E = E->IgnoreImplicitAsWritten();
   if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
-    if (DRE->getDecl()->getKind() == Decl::Function) {
+    if (IsCheckFunctionDecl) {
+      if (auto FD = dyn_cast<FunctionDecl>(DRE->getDecl())) {
+        if (FuncDecl) {
+          *FuncDecl = FD;
+        }
+        return DRE;
+      }
+    } else {
       return DRE;
     }
+  } else if (auto ULE = dyn_cast<UnresolvedLookupExpr>(E)) {
+    if (IsCheckFunctionDecl) {
+      for (auto *D : ULE->decls()) {
+        const FunctionDecl *FD = dyn_cast<FunctionDecl>(D);
+        if (!FD) {
+          if (const FunctionTemplateDecl *FTD =
+                  dyn_cast<FunctionTemplateDecl>(D)) {
+            FD = FTD->getTemplatedDecl();
+          }
+        }
+        if (FD) {
+          if (FuncDecl) {
+            *FuncDecl = FD;
+          }
+          return ULE;
+        }
+      }
+    } else {
+      return ULE;
+    }
   } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
-    return getAddressedRef(Paren->getSubExpr());
+    return getAddressedRef(Paren->getSubExpr(), IsCheckFunctionDecl, FuncDecl);
   } else if (auto Cast = dyn_cast<CastExpr>(E)) {
-    return getAddressedRef(Cast->getSubExprAsWritten());
+    return getAddressedRef(Cast->getSubExprAsWritten(), IsCheckFunctionDecl,
+                           FuncDecl);
   } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
     if (UO->getOpcode() == UO_AddrOf) {
-      return getAddressedRef(UO->getSubExpr());
+      return getAddressedRef(UO->getSubExpr(), IsCheckFunctionDecl, FuncDecl);
     }
+  } else if (auto COC = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COC->getOperator() == clang::OO_Amp) {
+      return getAddressedRef(COC->getArg(0), IsCheckFunctionDecl, FuncDecl);
+    }
+  }
+  if (FuncDecl) {
+    *FuncDecl = nullptr;
   }
   return nullptr;
 }

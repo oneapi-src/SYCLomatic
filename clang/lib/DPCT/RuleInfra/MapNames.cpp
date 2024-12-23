@@ -257,6 +257,33 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaEventDefault",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "cudaEventDefault", "0")},
+      {"cudaExternalMemoryDedicated",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaExternalMemoryDedicated", "0")},
+      {"cudaArrayDefault",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaArrayDefault",
+                          DpctGlobalInfo::useExtBindlessImages()
+                              ? getExpNamespace() + "image_type::standard"
+                              : "cudaArrayDefault")},
+      {"cudaArrayLayered",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaArrayLayered",
+                          DpctGlobalInfo::useExtBindlessImages()
+                              ? getExpNamespace() + "image_type::array"
+                              : "cudaArrayLayered")},
+      {"cudaArrayCubemap",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaArrayCubemap",
+                          DpctGlobalInfo::useExtBindlessImages()
+                              ? getExpNamespace() + "image_type::cubemap"
+                              : "cudaArrayCubemap")},
+      {"cudaArraySurfaceLoadStore",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaArraySurfaceLoadStore",
+                          DpctGlobalInfo::useExtBindlessImages()
+                              ? getExpNamespace() + "image_type::mipmap"
+                              : "cudaArraySurfaceLoadStore")},
       //...
   };
   // Type names mapping.
@@ -836,6 +863,9 @@ void MapNames::setExplicitNamespaceMap(
            "ext::oneapi::experimental::address_access_mode")},
       {"cudaGraphicsMapFlags", std::make_shared<TypeNameRule>("int")},
       {"cudaGraphicsRegisterFlags", std::make_shared<TypeNameRule>("int")},
+      {"cudaExternalMemoryHandleType",
+       std::make_shared<TypeNameRule>(getExpNamespace() +
+                                      "external_mem_handle_type")},
       // ...
   };
   // SYCLcompat unsupport types
@@ -1454,6 +1484,23 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>("0")},
       {"cudaGraphicsRegisterFlagsTextureGather",
        std::make_shared<EnumNameRule>("0")},
+      // enum cudaExternalMemoryHandleType
+      {"cudaExternalMemoryHandleTypeOpaqueFd",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() + "external_mem_handle_type::opaque_fd"
+               : "cudaExternalMemoryHandleTypeOpaqueFd")},
+      {"cudaExternalMemoryHandleTypeOpaqueWin32",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() + "external_mem_handle_type::win32_nt_handle"
+               : "cudaExternalMemoryHandleTypeOpaqueWin32")},
+      {"cudaExternalMemoryHandleTypeD3D12Resource",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_mem_handle_type::win32_nt_dx12_resource"
+               : "cudaExternalMemoryHandleTypeD3D12Resource")},
       // ...
   };
 
