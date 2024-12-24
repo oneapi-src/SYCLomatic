@@ -1412,5 +1412,74 @@ void foo42(MyClass<float> &vecs) {
   RUN_APPEND2(vecs);
 }
 
+//CHECK: /*
+//CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated cudaMemcpy call is used in a macro/template definition and
+//CHECK-NEXT: may not be valid for all macro/template uses. Adjust the code.
+//CHECK-NEXT: */
+//CHECK-NEXT: #define MEMCOPY(ptr_d, ptr_h)                                                  \
+//CHECK-NEXT:    dpct::get_in_order_queue().memcpy(ptr_d, ptr_h, sizeof(float)).wait();
+//CHECK-NEXT: #define THIS_DEFINE_NAME_IS_TOO_BIG(ptr_d, ptr_h) MEMCOPY(ptr_d, ptr_h)
+//CHECK-NEXT: #define TOO_SMALL(ptr_d, ptr_h) MEMCOPY(ptr_d, ptr_h)
+//CHECK-NEXT: #define JUST_RIGHT(ptr_d, ptr_h) MEMCOPY(ptr_d, ptr_h)
+#define MEMCOPY(ptr_d, ptr_h) cudaMemcpy(ptr_d, ptr_h, sizeof(float), cudaMemcpyHostToDevice);
+#define THIS_DEFINE_NAME_IS_TOO_BIG(ptr_d, ptr_h) MEMCOPY(ptr_d, ptr_h)
+#define TOO_SMALL(ptr_d, ptr_h) MEMCOPY(ptr_d, ptr_h)
+#define JUST_RIGHT(ptr_d, ptr_h) MEMCOPY(ptr_d, ptr_h)
+
+void foo43() {
+  float *ptr_d = (float*) malloc (sizeof(float));
+  float *ptr_h;
+  cudaMalloc((void**)&ptr_h, sizeof(float));
+
+  //CHECK: THIS_DEFINE_NAME_IS_TOO_BIG(ptr_d, ptr_h) ;
+  //CHECK-NEXT: TOO_SMALL(ptr_d, ptr_h) ;
+  //CHECK-NEXT: JUST_RIGHT(ptr_d, ptr_h) ;
+  THIS_DEFINE_NAME_IS_TOO_BIG(ptr_d, ptr_h) ;
+  TOO_SMALL(ptr_d, ptr_h) ;
+  JUST_RIGHT(ptr_d, ptr_h) ;
+}
+
+#undef MEMCOPY
+#undef THIS_DEFINE_NAME_IS_TOO_BIG
+#undef TOO_SMALL
+#undef JUST_RIGHT
+
+//# define TODEV(A,s) A = (float*) malloc ((s) * sizeof(float)); \
+//                    for (int i = 0; i < s; i++) A[i] = 0.001; \
+//                    float *A##_d;\
+//                    cudaMalloc((void**)&A##_d,((s))*sizeof(float));\
+//                    cudaMemcpy(A##_d, A, (s)*sizeof(float), cudaMemcpyHostToDevice);
+//
+//# define FROMDEV(A,s) cudaMemcpy(A, A##_d, (s)*sizeof(float), cudaMemcpyDeviceToHost);
+//
+//# define FREE(A) free(A);\
+//                 cudaFree(A##_d)
+//
+//# define TODEV3(A) TODEV(A,d3)
+//# define TODEV2(A) TODEV(A,d2)
+//# define FROMDEV3(A) FROMDEV(A,d3)
+//# define FROMDEV2(A) FROMDEV(A,d2)
+//
+//void foo44(float *x, int size, int d3, int d2) {
+//  TODEV(x, size)
+//  FROMDEV(x, size)
+//  FREE(x);
+//  {
+//    TODEV3(x)
+//  }
+//  {
+//    TODEV2(x)
+//  }
+//  FROMDEV3(x)
+//  FROMDEV2(x)
+//}
+//
+//#undef TODEV
+//#undef FROMDEV
+//#undef FREE
+//#undef TODEV3
+//#undef TODEV2
+//#undef FROMDEV3
+//#undef FROMDEV2
 
 #endif

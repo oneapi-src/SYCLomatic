@@ -170,7 +170,7 @@
 // CUDAMEMCPY-NEXT:   cudaMemcpy(dst /*void **/, src /*const void **/, s /*size_t*/, m);
 // CUDAMEMCPY-NEXT: Is migrated to:
 // CUDAMEMCPY-NEXT:   dpct::memcpy_direction m;
-// CUDAMEMCPY-NEXT:   dpct::get_in_order_queue().memcpy(dst /*void **/, src /*const void **/, s).wait();
+// CUDAMEMCPY-NEXT:   dpct::get_in_order_queue().memcpy(dst, src, s).wait();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMemcpy2D | FileCheck %s -check-prefix=CUDAMEMCPY2D
 // CUDAMEMCPY2D: CUDA API:

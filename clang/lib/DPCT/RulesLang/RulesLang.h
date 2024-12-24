@@ -552,6 +552,8 @@ public:
   static std::string
   getMemoryHelperFunctionName(StringRef RawName,
                               bool ExperimentalInSYCLCompat = false);
+  static std::pair<std::string, std::string>
+  getMemAPIVarNameAndArrayOffset(const Expr *E);
 
 private:
   void mallocMigration(const ast_matchers::MatchFinder::MatchResult &Result,
@@ -604,7 +606,6 @@ private:
                    const ast_matchers::MatchFinder::MatchResult &Result);
   void handleDirection(const CallExpr *C, unsigned i);
   void replaceMemAPIArg(const Expr *E,
-                        const ast_matchers::MatchFinder::MatchResult &Result,
                         const std::string &StreamStr,
                         std::string OffsetFromBaseStr = "");
   const ArraySubscriptExpr *getArraySubscriptExpr(const Expr *E);
