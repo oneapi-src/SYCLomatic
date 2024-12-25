@@ -2144,6 +2144,9 @@ SourceLocation getLocInRange(SourceLocation Loc, SourceRange Range) {
 std::pair<SourceLocation, SourceLocation>
 getRangeInRange(const Stmt *E, SourceLocation RangeBegin,
                 SourceLocation RangeEnd, bool IncludeLastToken) {
+  E->dump();
+  std::cout << "RangeBegin:" << RangeBegin.printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
+  std::cout << "RangeEnd:" << RangeEnd.printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
   return getRangeInRange(E->getSourceRange(), RangeBegin, RangeEnd,
                          IncludeLastToken);
 }
@@ -2191,6 +2194,7 @@ void traversePossibleLocations(const SourceLocation &SL,
 std::pair<SourceLocation, SourceLocation>
 getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
                 SourceLocation SearchRangeEnd, bool IncludeLastToken) {
+  std::cout << "#############" << std::endl;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Context = dpct::DpctGlobalInfo::getContext();
   Token Tok;
