@@ -10,7 +10,7 @@
 template<typename T> __global__ void kernel(cudaSurfaceObject_t surf, T data) {
   int i;
   float j, k, l, z, m;
-  // CHECK: sycl::ext::oneapi::experimental::write_image(surf, int(i) / sizeof(data), data);
+  // CHECK: sycl::ext::oneapi::experimental::write_image(surf, int(i / sizeof(data)), data);
   surf1Dwrite(data, surf, i);
   // CHECK: sycl::ext::oneapi::experimental::write_image(surf, sycl::int2(i / sizeof(data), j), data);
   surf2Dwrite(data, surf, i, j);
