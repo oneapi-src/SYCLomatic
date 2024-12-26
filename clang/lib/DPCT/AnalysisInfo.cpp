@@ -1570,13 +1570,7 @@ std::shared_ptr<DeviceFunctionDecl> DpctGlobalInfo::insertDeviceFunctionDecl(
       ->insertNode<ExplicitInstantiationDecl, DeviceFunctionDecl>(
           LocInfo.second, FTL, Attrs, Specialization, TAList);
 }
-std::shared_ptr<DeviceFunctionDecl>
-DpctGlobalInfo::insertDeviceFunctionDeclInModule(const FunctionDecl *FD) {
-  auto LocInfo = getLocInfo(FD);
-  return insertFile(LocInfo.first)
-      ->insertNode<DeviceFunctionDeclInModule, DeviceFunctionDecl>(
-          LocInfo.second, FD);
-}
+
 void DpctGlobalInfo::buildKernelInfo() {
   for (auto &File : FileMap)
     File.second->buildKernelInfo();
@@ -2491,6 +2485,7 @@ unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 bool DpctGlobalInfo::AnalysisModeFlag = false;
 bool DpctGlobalInfo::UseSYCLCompatFlag = false;
+bool DpctGlobalInfo::CVersionCUDALaunchUsedFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
@@ -4823,6 +4818,9 @@ DeviceFunctionDecl::DeviceFunctionDecl(
       FD->getTypeSourceInfo()->getTypeLoc().getAs<FunctionTypeLoc>(),
       FD->hasAttrs() ? FD->getAttrs() : NullAttrs);
   buildTextureObjectParamsInfo(FD->parameters());
+  if (FD->hasAttr<CUDAGlobalAttr>()) {
+    collectInfoForWrapper(FD);
+  }
 }
 DeviceFunctionDecl::DeviceFunctionDecl(
     unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
@@ -4838,6 +4836,9 @@ DeviceFunctionDecl::DeviceFunctionDecl(
 
   buildReplaceLocInfo(FTL, Attrs);
   buildTextureObjectParamsInfo(FTL.getParams());
+  if (Specialization->hasAttr<CUDAGlobalAttr>()) {
+    collectInfoForWrapper(Specialization);
+  }
 }
 std::shared_ptr<DeviceFunctionInfo>
 DeviceFunctionDecl::LinkUnresolved(const UnresolvedLookupExpr *ULE,
@@ -4937,6 +4938,9 @@ void DeviceFunctionDecl::emplaceReplacement() {
       Obj->addParamDeclReplacement();
     }
   }
+  if (FuncInfo->getDeviceFunctionInfoForWrapper()) {
+    insertWrapper();
+  }
 }
 void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
                                   std::shared_ptr<DeviceFunctionInfo> &Info) {
@@ -4970,11 +4974,9 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
     return;
   }
   std::shared_ptr<DeviceFunctionDecl> D;
-  if (isModuleFunction(FD)) {
-    D = DpctGlobalInfo::getInstance().insertDeviceFunctionDeclInModule(FD);
-  } else {
-    D = DpctGlobalInfo::getInstance().insertDeviceFunctionDecl(FD);
-  }
+
+  D = DpctGlobalInfo::getInstance().insertDeviceFunctionDecl(FD);
+
   if (Info) {
     if (auto FuncInfo = D->getFuncInfo())
       Info->merge(FuncInfo);
@@ -4983,6 +4985,11 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
     Info = FuncInfo;
   else
     List.push_back(D);
+
+  if (Info && isModuleFunction(FD) && FD->hasAttr<CUDAGlobalAttr>()) {
+    Info->collectInfoForWrapper(FD);
+    Info->setModuleUsed();
+  }
 }
 void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
                                   std::shared_ptr<DeviceFunctionInfo> &Info) {
@@ -5177,84 +5184,173 @@ public:
                          Result.length() - Indent.length() - NL.length());
   }
 };
-///// class DeviceFunctionDeclInModule /////
-void DeviceFunctionDeclInModule::insertWrapper() {
+
+void DeviceFunctionDecl::insertWrapper() {
   auto NL = std::string(getNL());
   std::string WrapperStr = "";
   llvm::raw_string_ostream OS(WrapperStr);
   KernelPrinter Printer(NL, "", OS);
   Printer.newLine();
   Printer.newLine();
-  Printer.line("extern \"C\" {");
+  auto InfoForWrapper = FuncInfo->getDeviceFunctionInfoForWrapper();
+  bool ModuleUsed = FuncInfo->isModuleUsed();
+  auto &TParamsInfo = InfoForWrapper->TemplateParametersInfo;
+  auto &ParamsInfo = InfoForWrapper->ParametersInfo;
+  std::string FuncName = FuncInfo->getFunctionName();
+  if (ModuleUsed) {
+    Printer.line("extern \"C\" {");
+  }
   {
     auto FunctionBlock = Printer.block();
     Printer.indent();
     requestFeature(HelperFeatureEnum::device_ext);
-    Printer << "DPCT_EXPORT void " << FuncName << "_wrapper("
-            << MapNames::getClNamespace() << "queue &queue, const "
-            << MapNames::getClNamespace()
-            << "nd_range<3> &nr, unsigned int localMemSize, void "
-               "**kernelParams, void **extra)";
-    if (HasBody) {
-      auto for_each_parameter = [&](auto F) {
-        auto it = getParametersInfo().begin();
-        for (int i = 0; it != getParametersInfo().end(); ++it, ++i) {
-          F(i, it->second);
+    // 1.Generate wrapper signature
+    if (ModuleUsed) {
+      Printer << "DPCT_EXPORT void " << FuncName << "_wrapper("
+              << MapNames::getClNamespace() << "queue &queue, const "
+              << MapNames::getClNamespace()
+              << "nd_range<3> &nr, unsigned int localMemSize, void "
+                 "**kernelParams, void **extra)";
+    } else {
+      Printer.line("// Auto generated SYCL kernel wrapper used to migration "
+                   "kernel function pointer.");
+      if (!TParamsInfo.empty()) {
+        Printer << "template<";
+        for (size_t i = 0; i < TParamsInfo.size(); i++) {
+          Printer << (i == 0 ? "" : " ,") << TParamsInfo[i].first << " "
+                  << TParamsInfo[i].second
+                  << TemplateParameterDefaultValueMap[i];
         }
-      };
-
-      Printer << " {";
-      {
-        auto BodyBlock = Printer.block();
+        Printer << ">";
         Printer.newLine();
-        auto DefaultParamNum = ParamsNum - NonDefaultParamNum;
-        Printer.line(llvm::formatv(
-            "// {0} non-default parameters, {1} default parameters",
-            NonDefaultParamNum, DefaultParamNum));
-        Printer.line(llvm::formatv("{0}args_selector<{1}, {2}, decltype({3})> "
-                                   "selector(kernelParams, extra);",
-                                   MapNames::getDpctNamespace(),
-                                   NonDefaultParamNum, DefaultParamNum,
-                                   FuncName));
-        for_each_parameter([&](auto &&i, auto &&p) {
-          Printer.line("auto& " + p + " = selector.get<" + std::to_string(i) +
-                       ">();");
-        });
-
-        Kernel->buildInfo();
-        Printer.line(Kernel->getReplacement());
       }
-      Printer.line("}");
+      Printer << "void " << FuncName << "_wrapper(";
+      for (size_t i = 0; i < ParamsInfo.size(); i++) {
+        Printer << (i == 0 ? "" : " ,") << ParamsInfo[i].first << " "
+                << ParamsInfo[i].second << ParameterDefaultValueMap[i];
+      }
+      Printer << ")";
+    }
+    // 2.Generate wrapper body
+    if (HasBody) {
+      if (ModuleUsed) {
+        auto for_each_parameter = [&](auto F) {
+          auto it = ParamsInfo.begin();
+          for (int i = 0; it != ParamsInfo.end(); ++it, ++i) {
+            F(i, it->second);
+          }
+        };
+        Printer << " {";
+        {
+          auto BodyBlock = Printer.block();
+          Printer.newLine();
+          auto DefaultParamNum = ParamsNum - NonDefaultParamNum;
+          Printer.line(llvm::formatv(
+              "// {0} non-default parameters, {1} default parameters",
+              NonDefaultParamNum, DefaultParamNum));
+          Printer.line(
+              llvm::formatv("{0}args_selector<{1}, {2}, decltype({3})> "
+                            "selector(kernelParams, extra);",
+                            MapNames::getDpctNamespace(), NonDefaultParamNum,
+                            DefaultParamNum, FuncName));
+          for_each_parameter([&](auto &&i, auto &&p) {
+            Printer.line("auto& " + p + " = selector.get<" + std::to_string(i) +
+                         ">();");
+          });
+          (InfoForWrapper->KernelForWrapper)->buildInfo();
+          Printer.line((InfoForWrapper->KernelForWrapper)->getReplacement());
+        }
+        Printer.line("}");
+      } else {
+        Printer << " {";
+        {
+          auto BodyBlock = Printer.block();
+          Printer.newLine();
+          Printer.line(MapNames::getClNamespace() + "queue queue = *" +
+                       MapNames::getDpctNamespace() + "kernel_launcher::_que;");
+          Printer.line(
+              "unsigned int localMemSize = " + MapNames::getDpctNamespace() +
+              "kernel_launcher::_local_mem_size;");
+          Printer.line(MapNames::getClNamespace() + "nd_range<3> nr = " +
+                       MapNames::getDpctNamespace() + "kernel_launcher::_nr;");
+          Printer.newLine();
+          (InfoForWrapper->KernelForWrapper)->buildInfo();
+          Printer.line((InfoForWrapper->KernelForWrapper)->getReplacement());
+        }
+        Printer.line("}");
+      }
     } else {
       Printer << ";";
       Printer.newLine();
     }
   }
-
-  Printer << "}";
+  if (ModuleUsed) {
+    Printer << "}";
+  }
 
   auto Repl = std::make_shared<ExtReplacement>(FilePath, DeclEnd, 0, WrapperStr,
                                                nullptr);
   Repl->setBlockLevelFormatFlag();
   DpctGlobalInfo::getInstance().addReplacement(Repl);
 }
-void DeviceFunctionDeclInModule::buildParameterInfo(const FunctionDecl *FD) {
-  for (auto It = FD->param_begin(); It != FD->param_end(); It++) {
-    ParametersInfo.push_back(std::pair<std::string, std::string>(
-        (*It)->getOriginalType().getAsString(), (*It)->getNameAsString()));
+void DeviceFunctionDecl::collectInfoForWrapper(const FunctionDecl *FD) {
+  if ((FD->getTemplatedKind() != FunctionDecl::TemplatedKind::TK_NonTemplate) &&
+      (FD->getTemplatedKind() !=
+       FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
+    return;
   }
-}
-void DeviceFunctionDeclInModule::buildWrapperInfo(const FunctionDecl *FD) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
   const FunctionDecl *Def;
   HasBody = FD->hasBody(Def);
   if (HasBody && FD != Def) {
     HasBody = false;
   }
 
-  FuncName = FD->getNameAsString();
+  auto analyzeTypeLoc = [](const TypeLoc &TL) {
+    ExprAnalysis EA;
+    EA.analyze(TL);
+    return EA.getReplacedString();
+  };
+
+  if (auto FTD = FD->getDescribedFunctionTemplate()) {
+    if (auto TemplateParmsList = FTD->getTemplateParameters()) {
+      for (size_t i = 0; i < TemplateParmsList->size(); ++i) {
+        auto TemplateParm = TemplateParmsList->getParam(i);
+        if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
+          if (TTPD->hasDefaultArgument() &&
+              !TTPD->defaultArgumentWasInherited()) {
+            TemplateParameterDefaultValueMap[i] =
+                " = " + analyzeTypeLoc(TTPD->getDefaultArgument()
+                                           .getTypeSourceInfo()
+                                           ->getTypeLoc());
+          }
+        } else if (auto NTTPD =
+                       dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
+          if (NTTPD->hasDefaultArgument() &&
+              !NTTPD->defaultArgumentWasInherited()) {
+            TemplateParameterDefaultValueMap[i] =
+                " = " + ExprAnalysis::ref(
+                            NTTPD->getDefaultArgument().getSourceExpression());
+          }
+        }
+      }
+    }
+  }
+  for (size_t i = 0; i < FD->param_size(); i++) {
+    auto PDecl = FD->getParamDecl(i);
+    if (!PDecl->hasInheritedDefaultArg()) {
+      if (PDecl->hasUninstantiatedDefaultArg()) {
+        ParameterDefaultValueMap[i] =
+            " = " + ExprAnalysis::ref(PDecl->getUninstantiatedDefaultArg());
+      } else if (PDecl->hasDefaultArg()) {
+        ParameterDefaultValueMap[i] =
+            " = " + ExprAnalysis::ref(PDecl->getDefaultArg());
+      }
+    }
+  }
+
   // FD has relatively large range, which is likely to be straddle,
   // getDefinitionRange may not work as good as getExpansionRange
+  auto &SM = DpctGlobalInfo::getSourceManager();
   auto EndLoc =
       SM.getSpellingLoc(SM.getExpansionRange(FD->getEndLoc()).getEnd());
   auto LastTokenLen = Lexer::MeasureTokenLength(
@@ -5267,30 +5363,7 @@ void DeviceFunctionDeclInModule::buildWrapperInfo(const FunctionDecl *FD) {
   }
   DeclEnd = SM.getFileOffset(EndLoc);
 }
-void DeviceFunctionDeclInModule::buildCallInfo(const FunctionDecl *FD) {
-  Kernel = KernelCallExpr::buildForWrapper(FilePath, FD, getFuncInfo(FD));
-}
-DeviceFunctionDeclInModule::DeviceFunctionDeclInModule(
-    unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
-    const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
-    const FunctionDecl *FD)
-    : DeviceFunctionDecl(Offset, FilePathIn, FTL, Attrs, FD) {
-  buildParameterInfo(FD);
-  buildWrapperInfo(FD);
-  buildCallInfo(FD);
-}
-DeviceFunctionDeclInModule::DeviceFunctionDeclInModule(
-    unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
-    const FunctionDecl *FD)
-    : DeviceFunctionDecl(Offset, FilePathIn, FD) {
-  buildParameterInfo(FD);
-  buildWrapperInfo(FD);
-  buildCallInfo(FD);
-}
-void DeviceFunctionDeclInModule::emplaceReplacement() {
-  DeviceFunctionDecl::emplaceReplacement();
-  insertWrapper();
-}
+
 ///// class DeviceFunctionInfo /////
 DeviceFunctionInfo::DeviceFunctionInfo(size_t ParamsNum,
                                        size_t NonDefaultParamNum,
@@ -5301,6 +5374,63 @@ DeviceFunctionInfo::DeviceFunctionInfo(size_t ParamsNum,
       FunctionName(FunctionName), IsLambda(false) {
   ParametersProps.resize(ParamsNum);
 }
+
+void DeviceFunctionInfo::collectInfoForWrapper(const FunctionDecl *FD) {
+  if (!DFInfoForWrapper) {
+    DFInfoForWrapper = std::make_shared<DeviceFunctionInfoForWrapper>();
+    auto LocInfo = DpctGlobalInfo::getLocInfo(FD->getBeginLoc());
+    auto &TemplateParametersInfo = DFInfoForWrapper->TemplateParametersInfo;
+    auto &ParametersInfo = DFInfoForWrapper->ParametersInfo;
+    auto analyzeTypeLoc = [](const TypeLoc &TL) {
+      ExprAnalysis EA;
+      EA.analyze(TL);
+      return EA.getReplacedString();
+    };
+
+    auto &Context = dpct::DpctGlobalInfo::getContext();
+    auto Parents = Context.getParents(*FD);
+    if (Parents.size()) {
+      if (auto FTD = Parents[0].get<FunctionTemplateDecl>()) {
+        FD = FTD->getTemplatedDecl();
+        if (auto TemplateParmsList = FTD->getTemplateParameters()) {
+          for (size_t i = 0; i < TemplateParmsList->size(); ++i) {
+            auto TemplateParm = TemplateParmsList->getParam(i);
+            if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
+              TemplateParametersInfo.push_back(
+                  {std::string(TTPD->wasDeclaredWithTypename() ? "typename"
+                                                               : "class") +
+                       std::string(TTPD->isParameterPack() ? "... " : ""),
+                   TTPD->getNameAsString()});
+            } else if (auto NTTPD =
+                           dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
+              std::string DefVal;
+              TemplateParametersInfo.push_back(
+                  {analyzeTypeLoc(NTTPD->getTypeSourceInfo()->getTypeLoc()),
+                   NTTPD->getNameAsString()});
+            }
+          }
+        }
+      }
+    }
+    DFInfoForWrapper->KernelForWrapper =
+        KernelCallExpr::buildForWrapper(LocInfo.first, FD);
+    std::string TemplateArgsStr;
+    for (size_t i = 0; i < TemplateParametersInfo.size(); i++) {
+      TemplateArgsStr +=
+          (i == 0 ? "" : ", ") + TemplateParametersInfo[i].second;
+    }
+    if (!TemplateArgsStr.empty()) {
+      DFInfoForWrapper->KernelForWrapper->setTemplateArgsStrForWrapper(
+          TemplateArgsStr);
+    }
+    for (auto It = FD->param_begin(); It != FD->param_end(); It++) {
+      ParametersInfo.push_back(
+          {DpctGlobalInfo::getReplacedTypeName((*It)->getType()),
+           (*It)->getNameAsString()});
+    }
+  }
+}
+
 std::shared_ptr<CallFunctionExpr>
 DeviceFunctionInfo::findCallee(const CallExpr *C) {
   auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
@@ -5718,6 +5848,13 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   }
 
   printStreamBase(Printer);
+  if (isDefaultStream()) {
+    SubmitStmts.DefaultStreamFlag = true;
+  }
+  if (DpctGlobalInfo::useExpInOrderQueueEvents() &&
+      (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)) {
+    SubmitStmts.ImplicitSyncFlag = true;
+  }
   if (SubmitStmts.empty()) {
     printParallelFor(Printer, false);
   } else {
@@ -5741,11 +5878,15 @@ void KernelCallExpr::printSubmitLambda(KernelPrinter &Printer) {
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   std::string TemplateArgsStr;
   if (DpctGlobalInfo::isSyclNamedLambda() && hasTemplateArgs()) {
-    bool IsNeedWarning = false;
-    TemplateArgsStr = getTemplateArguments(IsNeedWarning, false, true);
-    if (!TemplateArgsStr.empty() && IsNeedWarning) {
-      printWarningMessage(Printer, Diagnostics::UNDEDUCED_TYPE,
-                          "dpct_kernel_name");
+    if (IsForWrapper) {
+      TemplateArgsStr = TemplateArgsStrForWrapper;
+    } else {
+      bool IsNeedWarning = false;
+      TemplateArgsStr = getTemplateArguments(IsNeedWarning, false, true);
+      if (!TemplateArgsStr.empty() && IsNeedWarning) {
+        printWarningMessage(Printer, Diagnostics::UNDEDUCED_TYPE,
+                            "dpct_kernel_name");
+      }
     }
   }
   if (IsInSubmit) {
@@ -5859,7 +6000,11 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
     Printer.line(S.StmtStr);
   }
   std::string TemplateArgsStr;
-  if (hasWrittenTemplateArgs()) {
+  if (IsForWrapper) {
+    if (!TemplateArgsStrForWrapper.empty()) {
+      TemplateArgsStr = "<" + TemplateArgsStrForWrapper + ">";
+    }
+  } else if (hasWrittenTemplateArgs()) {
     bool IsNeedWarning = false;
     TemplateArgsStr =
         buildString("<", getTemplateArguments(IsNeedWarning), ">");
@@ -6027,10 +6172,9 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
                              CE->getArg(5)},
       CE);
   Kernel->buildNeedBracesInfo(CE);
-  if (auto Callee = getAddressedRef(CE->getArg(0))) {
+  const FunctionDecl *FD = nullptr;
+  if (auto Callee = getAddressedRef(CE->getArg(0), true, &FD)) {
     Kernel->buildCalleeInfo(Callee, std::nullopt);
-    auto FD =
-        dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee());
     auto FuncInfo = Kernel->getFuncInfo();
     if (FD && FuncInfo) {
       auto ArgsArray = ExprAnalysis::ref(CE->getArg(3));
@@ -6058,13 +6202,13 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
 }
 std::shared_ptr<KernelCallExpr>
 KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath,
-                                const FunctionDecl *FD,
-                                std::shared_ptr<DeviceFunctionInfo> FuncInfo) {
+                                const FunctionDecl *FD) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto Kernel =
       std::shared_ptr<KernelCallExpr>(new KernelCallExpr(0, FilePath));
+  Kernel->IsForWrapper = true;
   Kernel->Name = FD->getNameAsString();
-  Kernel->setFuncInfo(FuncInfo);
+  Kernel->setFuncInfo(DeviceFunctionDecl::LinkRedecls(FD));
   Kernel->ExecutionConfig.Config[0] = "";
   Kernel->ExecutionConfig.Config[1] = "";
   Kernel->ExecutionConfig.Config[2] = "localMemSize";
@@ -6074,6 +6218,7 @@ KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath,
   Kernel->ExecutionConfig.IsQueuePtr = false;
   Kernel->NeedBraces = false;
   Kernel->getFuncInfo()->getVarMap().Dim = 3;
+  Kernel->resizeTextureObjectList(FD->getNumParams());
   for (auto &Parm : FD->parameters()) {
     Kernel->ArgsInfo.emplace_back(Parm, Kernel.get());
   }
@@ -6516,10 +6661,20 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
   printList(Printer, NdRangeList,
             "ranges to define ND iteration space for the kernel");
   printList(Printer, CommandGroupList, "helper variables defined");
+  if (ImplicitSyncFlag) {
+    if (DefaultStreamFlag) {
+      Printer.line("cgh.depends_on(dpct::get_current_device().get_in_order_"
+                   "queues_last_events());");
+    } else {
+      Printer.line("cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_"
+                   "last_event());");
+    }
+    Printer.newLine();
+  }
   return Printer;
 }
 bool KernelCallExpr::SubmitStmtsList::empty() const noexcept {
-  return CommandGroupList.empty() && NdRangeList.empty() &&
+  return !ImplicitSyncFlag && CommandGroupList.empty() && NdRangeList.empty() &&
          AccessorList.empty() && PtrList.empty() && MemoryList.empty() &&
          RangeList.empty() && TextureList.empty() && SamplerList.empty() &&
          StreamList.empty() && SyncList.empty();
@@ -6886,7 +7041,7 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
   case Type::ConstantArray: {
     auto ArgConstArray = ARG_TYPE_CAST(ConstantArrayType);
     auto ParmConstArray = PARM_TYPE_CAST(ConstantArrayType);
-    if (ArgConstArray &&
+    if (ArgConstArray && ParmConstArray &&
         ArgConstArray->getSize() == ParmConstArray->getSize()) {
       deduceTemplateArgumentFromArrayElement(TAIList, ParmType, ArgType, TL);
     }

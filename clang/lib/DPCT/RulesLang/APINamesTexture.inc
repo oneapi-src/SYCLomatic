@@ -376,8 +376,8 @@ CONDITIONAL_FACTORY_ENTRY(
                        CALL(MapNames::getClNamespace() +
                                 "ext::oneapi::experimental::write_image",
                             ARG(1),
-                            BO(BinaryOperatorKind::BO_Div, CALL("int", ARG(2)),
-                               CALL("sizeof", ARG(0))),
+                            CALL("int", BO(BinaryOperatorKind::BO_Div, ARG(2),
+                               CALL("sizeof", ARG(0)))),
                             ARG(0))),
     UNSUPPORT_FACTORY_ENTRY("surf1Dwrite",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,

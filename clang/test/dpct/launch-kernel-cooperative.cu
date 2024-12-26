@@ -78,17 +78,10 @@ int main() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   cudaLaunchCooperativeKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
-
+  // CHECK: void *kernel_func = (void *)dpct::wrapper_register(&kernel_wrapper).get();
   void *kernel_func = (void *)&kernel;
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1123:{{[0-9]+}}: The kernel function pointer cannot be used in the device code. You need to call the kernel function with the correct argument(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may also be required.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: q_ct1.parallel_for(
-  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)), 
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:     kernel_func();
-  // CHECK-NEXT:   });
+  // CHECK: dpct::kernel_launcher::launch(kernel_func, dpct::dim3(16), dpct::dim3(16), args, 0, 0);
   cudaLaunchCooperativeKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);

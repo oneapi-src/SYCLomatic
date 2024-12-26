@@ -607,8 +607,8 @@ int migratePythonScript(const clang::tooling::UnifiedPath &InRoot,
 }
 
 // print APIMapping of Query
-int showAPIMapping(std::string SrcAPI, std::string Option,
-                   RefactoringTool &Tool, ReplTy &ReplSYCL) {
+int showAPIMapping(StringRef SrcAPI, StringRef Option, RefactoringTool &Tool,
+                   ReplTy &ReplSYCL) {
   llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN << SrcAPI
                << llvm::raw_ostream::RESET;
   DiagnosticsEngine Diagnostics(
@@ -968,6 +968,8 @@ int runDPCT(int argc, const char **argv) {
             Experimentals.addValue(ExperimentalFeatures::Exp_LogicalGroup);
           else if (Option.ends_with("root-group"))
             Experimentals.addValue(ExperimentalFeatures::Exp_RootGroup);
+          else if (Option.ends_with("virtual_mem"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_VirtualMemory);
           else if (Option.ends_with("masked-sub-group-operation"))
             Experimentals.addValue(
                 ExperimentalFeatures::Exp_MaskedSubGroupFunction);

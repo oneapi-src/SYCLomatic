@@ -235,6 +235,14 @@ MapNamesLang::MapTy TextureRule::ResourceTypeNames{
     {"format", "channel_type"},
     {"numChannels", "channel_num"}};
 
+// External memory handle descs fields mapping
+MapNamesLang::MapTy GraphicsInteropRule::ExtMemHandleDescNames{
+    {"fd", "fd_handle"},        {"handle", "win32_handle"},
+    {"name", "win32_obj_name"}, {"size", "res_size"},
+    {"type", "handle_type"},    {"flags", "flags"},
+    {"offset", "mem_offset"},   {"numLevels", "num_levels"},
+    {"extent", "size"},         {"formatDesc", "image_channel"}};
+
 const MapNamesLang::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data_ptr"}, {"xsize", "x"}, {"ysize", "y"}};
 const MapNamesLang::MapTy MemoryDataTypeRule::ExtentMemberNames{

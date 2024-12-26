@@ -351,11 +351,7 @@
 // CUDALAUNCHKERNEL-NEXT:   cudaLaunchKernel(f /*cudaError_t*/, gridDim /*dim3*/, blockDim /*dim3*/,
 // CUDALAUNCHKERNEL-NEXT:                    args /*void ***/, sharedMem /*size_t*/, s /*cudaStream_t*/);
 // CUDALAUNCHKERNEL-NEXT: Is migrated to:
-// CUDALAUNCHKERNEL-NEXT:   s->parallel_for(
-// CUDALAUNCHKERNEL-NEXT:     sycl::nd_range<3>(gridDim * blockDim, blockDim),
-// CUDALAUNCHKERNEL-NEXT:     [=](sycl::nd_item<3> item_ct1) {
-// CUDALAUNCHKERNEL-NEXT:       f();
-// CUDALAUNCHKERNEL-NEXT:     });
+// CUDALAUNCHKERNEL-NEXT:   dpct::kernel_launcher::launch(f, gridDim, blockDim, args, sharedMem, s);
 
 /// Occupancy
 

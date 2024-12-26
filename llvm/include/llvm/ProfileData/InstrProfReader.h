@@ -386,7 +386,7 @@ public:
       const InstrProfCorrelator *Correlator,
       const object::BuildIDFetcher *BIDFetcher,
       const InstrProfCorrelator::ProfCorrelatorKind BIDFetcherCorrelatorKind,
-      std::function<void(Error)> Warn)
+      const std::function<void(Error)> &Warn)
       : DataBuffer(std::move(DataBuffer)),
         Correlator(dyn_cast_or_null<const InstrProfCorrelatorImpl<IntPtrT>>(
             Correlator)),

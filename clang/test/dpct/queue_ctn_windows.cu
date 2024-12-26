@@ -76,8 +76,8 @@ void bar6() {
 void foo1() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-  // CHECK: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE );
-  // CHECK-NEXT: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
+  // CHECK: q_ct1.memcpy(d_A, h_A, sizeof(double)*SIZE*SIZE);
+  // CHECK-NEXT: q_ct1.memcpy(d_A, h_A, sizeof(double)*SIZE*SIZE).wait();
   // CHECK-NEXT: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
@@ -117,7 +117,7 @@ void foo2() {
 void foo3() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-  // CHECK: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
+  // CHECK: q_ct1.memcpy(d_A, h_A, sizeof(double)*SIZE*SIZE).wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   cudaMemset(d_A, 23, size);
@@ -126,7 +126,7 @@ void foo3() {
 void foo4() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-  // CHECK: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
+  // CHECK: q_ct1.memcpy(d_A, h_A, sizeof(double)*SIZE*SIZE).wait();
   // CHECK-NEXT: bar();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
@@ -137,9 +137,9 @@ void foo4() {
 void foo5() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-  // CHECK: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE );
-  // CHECK-NEXT: int Err = DPCT_CHECK_ERROR(q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ));
-  // CHECK-NEXT: Err = DPCT_CHECK_ERROR(q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait());
+  // CHECK: q_ct1.memcpy(d_A, h_A, sizeof(double)*SIZE*SIZE);
+  // CHECK-NEXT: int Err = DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, sizeof(double)*SIZE*SIZE));
+  // CHECK-NEXT: Err = DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, sizeof(double)*SIZE*SIZE).wait());
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   int Err = cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   Err = cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
@@ -150,9 +150,9 @@ void foo5() {
 void foo6() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-  // CHECK: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE );
+  // CHECK: q_ct1.memcpy(d_A, h_A, sizeof(double)*SIZE*SIZE);
   // CHECK-NEXT: // call in macro
-  // CHECK-NEXT: CUDA_CALL(q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait());
+  // CHECK-NEXT: CUDA_CALL(q_ct1.memcpy(d_A, h_A, sizeof(double)*SIZE*SIZE).wait());
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   // call in macro
   CUDA_CALL(cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost ));

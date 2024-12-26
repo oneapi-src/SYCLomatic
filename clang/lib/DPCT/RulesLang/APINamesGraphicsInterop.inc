@@ -103,4 +103,45 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
         "cudaGraphicsUnregisterResource", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("cudaGraphicsUnregisterResource"),
         ARG("--use-experimental-features=bindless_images"))))
+
+// External Resource APIs
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("cudaImportExternalMemory",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::import_external_memory",
+                                ARG(0), ARG(1))),
+    UNSUPPORT_FACTORY_ENTRY("cudaImportExternalMemory", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaImportExternalMemory"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaExternalMemoryGetMappedMipmappedArray", DEREF(0),
+        NEW(MapNames::getDpctNamespace() + "experimental::image_mem_wrapper",
+            ARG(1), ARG(2)))),
+    UNSUPPORT_FACTORY_ENTRY("cudaExternalMemoryGetMappedMipmappedArray", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaExternalMemoryGetMappedMipmappedArray"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaExternalMemoryGetMappedBuffer", DEREF(0),
+        CALL(MapNames::getClNamespace() + "ext::oneapi::experimental::map_external_linear_memory",
+            ARG(1), MEMBER_CALL(ARG(2), true, "get_res_size"), MEMBER_CALL(ARG(2), true, "get_mem_offset"), QUEUESTR))),
+    UNSUPPORT_FACTORY_ENTRY("cudaExternalMemoryGetMappedBuffer", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaExternalMemoryGetMappedBuffer"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("cudaDestroyExternalMemory",
+                        CALL(MapNames::getClNamespace() +
+                                 "ext::oneapi::experimental::release_external_memory",
+                            ARG(0), QUEUESTR)),
+    UNSUPPORT_FACTORY_ENTRY("cudaDestroyExternalMemory", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaDestroyExternalMemory"),
+                            ARG("--use-experimental-features=bindless_images")))
 // clang-format on

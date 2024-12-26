@@ -2913,7 +2913,11 @@ bool Driver::HandleImmediateArgs(Compilation &C) {
     // FIXME: For some more esoteric targets the default toolchain is not the
     //        correct one.
     C.getArgsForToolChain(&TC, Triple.getArchName(), Action::OFK_None);
+#ifdef SYCLomatic_CUSTOMIZATION
+    RegisterEffectiveTriple TripleRAII(TC, std::move(Triple));
+#else
     RegisterEffectiveTriple TripleRAII(TC, Triple);
+#endif
     switch (RLT) {
     case ToolChain::RLT_CompilerRT:
       llvm::outs() << TC.getCompilerRT(C.getArgs(), "builtins") << "\n";
@@ -6115,7 +6119,11 @@ class OffloadingActionBuilder final {
           auto ProvidedPath =
               Args.getLastArgValue(options::OPT_fsycl_libspirv_path_EQ).str();
           if (llvm::sys::fs::exists(ProvidedPath))
+#ifdef SYCLomatic_CUSTOMIZATION
+            LibSpirvFile = std::move(ProvidedPath);
+#else
             LibSpirvFile = ProvidedPath;
+#endif
         } else {
           SmallVector<StringRef, 2> LibraryPaths;
 

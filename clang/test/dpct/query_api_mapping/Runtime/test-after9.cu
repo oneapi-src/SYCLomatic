@@ -16,8 +16,4 @@
 // CUDALAUNCHCOOPERATIVEKERNEL-NEXT:                               blockDim /*dim3*/, args /*void ***/,
 // CUDALAUNCHCOOPERATIVEKERNEL-NEXT:                               sharedMem /*size_t*/, s /*cudaStream_t*/);
 // CUDALAUNCHCOOPERATIVEKERNEL-NEXT: Is migrated to:
-// CUDALAUNCHCOOPERATIVEKERNEL-NEXT:   s->parallel_for(
-// CUDALAUNCHCOOPERATIVEKERNEL-NEXT:     sycl::nd_range<3>(gridDim * blockDim, blockDim),
-// CUDALAUNCHCOOPERATIVEKERNEL-NEXT:     [=](sycl::nd_item<3> item_ct1) {
-// CUDALAUNCHCOOPERATIVEKERNEL-NEXT:       f();
-// CUDALAUNCHCOOPERATIVEKERNEL-NEXT:     });
+// CUDALAUNCHCOOPERATIVEKERNEL-NEXT:   dpct::kernel_launcher::launch(f, gridDim, blockDim, args, sharedMem, s);

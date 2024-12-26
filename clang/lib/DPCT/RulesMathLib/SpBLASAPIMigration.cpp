@@ -227,7 +227,8 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       };
     }
     std::string MigratedCall;
-    MigratedCall = MapNames::getDpctNamespace() + "sparse::csrgemm_nnz(";
+    MigratedCall =
+        MapNames::getLibraryHelperNamespace() + "sparse::csrgemm_nnz(";
     for (unsigned i = 0; i < MigratedArgs.size(); i++) {
       if (auto Iter = InsertBeforeIdxMap.find(i);
           Iter != InsertBeforeIdxMap.end()) {
