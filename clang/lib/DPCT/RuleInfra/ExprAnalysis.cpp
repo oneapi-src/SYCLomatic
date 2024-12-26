@@ -496,7 +496,6 @@ bool isCGAPI(std::string Name) {
 }
 
 void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
-  DRE->dump();
   std::string CTSName;
   auto Qualifier = DRE->getQualifier();
   if (Qualifier) {
