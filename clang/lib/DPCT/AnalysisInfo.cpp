@@ -7044,7 +7044,7 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
   case Type::ConstantArray: {
     auto ArgConstArray = ARG_TYPE_CAST(ConstantArrayType);
     auto ParmConstArray = PARM_TYPE_CAST(ConstantArrayType);
-    if (ArgConstArray &&
+    if (ArgConstArray && ParmConstArray &&
         ArgConstArray->getSize() == ParmConstArray->getSize()) {
       deduceTemplateArgumentFromArrayElement(TAIList, ParmType, ArgType, TL);
     }

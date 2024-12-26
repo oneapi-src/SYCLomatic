@@ -45,6 +45,17 @@ std::string MemoryMigrationRule::getMemoryHelperFunctionName(
   return dpct::getMemoryHelperFunctionName(Name, ExperimentalInSYCLCompat);
 }
 
+std::pair<std::string, std::string>
+MemArgExpr::getMemAPIVarNameAndArrayOffset(const Expr *) const {
+  return MemoryMigrationRule::getMemAPIVarNameAndArrayOffset(E);
+};
+
+MemArgExpr MemArgExpr::create(const Expr *E) {
+  MemArgExpr MAE;
+  MAE.E = E;
+  return MAE;
+}
+
 // clang-format off
 void CallExprRewriterFactoryBase::initRewriterMapMemory() {
   RewriterMap->merge(

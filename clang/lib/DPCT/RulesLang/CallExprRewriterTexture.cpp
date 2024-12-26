@@ -159,7 +159,8 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
 
 public:
   TextureReadRewriterFactory(std::string Name, int Tex, std::string TargetName)
-      : Source(std::move(Name)), TexType(Tex), TargetName(TargetName) {}
+      : Source(std::move(Name)), TexType(Tex),
+        TargetName(std::move(TargetName)) {}
   std::shared_ptr<CallExprRewriter>
   create(const CallExpr *Call) const override {
     const Expr *SourceExpr = Call->getArg(0);

@@ -696,8 +696,8 @@ void uninstantiated_template_call(const T *d_data, size_t width, size_t height) 
   // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host)));
   MY_ERROR_CHECKER(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
 
-// CHECK: #define CUDAMEMCPY dpct::dpct_memcpy
-// CHECK-NEXT: CUDAMEMCPY(data, d_data, datasize * sizeof(T), dpct::device_to_host);
+// CHECK: #define CUDAMEMCPY cudaMemcpy
+// CHECK-NEXT: dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host);
 #define CUDAMEMCPY cudaMemcpy
   CUDAMEMCPY(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 

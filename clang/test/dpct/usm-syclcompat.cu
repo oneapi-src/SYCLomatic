@@ -151,7 +151,7 @@ void foo() {
   MY_SAFE_CALL2(cudaMemcpy(d_A, h_A, foo_b(1), MACOR_C(1)));
 
 #define SIZE 100
-  // CHECK: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
+  // CHECK: q_ct1.memcpy(d_A, h_A, sizeof(double)*SIZE*SIZE).wait();
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
 
   /// memcpy async

@@ -16,31 +16,10 @@
 #include <unordered_map>
 #include <memory>
 
+#include "detail/ccl_utils_detail.hpp"
+
 namespace dpct {
 namespace ccl {
-namespace detail {
-
-/// Get stored kvs with specified kvs address.
-inline std::shared_ptr<oneapi::ccl::kvs> &
-get_kvs(const oneapi::ccl::kvs::address_type &addr) {
-  struct hash {
-    std::size_t operator()(const oneapi::ccl::kvs::address_type &in) const {
-      return std::hash<std::string_view>()(std::string_view(in.data(), in.size()));
-    }
-  };
-  static std::unordered_map<oneapi::ccl::kvs::address_type,
-                            std::shared_ptr<oneapi::ccl::kvs>, hash>
-      kvs_map;
-  return kvs_map[addr];
-}
-
-/// Help class to init ccl environment. 
-class ccl_init_helper {
-public:
-  ccl_init_helper() { oneapi::ccl::init(); }
-};
-
-} // namespace detail
 
 /// Get concatenated library version as an integer.
 static inline int get_version() {
