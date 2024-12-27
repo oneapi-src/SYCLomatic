@@ -55,6 +55,17 @@ makePrettyTemplatedCalleeCreator(std::string CalleeName,
 
 RewriterMap dpct::createUtilityFunctionsRewriterMap() {
   return RewriterMap{
+      // cub::Debug
+      CONDITIONAL_FACTORY_ENTRY(
+          checkIsCallExprOnly(),
+          WARNING_FACTORY_ENTRY(
+              "cub::Debug", TOSTRING_FACTORY_ENTRY("cub::Debug", LITERAL("")),
+              Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0,
+              std::string("cub::Debug"), std::string("removed")),
+          WARNING_FACTORY_ENTRY(
+              "cub::Debug", TOSTRING_FACTORY_ENTRY("cub::Debug", LITERAL("0")),
+              Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0,
+              std::string("cub::Debug"), std::string("replaced with 0")))
       // cub::IADD3
       CALL_FACTORY_ENTRY(
           "cub::IADD3",

@@ -736,10 +736,11 @@ __host__ __device__ __forceinline__ cudaError_t *foo15(cudaError_t error,
 }
 
 // CHECK: int foo16() {
-// CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
-// CHECK-NEXT:   codes. The call was replaced with 0. You need to rewrite this code.
-// CHECK-NEXT:   */
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
+// CHECK-NEXT:  codes. The cudaGetLastError function call was replaced with 0. You need to
+// CHECK-NEXT:  rewrite this code.
+// CHECK-NEXT:  */
 // CHECK-NEXT:   return 0;
 // CHECK-NEXT: }
 int foo16() {

@@ -70,40 +70,40 @@ int printf(const char *format, ...);
 
 const char *test_function() {
   // CHECK: /*
-  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaGetLastError function call was replaced with 0. You need to rewrite this code.
   // CHECK-NEXT: */
   PRINT_ERROR_STR(cudaGetLastError());
   // CHECK: /*
-  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaGetLastError function call was replaced with 0. You need to rewrite this code.
   // CHECK-NEXT: */
   PRINT_ERROR_NAME(cudaGetLastError());
   PRINT_ERROR_STR(cudaSuccess);
   PRINT_ERROR_NAME(cudaSuccess);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaGetLastError function call was replaced with 0. You need to rewrite this code.
   // CHECK-NEXT: */
   PRINT_ERROR_STR2(cudaGetLastError());
   // CHECK: /*
-  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaGetLastError function call was replaced with 0. You need to rewrite this code.
   // CHECK-NEXT: */
   PRINT_ERROR_NAME2(cudaGetLastError());
   PRINT_ERROR_STR2(cudaSuccess);
   PRINT_ERROR_NAME2(cudaSuccess);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaGetLastError function call was replaced with 0. You need to rewrite this code.
   // CHECK-NEXT: */
   PRINT_ERROR_STR3(cudaGetLastError());
   // CHECK: /*
-  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaGetLastError function call was replaced with 0. You need to rewrite this code.
   // CHECK-NEXT: */
   PRINT_ERROR_NAME3(cudaGetLastError());
   PRINT_ERROR_STR3(cudaSuccess);
   PRINT_ERROR_NAME3(cudaSuccess);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaGetLastError function call was replaced with 0. You need to rewrite this code.
   // CHECK-NEXT: */
   PRINT_ERROR_STR_NAME(cudaGetLastError());
   PRINT_ERROR_STR_NAME(cudaSuccess);
@@ -112,7 +112,7 @@ const char *test_function() {
 //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
 //CHECK-NEXT:*/
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+//CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaGetLastError function call was replaced with 0. You need to rewrite this code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(0));
   printf("%s\n", cudaGetErrorString(cudaGetLastError()));

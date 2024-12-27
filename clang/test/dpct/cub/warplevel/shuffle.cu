@@ -89,7 +89,12 @@ int main() {
   dim3 BlockSize(1 , 1, 128);
   int TotalThread = GridSize.x * BlockSize.x * BlockSize.y * BlockSize.z;
 
-  cudaMallocManaged(&dev_data, TotalThread * sizeof(int));
+  auto s1 = cudaMallocManaged(&dev_data, TotalThread * sizeof(int));
+// CHECK:  /*
+// CHECK:  DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cub::Debug function call was replaced with 0. You need to rewrite this code.
+// CHECK:  */
+// CHECK:  auto s2 = 0;
+  auto s2 = cub::Debug(s1, __FILE__, __LINE__);
 
   init_data(dev_data, TotalThread);
   // CHECK:  q_ct1.parallel_for(
