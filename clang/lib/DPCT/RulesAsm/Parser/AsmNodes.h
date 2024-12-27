@@ -83,7 +83,6 @@ public:
   enum TypeKind {
 #define BUILTIN_TYPE(X, Y) X,
 #include "AsmTokenKinds.def"
-    voidType,
     NUM_TYPES
   };
 
@@ -223,7 +222,9 @@ public:
       : InlineAsmNamedDecl(VariableDeclClass, Name), StateSpace(SS),
         Type(Type) {}
 
-  AsmStateSpace getStorageClass() const { return StateSpace; }
+  AsmStateSpace getStorageClass() const {
+    return StateSpace;
+  }
 
   void setInlineAsmOp(const Expr *Val) { InlineAsmOp = Val; }
   const Expr *getInlineAsmOp() const { return InlineAsmOp; }
@@ -389,12 +390,7 @@ public:
     return InstructionClass <= S->getStmtClass();
   }
   AsmStateSpace getStateSpace() const {
-    AsmStateSpace SS = AsmStateSpace::none;
-
-    if (StateSpace.has_value()) {
-      return StateSpace.value();
-    }
-    return SS;
+    return StateSpace.value_or(AsmStateSpace::none);
   }
 };
 

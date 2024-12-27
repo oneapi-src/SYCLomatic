@@ -1347,6 +1347,9 @@ public:
     return getUsingExperimental<
         ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();
   }
+  static bool useExtPrefetch() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_Prefetch>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }

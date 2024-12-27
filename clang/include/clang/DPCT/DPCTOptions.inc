@@ -815,6 +815,10 @@ DPCT_ENUM_OPTION(
             "builtin functions.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
+            "prefetch", int(ExperimentalFeatures::Exp_Prefetch),
+            "Experimental extension that allows use of SYCL prefetch APIs.\n",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
             "all", int(ExperimentalFeatures::Exp_All),
             "Enable all experimental extensions listed in this option.\n",
             false)),

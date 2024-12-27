@@ -265,6 +265,11 @@ LexNextToken:
     Char = getChar(CurPtr);
     if (Char == ':') {
       CurPtr++;
+      Char = getChar(CurPtr);
+      if (isIdentifierStart(Char) || isDigit(Char)) {
+        Result.setFlag(InlineAsmToken::StartOfColonColon);
+        return lexIdentifierContinue(Result, CurPtr);
+      }
       Kind = asmtok::coloncolon;
     } else {
       Kind = asmtok::colon;
