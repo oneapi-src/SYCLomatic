@@ -50,9 +50,10 @@ MemArgExpr::getMemAPIVarNameAndArrayOffset(const Expr *) const {
   return MemoryMigrationRule::getMemAPIVarNameAndArrayOffset(E);
 };
 
-MemArgExpr MemArgExpr::create(const Expr *E) {
+MemArgExpr MemArgExpr::create(const CallExpr *CE, const Expr *E) {
   MemArgExpr MAE;
   MAE.E = E;
+  MAE.CE = CE;
   return MAE;
 }
 

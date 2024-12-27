@@ -945,11 +945,11 @@ CONDITIONAL_FACTORY_ENTRY(
               ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                      \
                   HelperFeatureEnum::device_ext,                               \
                   CALL_FACTORY_ENTRY(                                          \
-                      NAME,                                                    \
-                      CALL(MapNames::getClNamespace() + "free",                \
-                           makeCombinedArg(makeCombinedArg(ARG("*("), ARG(0)), \
-                                           ARG(".get_ptr())")),                \
-                           QUEUESTR)))),                                       \
+                      NAME, CALL(MapNames::getClNamespace() + "free",          \
+                                 makeCombinedArg(                              \
+                                     makeCombinedArg(ARG("*("), ARG_WC(0)),    \
+                                     ARG(".get_ptr())")),                      \
+                                 QUEUESTR)))),                                 \
               CONDITIONAL_FACTORY_ENTRY(                                       \
                   [](const CallExpr *) {                                       \
                     return DpctGlobalInfo::useNoQueueDevice();                 \
@@ -958,19 +958,21 @@ CONDITIONAL_FACTORY_ENTRY(
                       NAME, true, true, true, true,                            \
                       MEMBER_CALL(QUEUESTR, false, "wait_and_throw"),          \
                       CALL(MapNames::getClNamespace() + "free",                \
-                           makeCombinedArg(makeCombinedArg(ARG("*("), ARG(0)), \
-                                           ARG(".get_ptr())")),                \
+                           makeCombinedArg(                                    \
+                               makeCombinedArg(ARG("*("), ARG_WC(0)),          \
+                               ARG(".get_ptr())")),                            \
                            QUEUESTR)),                                         \
                   ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                  \
                       HelperFeatureEnum::device_ext,                           \
                       CALL_FACTORY_ENTRY(                                      \
-                          NAME, CALL(MapNames::getDpctNamespace() +            \
-                                         (DpctGlobalInfo::useSYCLCompat()      \
-                                              ? "wait_and_free"                \
-                                              : "dpct_free"),                  \
-                                     makeCombinedArg(                          \
-                                         makeCombinedArg(ARG("*("), ARG(0)),   \
-                                         ARG(".get_ptr())")))))))),            \
+                          NAME,                                                \
+                          CALL(MapNames::getDpctNamespace() +                  \
+                                   (DpctGlobalInfo::useSYCLCompat()            \
+                                        ? "wait_and_free"                      \
+                                        : "dpct_free"),                        \
+                               makeCombinedArg(                                \
+                                   makeCombinedArg(ARG("*("), ARG_WC(0)),      \
+                                   ARG(".get_ptr())")))))))),                  \
           ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                          \
               HelperFeatureEnum::device_ext,                                   \
               CALL_FACTORY_ENTRY(                                              \
@@ -978,7 +980,7 @@ CONDITIONAL_FACTORY_ENTRY(
                   CALL(MapNames::getDpctNamespace() +                          \
                            (DpctGlobalInfo::useSYCLCompat() ? "wait_and_free"  \
                                                             : "dpct_free"),    \
-                       makeCombinedArg(makeCombinedArg(ARG("*("), ARG(0)),     \
+                       makeCombinedArg(makeCombinedArg(ARG("*("), ARG_WC(0)),  \
                                        ARG(".get_ptr())"))))))),               \
       CONDITIONAL_FACTORY_ENTRY(                                               \
           checkIsUSM(),                                                        \
@@ -990,7 +992,7 @@ CONDITIONAL_FACTORY_ENTRY(
                   HelperFeatureEnum::device_ext,                               \
                   CALL_FACTORY_ENTRY(NAME,                                     \
                                      CALL(MapNames::getClNamespace() + "free", \
-                                          ARG(0), QUEUESTR)))),                \
+                                          ARG_WC(0), QUEUESTR)))),             \
               CONDITIONAL_FACTORY_ENTRY(                                       \
                   [](const CallExpr *) {                                       \
                     return DpctGlobalInfo::useNoQueueDevice();                 \
@@ -998,7 +1000,7 @@ CONDITIONAL_FACTORY_ENTRY(
                   MULTI_STMTS_FACTORY_ENTRY(                                   \
                       NAME, true, true, true, true,                            \
                       MEMBER_CALL(QUEUESTR, false, "wait_and_throw"),          \
-                      CALL(MapNames::getClNamespace() + "free", ARG(0),        \
+                      CALL(MapNames::getClNamespace() + "free", ARG_WC(0),     \
                            QUEUESTR)),                                         \
                   ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                  \
                       HelperFeatureEnum::device_ext,                           \
@@ -1007,7 +1009,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                          (DpctGlobalInfo::useSYCLCompat()      \
                                               ? "wait_and_free"                \
                                               : "dpct_free"),                  \
-                                     ARG(0))))))),                             \
+                                     ARG_WC(0))))))),                          \
           ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                          \
               HelperFeatureEnum::device_ext,                                   \
               CALL_FACTORY_ENTRY(                                              \
@@ -1015,7 +1017,7 @@ CONDITIONAL_FACTORY_ENTRY(
                   CALL(MapNames::getDpctNamespace() +                          \
                            (DpctGlobalInfo::useSYCLCompat() ? "wait_and_free"  \
                                                             : "dpct_free"),    \
-                       ARG(0)))))))
+                       ARG_WC(0)))))))
 CUDA_FREE("cudaFree")
 CUDA_FREE("cublasFree")
 #undef CUDA_FREE
