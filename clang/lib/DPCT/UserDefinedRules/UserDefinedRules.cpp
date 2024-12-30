@@ -719,8 +719,18 @@ void clang::dpct::UserDefinedTypeRule::registerMatcher(
 void clang::dpct::UserDefinedTypeRule::runRule(
     const clang::ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto TL = getNodeAsType<TypeLoc>(Result, "typeLoc")) {
+    TypeLoc NewTL = *TL;
+    do {
+      auto Parents = Result.Context->getParents(*TL);
+      if (Parents.empty())
+        break;
+      if (!Parents[0].get<TypeLoc>())
+        break;
+      TL = Parents[0].get<TypeLoc>();
+      NewTL = *TL;
+    } while (true);
     dpct::ExprAnalysis EA;
-    EA.analyze(*TL);
+    EA.analyze(NewTL);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   }
