@@ -294,7 +294,6 @@ public:
     AA.analyze(E);
     Stream << AA.getRewritePrefix() << AA.getRewriteString()
            << AA.getRewritePostfix();
-    //clang::dpct::print(Stream, AA, E);
     if (VarName.empty())
       return;
 
