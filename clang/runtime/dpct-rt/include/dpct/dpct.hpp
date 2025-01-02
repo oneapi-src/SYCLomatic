@@ -59,9 +59,6 @@ inline const char *get_error_string_dummy(int ec) {
 } // namespace dpct
 
 #define DPCT_CHECK_ERROR(expr)                                                 \
-#if defined(__SYCL_DEVICE_ONLY__)                                              \
-  expr;                                                                        \
-#else                                                                          \
   [&]() {                                                                      \
     try {                                                                      \
       expr;                                                                    \
@@ -70,8 +67,7 @@ inline const char *get_error_string_dummy(int ec) {
       std::cerr << e.what() << std::endl;                                      \
       return dpct::default_error;                                              \
     }                                                                          \
-  }()                                                                          \
-#endif
+  }()
 
 #define DPCT_PI_F (3.14159274101257f)
 #define DPCT_PI (3.141592653589793115998)
