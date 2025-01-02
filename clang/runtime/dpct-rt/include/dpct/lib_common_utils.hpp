@@ -11,10 +11,12 @@
 
 #include "compat_service.hpp"
 
-#ifdef __INTEL_MKL__
+#if defined(__has_include) && __has_include(<oneapi/math.hpp>)
+#include <oneapi/math.hpp>
+#elif defined(__has_include) && __has_include(<oneapi/mkl.hpp>)
 #include <oneapi/mkl.hpp>
 #else
-#include <oneapi/math.hpp>
+#error "SYCLomatic runtime requires oneMath/oneMKL support"
 #endif
 
 namespace dpct {
