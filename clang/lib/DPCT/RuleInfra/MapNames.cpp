@@ -284,6 +284,12 @@ void MapNames::setExplicitNamespaceMap(
                           DpctGlobalInfo::useExtBindlessImages()
                               ? getExpNamespace() + "image_type::mipmap"
                               : "cudaArraySurfaceLoadStore")},
+      {"CubDebug",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CubDebug", MapNames::getCheckErrorMacroName())},
+      {"CubDebugExit",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CubDebugExit", MapNames::getCheckErrorMacroName())},
       //...
   };
   // Type names mapping.

@@ -277,7 +277,7 @@ ENTRY_MEMBER_FUNCTION(cub::CachingDeviceAllocator, cub::CachingDeviceAllocator, 
 ENTRY_MEMBER_FUNCTION(cub::CachingDeviceAllocator, cub::CachingDeviceAllocator, DeviceFree, DeviceFree, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::CachingDeviceAllocator, cub::CachingDeviceAllocator, FreeAllCached, FreeAllCached, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::ChainedPolicy, cub::ChainedPolicy, Invoke, Invoke, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::Debug, cub::Debug, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::Debug, cub::Debug, true, NO_FLAG, P4, "Comment")
 ENTRY(cub::MaxSmOccupancy, cub::MaxSmOccupancy, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::PtxVersion, cub::PtxVersion, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::SmVersion, cub::SmVersion, true, NO_FLAG, P4, "Successful")
