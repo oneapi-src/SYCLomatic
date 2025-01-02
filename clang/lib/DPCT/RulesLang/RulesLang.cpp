@@ -5273,11 +5273,9 @@ llvm::raw_ostream &printMemcpy3DParmsName(llvm::raw_ostream &OS,
   return OS << BaseName << "_" << MemberName << getCTFixedSuffix();
 }
 
-void MemoryMigrationRule::replaceMemAPIArg(
-    const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result,
-    const std::string &StreamStr, std::string OffsetFromBaseStr) {
-
-  StringRef VarName;
+std::pair<std::string, std::string>
+MemoryMigrationRule::getMemAPIVarNameAndArrayOffset(const Expr *E) {
+  std::string VarName;
   auto Sub = E->IgnoreImplicitAsWritten();
   if (auto MTE = dyn_cast<MaterializeTemporaryExpr>(Sub)) {
     Sub = MTE->getSubExpr()->IgnoreImplicitAsWritten();
@@ -5297,7 +5295,8 @@ void MemoryMigrationRule::replaceMemAPIArg(
     auto Idx = ASE->getIdx();
     Expr::EvalResult ER;
     ArrayOffset = ExprAnalysis::ref(Idx);
-    if (!Idx->isValueDependent() && Idx->EvaluateAsInt(ER, *Result.Context)) {
+    if (!Idx->isValueDependent() &&
+        Idx->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
       if (ER.Val.getInt().getZExtValue() == 0) {
         ArrayOffset.clear();
       }
@@ -5311,7 +5310,14 @@ void MemoryMigrationRule::replaceMemAPIArg(
   } else if (auto SL = dyn_cast<StringLiteral>(Sub)) {
     VarName = SL->getString();
   }
+  return {VarName, ArrayOffset};
+}
 
+void MemoryMigrationRule::replaceMemAPIArg(const Expr *E,
+                                           const std::string &StreamStr,
+                                           std::string OffsetFromBaseStr) {
+  std::string VarName, ArrayOffset;
+  std::tie(VarName, ArrayOffset) = getMemAPIVarNameAndArrayOffset(E);
   if (VarName.empty())
     return;
 
@@ -5881,8 +5887,8 @@ void MemoryMigrationRule::memcpyMigration(
       }
     }
 
-    replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
-    replaceMemAPIArg(C->getArg(1), Result, AsyncQueue);
+    replaceMemAPIArg(C->getArg(0), AsyncQueue);
+    replaceMemAPIArg(C->getArg(1), AsyncQueue);
     if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       // Since the range of removeArg is larger than the range of
       // handleDirection, the handle direction replacement will be removed.
@@ -6183,16 +6189,16 @@ void MemoryMigrationRule::memcpySymbolMigration(
 
   if ((Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyToSymbolAsync") &&
       OffsetFromBaseStr != "0") {
-    replaceMemAPIArg(C->getArg(0), Result, StreamStr, OffsetFromBaseStr);
+    replaceMemAPIArg(C->getArg(0), StreamStr, OffsetFromBaseStr);
   } else {
-    replaceMemAPIArg(C->getArg(0), Result, StreamStr);
+    replaceMemAPIArg(C->getArg(0), StreamStr);
   }
 
   if ((Name == "cudaMemcpyFromSymbol" || Name == "cudaMemcpyFromSymbolAsync") &&
       OffsetFromBaseStr != "0") {
-    replaceMemAPIArg(C->getArg(1), Result, StreamStr, OffsetFromBaseStr);
+    replaceMemAPIArg(C->getArg(1), StreamStr, OffsetFromBaseStr);
   } else {
-    replaceMemAPIArg(C->getArg(1), Result, StreamStr);
+    replaceMemAPIArg(C->getArg(1), StreamStr);
   }
 
   // Remove C->getArg(3)
@@ -6370,7 +6376,7 @@ void MemoryMigrationRule::memsetMigration(
       if (!isDefaultStream(C->getArg(3)))
         AsyncQueue = ExprAnalysis::ref(C->getArg(3));
     }
-    replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
+    replaceMemAPIArg(C->getArg(0), AsyncQueue);
     if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       if (IsAsync) {
         emplaceTransformation(removeArg(C, 3, *Result.SourceManager));
@@ -6811,7 +6817,7 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemAllocPitch_v2") && Name.compare("cuMemAlloc_v2") &&
         Name.compare("cudaMallocMipmappedArray") &&
         Name.compare("cudaGetMipmappedArrayLevel") &&
-        Name.compare("cudaFreeMipmappedArray")) {
+        Name.compare("cudaFreeMipmappedArray") && Name.compare("cudaMemcpy")) {
       requestFeature(HelperFeatureEnum::device_ext);
       insertAroundStmt(C, MapNames::getCheckErrorMacroName() + "(", ")");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&

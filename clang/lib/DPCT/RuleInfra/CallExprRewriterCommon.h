@@ -276,6 +276,41 @@ makeBLASEnumCallArgCreator(unsigned Idx, BLASEnumExpr::BLASEnumType BET) {
   };
 }
 
+class MemArgExpr {
+  MemArgExpr() = default;
+  std::pair<std::string, std::string>
+  getMemAPIVarNameAndArrayOffset(const Expr *) const;
+
+public:
+  const Expr *E = nullptr;
+
+  template <class StreamT> void print(StreamT &Stream) const {
+    auto P = getMemAPIVarNameAndArrayOffset(E);
+    std::string VarName = P.first;
+    std::string ArrayOffset = P.second;
+
+    clang::dpct::print(Stream, E);
+    if (VarName.empty())
+      return;
+
+    std::string Replaced;
+    llvm::raw_string_ostream OS(Replaced);
+
+    Stream << ".get_ptr()";
+    if (!ArrayOffset.empty())
+      Stream << " + " << ArrayOffset;
+  }
+
+  static MemArgExpr create(const Expr *E);
+};
+
+inline std::function<MemArgExpr(const CallExpr *)>
+makeMemArgCallArgCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> MemArgExpr {
+    return MemArgExpr::create(C->getArg(Idx));
+  };
+}
+
 inline std::function<bool(const CallExpr *)> makeBooleanCreator(bool B) {
   return [=](const CallExpr *C) -> bool { return B; };
 }
@@ -2073,6 +2108,7 @@ const std::string MipmapNeedBindlessImage =
 #define BOOL(x) makeBooleanCreator(x)
 #define BLAS_ENUM_ARG(x, BLAS_ENUM_TYPE)                                       \
   makeBLASEnumCallArgCreator(x, BLAS_ENUM_TYPE)
+#define MEM_ARG(x) makeMemArgCallArgCreator(x)
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
 #define QUEUESTR makeQueueStr()
 #define QUEUEPTRSTR makeQueuePtrStr()

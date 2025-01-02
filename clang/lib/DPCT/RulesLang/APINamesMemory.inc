@@ -910,3 +910,25 @@ CALL_FACTORY_ENTRY(
     "make_cudaPos",
     CALL(DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "id", 3),
          ARG(0), ARG(1), ARG(2)))
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    CONDITIONAL_FACTORY_ENTRY(
+        [](const CallExpr *CE) { return canOmitMemcpyWait(CE); },
+        ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            MEMBER_CALL_FACTORY_ENTRY("cudaMemcpy", QUEUESTR, false, "memcpy",
+                                      MEM_ARG(0), MEM_ARG(1), ARG(2)))),
+        ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            MEMBER_CALL_FACTORY_ENTRY("cudaMemcpy",
+                                      MEMBER_CALL(QUEUESTR, false, "memcpy",
+                                                  MEM_ARG(0), MEM_ARG(1),
+                                                  ARG(2)),
+                                      false, "wait")))),
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY(
+            "cudaMemcpy", CALL(MemoryMigrationRule::getMemoryHelperFunctionName(
+                                   "memcpy", false),
+                               MEM_ARG(0), MEM_ARG(1), ARG(2), ARG(3))))))

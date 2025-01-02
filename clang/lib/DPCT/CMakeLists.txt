@@ -37,6 +37,14 @@ set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/group_utils_detail.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/math_detail.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/memory_detail.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/lib_common_utils_detail.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/blas_utils_detail.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/lapack_utils_detail.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/rng_utils_detail.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/sparse_utils_detail.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/dnnl_utils_detail.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/blas_gemm_utils_detail.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/ccl_utils_detail.hpp
   )
 
 set(PROCESS_FILES_OUTPUT
@@ -72,6 +80,14 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/group_utils_detail.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/math_detail.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/memory_detail.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/lib_common_utils_detail.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/blas_utils_detail.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/lapack_utils_detail.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/rng_utils_detail.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/sparse_utils_detail.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/dnnl_utils_detail.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/blas_gemm_utils_detail.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/ccl_utils_detail.hpp.inc
 )
 
 add_custom_command(
