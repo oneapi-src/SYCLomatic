@@ -84,3 +84,4 @@ COMPAT_HEADER(SYCLcompat, "<syclcompat/syclcompat.hpp>")
 #undef DPCT_HEADER
 #undef COMPAT_HEADER
 #undef HEADER
+
