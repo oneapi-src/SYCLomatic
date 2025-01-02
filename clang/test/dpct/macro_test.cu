@@ -1462,7 +1462,7 @@ void foo43() {
 
 //     CHECK: #define FREE(A)                                                                \
 //CHECK-NEXT:   free(A);                                                                     \
-//CHECK-NEXT:   dpct::dpct_free(A##_d)
+//CHECK-NEXT:   dpct::dpct_free(A##_d, q_ct1)
 # define FREE(A) free(A);\
                  cudaFree(A##_d)
 

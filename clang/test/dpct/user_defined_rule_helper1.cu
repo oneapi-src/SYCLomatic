@@ -36,7 +36,7 @@ void foo2() {
   // CHECK-NEXT:       foo2_kernel(d);
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
-  // CHECK-NEXT: dpct::dpct_free(d);
+  // CHECK-NEXT: dpct::dpct_free(d, static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream1()));
   cudaMalloc(&d, sizeof(double));
   foo2_kernel<<<1, 1>>>(d);
   cudaFree(d);

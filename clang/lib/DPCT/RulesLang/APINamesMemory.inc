@@ -972,7 +972,8 @@ CONDITIONAL_FACTORY_ENTRY(
                                         : "dpct_free"),                        \
                                makeCombinedArg(                                \
                                    makeCombinedArg(ARG("*("), ARG_WC(0)),      \
-                                   ARG(".get_ptr())")))))))),                  \
+                                   ARG(".get_ptr())")),                        \
+                               QUEUESTR)))))),                                 \
           ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                          \
               HelperFeatureEnum::device_ext,                                   \
               CALL_FACTORY_ENTRY(                                              \
@@ -981,7 +982,8 @@ CONDITIONAL_FACTORY_ENTRY(
                            (DpctGlobalInfo::useSYCLCompat() ? "wait_and_free"  \
                                                             : "dpct_free"),    \
                        makeCombinedArg(makeCombinedArg(ARG("*("), ARG_WC(0)),  \
-                                       ARG(".get_ptr())"))))))),               \
+                                       ARG(".get_ptr())")),                    \
+                       QUEUESTR))))),                                          \
       CONDITIONAL_FACTORY_ENTRY(                                               \
           checkIsUSM(),                                                        \
           CONDITIONAL_FACTORY_ENTRY(                                           \
@@ -1009,7 +1011,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                          (DpctGlobalInfo::useSYCLCompat()      \
                                               ? "wait_and_free"                \
                                               : "dpct_free"),                  \
-                                     ARG_WC(0))))))),                          \
+                                     ARG_WC(0), QUEUESTR)))))),                \
           ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                          \
               HelperFeatureEnum::device_ext,                                   \
               CALL_FACTORY_ENTRY(                                              \
@@ -1017,7 +1019,7 @@ CONDITIONAL_FACTORY_ENTRY(
                   CALL(MapNames::getDpctNamespace() +                          \
                            (DpctGlobalInfo::useSYCLCompat() ? "wait_and_free"  \
                                                             : "dpct_free"),    \
-                       ARG_WC(0)))))))
+                       ARG_WC(0), QUEUESTR))))))
 CUDA_FREE("cudaFree")
 CUDA_FREE("cublasFree")
 #undef CUDA_FREE

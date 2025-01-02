@@ -33,7 +33,7 @@ void foo2() {
   // CHECK-NEXT:       foo2_kernel(d);
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
-  // CHECK-NEXT: syclcompat::wait_and_free(d);
+  // CHECK-NEXT: syclcompat::wait_and_free(d, static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream3()));
   cudaMalloc(&d, sizeof(double));
   foo2_kernel<<<1, 1>>>(d);
   cudaFree(d);
