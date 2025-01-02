@@ -107,10 +107,10 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 // External Resource APIs
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    CALL_FACTORY_ENTRY("cudaImportExternalMemory",
+    ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaImportExternalMemory",
                            CALL(MapNames::getDpctNamespace() +
                                     "experimental::import_external_memory",
-                                ARG(0), ARG(1))),
+                                ARG(0), ARG(1)))),
     UNSUPPORT_FACTORY_ENTRY("cudaImportExternalMemory", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaImportExternalMemory"),
                             ARG("--use-experimental-features=bindless_images")))
