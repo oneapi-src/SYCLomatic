@@ -13,6 +13,7 @@
 
 #if defined(__has_include) && __has_include(<oneapi/math.hpp>)
 #include <oneapi/math.hpp>
+#include <oneapi/mkl/namespace_alias.hpp>
 #elif defined(__has_include) && __has_include(<oneapi/mkl.hpp>)
 #include <oneapi/mkl.hpp>
 #else
