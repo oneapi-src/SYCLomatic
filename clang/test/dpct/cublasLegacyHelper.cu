@@ -26,7 +26,7 @@ void cublasErrCheck_(cublasStatus_t stat, const char *file, int line) {
 
 #define MACRO_B(status) (status)
 
-// CHECK: #define MACRO_C(pointer) status = DPCT_CHECK_ERROR(dpct::dpct_free(pointer))
+// CHECK: #define MACRO_C(pointer) status = DPCT_CHECK_ERROR(dpct::dpct_free(pointer, q_ct1))
 #define MACRO_C(pointer) status = cublasFree(pointer)
 
 void foo2(cublasStatus){}
@@ -82,7 +82,7 @@ int main() {
   a = sizeof(cuDoubleComplex);
 
   // CHECK: dpct::queue_ptr stream1;
-  // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
+  // CHECK-NEXT: stream1 = dev_ct1.create_queue();
   // CHECK-NEXT: dpct::blas::descriptor::set_saved_queue(stream1);
   // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(dpct::blas::descriptor::set_saved_queue(stream1)));
   cudaStream_t stream1;
@@ -102,15 +102,15 @@ int main() {
   // CHECK: foo2(DPCT_CHECK_ERROR(d_A = (float *)dpct::dpct_malloc((n)*(elemSize))));
   foo2(cublasAlloc(n, elemSize, (void **)&d_A));
 
-  // CHECK: status = DPCT_CHECK_ERROR(dpct::dpct_free(d_A));
-  // CHECK-NEXT: dpct::dpct_free(d_A);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::dpct_free(d_A, q_ct1));
+  // CHECK-NEXT: dpct::dpct_free(d_A, q_ct1);
   status = cublasFree(d_A);
   cublasFree(d_A);
 
-  // CHECK: foo2(DPCT_CHECK_ERROR(dpct::dpct_free(d_A)));
+  // CHECK: foo2(DPCT_CHECK_ERROR(dpct::dpct_free(d_A, q_ct1)));
   foo2(cublasFree(d_A));
 
-  // CHECK: MACRO_B(DPCT_CHECK_ERROR(dpct::dpct_free(d_A)));
+  // CHECK: MACRO_B(DPCT_CHECK_ERROR(dpct::dpct_free(d_A, q_ct1)));
   MACRO_B(cublasFree(d_A));
 
   // CHECK: /*

@@ -192,7 +192,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
   // CHECK-NEXT: */
-  // CHECK-NEXT: CUDA_CHECK(DPCT_CHECK_ERROR(f = sycl::malloc_device<float>(1, dpct::get_in_order_queue())));
+  // CHECK-NEXT: CUDA_CHECK(DPCT_CHECK_ERROR(f = sycl::malloc_device<float>(1, q_ct1)));
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
   // CHECK-NEXT: */
