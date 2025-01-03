@@ -2422,9 +2422,10 @@ void nontrivial_run_length_encode(ExecutionPolicy &&policy,
   auto zipped_vals_beg = make_zip_iterator(tr_nontrivial_flags, count_beg);
   auto pred = [](bool lhs, bool rhs) { return !rhs; };
   auto op = [](auto lhs, const auto &rhs) {
-    using ::std::get;
-    // Update the left-hand side count of and return the lhs tuple. This ensures
-    // that get<1> of the result contains the starting offset of the run.
+    using std::get;
+    // Update the left-hand side length of the run and return the lhs tuple.
+    // This ensures that get<1> of the result contains the starting offset of
+    // the run.
     get<0>(lhs) += get<0>(rhs);
     return std::move(lhs);
   };
