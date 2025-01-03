@@ -138,8 +138,8 @@ int main() {
   // CHECK: delete a42;
   cuArrayDestroy(a42);
 
-  // CHECK: dpct::dpct_free(d_data42, q_ct1);
-  // CHECK-NEXT: dpct::dpct_free(d_data21, q_ct1);
+  // CHECK: dpct::dpct_free(d_data42);
+  // CHECK-NEXT: dpct::dpct_free(d_data21);
   cudaFree(d_data42);
   cudaFree(d_data21);
 

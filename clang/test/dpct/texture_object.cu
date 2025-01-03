@@ -179,7 +179,7 @@ int main() {
   cudaCreateTextureObject(&tex21, &res21, &texDesc21, NULL);
   // CHECK:  static_cast<dpct::image_wrapper<sycl::uint2, 1> *>(tex21)->create_image();
   // CHECK-NEXT:  static_cast<dpct::image_wrapper<sycl::float4, 2> *>(tex42)->create_image();
-  // CHECK: q_ct1.submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     auto tex21_acc = static_cast<dpct::image_wrapper<sycl::uint2, 1> *>(tex21)->get_access(cgh);
   // CHECK-NEXT:     auto tex42_acc = static_cast<dpct::image_wrapper<sycl::float4, 2> *>(tex42)->get_access(cgh);
@@ -208,8 +208,8 @@ int main() {
   // CHECK: delete a42;
   cudaFreeArray(a42);
 
-  // CHECK: dpct::dpct_free(d_data42, q_ct1);
-  // CHECK-NEXT: dpct::dpct_free(d_data21, q_ct1);
+  // CHECK: dpct::dpct_free(d_data42);
+  // CHECK-NEXT: dpct::dpct_free(d_data21);
   cudaFree(d_data42);
   cudaFree(d_data21);
 

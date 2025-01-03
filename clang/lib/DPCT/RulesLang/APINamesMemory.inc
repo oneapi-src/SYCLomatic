@@ -982,8 +982,7 @@ CONDITIONAL_FACTORY_ENTRY(
                            (DpctGlobalInfo::useSYCLCompat() ? "wait_and_free"  \
                                                             : "dpct_free"),    \
                        makeCombinedArg(makeCombinedArg(ARG("*("), ARG_WC(0)),  \
-                                       ARG(".get_ptr())")),                    \
-                       QUEUESTR))))),                                          \
+                                       ARG(".get_ptr())"))))))),               \
       CONDITIONAL_FACTORY_ENTRY(                                               \
           checkIsUSM(),                                                        \
           CONDITIONAL_FACTORY_ENTRY(                                           \
@@ -1019,7 +1018,7 @@ CONDITIONAL_FACTORY_ENTRY(
                   CALL(MapNames::getDpctNamespace() +                          \
                            (DpctGlobalInfo::useSYCLCompat() ? "wait_and_free"  \
                                                             : "dpct_free"),    \
-                       ARG_WC(0), QUEUESTR))))))
+                       ARG_WC(0)))))))
 CUDA_FREE("cudaFree")
 CUDA_FREE("cublasFree")
 #undef CUDA_FREE

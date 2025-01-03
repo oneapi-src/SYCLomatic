@@ -171,7 +171,7 @@ void fooo() {
   // dpct::async_dpct_memcpy(h_A, constData.get_ptr(*stream)), size, dpct::device_to_host, *stream);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 0, cudaMemcpyDeviceToHost, stream);
 
-  // CHECK: dpct::dpct_free(d_A, q_ct1);
+  // CHECK: dpct::dpct_free(d_A);
   cudaFree(d_A);
   free(h_A);
 }
@@ -448,11 +448,11 @@ void testCommas() {
   // CHECK:   checkError(DPCT_CHECK_ERROR(dpct::dpct_memcpy(h_A, constData.get_ptr(), size)));
   checkError(cudaMemcpyFromSymbol(h_A, constData, size));
 
-  // CHECK: dpct::dpct_free(d_A, q_ct1);
+  // CHECK: dpct::dpct_free(d_A);
   cudaFree(d_A);
-  // CHECK:  err = DPCT_CHECK_ERROR(dpct::dpct_free(d_A, q_ct1));
+  // CHECK:  err = DPCT_CHECK_ERROR(dpct::dpct_free(d_A));
   err = cudaFree(d_A);
-  // CHECK:  checkError(DPCT_CHECK_ERROR(dpct::dpct_free(d_A, q_ct1)));
+  // CHECK:  checkError(DPCT_CHECK_ERROR(dpct::dpct_free(d_A)));
   checkError(cudaFree(d_A));
   // CHECK:  free(h_A);
   free(h_A);

@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  // CHECK: q_ct1.submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     auto d_array_acc_ct0 = dpct::get_access(d_array, cgh);
   // CHECK-EMPTY:
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
   cudaFuncCache pCacheConfig;
   // CHECK: CHKERR(0);
   CHKERR(cudaDeviceGetCacheConfig(&pCacheConfig));
-  // CHECK: dpct::dpct_free(d_array, q_ct1);
+  // CHECK: dpct::dpct_free(d_array);
   cudaFree(d_array);
   return 0;
 }

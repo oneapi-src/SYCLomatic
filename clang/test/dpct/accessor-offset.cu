@@ -548,7 +548,7 @@ int testVectorAdd(void)
     // CHECK: /*
     // CHECK: DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
     // CHECK: */
-    // CHECK-NEXT: q_ct1.submit(
+    // CHECK-NEXT: dpct::get_out_of_order_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
     // CHECK-NEXT:     auto d_A_acc_ct0 = dpct::get_access(d_A, cgh);
     // CHECK-NEXT:     auto d_B_acc_ct1 = dpct::get_access(d_B, cgh);
