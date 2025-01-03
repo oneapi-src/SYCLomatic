@@ -12,10 +12,14 @@
 #include "compat_service.hpp"
 #include "lib_common_utils.hpp"
 
-#ifdef __INTEL_MKL__
-#include <oneapi/mkl/rng/device.hpp>
-#else
+#if defined(__has_include) && __has_include(<oneapi/math/rng/device.hpp>)
 #include <oneapi/math/rng/device.hpp>
+#elif defined(__has_include) && __has_include(<oneapi/mkl/rng/device.hpp>)
+#include <oneapi/mkl/rng/device.hpp>
+#elif defined(__has_include)
+#error "SYCLomatic runtime requires oneMath/oneMKL support"
+#else
+#error "SYCLomatic runtime requires __has_include support"
 #endif
 
 namespace dpct::rng {

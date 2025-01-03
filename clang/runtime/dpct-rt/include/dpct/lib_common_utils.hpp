@@ -16,8 +16,10 @@
 #include <oneapi/mkl/namespace_alias.hpp>
 #elif defined(__has_include) && __has_include(<oneapi/mkl.hpp>)
 #include <oneapi/mkl.hpp>
-#else
+#elif defined(__has_include)
 #error "SYCLomatic runtime requires oneMath/oneMKL support"
+#else
+#error "SYCLomatic runtime requires __has_include support"
 #endif
 
 namespace dpct {
