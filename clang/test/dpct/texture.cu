@@ -85,7 +85,7 @@ int main() {
   // CHECK-NEXT: *a_ptr = new dpct::image_matrix(tex42.get_channel(), sycl::range<2>(32, 32));
   // CHECK-NEXT: dpct::dpct_memcpy((*a_ptr)->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_test, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
   // CHECK-NEXT: delete *a_ptr;
-  // CHECK-NEXT: dpct::dpct_free(d_test);
+  // CHECK-NEXT: dpct::dpct_free(d_test, q_ct1);
   // CHECK-NEXT: delete a_ptr;
 
   cudaArray **a_ptr = new cudaArray_t;
@@ -156,7 +156,7 @@ int main() {
   cudaGetChannelDesc(&desc21, a42);
   // CHECK:   tex42.create_image();
   // CHECK:   tex21.create_image();
-  // CHECK:   dpct::get_out_of_order_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto tex42_acc = tex42.get_access(cgh);
   // CHECK-NEXT:         auto tex21_acc = tex21.get_access(cgh);
@@ -180,8 +180,8 @@ int main() {
   // CHECK: delete a42;
   cudaFreeArray(a42);
 
-  // CHECK: dpct::dpct_free(d_data42);
-  // CHECK-NEXT: dpct::dpct_free(d_data21);
+  // CHECK: dpct::dpct_free(d_data42, q_ct1);
+  // CHECK-NEXT: dpct::dpct_free(d_data21, q_ct1);
   cudaFree(d_data42);
   cudaFree(d_data21);
 

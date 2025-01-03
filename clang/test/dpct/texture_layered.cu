@@ -103,7 +103,7 @@ int main() {
   cudaMalloc(&d, sizeof(float4) * 4);
   // CHECK:  tex42.create_image();
   // CHECK:  tex21.create_image();
-  // CHECK:   dpct::get_out_of_order_queue().submit(
+  // CHECK:  q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_acc_ct0 = dpct::get_access(d, cgh);
   // CHECK-EMPTY:
@@ -129,8 +129,8 @@ int main() {
   // CHECK: delete a42;
   cudaFreeArray(a42);
 
-  // CHECK: dpct::dpct_free(d_data42);
-  // CHECK-NEXT: dpct::dpct_free(d_data21);
+  // CHECK: dpct::dpct_free(d_data42, q_ct1);
+  // CHECK-NEXT: dpct::dpct_free(d_data21, q_ct1);
   cudaFree(d_data42);
   cudaFree(d_data21);
 
