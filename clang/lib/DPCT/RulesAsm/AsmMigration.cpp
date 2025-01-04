@@ -590,7 +590,7 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVarDecl *D) {
 bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
   // Address expression only support ld/st & atom instructions.
   if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom,
-                                 asmtok::op_prefetch, asmtok::op_prefetchu))
+                                 asmtok::op_prefetch))
     return SYCLGenError();
   std::string Type;
   if (tryEmitType(Type, CurrInst->getType(0)))
@@ -618,8 +618,7 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     std::string Reg;
     if (tryEmitStmt(Reg, Dst->getSymbol()))
       return SYCLGenSuccess();
-    if (CurrInst->is(asmtok::op_prefetch, asmtok::op_prefetchu) ||
-        CanSuppressCast(Dst->getSymbol()))
+    if (CurrInst->is(asmtok::op_prefetch) || CanSuppressCast(Dst->getSymbol()))
       OS() << llvm::formatv("{0}", Reg);
     else
       OS() << llvm::formatv("(({0} *)(uintptr_t){1})", Type, Reg);
@@ -1289,9 +1288,7 @@ protected:
 
     AsmStateSpace SS = Inst->getStateSpace();
     if (SS != AsmStateSpace::S_global && SS != AsmStateSpace::none) {
-      report(Diagnostics::API_NOT_MIGRATED, /*UseTextBegin=*/true,
-             GAS->getAsmString()->getString());
-      return SYCLGenSuccess();
+      return SYCLGenError();
     }
 
     if (!(Inst->hasAttr(InstAttr::L1) || Inst->hasAttr(InstAttr::L2)))
@@ -1303,24 +1300,12 @@ protected:
     else if (Inst->hasAttr(InstAttr::L2))
       PrefetchHint = "L2";
 
-    std::string evictionHint = "";
-    if (Inst->hasAttr(InstAttr::evict_last))
-      evictionHint = "evict_last";
-    else if (Inst->hasAttr(InstAttr::evict_normal))
-      evictionHint = "evict_normal";
-
-    if (!evictionHint.empty()) {
-      report(Diagnostics::API_NOT_MIGRATED, /*UseTextBegin=*/true,
-             GAS->getAsmString()->getString());
-      return SYCLGenSuccess();
-    }
-
     llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
     CurrInst = Inst;
     const auto *Src =
         dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getInputOperand(0));
     if (!Src)
-      return false;
+      return SYCLGenError();
 
     OS() << MapNames::getExpNamespace() << "prefetch(";
     if (emitStmt(Src))
@@ -1330,15 +1315,6 @@ protected:
     OS() << MapNames::getExpNamespace() << "prefetch_hint_" << PrefetchHint;
     OS() << "})";
     endstmt();
-    return SYCLGenSuccess();
-  }
-
-  bool handle_prefetchu(const InlineAsmInstruction *Inst) override {
-    if (!DpctGlobalInfo::useExtPrefetch())
-      return SYCLGenError();
-
-    report(Diagnostics::API_NOT_MIGRATED, /*UseTextBegin=*/true,
-           GAS->getAsmString()->getString());
     return SYCLGenSuccess();
   }
 

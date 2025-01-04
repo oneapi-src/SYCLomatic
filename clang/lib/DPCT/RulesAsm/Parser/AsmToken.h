@@ -27,10 +27,9 @@ class InlineAsmToken {
 
 public:
   enum TokenFlags {
-    NeedsCleaning = 0x01,     // This identifier contains special characters.
-    Placeholder = 0x02,       // This identifier is an inline asm placeholder.
-    StartOfDot = 0x04,        // This identifier is a dot identifier.
-    StartOfColonColon = 0x08, // This identifier is a coloncolon identifier.
+    NeedsCleaning = 0x01, // This identifier contains special characters.
+    Placeholder = 0x02,   // This identifier is an inline asm placeholder.
+    StartOfDot = 0x04,    // This identifier is a dot identifier.
   };
 
   asmtok::TokenKind getKind() const { return Kind; }
@@ -115,9 +114,6 @@ public:
 
   /// Return true if this token is a dot identifier.
   bool startOfDot() const { return getFlag(StartOfDot); }
-
-  /// Return true if this token is a coloncolon identifier.
-  bool startOfColonColon() const { return getFlag(StartOfColonColon); }
 };
 
 } // namespace clang::dpct

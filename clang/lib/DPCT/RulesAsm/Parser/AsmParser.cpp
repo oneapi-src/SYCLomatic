@@ -335,7 +335,7 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   SmallVector<InlineAsmExpr *, 4> Ops;
   std::optional<AsmStateSpace> StateSpace;
 
-  while (Tok.startOfDot() || Tok.startOfColonColon()) {
+  while (Tok.startOfDot()) {
     switch (Tok.getIdentifier()->getFlags()) {
     case InlineAsmIdentifierInfo::BuiltinType:
       Types.push_back(Context.getBuiltinTypeFromTokenKind(Tok.getKind()));
@@ -354,11 +354,6 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
       return AsmStmtError();
     }
     ConsumeToken(); // consume instruction attribute
-  }
-
-  if (Tok.getKind() == asmtok::coloncolon) {
-    Attrs.push_back(ConvertToInstAttr(Tok.getKind()));
-    ConsumeToken();
   }
 
   InlineAsmExprResult Pred, Out;
@@ -383,8 +378,7 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
     Out = nullptr;
   }
   // prefetch{.state}.{level} [%0] has only one input operand and no type.
-  if (Opcode->getTokenID() == asmtok::op_prefetch ||
-      Opcode->getTokenID() == asmtok::op_prefetchu) {
+  if (Opcode->getTokenID() == asmtok::op_prefetch) {
     Ops.push_back(Out.get());
     Out = nullptr;
     Types.push_back(Context.getBuiltinType(InlineAsmBuiltinType::byte));

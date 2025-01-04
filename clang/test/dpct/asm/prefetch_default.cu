@@ -34,36 +34,6 @@ __global__ void prefetch(int *arr) {
   // CHECK-NEXT: DPCT1053:{{.*}} Migration of device assembly code is not supported.
   // CHECK-NEXT: */
   asm volatile("prefetch.global.L1 [%0 + 2];" :: "l"(arr));
-
-  /* prefetch of global address space with eviction priority */
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1053:{{.*}} Migration of device assembly code is not supported.
-  // CHECK-NEXT: */
-  asm volatile ("prefetch.global.L2::evict_last [%0];" : : "l"(arr));
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1053:{{.*}} Migration of device assembly code is not supported.
-  // CHECK-NEXT: */
-  asm volatile ("prefetch.global.L2::evict_normal [%0];" : : "l"(arr));
-
-  /* prefetch of local address space */
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1053:{{.*}} Migration of device assembly code is not supported.
-  // CHECK-NEXT: */
-  asm volatile ("prefetch.local.L1 [%0];" : : "l"(arr));
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1053:{{.*}} Migration of device assembly code is not supported.
-  // CHECK-NEXT: */
-  asm volatile ("prefetch.local.L2 [%0];" : : "l"(arr));
-
-  /* prefetch of tensormap space */
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1053:{{.*}} Migration of device assembly code is not supported.
-  // CHECK-NEXT: */
-  asm volatile ("prefetch.const.tensormap [%0];" : : "l"(arr));
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1053:{{.*}} Migration of device assembly code is not supported.
-  // CHECK-NEXT: */
-  asm volatile ("prefetch.param.tensormap [%0];" : : "l"(arr));
 #endif // BUILD_TEST
 }
 

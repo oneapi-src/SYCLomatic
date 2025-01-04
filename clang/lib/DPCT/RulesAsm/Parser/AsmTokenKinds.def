@@ -406,9 +406,6 @@ MODIFIER(sc, ".sc")
 MODIFIER(gl, ".gl")
 MODIFIER(L1, ".L1")
 MODIFIER(L2, ".L2")
-MODIFIER(tensormap, ".tensormap")
-MODIFIER(evict_last, "::evict_last")
-MODIFIER(evict_normal, "::evict_normal")
 
 
 #undef LINKAGE

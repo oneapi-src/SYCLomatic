@@ -40,28 +40,6 @@ __global__ void prefetch(int *arr) {
   /* using Register-Immediate (Displacement) address mode */
   // CHECK: sycl::ext::oneapi::experimental::prefetch(((uint8_t *)((uintptr_t)arr + 2)), sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::experimental::prefetch_hint_L1});
   asm volatile("prefetch.global.L1 [%0 + 2];" :: "l"(arr));
-
-#ifndef BUILD_TEST
-  /* prefetch of global address space with eviction priority */
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{.*}} Migration of prefetch.global.L2::evict_last [%0]; is not supported.
-  // CHECK-NEXT: */
-  asm volatile ("prefetch.global.L2::evict_last [%0];" : : "l"(arr));
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{.*}} Migration of prefetch.global.L2::evict_normal [%0]; is not supported.
-  // CHECK-NEXT: */
-  asm volatile ("prefetch.global.L2::evict_normal [%0];" : : "l"(arr));
-
-  /* prefetch of local address space */
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{.*}} Migration of prefetch.local.L1 [%0]; is not supported.
-  // CHECK-NEXT: */
-  asm volatile ("prefetch.local.L1 [%0];" : : "l"(arr));
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{.*}} Migration of prefetch.local.L2 [%0]; is not supported.
-  // CHECK-NEXT: */
-  asm volatile ("prefetch.local.L2 [%0];" : : "l"(arr));
-#endif // BUILD_TEST
 }
 
 // clang-format on
