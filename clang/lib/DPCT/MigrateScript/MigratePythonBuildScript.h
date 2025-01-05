@@ -23,6 +23,7 @@ void doPythonBuildScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                                   const clang::tooling::UnifiedPath &OutRoot);
 void registerPythonMigrationRule(MetaRuleObject &R);
 bool pythonBuildScriptNotFound();
+bool pythonMigrationRulesRegistered();
 void addPythonWarningMsg(const std::string &WarningMsg,
                          const std::string FileName);
 } // namespace dpct

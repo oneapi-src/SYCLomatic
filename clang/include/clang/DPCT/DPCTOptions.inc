@@ -464,7 +464,8 @@ DPCT_ENUM_OPTION(
 DPCT_ENUM_OPTION(
     clang::dpct::opt, BuildScriptKind, BuildScript,
     clang::dpct::DpctOptionClass::OC_Attribute,
-    DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration,
+    DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_BuildScript,
+                        clang::dpct::DpctActionKind::DAK_Migration,
                         clang::dpct::DpctActionKind::DAK_Analysis),
     "migrate-build-script",
     DPCT_OPTION_VALUES(
@@ -473,10 +474,13 @@ DPCT_ENUM_OPTION(
         DPCT_OPTION_ENUM_VALUE("Python", int(BuildScriptKind::BS_Python),
                                "Migrate the python build script file(s) of "
                                "PyTorch based project.",
-                               false)),
+                               false),
+        DPCT_OPTION_ENUM_VALUE(
+            "CMake,Python", int(BuildScriptKind::BS_Both),
+            "Migrate both CMake & python build script file(s)", false)),
     llvm::cl::desc("EXPERIMENTAL: Migrate build script(s).\n"),
     llvm::cl::init(BuildScriptKind::BS_None), llvm::cl::value_desc("value"),
-    llvm::cl::Optional)
+    llvm::cl::cat(CtHelpCatAll), llvm::cl::Optional)
 
 DPCT_ENUM_OPTION(
     clang::dpct::opt, FormatRange, FormatRng,
@@ -856,7 +860,9 @@ DPCT_FLAG_OPTION(
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_BuildScript),
     "migrate-build-script-only",
     llvm::cl::desc(
-        "EXPERIMENTAL: Only migrate the build script(s). Default: off."))
+        "EXPERIMENTAL: Only migrate the build script(s). Default: off."),
+    llvm::cl::cat(CtHelpCatAll), llvm::cl::cat(CtHelpCatBasic),
+    llvm::cl::Optional)
 
 DPCT_OPTION(
     clang::dpct::list, std::string, ExcludePathList,

@@ -596,7 +596,7 @@ int migrateCmakeScript(const clang::tooling::UnifiedPath &InRoot,
 
 int migratePythonScript(const clang::tooling::UnifiedPath &InRoot,
                         const clang::tooling::UnifiedPath &OutRoot) {
-  if (!pythonBuildScriptNotFound()) {
+  if (pythonMigrationRulesRegistered() && !pythonBuildScriptNotFound()) {
     runWithCrashGuard(
         [&]() { doPythonBuildScriptMigration(InRoot, OutRoot); },
         "Error: dpct internal error. Migrating Python build scripts in \"" +
@@ -846,17 +846,13 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if ((BuildScript == BuildScriptKind::BS_Cmake ||
+  if (!MigrateBuildScriptOnly &&
+      (BuildScript == BuildScriptKind::BS_Both ||
+       BuildScript == BuildScriptKind::BS_Cmake ||
        BuildScript == BuildScriptKind::BS_Python) &&
       !OptParser->getSourcePathList().empty()) {
     ShowStatus(MigrateBuildScriptIncorrectUse);
     dpctExit(MigrateBuildScriptIncorrectUse);
-  }
-  if ((BuildScript == BuildScriptKind::BS_Cmake ||
-       BuildScript == BuildScriptKind::BS_Python) &&
-      MigrateBuildScriptOnly) {
-    ShowStatus(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
-    dpctExit(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
   }
 
   int SDKIncPathRes = checkSDKPathOrIncludePath(CudaIncludePath);
@@ -1030,9 +1026,10 @@ int runDPCT(int argc, const char **argv) {
     Tool.setPrintErrorMessage(false);
   } else {
     IsUsingDefaultOutRoot = OutRootPath.getPath().empty();
-    bool NeedCheckOutRootEmpty = !(BuildScript == BuildScriptKind::BS_Cmake ||
-                                   BuildScript == BuildScriptKind::BS_Python) &&
-                                 !MigrateBuildScriptOnly;
+    bool NeedCheckOutRootEmpty =
+        !(BuildScript == BuildScriptKind::BS_Both ||
+          BuildScript == BuildScriptKind::BS_Cmake ||
+          BuildScript == BuildScriptKind::BS_Python || MigrateBuildScriptOnly);
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
         !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
@@ -1186,7 +1183,7 @@ int runDPCT(int argc, const char **argv) {
   clang::dpct::initHeaderSpellings();
 
   // load user defind rules in case.
-  if (MigrateBuildScriptOnly ||
+  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Both ||
       DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
     SmallString<128> FilePath1(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(FilePath1,
@@ -1204,7 +1201,7 @@ int runDPCT(int argc, const char **argv) {
     dpct::genCmakeHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
   }
 
-  if (MigrateBuildScriptOnly ||
+  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Both ||
       DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Python) {
     // check if RuleFilePaths contains any user specified python migration rule
     // file
@@ -1215,17 +1212,14 @@ int runDPCT(int argc, const char **argv) {
         });
 
     if (!pythonRuleFilePresent) {
-      SmallString<128> PythonRuleFilePath(DpctInstallPath.getCanonicalPath());
-      llvm::sys::path::append(
-          PythonRuleFilePath,
-          Twine("extensions/python_rules/"
-                "python_build_script_migration_rule_pytorch.yaml"));
-      if (llvm::sys::fs::exists(PythonRuleFilePath)) {
-        std::vector<clang::tooling::UnifiedPath> PythonRuleFiles{
-            PythonRuleFilePath};
-        importRules(PythonRuleFiles);
-        // generage helper functions file in the outroot dir here
+      if (MigrateBuildScriptOnly) {
+        ShowStatus(
+            MigratePythonBuildScriptSpecifiedButPythonRuleFileNotSpecified);
+        dpctExit(
+            MigratePythonBuildScriptSpecifiedButPythonRuleFileNotSpecified);
       }
+
+      llvm::errs() << getPythonRuleFileNotProvidedWarning();
     }
   }
 
@@ -1312,10 +1306,16 @@ int runDPCT(int argc, const char **argv) {
   // OC_Action: only migrate Build scripts.
   if (MigrateBuildScriptOnly) {
     loadMainSrcFileInfo(OutRootPath);
-    collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
-    collectPythonBuildScriptsSpecified(OptParser, InRootPath, OutRootPath);
-    migrateCmakeScript(InRootPath, OutRootPath);
-    migratePythonScript(InRootPath, OutRootPath);
+    if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Both ||
+        DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
+      collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
+      migrateCmakeScript(InRootPath, OutRootPath);
+    }
+    if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Both ||
+        DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Python) {
+      collectPythonBuildScriptsSpecified(OptParser, InRootPath, OutRootPath);
+      migratePythonScript(InRootPath, OutRootPath);
+    }
     if (cmakeScriptNotFound() && pythonBuildScriptNotFound()) {
       std::cout << BuildScriptMigrationHelpHint << "\n";
     }
@@ -1450,7 +1450,8 @@ int runDPCT(int argc, const char **argv) {
           "\" causing the error skipped. Migration continues.\n");
 
   // OC_Action: Migrate CMake scripts after Code Migration
-  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
+  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Both ||
+      DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScripts(InRootPath, OutRootPath);
     migrateCmakeScript(InRootPath, OutRootPath);
@@ -1459,7 +1460,9 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Python) {
+  // OC_Action: Migrate Python scripts after Code Migration
+  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Both ||
+      DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Python) {
     loadMainSrcFileInfo(OutRootPath);
     collectPythonBuildScripts(InRootPath, OutRootPath);
     migratePythonScript(InRootPath, OutRootPath);

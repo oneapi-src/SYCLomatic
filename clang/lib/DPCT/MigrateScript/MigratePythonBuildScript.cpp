@@ -98,6 +98,8 @@ applyPythonMigrationRules(const clang::tooling::UnifiedPath InRoot,
 
 bool pythonBuildScriptNotFound() { return PythonBuildScriptFilesSet.empty(); }
 
+bool pythonMigrationRulesRegistered() { return !PythonBuildInRules.empty(); }
+
 void doPythonBuildScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                                   const clang::tooling::UnifiedPath &OutRoot) {
   loadBufferFromFile(InRoot, OutRoot, PythonBuildScriptFilesSet,

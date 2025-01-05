@@ -3,7 +3,7 @@
 // RUN: cp -r %S/nvcv_types ./nvcv_types
 // RUN: mkdir -p out
 // RUN: cp %S/MainSourceFiles.yaml ./out
-// RUN: dpct -in-root ./ -out-root out   --migrate-build-script-only
+// RUN: dpct -in-root ./ -out-root out   --migrate-build-script-only --migrate-build-script=CMake
 
 // RUN: echo "begin" > %T/diff_1.txt
 // RUN: diff --strip-trailing-cr %S/CMakeLists_outer.ref %T/out/nvcv_types/CMakeLists.txt >> %T/diff_1.txt
