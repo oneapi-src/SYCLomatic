@@ -136,8 +136,8 @@ public:
 
   /// num_levels setter
   /// \param [in] numLevels The no. of levels in the imported image resource
-  void set_num_levels(unsigned int numLevels) {
-    num_levels = numLevels;
+  void set_num_levels(unsigned int num_levels) {
+    this->num_levels = num_levels;
 
     if (num_levels > 1) {
       set_image_type(sycl::ext::oneapi::experimental::image_type::mipmap);
