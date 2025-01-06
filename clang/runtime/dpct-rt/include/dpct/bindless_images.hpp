@@ -123,9 +123,11 @@ public:
   /// size setter
   /// \param [in] img_dims The dimensions of the imported image resource
   void set_size(sycl::range<3> img_dims) {
+    size = img_dims;
+
     for (int i = 0; i < 3; i++) {
-      if (img_dims[i] > 1) {
-        size[i] = img_dims[i];
+      if (size[i] == 1) {
+        size[i] = 0;
       }
     }
   }
