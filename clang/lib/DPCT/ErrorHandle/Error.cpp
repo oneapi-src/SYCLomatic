@@ -248,6 +248,14 @@ std::string getCheckVersionFailWarning() {
          "overview.html for more "
          "details.\n";
 }
+std::string getBuildScriptNotSpecifiedWarning() {
+  return "Warning: Only CMake scripts will be migrated as no "
+         "--migrate-build-script option is provided. "
+         "See https://www.intel.com/content/www/us/en/docs/"
+         "dpcpp-compatibility-tool/developer-guide-reference/current/"
+         "overview.html for more "
+         "details.\n";
+}
 std::string getPythonRuleFileNotProvidedWarning() {
   return "Warning: Rule file for python build script migration not found. "
          "Migration continues with python build script migration disabled. See "

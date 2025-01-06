@@ -462,25 +462,27 @@ DPCT_ENUM_OPTION(
     llvm::cl::Optional)
 
 DPCT_ENUM_OPTION(
-    clang::dpct::opt, BuildScriptKind, BuildScript,
+    clang::dpct::bits, BuildScriptKind, BuildScript,
     clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_BuildScript,
                         clang::dpct::DpctActionKind::DAK_Migration,
                         clang::dpct::DpctActionKind::DAK_Analysis),
     "migrate-build-script",
     DPCT_OPTION_VALUES(
-        DPCT_OPTION_ENUM_VALUE("CMake", int(BuildScriptKind::BS_Cmake),
+        DPCT_OPTION_ENUM_VALUE("CMake", int(BuildScriptKind::BS_CMake),
                                "Migrate the CMake file(s).", false),
         DPCT_OPTION_ENUM_VALUE("Python", int(BuildScriptKind::BS_Python),
                                "Migrate the python build script file(s) of "
                                "PyTorch based project.",
-                               false),
-        DPCT_OPTION_ENUM_VALUE(
-            "CMake,Python", int(BuildScriptKind::BS_Both),
-            "Migrate both CMake & python build script file(s)", false)),
-    llvm::cl::desc("EXPERIMENTAL: Migrate build script(s).\n"),
-    llvm::cl::init(BuildScriptKind::BS_None), llvm::cl::value_desc("value"),
-    llvm::cl::cat(CtHelpCatAll), llvm::cl::Optional)
+                               false)),
+    llvm::cl::desc(
+        "EXPERIMENTAL: A comma-separated list of build script type(s) to be "
+        "migrated.\n"
+        "By default, no build script is migrated.\n"
+        "The values are:\n"),
+    llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
+    llvm::cl::cat(CtHelpCatAll), llvm::cl::cat(CtHelpCatAdvanced),
+    llvm::cl::Optional, llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(
     clang::dpct::opt, FormatRange, FormatRng,

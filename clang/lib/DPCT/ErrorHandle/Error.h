@@ -75,6 +75,7 @@ namespace dpct {
 void ShowStatus(int Status, std::string Message = "");
 std::string getLoadYamlFailWarning(const clang::tooling::UnifiedPath& YamlPath);
 std::string getCheckVersionFailWarning();
+std::string getBuildScriptNotSpecifiedWarning();
 std::string getPythonRuleFileNotProvidedWarning();
 
 extern bool IsUsingDefaultOutRoot;

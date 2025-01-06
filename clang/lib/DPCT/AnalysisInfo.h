@@ -832,8 +832,17 @@ public:
   static unsigned int getKCIndentWidth();
   static UsmLevel getUsmLevel() { return UsmLvl; }
   static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
-  static BuildScriptKind getBuildScript() { return BuildScriptVal; }
-  static void setBuildScript(BuildScriptKind BSVal) { BuildScriptVal = BSVal; }
+  static unsigned getBuildScript() { return BuildScriptType; }
+  static void setBuildScript(unsigned BS_type) { BuildScriptType = BS_type; }
+  template <BuildScriptKind BS_kind> static bool getMigrateBuildScriptType() {
+    return BuildScriptType & (1 << static_cast<unsigned>(BS_kind));
+  }
+  static bool migrateCMakeScripts() {
+    return getMigrateBuildScriptType<BuildScriptKind::BS_CMake>();
+  }
+  static bool migratePythonScripts() {
+    return getMigrateBuildScriptType<BuildScriptKind::BS_Python>();
+  }
   static clang::CudaVersion getSDKVersion() { return SDKVersion; }
   static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
   static bool isIncMigration() { return IsIncMigration; }
@@ -1570,7 +1579,7 @@ private:
   static clang::tooling::UnifiedPath CudaPath;
   static std::string RuleFile;
   static UsmLevel UsmLvl;
-  static BuildScriptKind BuildScriptVal;
+  static unsigned BuildScriptType;
   static clang::CudaVersion SDKVersion;
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;

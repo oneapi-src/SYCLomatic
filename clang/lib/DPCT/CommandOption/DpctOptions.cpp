@@ -174,8 +174,6 @@ void DpctOptionBase::init() {
                 DpctOptionNameKind::OPT_InRoot);
   setDependency(DpctOptionNameKind::OPT_BuildScriptFile,
                 DpctOptionNameKind::OPT_GenBuildScript);
-  setDependency(DpctOptionNameKind::OPT_MigrateBuildScriptOnly,
-                DpctOptionNameKind::OPT_BuildScript);
 }
 
 void DpctOptionBase::check() {
