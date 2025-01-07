@@ -71,8 +71,8 @@ int main() {
   cudaGraphAddEmptyNode(&node, graph, node10, 1);
 
   size_t *numNodes;
-  // CHECK: dpct::experimental::get_nodes(graph, node2, numNodes);
-  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_nodes(graph, node2, numNodes)));
+  // CHECK: dpct::experimental::get_nodes(graph, node4, numNodes);
+  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_nodes(graph, node4 numNodes)));
   cudaGraphGetNodes(graph, node4, numNodes);
   CUDA_CHECK_THROW(cudaGraphGetNodes(graph, node4, numNodes));
 
