@@ -133,5 +133,41 @@ static void add_dependencies(dpct::experimental::command_graph_ptr graph,
   }
 }
 
+/// Gets the nodes in the command graph.
+/// \param [in] graph A pointer to the command graph.
+/// \param [out] nodesArray An array of node pointers where the
+/// nodes will be assigned.
+/// \param [out] numberOfNodes The number of nodes in the graph.
+static void get_nodes(dpct::experimental::command_graph_ptr graph,
+                      dpct::experimental::node_ptr *nodesArray,
+                      std::size_t *numberOfNodes) {
+  auto nodes = graph->get_nodes();
+  *numberOfNodes = nodes.size();
+  if (!nodesArray) {
+    return;
+  }
+  for (std::size_t i = 0; i < *numberOfNodes; i++) {
+    nodesArray[i] = &nodes[i];
+  }
+}
+
+/// Gets the root nodes in the command graph.
+/// \param [in] graph A pointer to the command graph.
+/// \param [out] nodesArray An array of node pointers where the
+/// root nodes will be assigned.
+/// \param [out] numberOfNodes The number of root nodes in the graph.
+static void get_root_nodes(dpct::experimental::command_graph_ptr graph,
+                           dpct::experimental::node_ptr *nodesArray,
+                           std::size_t *numberOfNodes) {
+  auto nodes = graph->get_root_nodes();
+  *numberOfNodes = nodes.size();
+  if (!nodesArray) {
+    return;
+  }
+  for (std::size_t i = 0; i < *numberOfNodes; i++) {
+    nodesArray[i] = &nodes[i];
+  }
+}
+
 } // namespace experimental
 } // namespace dpct
