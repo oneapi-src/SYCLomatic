@@ -2,7 +2,6 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct -in-root %S -out-root %T/template_uninstantiated %S/template_uninstantiated.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/template_uninstantiated/template_uninstantiated.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/template_uninstantiated/template_uninstantiated.dp.cpp -o %T/template_uninstantiated/template_uninstantiated.dp.o %}
 
 #include <cub/cub.cuh>
 

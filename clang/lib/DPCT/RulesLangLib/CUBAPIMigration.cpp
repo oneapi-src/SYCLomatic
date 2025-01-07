@@ -739,12 +739,12 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   auto isTempStorage = hasDeclaration(namedDecl(hasAnyName("TempStorage")));
   MF.addMatcher(declStmt(has(varDecl(anyOf(
-                             hasType(typeContainsString("TempStorage")),
                              hasType(hasCanonicalType(qualType(isTempStorage))),
                              hasType(arrayType(hasElementType(
                                  hasCanonicalType(qualType(isTempStorage))))),
                              hasType(hasCanonicalType(qualType(hasDeclaration(
-                                 recordDecl(isUnion(), has(fieldDecl()))))))))))
+                                 recordDecl(isUnion(), has(fieldDecl())))))),
+                             hasType(typeContainsString("TempStorage"))))))
                     .bind("DeclStmt"),
                 this);
 
@@ -1653,7 +1653,8 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
                  getNodeAsType<CXXDependentScopeMemberExpr>(
                      Result, "DependentMemberCall")) {
     processDependentMemberCall(DMC);
-  } else if (const DeclStmt *DS = getNodeAsType<DeclStmt>(Result, "DeclStmt")) {
+  } else if (const DeclStmt *DS =
+                 getAssistNodeAsType<DeclStmt>(Result, "DeclStmt")) {
     processCubDeclStmt(DS);
   } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall")) {
     processCubFuncCall(CE);
