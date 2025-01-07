@@ -52,4 +52,4 @@ void unifyInputFileFormat(
 } // namespace dpct
 } // namespace clang
 
-#endif //!DPCT_MIGRATE_BUILD_SCRIPT_H
+#endif //! DPCT_MIGRATE_BUILD_SCRIPT_H
