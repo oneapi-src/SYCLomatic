@@ -79,10 +79,9 @@ CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
-    CALL_FACTORY_ENTRY("cudaGraphGetNodes",
-                       CALL(MapNames::getDpctNamespace() +
-                                "experimental::get_nodes",
-                            ARG(0), ARG(1), ARG(2))),
+    CALL_FACTORY_ENTRY("cudaGraphGetNodes", CALL(MapNames::getDpctNamespace() +
+                                                     "experimental::get_nodes",
+                                                 ARG(0), ARG(1), ARG(2))),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphGetNodes",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphGetNodes"),
