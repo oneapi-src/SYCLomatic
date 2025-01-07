@@ -6267,47 +6267,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
     return;
   }
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-  if (Name == "cudaFree" || Name == "cublasFree") {
-    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
-      ArgumentAnalysis AA;
-      AA.setCallSpelling(C);
-      AA.analyze(C->getArg(0));
-      auto ArgStr = AA.getRewritePrefix() + AA.getRewriteString() +
-                    AA.getRewritePostfix();
-      std::ostringstream Repl;
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      if (hasManagedAttr(0)(C)) {
-        ArgStr = "*(" + ArgStr + ".get_ptr())";
-      }
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Indent = getIndent(SM.getExpansionLoc(C->getBeginLoc()), SM).str();
-      if (DpctGlobalInfo::isOptimizeMigration()) {
-        Repl << MapNames::getClNamespace() << "free";
-      } else {
-        if (DpctGlobalInfo::useNoQueueDevice()) {
-          Repl << Indent << "{{NEEDREPLACEQ" << std::to_string(Index)
-               << "}}.wait_and_throw();\n"
-               << Indent << MapNames::getClNamespace() << "free";
-        } else {
-          requestFeature(HelperFeatureEnum::device_ext);
-          Repl << MapNames::getDpctNamespace();
-          if (DpctGlobalInfo::useSYCLCompat())
-            Repl << "wait_and_free";
-          else
-            Repl << "dpct_free";
-        }
-      }
-      Repl << "(" << ArgStr
-           << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
-    } else {
-      requestFeature(HelperFeatureEnum::device_ext);
-      emplaceTransformation(new ReplaceCalleeName(
-          C, MapNames::getDpctNamespace() + (DpctGlobalInfo::useSYCLCompat()
-                                                 ? "wait_and_free"
-                                                 : "dpct_free")));
-    }
-  } else if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
+  if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
     if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       CheckCanUseCLibraryMallocOrFree Checker(0, true);
       ExprAnalysis EA;
@@ -6817,7 +6777,8 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemAllocPitch_v2") && Name.compare("cuMemAlloc_v2") &&
         Name.compare("cudaMallocMipmappedArray") &&
         Name.compare("cudaGetMipmappedArrayLevel") &&
-        Name.compare("cudaFreeMipmappedArray") && Name.compare("cudaMemcpy")) {
+        Name.compare("cudaFreeMipmappedArray") && Name.compare("cudaMemcpy") &&
+        Name.compare("cudaFree") && Name.compare("cublasFree")) {
       requestFeature(HelperFeatureEnum::device_ext);
       insertAroundStmt(C, MapNames::getCheckErrorMacroName() + "(", ")");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&

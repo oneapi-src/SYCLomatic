@@ -2264,10 +2264,12 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
     // the behavior of immediateExpansion is different:
     // 1. string_literal created with "#" does not include the last token
     // 2. greatergreatergreater of template does include the last token
+    // 3. raw_identifier created with "##" is similar as (1)
     // We need to process the last token according to the token kind.
     if (IncludeLastToken &&
         (!SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd())) ||
-         Tok.getKind() == tok::TokenKind::string_literal)) {
+         Tok.getKind() == tok::TokenKind::string_literal ||
+         Tok.getKind() == tok::TokenKind::raw_identifier)) {
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
       ResultEnd = ResultEnd.getLocWithOffset(LastTokenLength);

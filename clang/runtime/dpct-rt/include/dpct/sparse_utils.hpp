@@ -47,6 +47,11 @@ enum matrix_attribute : int { uplo = 0, diag };
 enum class conversion_scope : int { index = 0, index_and_value };
 
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
+// Forward declaration
+namespace detail {
+template <typename T> struct optimize_csrsv_impl;
+}
+
 /// Saving the optimization information for solving a system of linear
 /// equations.
 class optimize_info {
@@ -67,10 +72,27 @@ public:
   oneapi::mkl::sparse::matrix_handle_t get_matrix_handle() const noexcept {
     return _matrix_handle;
   }
+#ifdef DPCT_USM_LEVEL_NONE
+  template <typename T> friend struct detail::optimize_csrsv_impl;
+#endif
 
 private:
   oneapi::mkl::sparse::matrix_handle_t _matrix_handle = nullptr;
   std::vector<sycl::event> _deps;
+#ifdef DPCT_USM_LEVEL_NONE
+  static constexpr size_t _max_data_variable_size =
+      (std::max)({sizeof(sycl::buffer<float>), sizeof(sycl::buffer<double>),
+                  sizeof(sycl::buffer<std::complex<float>>),
+                  sizeof(sycl::buffer<std::complex<double>>)});
+  using value_buf_t =
+      std::variant<std::array<std::byte, _max_data_variable_size>,
+                   sycl::buffer<float>, sycl::buffer<double>,
+                   sycl::buffer<std::complex<float>>,
+                   sycl::buffer<std::complex<double>>>;
+  sycl::buffer<int> _row_ptr_buf = sycl::buffer<int>(0);
+  sycl::buffer<int> _col_ind_buf = sycl::buffer<int>(0);
+  value_buf_t _val_buf;
+#endif
 };
 
 /// Structure for describe a sparse matrix

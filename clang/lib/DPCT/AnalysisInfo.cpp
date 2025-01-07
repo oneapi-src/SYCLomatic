@@ -984,9 +984,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     insertHeader(HT_DPL_Execution);
     insertHeader(HT_DPL_Algorithm);
     break;
-  case HT_MKL_RNG:
-    insertHeader(HT_MKL_Mkl);
-    break;
   case HT_DPCT_CodePin_CUDA:
   case HT_DPCT_CodePin_SYCL: {
     OS << getNL();

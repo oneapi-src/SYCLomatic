@@ -58,9 +58,6 @@ ONEDPL_HEADER(Async, "<oneapi/dpl/async>")
 ONEDPL_HEADER(Memory, "<oneapi/dpl/memory>")
 ONEDPL_HEADER(Random, "<oneapi/dpl/random>")
 
-MKL_HEADER(Mkl, "<oneapi/mkl.hpp>")
-MKL_HEADER(RNG, "<oneapi/mkl/rng/device.hpp>")
-
 DPCT_HEADER(Dpct,  "<dpct/dpct.hpp>")
 DPCT_HEADER(DPL_Utils, "<dpct/dpl_utils.hpp>")
 DPCT_HEADER(FFT_Utils, "<dpct/fft_utils.hpp>")

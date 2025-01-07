@@ -152,9 +152,21 @@ template <typename T> struct optimize_csrsv_impl {
                   const int *row_ptr, const int *col_ind,
                   std::shared_ptr<optimize_info> optimize_info) {
     using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
-    auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
-    auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
-    auto data_val = dpct::detail::get_memory<Ty>(val);
+    auto temp_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+    auto temp_col_ind = dpct::detail::get_memory<int>(col_ind);
+    auto temp_val = dpct::detail::get_memory<Ty>(val);
+#ifdef DPCT_USM_LEVEL_NONE
+    optimize_info->_row_ptr_buf = temp_row_ptr;
+    optimize_info->_col_ind_buf = temp_col_ind;
+    optimize_info->_val_buf = temp_val;
+    auto &data_row_ptr = optimize_info->_row_ptr_buf;
+    auto &data_col_ind = optimize_info->_col_ind_buf;
+    auto &data_val = std::get<sycl::buffer<Ty>>(optimize_info->_val_buf);
+#else
+    auto data_row_ptr = temp_row_ptr;
+    auto data_col_ind = temp_col_ind;
+    auto data_val = temp_val;
+#endif
     oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
                                       row_col, row_col, info->get_index_base(),
                                       data_row_ptr, data_col_ind, data_val);
@@ -363,11 +375,12 @@ template <typename T> struct csr2csc_impl {
                                       data_to_val);
     sycl::event e1 = oneapi::mkl::sparse::omatcopy(
         queue, oneapi::mkl::transpose::trans, from_handle, to_handle);
-    oneapi::mkl::sparse::release_matrix_handle(queue, &from_handle, {e1});
     sycl::event e2 =
+        oneapi::mkl::sparse::release_matrix_handle(queue, &from_handle, {e1});
+    sycl::event e3 =
         oneapi::mkl::sparse::release_matrix_handle(queue, &to_handle, {e1});
     if (range == conversion_scope::index) {
-      ::dpct::cs::enqueue_free({new_to_value}, {e2}, queue);
+      ::dpct::cs::enqueue_free({new_to_value}, {e2, e3}, queue);
     }
   }
 };

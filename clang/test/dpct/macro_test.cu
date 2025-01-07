@@ -1444,4 +1444,72 @@ void foo43() {
 #undef TOO_SMALL
 #undef JUST_RIGHT
 
+//     CHECK: #define TODEV(A, s)                                                            \
+//CHECK-NEXT:   A = (float *)malloc((s) * sizeof(float));                                    \
+//CHECK-NEXT:     for (int i = 0; i < s; i++) A[i] = 0.001;                                  \
+//CHECK-NEXT:   float *A##_d;                                                                \
+//CHECK-NEXT:   A##_d = sycl::malloc_device<float>(((s)), dpct::get_in_order_queue());       \
+//CHECK-NEXT:   dpct::get_in_order_queue().memcpy(A##_d, A, (s) * sizeof(float)).wait();
+# define TODEV(A,s) A = (float*) malloc ((s) * sizeof(float)); \
+                    for (int i = 0; i < s; i++) A[i] = 0.001; \
+                    float *A##_d;\
+                    cudaMalloc((void**)&A##_d,((s))*sizeof(float));\
+                    cudaMemcpy(A##_d, A, (s)*sizeof(float), cudaMemcpyHostToDevice);
+
+//     CHECK: #define FROMDEV(A, s)                                                          \
+//CHECK-NEXT:   dpct::get_in_order_queue().memcpy(A, A##_d, (s) * sizeof(float)).wait();
+# define FROMDEV(A,s) cudaMemcpy(A, A##_d, (s)*sizeof(float), cudaMemcpyDeviceToHost);
+
+//     CHECK: #define FREE(A)                                                                \
+//CHECK-NEXT:   free(A);                                                                     \
+//CHECK-NEXT:   dpct::dpct_free(A##_d, q_ct1)
+# define FREE(A) free(A);\
+                 cudaFree(A##_d)
+
+//     CHECK: # define TODEV3(A) TODEV(A,d3)
+//CHECK-NEXT: # define TODEV2(A) TODEV(A,d2)
+//CHECK-NEXT: # define FROMDEV3(A) FROMDEV(A,d3)
+//CHECK-NEXT: # define FROMDEV2(A) FROMDEV(A,d2)
+# define TODEV3(A) TODEV(A,d3)
+# define TODEV2(A) TODEV(A,d2)
+# define FROMDEV3(A) FROMDEV(A,d3)
+# define FROMDEV2(A) FROMDEV(A,d2)
+
+//     CHECK: void foo44(float *x, int size, int d3, int d2) {
+//CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK-NEXT:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+//CHECK-NEXT:   TODEV(x, size)
+//CHECK-NEXT:   FROMDEV(x, size)
+//CHECK-NEXT:   FREE(x);
+//CHECK-NEXT:   {
+//CHECK-NEXT:     TODEV3(x)
+//CHECK-NEXT:   }
+//CHECK-NEXT:   {
+//CHECK-NEXT:     TODEV2(x)
+//CHECK-NEXT:   }
+//CHECK-NEXT:   FROMDEV3(x)
+//CHECK-NEXT:   FROMDEV2(x)
+//CHECK-NEXT: }
+void foo44(float *x, int size, int d3, int d2) {
+  TODEV(x, size)
+  FROMDEV(x, size)
+  FREE(x);
+  {
+    TODEV3(x)
+  }
+  {
+    TODEV2(x)
+  }
+  FROMDEV3(x)
+  FROMDEV2(x)
+}
+
+#undef TODEV
+#undef FROMDEV
+#undef FREE
+#undef TODEV3
+#undef TODEV2
+#undef FROMDEV3
+#undef FROMDEV2
+
 #endif

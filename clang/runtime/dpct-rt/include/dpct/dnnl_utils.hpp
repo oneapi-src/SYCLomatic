@@ -14,7 +14,16 @@
 
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
+
+#if defined(__has_include) && __has_include(<oneapi/math/rng/device.hpp>)
+#include <oneapi/math/rng/device.hpp>
+#elif defined(__has_include) && __has_include(<oneapi/mkl/rng/device.hpp>)
 #include <oneapi/mkl/rng/device.hpp>
+#elif defined(__has_include)
+#error "SYCLomatic runtime requires oneMath/oneMKL support"
+#else
+#error "SYCLomatic runtime requires __has_include support"
+#endif
 
 #include <algorithm>
 #include <list>
