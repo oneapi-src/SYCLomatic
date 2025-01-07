@@ -72,15 +72,15 @@ int main() {
 
   size_t *numNodes;
   // CHECK: dpct::experimental::get_nodes(graph, node4, numNodes);
-  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_nodes(graph, node4 numNodes)));
+  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_nodes(graph, node4, numNodes)));
   cudaGraphGetNodes(graph, node4, numNodes);
   CUDA_CHECK_THROW(cudaGraphGetNodes(graph, node4, numNodes));
 
   // CHECK: dpct::experimental::get_nodes(*graph2, node5, numNodes);
   cudaGraphGetNodes(*graph2, node5, numNodes);
 
-  // CHECK: dpct::experimental::get_nodes(graph, node4, numNodes);
-  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_nodes(graph, node4, numNodes)));
+  // CHECK: dpct::experimental::get_root_nodes(graph, node4, numNodes);
+  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_root_nodes(graph, node4, numNodes)));
   cudaGraphGetRootNodes(graph, node4, numNodes);
   CUDA_CHECK_THROW(cudaGraphGetRootNodes(graph, node4, numNodes));
 
