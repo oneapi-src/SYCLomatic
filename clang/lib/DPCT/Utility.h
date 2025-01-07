@@ -617,6 +617,10 @@ AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {
   return DRE->getDecl() == TargetVD;
 }
 
+AST_MATCHER_P(QualType, typeContainsString, std::string, substring) {
+  return Node.getAsString().find(substring) != std::string::npos;
+}
+
 } // namespace ast_matchers
 } // namespace clang
 #endif // DPCT_UTILITY_H

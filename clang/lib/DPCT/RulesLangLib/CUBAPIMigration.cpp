@@ -739,6 +739,7 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   auto isTempStorage = hasDeclaration(namedDecl(hasAnyName("TempStorage")));
   MF.addMatcher(declStmt(has(varDecl(anyOf(
+                             hasType(typeContainsString("TempStorage")),
                              hasType(hasCanonicalType(qualType(isTempStorage))),
                              hasType(arrayType(hasElementType(
                                  hasCanonicalType(qualType(isTempStorage))))),
@@ -753,6 +754,15 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                                       "Reduce", "Sum", "Broadcast", "Scan")))))
                     .bind("MemberCall"),
                 this);
+
+  MF.addMatcher(
+      cxxDependentScopeMemberExpr(
+          anyOf(hasMemberName("InclusiveSum"), hasMemberName("ExclusiveSum"),
+                hasMemberName("InclusiveScan"), hasMemberName("ExclusiveScan"),
+                hasMemberName("Reduce"), hasMemberName("Sum"),
+                hasMemberName("Broadcast"), hasMemberName("Scan")))
+          .bind("DependentMemberCall"),
+      this);
 
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasAnyName(
@@ -1617,12 +1627,32 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
   }
 }
 
+void CubRule::processDependentMemberCall(
+    const CXXDependentScopeMemberExpr *DMC) {
+  if (!isCubCollectiveRecordType(DMC->getBaseType())) {
+    return;
+  }
+  if (auto FTD = DpctGlobalInfo::findAncestor<FunctionTemplateDecl>(DMC)) {
+    if (FTD->spec_end() == FTD->spec_begin()) {
+      auto MemeberName = DMC->getMember().getAsString();
+      report(DMC->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,
+             MemeberName + " member function call",
+             "the caller function may not instantiated");
+    }
+  }
+  return;
+}
+
 int CubRule::PlaceholderIndex = 1;
 
 void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const CXXMemberCallExpr *MC =
           getNodeAsType<CXXMemberCallExpr>(Result, "MemberCall")) {
     processCubMemberCall(MC);
+  } else if (const CXXDependentScopeMemberExpr *DMC =
+                 getNodeAsType<CXXDependentScopeMemberExpr>(
+                     Result, "DependentMemberCall")) {
+    processDependentMemberCall(DMC);
   } else if (const DeclStmt *DS = getNodeAsType<DeclStmt>(Result, "DeclStmt")) {
     processCubDeclStmt(DS);
   } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall")) {
