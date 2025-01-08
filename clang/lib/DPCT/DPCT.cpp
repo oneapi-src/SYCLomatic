@@ -867,7 +867,8 @@ int runDPCT(int argc, const char **argv) {
   if (MigrateBuildScriptOnly) {
     if (!BuildScriptsSpecified) {
       llvm::errs() << getBuildScriptNotSpecifiedWarning();
-      DpctGlobalInfo::setBuildScript(1); // enable cmake script migration
+      auto CMakeSelectionBits = 1 << (unsigned)BuildScriptKind::BS_CMake;
+      DpctGlobalInfo::setBuildScript(CMakeSelectionBits);
       BuildScriptsSpecified = true;
     }
   } else {

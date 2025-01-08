@@ -211,9 +211,11 @@ void ShowStatus(int Status, std::string Message) {
     break;
   case MigratePythonBuildScriptSpecifiedButPythonRuleFileNotSpecified:
     StatusString =
-        "Error: The option -migrate-build-script=Python requires python rule "
-        "file option --rule-file=python_migration_rule_[ipex|pytorch].yaml be "
-        "specified explicitly.";
+        "Error: The option -migrate-build-script=Python requires python "
+        "migration rules to be explicitly loaded with option --rule-file. For "
+        "example, --rule-file={dpct_install_folder}/extensions/python_rules/"
+        "python_build_script_migration_rule_[ipex|pytorch].yaml to load the "
+        "predefined rules.";
     break;
   case MigrationErrorInvalidInstallPath:
     StatusString = "Error: " + Message + " not found.";
@@ -250,19 +252,11 @@ std::string getCheckVersionFailWarning() {
 }
 std::string getBuildScriptNotSpecifiedWarning() {
   return "Warning: Only CMake scripts will be migrated as no "
-         "--migrate-build-script option is provided. "
-         "See https://www.intel.com/content/www/us/en/docs/"
-         "dpcpp-compatibility-tool/developer-guide-reference/current/"
-         "overview.html for more "
-         "details.\n";
+         "--migrate-build-script option is provided.\n";
 }
 std::string getPythonRuleFileNotProvidedWarning() {
   return "Warning: Rule file for python build script migration not found. "
-         "Migration continues with python build script migration disabled. See "
-         "https://www.intel.com/content/www/us/en/docs/"
-         "dpcpp-compatibility-tool/developer-guide-reference/current/"
-         "overview.html for more "
-         "details.\n";
+         "Migration continues with python build script migration disabled.";
 }
 
 bool IsUsingDefaultOutRoot = false;
