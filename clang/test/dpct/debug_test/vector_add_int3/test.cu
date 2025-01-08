@@ -47,8 +47,8 @@ int main() {
     cudaMalloc((void**)&d_result, vectorSize * sizeof(int3));
  
     // Copy host vectors to device
-    cudaMemcpy(d_a, h_a, vectorSize * 12, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, h_b, vectorSize * 12, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_a, h_a, vectorSize * sizeof(int3), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, h_b, vectorSize * sizeof(int3), cudaMemcpyHostToDevice);
  
     // Define grid and block dimensions
     dim3 blockDim(256); // 256 threads per block
@@ -60,10 +60,10 @@ int main() {
     //CHECK: dpctexp::codepin::gen_epilog_API_CP("{{[._0-9a-zA-Z\/\(\)\:\-]+}}", &q_ct1, "d_a", d_a, "d_b", d_b, "d_result", d_result, "vectorSize", vectorSize);
  
     // Copy result from device to host
-    cudaMemcpy(h_result, d_result, vectorSize * 12, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_result, d_result, vectorSize * sizeof(int3)s, cudaMemcpyDeviceToHost);
  
     // Print the result
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < vectorSize; ++i) {
         std::cout << "Result[" << i << "]: (" << h_result[i].x << ", " << h_result[i].y << ", " << h_result[i].z << ")\n";
     }
  

@@ -5429,11 +5429,11 @@ bool MemoryMigrationRule::canUseTemplateStyleMigration(
 }
 
 void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
-    const CallExpr *C, int PtrArgLoc, int AllocMemSizeLoc) {
-  auto &SM = dpct::DpctGlobalInfo::getSourceManager(); 
+    const CallExpr *C, std::string ReplaceText, int AllocMemSizeLoc) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (DpctGlobalInfo::isCodePinEnabled()) {
     SourceLocation CallEnd = C->getEndLoc();
-    if(SM.isMacroArgExpansion(C->getEndLoc())){
+    if (SM.isMacroArgExpansion(C->getEndLoc())) {
       CallEnd = SM.getExpansionRange(C->getEndLoc()).getEnd();
     } else {
       CallEnd = getDefinitionRange(C->getBeginLoc(), C->getEndLoc()).getEnd();
@@ -5445,19 +5445,20 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
 
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
-        std::string(getNL()) + "dpctexp::codepin::get_ptr_size_map()[" +
-            getDrefName(C->getArg(PtrArgLoc)) + "] = " +
+        std::string(getNL()) + "dpctexp::codepin::set_ptr_size_map(" +
+            ReplaceText +
             std::string(Lexer::getSourceText(
                 CharSourceRange::getTokenRange(
                     C->getArg(AllocMemSizeLoc)->getSourceRange()),
                 DpctGlobalInfo::getSourceManager(), LangOptions())) +
-            ";",
+            ");",
         0, RT_CUDAWithCodePin));
+
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
-        std::string(getNL()) + "dpctexp::codepin::get_ptr_size_map()[" +
-            getDrefName(C->getArg(PtrArgLoc)) +
-            "] = " + ExprAnalysis::ref(C->getArg(AllocMemSizeLoc)) + ";",
+        std::string(getNL()) + "dpctexp::codepin::set_ptr_size_map(" +
+            ReplaceText + "," + ExprAnalysis::ref(C->getArg(AllocMemSizeLoc)) +
+            ");",
         0, RT_ForSYCLMigration));
     DpctGlobalInfo::getInstance().insertHeader(
         C->getBeginLoc(), HT_DPCT_CodePin_CUDA, RT_CUDAWithCodePin);
@@ -5653,7 +5654,7 @@ void MemoryMigrationRule::mallocMigration(
     // to the post process. At that time, the MainFile is invalid.
     DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
                                                HeaderType::HT_SYCL);
-    instrumentAddressToSizeRecordForCodePin(C,0,1);
+    instrumentAddressToSizeRecordForCodePin(C, getDrefName(C->getArg(0)) ,1);
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
              Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch" ||
@@ -5821,6 +5822,7 @@ void MemoryMigrationRule::memcpyMigration(
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(Name);
+  instrumentAddressToSizeRecordForCodePin(C, ExprAnalysis::ref(C->getArg(0)), 2);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
