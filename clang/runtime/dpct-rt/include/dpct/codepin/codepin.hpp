@@ -143,6 +143,7 @@ public:
     print_args(cp_obj, ofs_bin, queue, 0, args...);
     json_ss.flush();
     ofs_bin.flush();
+    std::cout <<"CCCEEEEE "  << std::endl;
     read_value(ifs_bin, offset, args...);
   }
 
@@ -160,9 +161,13 @@ public:
       print_address(type_obj, arg);
       type_obj.key("Index");
       type_obj.value(index);
-      size_t length = detail::data_ser<First>::dump(json_ss, ofst, arg, queue);
-      type_obj.key("Length");
-      type_obj.value(length);
+      std::cout << "MMMM " << typeid(First).name() << std::endl;
+       size_t length = 0;
+       
+      length = detail::data_ser<First>::dump(json_ss, ofst, arg, queue);
+      std::cout << "LLLL  " << length << "\n";
+      // type_obj.key("Length");
+      // type_obj.value(length);
       type_obj.key("Offset");
       type_obj.value(bin_offset);
       bin_offset += length;
@@ -192,6 +197,8 @@ public:
       } else {
         length = read_tlv_from_ifstream<First>(is, offset);
       }
+      std::cout << "Lengthaaaa is " << length << std::endl;
+      std::cout << " Offset " << offset << std::endl;
       offset += length;
       read_value(is, offset, args...);
     }
@@ -200,7 +207,7 @@ public:
   static size_t read_tlv_from_ifstream(std::ifstream &is, size_t start_offset) {
     if (is) {
       is.seekg(start_offset);
-    using PointeeType = std::remove_cv_t<std::remove_pointer_t<T>>;
+      using PointeeType = std::remove_cv_t<std::remove_pointer_t<T>>;
       std::string type = "";
       read_until_null_terminator(is, type);
       size_t length;
@@ -234,7 +241,9 @@ public:
         }
         type_name += type[i];
       }
+      std::cout << "PT " << typeid(PointeeType).name() << std::endl;
       if (std::is_arithmetic_v<PointeeType>) {
+        data_ser<PointeeType>::read(is, length);
       } else {
          data_ser<PointeeType>::read(is, length);
       }
@@ -295,6 +304,7 @@ class data_ser<T*, void> {
 public:
   static size_t dump(json_stringstream &ss, std::ofstream &ofst, T* value,
                    queue_t queue) {
+
     size_t length = 0;
     using PointeeType = std::remove_cv_t<std::remove_pointer_t<T>>;
     PointeeType *non_const_value = const_cast<PointeeType *>(value);
@@ -318,11 +328,27 @@ public:
 #endif
       dump_addr = h_data;
     }
+      std::cout << "Type id is " << typeid(PointeeType).name() << std::endl;
+
     if (std::is_arithmetic_v<PointeeType>) {
       length = write_tlv_to_file<PointeeType>(ofst, dump_addr, size * sizeof(PointeeType));
     } else {
-     length = data_ser<PointeeType>::dump(ss, ofst, dump_addr, size * sizeof(PointeeType), queue);
+      std::string type_name = get_demangle_type_name<PointeeType>(true);
+      ofst.write(type_name.c_str(), type_name.length() + 1);
+      size_t type_size = size * TypeSize<PointeeType>::get_dump_type_size();
+      std::cout << "TTTTNNN  " << type_name.length() << "\n";
+      length = type_size + type_name.length() + 1 + sizeof(size_t);
+      std::cout << "RRRR " << TypeSize<PointeeType>::get_dump_type_size() << "\n";
+      std::cout << "RRRR " << size<< "\n";
+      ofst.write(reinterpret_cast<char *>(&type_size), sizeof(size_t));
+      for (int i = 0; i < size; i++) {
+        data_ser<PointeeType>::dump(ss, ofst, *(dump_addr +i), queue);
+      }
     }
+
+    // Write the type:
+    std::cout << "Length is  " << length << "\n";    
+
     if(is_dev)
       delete[] dump_addr;
     return length;
