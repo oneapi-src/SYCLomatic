@@ -221,7 +221,8 @@ public:
   }
 
   inline void analyze(const TemplateArgumentLoc &TAL) {
-    initSourceRange(TAL.getSourceRange());
+    auto SR = TAL.getSourceRange();
+    initSourceRange(getDefinitionRange(SR.getBegin(), SR.getEnd()));
     analyzeTemplateArgument(TAL);
   }
 

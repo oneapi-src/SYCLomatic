@@ -1504,6 +1504,14 @@ void foo44(float *x, int size, int d3, int d2) {
   FROMDEV2(x)
 }
 
+template<typename T>
+void foo45(){}
+
+#define EXPLICIT_DECL(T) template void foo45<T>()
+
+// CHECK: extern EXPLICIT_DECL(sycl::half);
+extern EXPLICIT_DECL(half);
+
 #undef TODEV
 #undef FROMDEV
 #undef FREE
