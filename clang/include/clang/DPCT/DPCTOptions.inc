@@ -435,8 +435,10 @@ DPCT_OPTION(clang::dpct::list, std::string, RuleFile,
                                 clang::dpct::DpctActionKind::DAK_BuildScript,
                                 clang::dpct::DpctActionKind::DAK_Analysis),
             "rule-file",
-            llvm::cl::desc("Specify the rule file path that "
-                           "contains rules used for migration.\n"),
+            llvm::cl::desc(
+                "Specify the rule file path that "
+                "contains rules used for migration. Reference rule examples in "
+                "directory \"extensions\" under this tool install folder.\n"),
             llvm::cl::value_desc("file"), llvm::cl::cat(CtHelpCatAdvanced),
             llvm::cl::ZeroOrMore)
 
