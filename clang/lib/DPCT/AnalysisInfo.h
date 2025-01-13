@@ -2228,6 +2228,7 @@ public:
   enum APIKind {
     BlockReduce,
     BlockRadixSort,
+    BlockShuffle,
   };
 
 private:
