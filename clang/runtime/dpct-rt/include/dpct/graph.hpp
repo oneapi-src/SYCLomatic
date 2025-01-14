@@ -143,11 +143,12 @@ static void get_nodes(dpct::experimental::command_graph_ptr graph,
                       std::size_t *numberOfNodes) {
   auto nodes = graph->get_nodes();
   *numberOfNodes = nodes.size();
+  nodesArray = new dpct::experimental::node_ptr[nodes.size()];
   if (!nodesArray) {
     return;
   }
   for (std::size_t i = 0; i < *numberOfNodes; i++) {
-    nodesArray[i] = &nodes[i];
+    *nodesArray[i] = nodes[i];
   }
 }
 
