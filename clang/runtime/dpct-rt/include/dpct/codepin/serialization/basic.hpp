@@ -246,12 +246,15 @@ public:
 template <class T>
 class data_ser<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const T &value, queue_t queue) {
+  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const T &value, queue_t queue, bool top_call = true) {
     size_t size = sizeof(T);
-    ofst.write(get_demangle_type_name<T>().c_str(), get_demangle_type_name<T>().length() + 1);
-    ofst.write(reinterpret_cast<char*>(&size), sizeof(size_t));
+    if (top_call) {
+      ofst.write(get_demangle_type_name<T>().c_str(), get_demangle_type_name<T>().length() + 1);
+      ofst.write(reinterpret_cast<char*>(&size), sizeof(size_t));
+    }
+
     ofst.write(reinterpret_cast<const char*>(&value), sizeof(T));
-    return size;
+    return  size;
   }
   static void print_type_name(json_stringstream::json_obj &obj) {
       obj.key("Type");
@@ -265,7 +268,7 @@ public:
 #ifdef __NVCC__
 template <> class data_ser<__half> {
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const __half &value, queue_t queue) {
+  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const __half &value, queue_t queue, bool top_call = true) {
     float f = __half2float(value);
     // auto arr = ss.array();
     // arr.member<float>(value);
@@ -310,20 +313,25 @@ public:
 #ifdef __NVCC__
 template <> class data_ser<int3> {
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst,
-                     const int3 *value, size_t size, queue_t queue) {
-    size_t items = size / sizeof(int3);
-    size_t total_len = items * sizeof(int3);
-    std::string tag = get_demangle_type_name<int3>(true);
-    ofst.write(&tag[0], tag.length() + 1);
-    ofst.write(reinterpret_cast<char *>(&total_len), sizeof(size_t));
-    for (size_t i = 0; i < items; i++) {
-      ofst.write(reinterpret_cast<const char *>(&value[i].x), sizeof(int));
-      ofst.write(reinterpret_cast<const char *>(&value[i].y), sizeof(int));
-      ofst.write(reinterpret_cast<const char *>(&value[i].z), sizeof(int));
+  static void dump(json_stringstream &ss, std::ofstream &ofst,
+                     const int3 &value, queue_t queue, bool top_call = true) {
+    // size_t items = size / sizeof(int3);
+    // size_t total_len = items * sizeof(int3);
+    // std::string tag = get_demangle_type_name<int3>(true);
+    // ofst.write(&tag[0], tag.length() + 1);
+    // ofst.write(reinterpret_cast<char *>(&total_len), sizeof(size_t));
+    // for (size_t i = 0; i < items; i++) {
+    if (top_call) {
+      std::string tag = get_demangle_type_name<int3>(false);
+      ofst.write(&tag[0], tag.length() + 1);
+      ofst.write(reinterpret_cast<char *>(&sizeof(int3)), sizeof(size_t));
     }
+      ofst.write(reinterpret_cast<const char *>(&value.x), sizeof(int));
+      ofst.write(reinterpret_cast<const char *>(&value.y), sizeof(int));
+      ofst.write(reinterpret_cast<const char *>(&value.z), sizeof(int));
+    // }
     ofst.flush();
-    return total_len;
+    // return total_len;
   }
   static void print_type_name(json_stringstream::json_obj &obj){
     obj.key("Type");
@@ -333,20 +341,26 @@ public:
 
 template <> class data_ser<float3> {
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst,
-                     const float3 *value, size_t size, queue_t queue) {
-    size_t items = size / sizeof(float3);
-    size_t total_len = items * sizeof(float3);
-    std::string tag = get_demangle_type_name<float3>(true);
-    ofst.write(&tag[0], tag.length() + 1);
-    ofst.write(reinterpret_cast<char *>(&total_len), sizeof(size_t));
-    for (size_t i = 0; i < items; i++) {
-      ofst.write(reinterpret_cast<const char *>(&value[i].x()), sizeof(float));
-      ofst.write(reinterpret_cast<const char *>(&value[i].y()), sizeof(float));
-      ofst.write(reinterpret_cast<const char *>(&value[i].z()), sizeof(float));
+  static void dump(json_stringstream &ss, std::ofstream &ofst,
+                     const float3 &value,  queue_t queue, bool top_call = true) {
+    // size_t items = size / sizeof(float3);
+    // size_t total_len = items * sizeof(float3);
+    // std::string tag = get_demangle_type_name<float3>(true);
+    // ofst.write(&tag[0], tag.length() + 1);
+    // ofst.write(reinterpret_cast<char *>(&total_len), sizeof(size_t));
+
+    if (top_call) {
+      std::string tag = get_demangle_type_name<float3>(false);
+      ofst.write(&tag[0], tag.length() + 1);
+      ofst.write(reinterpret_cast<char *>(&sizeof(float3)), sizeof(size_t));
     }
+    // for (size_t i = 0; i < items; i++) {
+      ofst.write(reinterpret_cast<const char *>(&value.x), sizeof(float));
+      ofst.write(reinterpret_cast<const char *>(&value.y), sizeof(float));
+      ofst.write(reinterpret_cast<const char *>(&value.z), sizeof(float));
+    // }
     ofst.flush();
-    return total_len;
+    // return total_len;
   }
   static void print_type_name(json_stringstream::json_obj &obj){
     obj.key("Type");
@@ -357,20 +371,26 @@ public:
 #else
 template <> class data_ser<sycl::int3> {
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const sycl::int3 *value,
-                   size_t size, queue_t queue) {
-    size_t items = size/sizeof(sycl::int3);
-    size_t total_len = items * sizeof(int) * 3;
-    std::string tag = get_demangle_type_name<sycl::int3>(true);
-    ofst.write(&tag[0], tag.length() + 1);
-    ofst.write(reinterpret_cast<char *>(&total_len), sizeof(size_t));
-    for (size_t i = 0; i < items; i++) {
-      ofst.write(reinterpret_cast<const char *>(&value[i].x()), sizeof(int));
-      ofst.write(reinterpret_cast<const char *>(&value[i].y()), sizeof(int));
-      ofst.write(reinterpret_cast<const char *>(&value[i].z()), sizeof(int));
+  static void dump(json_stringstream &ss, std::ofstream &ofst, const sycl::int3 &value,
+                  queue_t queue, bool top_call = true) {
+    // size_t items = size/sizeof(sycl::int3);
+    // size_t total_len = items * sizeof(int) * 3;
+    // std::string tag = get_demangle_type_name<sycl::int3>(true);
+    // ofst.write(&tag[0], tag.length() + 1);
+    // ofst.write(reinterpret_cast<char *>(&total_len), sizeof(size_t));
+    // for (size_t i = 0; i < items; i++) {
+    if (top_call) {
+      size_t size = sizeof(sycl::int3);
+      std::string tag = get_demangle_type_name<sycl::int3>(false);
+      ofst.write(&tag[0], tag.length() + 1);
+      ofst.write(reinterpret_cast<char *>(&size), sizeof(size_t));
     }
+      ofst.write(reinterpret_cast<const char *>(&value.x()), sizeof(int));
+      ofst.write(reinterpret_cast<const char *>(&value.y()), sizeof(int));
+      ofst.write(reinterpret_cast<const char *>(&value.z()), sizeof(int));
+    // }
     ofst.flush();
-    return total_len;
+    // return total_len;
   }
   static void read(std::ifstream &ifst, size_t size) {
     size_t items = size/(sizeof(int) * 3);
@@ -390,20 +410,27 @@ public:
 
 template <> class data_ser<sycl::float3> {
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const sycl::float3 *value, size_t size,
-                   queue_t queue) {
-    size_t items = size / sizeof(sycl::float3);
-    size_t total_len = items * sizeof(float) * 3;
-    std::string tag = get_demangle_type_name<sycl::float3>(true);
-    ofst.write(&tag[0], tag.length() + 1);
-    ofst.write(reinterpret_cast<char *>(&total_len), sizeof(size_t));
-    for (size_t i = 0; i < items; i++) {
-      ofst.write(reinterpret_cast<const char *>(&value[i].x()), sizeof(float));
-      ofst.write(reinterpret_cast<const char *>(&value[i].y()), sizeof(float));
-      ofst.write(reinterpret_cast<const char *>(&value[i].z()), sizeof(float));
+  static void dump(json_stringstream &ss, std::ofstream &ofst, const sycl::float3 &value,
+                   queue_t queue, bool top_call = true) {
+    // size_t items = size / sizeof(sycl::float3);
+    // size_t total_len = items * sizeof(float) * 3;
+    // std::string tag = get_demangle_type_name<sycl::float3>(true);
+    // ofst.write(&tag[0], tag.length() + 1);
+    // ofst.write(reinterpret_cast<char *>(&total_len), sizeof(size_t));
+    // for (size_t i = 0; i < items; i++) {
+    if (top_call) {
+      size_t size = sizeof(sycl::float3);
+      std::string tag = get_demangle_type_name<sycl::float3>(false);
+      ofst.write(&tag[0], tag.length() + 1);
+      ofst.write(reinterpret_cast<char *>(&size), sizeof(size_t));
     }
+      ofst.write(reinterpret_cast<const char *>(&value.x()), sizeof(float));
+      ofst.write(reinterpret_cast<const char *>(&value.y()), sizeof(float));
+      ofst.write(reinterpret_cast<const char *>(&value.z()), sizeof(float));
+    // }
     ofst.flush();
-    return total_len;
+    // return total_len;
+    
   }
   static void print_type_name(json_stringstream::json_obj &obj){
     obj.key("Type");

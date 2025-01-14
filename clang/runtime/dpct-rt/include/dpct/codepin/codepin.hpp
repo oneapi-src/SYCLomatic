@@ -75,15 +75,21 @@ inline size_t &get_bin_offset() {
   return bin_offset;
 }
 inline void read_until_null_terminator(std::ifstream &is, std::string &output) {
-  char ch;
-  while (is.get(ch)) {
-    if (ch == '\0') {
-      break;
+    char ch;
+
+    while (is.get(ch)) {
+        std::cout << "ch is " << ch << std::endl;
+        if (ch == '\0') {
+            break;
+        }
+        output += ch;
     }
-    output += ch;
-  }
 }
 
+// void read_length_of_tlv(std::ifstream &is, size_t &length) {
+
+//   is.read(reinterpret_cast<char *>(&length), sizeof(size_t));
+// }
 inline size_t get_ptr_size_in_bytes(void *ptr) {
   const std::map<void *, size_t> &ptr_size_map = get_ptr_size_map();
   const auto &it = ptr_size_map.find(ptr);
@@ -140,10 +146,12 @@ public:
     auto cp_obj =
         obj.value<detail::json_stringstream::json_obj>();
     size_t &offset = get_bin_offset();
+    size_t old_offset = bin_offset;
     print_args(cp_obj, ofs_bin, queue, 0, args...);
     json_ss.flush();
     ofs_bin.flush();
-    read_value(ifs_bin, offset, args...);
+    read_value(ifs_bin, old_offset, args...);
+    offset = bin_offset;
   }
 
 
@@ -154,18 +162,22 @@ public:
                   std::string_view arg_name, First &arg, RestArgs... args) {
     obj.key(arg_name);
     {
-      auto type_obj = obj.value<detail::json_stringstream::json_obj>();
+      auto type_obj =
+          obj.value<detail::json_stringstream::json_obj>();
       detail::data_ser<First>::print_type_name(type_obj);
       type_obj.key("Address");
       print_address(type_obj, arg);
       type_obj.key("Index");
       type_obj.value(index);
-      size_t length = detail::data_ser<First>::dump(json_ss, ofst, arg, queue);
-      type_obj.key("Length");
-      type_obj.value(length);
+      // type_obj.key("Length");
+      // type_obj.value(length);
       type_obj.key("Offset");
-      type_obj.value(bin_offset);
-      bin_offset += length;
+      type_obj.value(static_cast<size_t>(ofst.tellp()));
+      type_obj.key("Data");
+      detail::data_ser<First>::dump(json_ss, ofst, arg, queue);
+    
+      
+      std::cout << "===========================\n"  << typeid(First).name() << std::endl; 
     }
     print_args(obj, ofst, queue, index + 1, args...);
   }
@@ -179,19 +191,24 @@ public:
     }
   }
 
-  static void read_value(std::ifstream &, size_t &offset) {}
+  static void read_value(std::ifstream &, size_t offset) {}
 
   template <class First, class... RestArgs>
-  static void read_value(std::ifstream &is, size_t &offset, std::string_view arg_name,
+  static void read_value(std::ifstream &is, size_t offset, std::string_view arg_name,
                          First &arg, RestArgs... args) {
     if (is) {
       unsigned length = 0;
       if (std::is_pointer_v<First>) { // How to solve the two level pointer?
+        std::cout << "Value is22222 " << std::endl;
+
         using PointeeType = std::remove_cv_t<std::remove_pointer_t<First>>;
+        std::cout << "Va " << typeid(PointeeType).name() << std::endl;
         length = read_tlv_from_ifstream<PointeeType>(is, offset);
+
       } else {
         length = read_tlv_from_ifstream<First>(is, offset);
       }
+      std::cout << "RRR VVVV Length is " << length << std::endl;
       offset += length;
       read_value(is, offset, args...);
     }
@@ -200,11 +217,13 @@ public:
   static size_t read_tlv_from_ifstream(std::ifstream &is, size_t start_offset) {
     if (is) {
       is.seekg(start_offset);
-    using PointeeType = std::remove_cv_t<std::remove_pointer_t<T>>;
+    std::cout << "MMMMMM " << start_offset << std::endl;
+    std::cout << typeid(T).name() << std::endl;
       std::string type = "";
       read_until_null_terminator(is, type);
       size_t length;
       is.read(reinterpret_cast<char *>(&length), sizeof(size_t));
+      std::cout << "aaaa " << length << std::endl;
       bool is_pointer = false;
       bool is_array = false;
       size_t type_len = 0;
@@ -212,6 +231,7 @@ public:
       std::string type_name = "";
 
       for (size_t i = 0; i < type.size(); i++) {
+        std::cout << "vvvv " << type[i] << std::endl;
         if (i == 0 && type[i] == 'P') {
           is_pointer = true;
           type_name += type[i];
@@ -228,16 +248,22 @@ public:
           break;
         }
         if (is_array) {
+          std::cout << "type is i " << type[i] << std::endl;
+          std::cout << "array size " << array_size << std::endl;
           array_size = array_size * 10 + (type[i] - '0');
           type_name += type[i];
           continue;
         }
         type_name += type[i];
       }
-      if (std::is_arithmetic_v<PointeeType>) {
-      } else {
-         data_ser<PointeeType>::read(is, length);
-      }
+      std::cout << "Type name " << type_name << " Array size " << array_size
+                << std::endl;
+      std::cout << "Length " << length << std::endl;
+      T *data = new T[length / sizeof(T)];
+      is.read(reinterpret_cast<char *>(&data[0]), length);
+      // for (int i = 0; i < length / sizeof(T); i++) {
+      //   std::cout << "Daxxxta " << data[i] << std::endl;
+      // }
       return type_name.length() + 1 + sizeof(size_t) + length;
     }
   }
@@ -302,8 +328,8 @@ public:
       return 0;
     }
     ptr_unique.insert(non_const_value);
-    int size = get_ptr_size_in_bytes(non_const_value);
-    size = size == 0 ? 1 : size / sizeof(*value);
+    size_t ptr_size = get_ptr_size_in_bytes(non_const_value);
+    int size = ptr_size == 0 ? 1 : ptr_size / sizeof(*value);
     PointeeType *dump_addr = non_const_value;
     bool is_dev = is_dev_ptr(non_const_value);
     if (is_dev) {
@@ -318,11 +344,45 @@ public:
 #endif
       dump_addr = h_data;
     }
-    if (std::is_arithmetic_v<PointeeType>) {
-      length = write_tlv_to_file<PointeeType>(ofst, dump_addr, size * sizeof(PointeeType));
-    } else {
-     length = data_ser<PointeeType>::dump(ss, ofst, dump_addr, size * sizeof(PointeeType), queue);
+    auto arr = ss.array();
+    
+    std::string tag = get_demangle_type_name<PointeeType>(true);
+    ofst.write(&tag[0], tag.length()+1);
+    std::cout << "tag " << tag << std::endl;
+    std::cout << "ptr SIZE " << ptr_size << std::endl;
+    ofst.write(reinterpret_cast<char *>(&ptr_size), sizeof(size_t));
+    ofst.flush();
+    length += tag.length() + 1 + sizeof(size_t) + sizeof(PointeeType) * size;
+    for (int i = 0; i < size; ++i) {
+      // if (size > CODEPIN_SAMPLING_THRESHOLD && i != 0) {
+      //   float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+      //   if (r > (float)CODEPIN_SAMPLING_PERCENT/(float)100)
+      //     continue;
+      // }
+      // auto obj = arr.object();
+      // detail::data_ser<PointeeType>::print_type_name(obj);
+      // obj.key("Data");
+      if (std::is_arithmetic_v<PointeeType>) {
+        detail::data_ser<PointeeType>::dump(
+          ss, ofst, *(dump_addr + i), queue, false);
+      } else {
+        auto obj = arr.object();
+        detail::data_ser<PointeeType>::print_type_name(obj);
+        obj.key("Offset");
+        obj.value(static_cast<size_t>(ofst.tellp()));
+        obj.key("Data");
+        detail::data_ser<PointeeType>::dump(
+            ss, ofst, *(dump_addr + i), queue, false);
+      }
     }
+    //    length = write_tlv_to_file<PointeeType>(ofst, dump_addr, size * sizeof(PointeeType));
+    // ofst.flush();
+    // if (std::is_arithmetic_v<PointeeType>) {
+    //   length = write_tlv_to_file<PointeeType>(ofst, dump_addr, size * sizeof(PointeeType));
+    // } else {
+    //   length = data_ser<PointeeType>::dump(ss, ofst, dump_addr, size * sizeof(PointeeType), queue);
+    // }
+
     if(is_dev)
       delete[] dump_addr;
     return length;
