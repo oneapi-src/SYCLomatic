@@ -1002,15 +1002,15 @@ public:
 /// \tparam group_dim_2 The third dimension size of the work-group.
 template <typename T, int group_dim_0, int group_dim_1 = 1, int group_dim_2 = 1>
 class group_shuffle {
-  uint8_t *_local_memory = nullptr;
+  T *_local_memory = nullptr;
   static constexpr size_t group_work_items =
       group_dim_0 * group_dim_1 * group_dim_2;
 
 public:
   static constexpr size_t get_local_memory_size(size_t work_group_size) {
-    return sizeof(T) * group_work_items;
+    return sizeof(T) * work_group_size;
   }
-  group_shuffle(uint8_t *local_memory) : _local_memory(local_memory) {}
+  group_shuffle(uint8_t *local_memory) : _local_memory((T *)local_memory) {}
 
   /// Selects a value from a work-item at a given distance in the work-group
   /// and stores the value in the output.
