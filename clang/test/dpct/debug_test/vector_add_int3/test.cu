@@ -60,7 +60,7 @@ int main() {
     //CHECK: dpctexp::codepin::gen_epilog_API_CP("{{[._0-9a-zA-Z\/\(\)\:\-]+}}", &q_ct1, "d_a", d_a, "d_b", d_b, "d_result", d_result, "vectorSize", vectorSize);
  
     // Copy result from device to host
-    cudaMemcpy(h_result, d_result, vectorSize * sizeof(int3)s, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_result, d_result, vectorSize * sizeof(int3), cudaMemcpyDeviceToHost);
  
     // Print the result
     for (int i = 0; i < vectorSize; ++i) {

@@ -321,6 +321,7 @@ class data_ser<T*, void> {
 public:
   static size_t dump(json_stringstream &ss, std::ofstream &ofst, T* value,
                    queue_t queue) {
+
     size_t length = 0;
     using PointeeType = std::remove_cv_t<std::remove_pointer_t<T>>;
     PointeeType *non_const_value = const_cast<PointeeType *>(value);

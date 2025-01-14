@@ -80,8 +80,34 @@ std::string get_demangle_type_name(bool is_pointer = false) {
     ofst.write(reinterpret_cast<char *>(&size), sizeof(size_t));
     ofst.write(reinterpret_cast<char *>(data), size);
     ofst.flush();
-    return size;
+    return size + tag.length() + 1 + sizeof(size_t);
   }
+
+
+template <class T>
+class TypeSize {
+public:
+    static size_t get_dump_type_size() {
+        return sizeof(T);
+    }
+};
+#ifndef __NVCC__
+template <>
+class TypeSize<sycl::int3> {
+public:
+    static size_t get_dump_type_size() {
+        return 3 * sizeof(int);
+    }
+};
+
+template <>
+class TypeSize<sycl::float3> {
+public:
+    static size_t get_dump_type_size() {
+        return 3 * sizeof(float);
+    }
+};
+#endif
 
 inline bool is_dev_ptr(void *p) {
 #ifdef __NVCC__
@@ -231,7 +257,7 @@ json_stringstream::json_obj::value<json_stringstream::json_obj>() {
 template <class T, class T2 = void> class data_ser {
 
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst, T value, queue_t queue) {
+  static size_t dump(json_stringstream &ss, std::ofstream &ofst, T &value, queue_t queue) {
     // auto obj = ss.object();
     // obj.key("Data");
     // obj.value("CODEPIN:ERROR:1: Unable to find the corresponding serialization "
@@ -256,15 +282,37 @@ public:
     ofst.write(reinterpret_cast<const char*>(&value), sizeof(T));
     return  size;
   }
+
   static void print_type_name(json_stringstream::json_obj &obj) {
       obj.key("Type");
       obj.value(std::to_string(strlen(typeid(T).name())) + std::string(demangle_name<T>()));
   }
   static void read(std::ifstream &ifst,  size_t size) {
-
+    T * data = new T[size/sizeof(T)];
+  ifst.read(reinterpret_cast<char *>(&data[0]), size);
+  for (int i = 0; i < size/sizeof(T); i++) {
+    std::cout << "Read " << data[i] << std::endl;
+  }
   }
 };
+// template <class T>
+// class data_ser<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
+// public:
+//   static size_t dump(json_stringstream &ss, std::ofstream &ofst, const T value, size_t len, queue_t queue) {
+//     size_t size = sizeof(T);
+//     ofst.write(get_demangle_type_name<T>().c_str(), get_demangle_type_name<T>().length() + 1);
+//     ofst.write(reinterpret_cast<char*>(&size), sizeof(size_t));
+//     ofst.write(reinterpret_cast<const char*>(&value), sizeof(T));
+//     return size;
+//   }
+//   static void print_type_name(json_stringstream::json_obj &obj) {
+//       obj.key("Type");
+//       obj.value(std::to_string(strlen(typeid(T).name())) + std::string(demangle_name<T>()));
+//   }
+//   static void read(std::ifstream &ifst,  size_t size) {
 
+//   }
+// };
 #ifdef __NVCC__
 template <> class data_ser<__half> {
 public:
@@ -272,6 +320,7 @@ public:
     float f = __half2float(value);
     // auto arr = ss.array();
     // arr.member<float>(value);
+    return 0;
   }
   static void print_type_name(json_stringstream::json_obj &obj) {
     obj.key("Type");
@@ -280,11 +329,12 @@ public:
 };
 template <> class data_ser<__nv_bfloat16> {
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const __nv_bfloat16 &value,
+  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const __nv_bfloat16 &value, 
                    queue_t queue) {
     float f = __bfloat162float(value);
     // auto arr = ss.array();
     // arr.member<float>(value);
+    return 0;
   }
   static void print_type_name(json_stringstream::json_obj &obj) {
     obj.key("Type");
@@ -333,9 +383,19 @@ public:
     ofst.flush();
     // return total_len;
   }
-  static void print_type_name(json_stringstream::json_obj &obj){
+  static void print_type_name(json_stringstream::json_obj &obj) {
     obj.key("Type");
     obj.value("int3");
+  }
+
+   static void read(std::ifstream &ifst, size_t size) {
+    size_t items = size/(sizeof(int3));
+    int3 *data = new int3[items];
+    std::cout << "RRRRR  " << items << std::endl;
+    for (size_t i = 0; i < items; i++) {
+      ifst.read(reinterpret_cast<char *>(&data[i]), sizeof(int3));
+      std::cout << "Read " << data[i].x << " " << data[i].y << " " << data[i].z << std::endl;
+    }
   }
 };
 
@@ -360,7 +420,6 @@ public:
       ofst.write(reinterpret_cast<const char *>(&value.z), sizeof(float));
     // }
     ofst.flush();
-    // return total_len;
   }
   static void print_type_name(json_stringstream::json_obj &obj){
     obj.key("Type");
@@ -441,11 +500,11 @@ public:
 
 template <> class data_ser<char *> {
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const char *value,
+  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const char *value, 
                    queue_t queue) {
     // auto obj = ss.object();
     // obj.key("Data");
-    const char *dump_addr = value;
+    // const char *dump_addr = value;
     bool is_dev = is_dev_ptr((void*)value);
     if (is_dev) {
       const char *h_data = new char[strlen(value)];
@@ -458,8 +517,9 @@ public:
       queue->memcpy((void *)h_data, (void *)value, strlen(value) * sizeof(char))
           .wait();
 #endif
-      dump_addr = h_data;    
+      // dump_addr = h_data;    
     }
+    return 0;
     // obj.value(std::string(dump_addr));
   }
   static void print_type_name(json_stringstream::json_obj &obj){
@@ -470,11 +530,12 @@ public:
 
 template <> class data_ser<std::string> {
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const std::string &value,
+  static size_t dump(json_stringstream &ss, std::ofstream &ofst, const std::string &value, 
                    queue_t queue) {
     // auto obj = ss.object();
     // obj.key("Data");
     // obj.value(value);
+    return 0;
   }
   static void print_type_name(json_stringstream::json_obj &obj){
     obj.key("Type");

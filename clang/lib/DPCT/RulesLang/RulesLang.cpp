@@ -5446,7 +5446,7 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
         std::string(getNL()) + "dpctexp::codepin::set_ptr_size_map(" +
-            ReplaceText +
+            ReplaceText + ", " +
             std::string(Lexer::getSourceText(
                 CharSourceRange::getTokenRange(
                     C->getArg(AllocMemSizeLoc)->getSourceRange()),
