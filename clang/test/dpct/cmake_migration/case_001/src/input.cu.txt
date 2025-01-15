@@ -1,0 +1,8 @@
+#include <cuda.h>
+
+int main() {
+    int *dP;
+    cudaMalloc(&dP, 1024);
+
+    return 0;
+}

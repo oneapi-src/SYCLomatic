@@ -46,11 +46,6 @@ int main(int argc, char **argv) {
     // CHECK-NEXT: CUgraphNode cugn;
     CUgraphNode cugn;
     // CHECK: /*
-    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of CUgraphicsResource type is not supported.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: CUgraphicsResource cugr;
-    CUgraphicsResource cugr;
-    // CHECK: /*
     // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of nvmlDevice_t type is not supported.
     // CHECK-NEXT: */
     // CHECK-NEXT: nvmlDevice_t nvmld;

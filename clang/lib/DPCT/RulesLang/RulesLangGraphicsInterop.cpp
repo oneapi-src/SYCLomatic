@@ -50,10 +50,13 @@ void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto graphicsInteropAPI = [&]() {
     return hasAnyName(
         "cudaGraphicsD3D11RegisterResource", "cudaGraphicsResourceSetMapFlags",
-        "cudaGraphicsMapResources", "cudaGraphicsResourceGetMappedPointer",
+        "cudaGraphicsMapResources", "cuGraphicsMapResources",
+        "cudaGraphicsResourceGetMappedPointer",
+        "cuGraphicsResourceGetMappedPointer_v2",
         "cudaGraphicsResourceGetMappedMipmappedArray",
         "cudaGraphicsSubResourceGetMappedArray", "cudaGraphicsUnmapResources",
-        "cudaGraphicsUnregisterResource", "cudaImportExternalMemory",
+        "cuGraphicsUnmapResources", "cudaGraphicsUnregisterResource",
+        "cuGraphicsUnregisterResource", "cudaImportExternalMemory",
         "cudaExternalMemoryGetMappedMipmappedArray",
         "cudaExternalMemoryGetMappedBuffer", "cudaDestroyExternalMemory");
   };

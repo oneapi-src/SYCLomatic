@@ -343,6 +343,7 @@ void initTypeLocSYCLCompatRewriterMap(
   SYCLCOMPAT_UNSUPPORT("cudaGraphNode_t")
   SYCLCOMPAT_UNSUPPORT("cudaGraphicsResource")
   SYCLCOMPAT_UNSUPPORT("cudaGraphicsResource_t")
+  SYCLCOMPAT_UNSUPPORT("CUgraphicsResource")
   SYCLCOMPAT_UNSUPPORT("cudaExternalMemory_t")
   SYCLCOMPAT_UNSUPPORT("cudaExternalMemoryHandleDesc")
   SYCLCOMPAT_UNSUPPORT("cudaExternalMemoryMipmappedArrayDesc")

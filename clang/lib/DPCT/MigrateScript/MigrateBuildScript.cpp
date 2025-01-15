@@ -15,6 +15,11 @@ namespace fs = llvm::sys::fs;
 
 namespace clang {
 namespace dpct {
+static std::vector<clang::tooling::UnifiedPath /*file path*/>
+    CMakeBuildScriptFilesSet, PythonBuildScriptFilesSet;
+
+bool cmakeScriptNotFound() { return CMakeBuildScriptFilesSet.empty(); }
+bool pythonBuildScriptNotFound() { return PythonBuildScriptFilesSet.empty(); }
 
 std::string readFile(const clang::tooling::UnifiedPath &Name) {
   std::ifstream Stream(Name.getCanonicalPath().str(),
@@ -118,15 +123,12 @@ getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
   return CmakeBuildDirectory;
 }
 
-void collectBuildScripts(
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot,
-    std::vector<clang::tooling::UnifiedPath> &BuildScriptFilesSet,
-    BuildScriptKind BuildScript) {
+void collectBuildScripts(const clang::tooling::UnifiedPath &InRoot,
+                         const clang::tooling::UnifiedPath &OutRoot) {
   std::error_code EC;
 
   clang::tooling::UnifiedPath CmakeBuildDirectory;
-  if (BuildScript == BuildScriptKind::BS_Cmake) {
+  if (DpctGlobalInfo::migrateCMakeScripts()) {
     CmakeBuildDirectory = getCmakeBuildPathFromInRoot(InRoot, OutRoot);
   }
   for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
@@ -145,7 +147,7 @@ void collectBuildScripts(
     if (isChildOrSamePath(OutRoot, FilePath))
       continue;
 
-    if (BuildScript == BuildScriptKind::BS_Cmake) {
+    if (DpctGlobalInfo::migrateCMakeScripts()) {
       // Skip cmake build directory if it is in the in-root directory.
       if (!CmakeBuildDirectory.getPath().empty() &&
           isChildOrSamePath(CmakeBuildDirectory, FilePath))
@@ -170,18 +172,20 @@ void collectBuildScripts(
     if (Iter->type() == fs::file_type::regular_file) {
       llvm::StringRef Name =
           llvm::sys::path::filename(FilePath.getCanonicalPath());
-      if (BuildScript == BuildScriptKind::BS_Cmake) {
+      if (DpctGlobalInfo::migrateCMakeScripts()) {
 #ifdef _WIN32
         if (Name.lower() == "cmakelists.txt" ||
             llvm::StringRef(Name.lower()).ends_with(".cmake")) {
 #else
         if (Name == "CMakeLists.txt" || Name.ends_with(".cmake")) {
 #endif
-          BuildScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
+          CMakeBuildScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
         }
-      } else if (BuildScript == BuildScriptKind::BS_Python) {
+      }
+      if (DpctGlobalInfo::migratePythonScripts()) {
         if (Name.ends_with(".py")) {
-          BuildScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
+          PythonBuildScriptFilesSet.push_back(
+              FilePath.getCanonicalPath().str());
         }
       }
     }
@@ -219,39 +223,39 @@ bool buildScriptFileSpecified(const std::vector<std::string> &SourceFiles) {
 void collectBuildScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot,
-    std::vector<clang::tooling::UnifiedPath> &BuildScriptFilesSet,
-    BuildScriptKind BuildScript) {
+    const clang::tooling::UnifiedPath &OutRoot) {
   auto BuildScriptLists = OptParser->getSourcePathList();
   if (!BuildScriptLists.empty()) {
     for (auto &FilePath : BuildScriptLists) {
       if (fs::is_directory(FilePath)) {
-        collectBuildScripts(FilePath, OutRoot, BuildScriptFilesSet,
-                            BuildScript);
+        collectBuildScripts(FilePath, OutRoot);
       } else {
-        if (BuildScript == BuildScriptKind::BS_Cmake) {
+        if (DpctGlobalInfo::migrateCMakeScripts()) {
           if (llvm::sys::path::filename(FilePath).ends_with(".cmake") ||
               llvm::sys::path::filename(FilePath).ends_with(".txt")) {
-            BuildScriptFilesSet.push_back(FilePath);
+            CMakeBuildScriptFilesSet.push_back(FilePath);
           }
-        } else if (BuildScript == BuildScriptKind::BS_Python) {
+        }
+        if (DpctGlobalInfo::migratePythonScripts()) {
           if (llvm::sys::path::filename(FilePath).ends_with(".py")) {
-            BuildScriptFilesSet.push_back(FilePath);
+            PythonBuildScriptFilesSet.push_back(FilePath);
           }
         }
       }
     }
   } else {
-    collectBuildScripts(InRoot, OutRoot, BuildScriptFilesSet, BuildScript);
+    collectBuildScripts(InRoot, OutRoot);
   }
 }
 
-void loadBufferFromFile(
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot,
-    std::vector<clang::tooling::UnifiedPath> &BuildScriptFilesSet,
-    std::map<clang::tooling::UnifiedPath, std::string>
-        &BuildScriptFileBufferMap) {
+void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
+                        const clang::tooling::UnifiedPath &OutRoot,
+                        std::map<clang::tooling::UnifiedPath, std::string>
+                            &BuildScriptFileBufferMap,
+                        bool isCMake) {
+  std::vector<clang::tooling::UnifiedPath> &BuildScriptFilesSet =
+      isCMake ? CMakeBuildScriptFilesSet : PythonBuildScriptFilesSet;
+
   for (const auto &ScriptFile : BuildScriptFilesSet) {
     if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile,
                                   BuildScriptFileBufferMap))

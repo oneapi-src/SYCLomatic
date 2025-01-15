@@ -117,7 +117,7 @@ const char *const CtHelpHint =
 const char *const CmakeScriptMigrationHelpHint =
     "Warning: CMake build script file like CMakeLists.txt is not found, so no CMake build script file will be migrated.";
 
-const char *const SetupScriptMigrationHelpHint =
+const char *const PythonBuildScriptMigrationHelpHint =
     "Warning: No Python file is found, so no Python build script file will be migrated.";
 
 const char *const BuildScriptMigrationHelpHint =
@@ -582,28 +582,43 @@ void checkIncMigrationOrExit() {
   }
 }
 
-int migrateCmakeScript(const clang::tooling::UnifiedPath &InRoot,
-                       const clang::tooling::UnifiedPath &OutRoot) {
-  if (!cmakeScriptNotFound()) {
-    runWithCrashGuard(
-        [&]() { doCmakeScriptMigration(InRoot, OutRoot); },
-        "Error: dpct internal error. Migrating CMake scripts in \"" +
-            InRootPath.getCanonicalPath().str() +
-            "\" causing the error skipped. Migration continues.\n");
+int migrateBuildScripts(const clang::tooling::UnifiedPath &InRoot,
+                        const clang::tooling::UnifiedPath &OutRoot) {
+  if (cmakeScriptNotFound() && pythonBuildScriptNotFound()) {
+    std::cout << BuildScriptMigrationHelpHint << "\n";
+  } else {
+    if (DpctGlobalInfo::migrateCMakeScripts()) {
+      if (!cmakeScriptNotFound()) {
+        runWithCrashGuard(
+            [&]() { doCmakeScriptMigration(InRoot, OutRoot); },
+            "Error: dpct internal error. Migrating CMake scripts in \"" +
+                InRootPath.getCanonicalPath().str() +
+                "\" causing the error skipped. Migration continues.\n");
+      } else {
+        std::cout << CmakeScriptMigrationHelpHint << "\n";
+      }
+    }
+
+    if (DpctGlobalInfo::migratePythonScripts()) {
+      if (pythonMigrationRulesRegistered() && !pythonBuildScriptNotFound()) {
+        runWithCrashGuard(
+            [&]() { doPythonBuildScriptMigration(InRoot, OutRoot); },
+            "Error: dpct internal error. Migrating Python build scripts in \"" +
+                InRoot.getCanonicalPath().str() +
+                "\" causing the error skipped. Migration continues.\n");
+      } else if (pythonBuildScriptNotFound()) {
+        std::cout << PythonBuildScriptMigrationHelpHint << "\n";
+      }
+    }
   }
+
   return MigrationSucceeded;
 }
 
-int migratePythonScript(const clang::tooling::UnifiedPath &InRoot,
-                        const clang::tooling::UnifiedPath &OutRoot) {
-  if (!pythonBuildScriptNotFound()) {
-    runWithCrashGuard(
-        [&]() { doPythonBuildScriptMigration(InRoot, OutRoot); },
-        "Error: dpct internal error. Migrating Python build scripts in \"" +
-            InRoot.getCanonicalPath().str() +
-            "\" causing the error skipped. Migration continues.\n");
-  }
-  return MigrationSucceeded;
+void doBuildScriptMigration() {
+  loadMainSrcFileInfo(OutRootPath);
+  collectBuildScripts(InRootPath, OutRootPath);
+  migrateBuildScripts(InRootPath, OutRootPath);
 }
 
 // print APIMapping of Query
@@ -846,17 +861,21 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if ((BuildScript == BuildScriptKind::BS_Cmake ||
-       BuildScript == BuildScriptKind::BS_Python) &&
-      !OptParser->getSourcePathList().empty()) {
-    ShowStatus(MigrateBuildScriptIncorrectUse);
-    dpctExit(MigrateBuildScriptIncorrectUse);
-  }
-  if ((BuildScript == BuildScriptKind::BS_Cmake ||
-       BuildScript == BuildScriptKind::BS_Python) &&
-      MigrateBuildScriptOnly) {
-    ShowStatus(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
-    dpctExit(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
+  DpctGlobalInfo::setBuildScript(BuildScript.getBits());
+  bool BuildScriptsSpecified = DpctGlobalInfo::migrateCMakeScripts() ||
+                               DpctGlobalInfo::migratePythonScripts();
+  if (MigrateBuildScriptOnly) {
+    if (!BuildScriptsSpecified) {
+      llvm::errs() << getBuildScriptNotSpecifiedWarning();
+      auto CMakeSelectionBits = 1 << (unsigned)BuildScriptKind::BS_CMake;
+      DpctGlobalInfo::setBuildScript(CMakeSelectionBits);
+      BuildScriptsSpecified = true;
+    }
+  } else {
+    if (BuildScriptsSpecified && !OptParser->getSourcePathList().empty()) {
+      ShowStatus(MigrateBuildScriptIncorrectUse);
+      dpctExit(MigrateBuildScriptIncorrectUse);
+    }
   }
 
   int SDKIncPathRes = checkSDKPathOrIncludePath(CudaIncludePath);
@@ -1030,9 +1049,8 @@ int runDPCT(int argc, const char **argv) {
     Tool.setPrintErrorMessage(false);
   } else {
     IsUsingDefaultOutRoot = OutRootPath.getPath().empty();
-    bool NeedCheckOutRootEmpty = !(BuildScript == BuildScriptKind::BS_Cmake ||
-                                   BuildScript == BuildScriptKind::BS_Python) &&
-                                 !MigrateBuildScriptOnly;
+    bool NeedCheckOutRootEmpty =
+        !(MigrateBuildScriptOnly || BuildScriptsSpecified);
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
         !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
@@ -1133,7 +1151,6 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCode);
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambda);
   DpctGlobalInfo::setUsmLevel(USMLevel);
-  DpctGlobalInfo::setBuildScript(BuildScript);
   // When enable codepin feature, the incremental migration will be disabled.
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration && !EnableCodePin &&
                                     !MigrateBuildScriptOnly);
@@ -1186,8 +1203,7 @@ int runDPCT(int argc, const char **argv) {
   clang::dpct::initHeaderSpellings();
 
   // load user defind rules in case.
-  if (MigrateBuildScriptOnly ||
-      DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
+  if (DpctGlobalInfo::migrateCMakeScripts()) {
     SmallString<128> FilePath1(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(FilePath1,
                             Twine("extensions/cmake_rules/"
@@ -1204,18 +1220,24 @@ int runDPCT(int argc, const char **argv) {
     dpct::genCmakeHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
   }
 
-  if (MigrateBuildScriptOnly ||
-      DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Python) {
-    SmallString<128> PythonRuleFilePath(DpctInstallPath.getCanonicalPath());
-    llvm::sys::path::append(
-        PythonRuleFilePath,
-        Twine("extensions/python_rules/"
-              "python_build_script_migration_rule_ipex.yaml"));
-    if (llvm::sys::fs::exists(PythonRuleFilePath)) {
-      std::vector<clang::tooling::UnifiedPath> PythonRuleFiles{
-          PythonRuleFilePath};
-      importRules(PythonRuleFiles);
-      // generage helper functions file in the outroot dir here
+  if (DpctGlobalInfo::migratePythonScripts()) {
+    // check if RuleFilePaths contains any user specified python migration rule
+    // file
+    bool pythonRuleFilePresent = std::any_of(
+        RuleFilePath.begin(), RuleFilePath.end(),
+        [](const clang::tooling::UnifiedPath &path) {
+          return path.getPath().contains("python_build_script_migration_rule");
+        });
+
+    if (!pythonRuleFilePresent) {
+      if (MigrateBuildScriptOnly) {
+        ShowStatus(
+            MigratePythonBuildScriptSpecifiedButPythonRuleFileNotSpecified);
+        dpctExit(
+            MigratePythonBuildScriptSpecifiedButPythonRuleFileNotSpecified);
+      }
+
+      llvm::errs() << getPythonRuleFileNotProvidedWarning();
     }
   }
 
@@ -1276,10 +1298,9 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_UsmLevel,
                      static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
                      USMLevel.getNumOccurrences());
-    setValueToOptMap(
-        clang::dpct::OPTION_BuildScript,
-        static_cast<unsigned int>(DpctGlobalInfo::getBuildScript()),
-        BuildScript.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_BuildScript,
+                     DpctGlobalInfo::getBuildScript(),
+                     BuildScript.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
@@ -1301,14 +1322,7 @@ int runDPCT(int argc, const char **argv) {
   }
   // OC_Action: only migrate Build scripts.
   if (MigrateBuildScriptOnly) {
-    loadMainSrcFileInfo(OutRootPath);
-    collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
-    collectPythonBuildScriptsSpecified(OptParser, InRootPath, OutRootPath);
-    migrateCmakeScript(InRootPath, OutRootPath);
-    migratePythonScript(InRootPath, OutRootPath);
-    if (cmakeScriptNotFound() && pythonBuildScriptNotFound()) {
-      std::cout << BuildScriptMigrationHelpHint << "\n";
-    }
+    doBuildScriptMigration();
     ShowStatus(MigrationBuildScriptCompleted);
     dpctExit(MigrationSucceeded, false);
   }
@@ -1439,23 +1453,10 @@ int runDPCT(int argc, const char **argv) {
           OutRootPath.getCanonicalPath().str() +
           "\" causing the error skipped. Migration continues.\n");
 
-  // OC_Action: Migrate CMake scripts after Code Migration
-  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
-    loadMainSrcFileInfo(OutRootPath);
-    collectCmakeScripts(InRootPath, OutRootPath);
-    migrateCmakeScript(InRootPath, OutRootPath);
-    if (cmakeScriptNotFound()) {
-      std::cout << CmakeScriptMigrationHelpHint << "\n";
-    }
-  }
-
-  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Python) {
-    loadMainSrcFileInfo(OutRootPath);
-    collectPythonBuildScripts(InRootPath, OutRootPath);
-    migratePythonScript(InRootPath, OutRootPath);
-    if (pythonBuildScriptNotFound()) {
-      std::cout << SetupScriptMigrationHelpHint << "\n";
-    }
+  // OC_Action: Migrate CMake/Python build scripts after Code Migration
+  if (DpctGlobalInfo::migrateCMakeScripts() ||
+      DpctGlobalInfo::migratePythonScripts()) {
+    doBuildScriptMigration();
   }
 
   ShowStatus(Status);

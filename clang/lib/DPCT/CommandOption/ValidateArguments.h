@@ -38,7 +38,7 @@ enum class OutputVerbosityLevel {
   OVL_Detailed,
   OVL_Diagnostics
 };
-enum class BuildScriptKind { BS_None, BS_Cmake, BS_Python };
+enum class BuildScriptKind { BS_CMake = 0, BS_Python };
 enum class DPCTFormatStyle { FS_LLVM, FS_Google, FS_Custom };
 enum class ReportFormatEnum { RFE_NotSetFormat, RFE_CSV, RFE_Formatted };
 enum class HelperFilesCustomizationLevel {

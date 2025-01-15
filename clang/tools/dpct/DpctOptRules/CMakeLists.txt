@@ -11,6 +11,7 @@ set(dpct_cmake_rule_files
 
 set(dpct_python_rule_files
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/python_build_script_migration_rule_ipex.yaml
+  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/python_build_script_migration_rule_pytorch.yaml
 )
 
 set(dpct_pytorch_api_rule_files

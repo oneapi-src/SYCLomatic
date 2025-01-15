@@ -40,8 +40,6 @@ std::map<std::string /*CMake command*/,
 #undef ENTRY_TYPE
     };
 
-static std::vector<clang::tooling::UnifiedPath /*file path*/>
-    CmakeScriptFilesSet;
 static std::map<clang::tooling::UnifiedPath /*file path*/,
                 std::string /*content*/>
     CmakeScriptFileBufferMap;
@@ -59,20 +57,6 @@ static std::map<std::string /*file path*/,
     FileWarningsMap;
 
 void cmakeSyntaxProcessed(std::string &Input);
-
-void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
-                         const clang::tooling::UnifiedPath &OutRoot) {
-  collectBuildScripts(InRoot, OutRoot, CmakeScriptFilesSet,
-                      BuildScriptKind::BS_Cmake);
-}
-
-void collectCmakeScriptsSpecified(
-    const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot) {
-  collectBuildScriptsSpecified(OptParser, InRoot, OutRoot, CmakeScriptFilesSet,
-                               BuildScriptKind::BS_Cmake);
-}
 
 static size_t skipWhiteSpaces(const std::string Input, size_t Index) {
   size_t Size = Input.size();
@@ -589,8 +573,6 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
   }
 }
 
-bool cmakeScriptNotFound() { return CmakeScriptFilesSet.empty(); }
-
 // cmake systaxes need to be processed by implicit migration rules, as they are
 // difficult to be described with yaml based rule syntax.
 static const std::vector<std::string> ImplicitMigrationRules = {
@@ -607,8 +589,7 @@ static void reserveImplicitMigrationRules() {
 
 void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot) {
-  loadBufferFromFile(InRoot, OutRoot, CmakeScriptFilesSet,
-                     CmakeScriptFileBufferMap);
+  loadBufferFromFile(InRoot, OutRoot, CmakeScriptFileBufferMap);
   unifyInputFileFormat(CmakeScriptFileBufferMap, ScriptFileCRLFMap);
   convertAllCmakeCommandsToLowerCase();
   reserveImplicitMigrationRules();
