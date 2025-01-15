@@ -881,7 +881,7 @@ ENTRY(__ushort2bfloat16_rn, __ushort2bfloat16_rn, true, NO_FLAG, P4, "Successful
 ENTRY(__ushort2bfloat16_ru, __ushort2bfloat16_ru, true, NO_FLAG, P4, "Successful")
 ENTRY(__ushort2bfloat16_rz, __ushort2bfloat16_rz, true, NO_FLAG, P4, "Successful")
 ENTRY(__ushort_as_bfloat16, __ushort_as_bfloat16, true, NO_FLAG, P4, "Successful")
-ENTRY(make_bfloat162, make_bfloat162, false, NO_FLAG, P4, "comment")
+ENTRY(make_bfloat162, make_bfloat162, true, NO_FLAG, P4, "Successful")
 
 // 15 Bfloat16 Math Functions are overload with with the ENTRYs of Half Math Functions
 
