@@ -2457,11 +2457,9 @@ public:
     sortSubCommands(GlobalParser->RegisteredSubCommands, Subs);
 
 #ifdef SYCLomatic_CUSTOMIZATION
-    if (isDPCT) {
-      if (CtHelpCat == CtHelpCategory::HC_Examples) {
-        outs() << DPCTExamplesMsg;
-        return;
-      }
+    if (isDPCT && CtHelpCat == CtHelpCategory::HC_Examples) {
+      outs() << DPCTExamplesMsg;
+      return;
     }
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -2515,10 +2513,10 @@ public:
       MaxArgLen = std::max(MaxArgLen, Opts[i].second->getOptionWidth());
 
 #ifdef SYCLomatic_CUSTOMIZATION
-    OptionCategory &reqCtHelpCat(getReqCtHelpCategory(CtHelpCat));
+    OptionCategory &ReqCtHelpCat(getReqCtHelpCategory(CtHelpCat));
 
     if (isDPCT && CtHelpCat != CtHelpCategory::HC_All)
-      outs() << "OPTIONS: " << reqCtHelpCat.getName() << "\n";
+      outs() << "OPTIONS: " << ReqCtHelpCat.getName() << "\n";
     else
       outs() << "OPTIONS:\n";
 #else
@@ -2582,8 +2580,10 @@ public:
 
   // Make sure we inherit our base class's operator=()
   using HelpPrinter::operator=;
+#ifdef SYCLomatic_CUSTOMIZATION
   using HelpPrinter::getReqCtHelpCategory;
   using HelpPrinter::setReqCtHelpCategory;
+#endif // SYCLomatic_CUSTOMIZATION
 
 protected:
   void printOptions(StrOptionPairVector &Opts, size_t MaxArgLen) override {
@@ -2600,6 +2600,10 @@ protected:
     array_pod_sort(SortedCategories.begin(), SortedCategories.end(),
                    OptionCategoryCompare);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+    OptionCategory &ReqCtHelpCat(getReqCtHelpCategory(CtHelpCat));
+#endif // SYCLomatic_CUSTOMIZATION
+
     // Walk through pre-sorted options and assign into categories.
     // Because the options are already alphabetically sorted the
     // options within categories will also be alphabetically sorted.
@@ -2608,16 +2612,12 @@ protected:
       for (auto &Cat : Opt->Categories) {
         assert(llvm::is_contained(SortedCategories, Cat) &&
                "Option has an unregistered category");
-        CategorizedOptions[Cat].push_back(Opt);
+#ifdef SYCLomatic_CUSTOMIZATION
+        if (!isDPCT || Cat == &ReqCtHelpCat)
+#endif // SYCLomatic_CUSTOMIZATION
+          CategorizedOptions[Cat].push_back(Opt);
       }
     }
-
-#ifdef SYCLomatic_CUSTOMIZATION
-    if (CtHelpCat != CtHelpCategory::HC_All)
-      SortedCategories.erase(
-          std::find(SortedCategories.begin(), SortedCategories.end(),
-                    &getReqCtHelpCategory(CtHelpCategory::HC_All)));
-#endif // SYCLomatic_CUSTOMIZATION
 
     // Now do printing.
     for (OptionCategory *Category : SortedCategories) {
@@ -2626,7 +2626,7 @@ protected:
       if (CategoryOptions.empty())
         continue;
 
-        // Print category information.
+      // Print category information.
 #ifdef SYCLomatic_CUSTOMIZATION
       // outs() << "\n";
       // outs() << Category->getName() << ":\n";
@@ -2979,8 +2979,10 @@ void HelpPrinterWrapper::operator=(bool Value) {
 
 #ifdef SYCLomatic_CUSTOMIZATION
 void HelpPrinterWrapper::operator=(CtHelpCategory Value) {
-  CategorizedPrinter.setReqCtHelpCategory(Value);
-  cl::HideUnrelatedOptions(CategorizedPrinter.getReqCtHelpCategory(Value));
+  if (isDPCT) {
+    CategorizedPrinter.setReqCtHelpCategory(Value);
+    cl::HideUnrelatedOptions(CategorizedPrinter.getReqCtHelpCategory(Value));
+  }
 
   *this = true;
 }

@@ -30,8 +30,6 @@ namespace fs = llvm::sys::fs;
 
 namespace clang {
 namespace dpct {
-static std::vector<clang::tooling::UnifiedPath /*file path*/>
-    PythonBuildScriptFilesSet;
 static std::map<clang::tooling::UnifiedPath /*file path*/,
                 std::string /*content*/>
     PythonBuildScriptFileBufferMap;
@@ -45,21 +43,6 @@ static std::map<std::string /*Python syntax*/,
 static std::map<std::string /*file path*/,
                 std::vector<std::string> /*warning msg*/>
     FileWarningsMap;
-
-void collectPythonBuildScripts(const clang::tooling::UnifiedPath &InRoot,
-                               const clang::tooling::UnifiedPath &OutRoot) {
-  collectBuildScripts(InRoot, OutRoot, PythonBuildScriptFilesSet,
-                      BuildScriptKind::BS_Python);
-}
-
-void collectPythonBuildScriptsSpecified(
-    const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot) {
-  collectBuildScriptsSpecified(OptParser, InRoot, OutRoot,
-                               PythonBuildScriptFilesSet,
-                               BuildScriptKind::BS_Python);
-}
 
 void addPythonWarningMsg(const std::string &WarningMsg,
                          const std::string FileName) {
@@ -96,12 +79,11 @@ applyPythonMigrationRules(const clang::tooling::UnifiedPath InRoot,
   }
 }
 
-bool pythonBuildScriptNotFound() { return PythonBuildScriptFilesSet.empty(); }
+bool pythonMigrationRulesRegistered() { return !PythonBuildInRules.empty(); }
 
 void doPythonBuildScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                                   const clang::tooling::UnifiedPath &OutRoot) {
-  loadBufferFromFile(InRoot, OutRoot, PythonBuildScriptFilesSet,
-                     PythonBuildScriptFileBufferMap);
+  loadBufferFromFile(InRoot, OutRoot, PythonBuildScriptFileBufferMap, false);
   unifyInputFileFormat(PythonBuildScriptFileBufferMap, ScriptFileCRLFMap);
   applyPythonMigrationRules(InRoot, OutRoot);
   storeBufferToFile(PythonBuildScriptFileBufferMap, ScriptFileCRLFMap);

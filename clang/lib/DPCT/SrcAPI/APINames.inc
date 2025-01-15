@@ -2008,13 +2008,13 @@ ENTRY(cuDeviceCanAccessPeer, cuDeviceCanAccessPeer, true, NO_FLAG, P4, "DPCT1031
 ENTRY(cuDeviceGetP2PAttribute, cuDeviceGetP2PAttribute, false, NO_FLAG, P4, "comment")
 
 // Graphics Interoperability
-ENTRY(cuGraphicsMapResources, cuGraphicsMapResources, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphicsMapResources, cuGraphicsMapResources, true, NO_FLAG, P4, "successful/DPCT1119")
 ENTRY(cuGraphicsResourceGetMappedMipmappedArray, cuGraphicsResourceGetMappedMipmappedArray, false, NO_FLAG, P4, "comment")
-ENTRY(cuGraphicsResourceGetMappedPointer, cuGraphicsResourceGetMappedPointer_v2, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphicsResourceGetMappedPointer, cuGraphicsResourceGetMappedPointer_v2, true, NO_FLAG, P4, "successful/DPCT1119")
 ENTRY(cuGraphicsResourceSetMapFlags, cuGraphicsResourceSetMapFlags_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cuGraphicsSubResourceGetMappedArray, cuGraphicsSubResourceGetMappedArray, false, NO_FLAG, P4, "comment")
-ENTRY(cuGraphicsUnmapResources, cuGraphicsUnmapResources, false, NO_FLAG, P4, "comment")
-ENTRY(cuGraphicsUnregisterResource, cuGraphicsUnregisterResource, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphicsUnmapResources, cuGraphicsUnmapResources, true, NO_FLAG, P4, "successful/DPCT1119")
+ENTRY(cuGraphicsUnregisterResource, cuGraphicsUnregisterResource, true, NO_FLAG, P4, "successful/DPCT1119")
 
 // Driver Entry Point Access
 ENTRY(cuGetProcAddress, cuGetProcAddress, false, NO_FLAG, P7, "comment")

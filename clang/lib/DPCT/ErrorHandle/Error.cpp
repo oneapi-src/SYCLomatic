@@ -203,15 +203,19 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: option '-migrate-build-script' is only used for "
                    "whole project code migration.";
     break;
-  case MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse:
-    StatusString = "Error: option '-migrate-build-script' and "
-                   "'-migrate-build-script-only' cannot be used together.";
-    break;
   case MigrationErrorNoExplicitInRootAndBuildScript:
     StatusString =
         "Error: The option -migrate-build-script-only requires that either "
         "the option '--in-root' or the CMake or Python build file(s) be "
         "specified explicitly.";
+    break;
+  case MigratePythonBuildScriptSpecifiedButPythonRuleFileNotSpecified:
+    StatusString =
+        "Error: The option -migrate-build-script=Python requires python "
+        "migration rules to be explicitly loaded with option --rule-file. For "
+        "example, --rule-file={dpct_install_folder}/extensions/python_rules/"
+        "python_build_script_migration_rule_[ipex|pytorch].yaml to load the "
+        "predefined rules.";
     break;
   case MigrationErrorInvalidInstallPath:
     StatusString = "Error: " + Message + " not found.";
@@ -245,6 +249,14 @@ std::string getCheckVersionFailWarning() {
          "dpcpp-compatibility-tool/developer-guide-reference/current/"
          "overview.html for more "
          "details.\n";
+}
+std::string getBuildScriptNotSpecifiedWarning() {
+  return "Warning: Only CMake scripts will be migrated as no "
+         "--migrate-build-script option is provided.\n";
+}
+std::string getPythonRuleFileNotProvidedWarning() {
+  return "Warning: Rule file for python build script migration not found. "
+         "Migration continues with python build script migration disabled.";
 }
 
 bool IsUsingDefaultOutRoot = false;

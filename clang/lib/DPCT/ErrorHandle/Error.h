@@ -63,11 +63,11 @@ enum ProcessStatus {
   MigrationErrorBuildScriptPathInvalid = -48,
   MigrateBuildScriptOnlyNotSpecifed = -49,
   MigrateBuildScriptIncorrectUse = -50,
-  MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse = -51,
-  MigrationErrorNoExplicitInRootAndBuildScript = -52,
-  MigrationErrorCannotWrite = -53,
-  MigratePythonBuildScriptOnlyNotSpecifed = -54,
-  };
+  MigrationErrorNoExplicitInRootAndBuildScript = -51,
+  MigrationErrorCannotWrite = -52,
+  MigratePythonBuildScriptOnlyNotSpecifed = -53,
+  MigratePythonBuildScriptSpecifiedButPythonRuleFileNotSpecified = -54,
+};
 
 namespace clang {
 namespace dpct {
@@ -75,6 +75,8 @@ namespace dpct {
 void ShowStatus(int Status, std::string Message = "");
 std::string getLoadYamlFailWarning(const clang::tooling::UnifiedPath& YamlPath);
 std::string getCheckVersionFailWarning();
+std::string getBuildScriptNotSpecifiedWarning();
+std::string getPythonRuleFileNotProvidedWarning();
 
 extern bool IsUsingDefaultOutRoot;
 void removeDefaultOutRootFolder(const clang::tooling::UnifiedPath &DefaultOutRoot);

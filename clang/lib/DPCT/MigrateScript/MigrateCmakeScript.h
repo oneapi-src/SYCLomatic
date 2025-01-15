@@ -13,16 +13,9 @@
 
 namespace clang {
 namespace dpct {
-void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
-                         const clang::tooling::UnifiedPath &OutRoot);
-void collectCmakeScriptsSpecified(
-    const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot);
 void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot);
 void registerCmakeMigrationRule(MetaRuleObject &R);
-bool cmakeScriptNotFound();
 void addCmakeWarningMsg(const std::string &WarningMsg,
                         const std::string FileName);
 
