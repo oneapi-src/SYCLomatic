@@ -5,53 +5,7 @@
 # This file will be installed to folder:
 # {dpct_install_folder}/extensions/python_rules.
 # The rule specified in this file can be imported with commandline option:
-# --rule-file={dpct_install_folder}/extensions/python_rules/python_build_script_migration_rule_ipex.yaml
-
-# torch import rules
-- Rule: rule_import_torch
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: import_torch
-  In: import torch
-  Out: |
-    import torch
-    import intel_extension_for_pytorch
-
-# CPP extension rules
-- Rule: rule_from_torch_utils_import_cpp_extension_only
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: from_torch_utils_import_cpp_extension_only
-  In: from torch.utils import cpp_extension
-  Out: from intel_extension_for_pytorch.xpu import cpp_extension
-
-- Rule: rule_torch_utils_cpp_extension
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: torch_utils_cpp_extension
-  In: torch.utils.cpp_extension
-  Out: intel_extension_for_pytorch.xpu.cpp_extension
-
-- Rule: rule_utils_cpp_extension
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: utils_cpp_extension
-  In: utils.cpp_extension
-  Out: intel_extension_for_pytorch.xpu.cpp_extension
-
-- Rule: rule_cpp_extension_import_CppExtension
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: cpp_extension_import_CppExtension
-  In: from ${mod_prefix}cpp_extension import${ws1}(${class_prefix}CppExtension,${class_suffix})
-  Out: |
-    from ${mod_prefix}cpp_extension import${ws1}(${class_prefix}${class_suffix})
-    from torch.utils.cpp_extension import CppExtension
+# --rule-file={dpct_install_folder}/extensions/python_rules/python_build_script_migration_rule_pytorch.yaml
 
 # CUDA_HOME rules
 - Rule: rule_CUDA_HOME
@@ -62,40 +16,6 @@
   In: CUDA_HOME
   Out: SYCL_HOME
 
-- Rule: rule_torch_utils_cpp_extension_CUDA_HOME
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: torch_utils_cpp_extension_CUDA_HOME
-  In: intel_extension_for_pytorch.xpu.cpp_extension.SYCL_HOME
-  Out: __import__('os').environ.get('CMPLR_ROOT')
-
-- Rule: rule_cpp_extension_import_CUDA_HOME_only
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: cpp_extension_import_CUDA_HOME_only
-  In: from ${mod_prefix}cpp_extension import SYCL_HOME
-  Out: SYCL_HOME = __import__('os').environ.get('CMPLR_ROOT')
-
-- Rule: rule_cpp_extension_import_(CUDA_HOME)_only
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: cpp_extension_import_(CUDA_HOME)_only
-  In: from ${mod_prefix}cpp_extension import${ws}(${ws1}SYCL_HOME)
-  Out: SYCL_HOME = __import__('os').environ.get('CMPLR_ROOT')
-
-- Rule: rule_cpp_extension_import_CUDA_HOME
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: cpp_extension_import_CUDA_HOME
-  In: from ${mod_prefix}cpp_extension import${ws}(${class_prefix}SYCL_HOME,${class_suffix})
-  Out: |
-    from ${mod_prefix}cpp_extension import${ws}(${class_prefix}${class_suffix})
-    SYCL_HOME = __import__('os').environ.get('CMPLR_ROOT')
-
 # Extension rules
 - Rule: rule_CUDAExtension
   Kind: PythonRule
@@ -103,15 +23,15 @@
   MatchMode: Partial
   PythonSyntax: CUDAExtension
   In: CUDAExtension
-  Out: DPCPPExtension
+  Out: CppExtension
 
 - Rule: rule_include_dirs
   Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: include_dirs
-  In: DPCPPExtension(${args})
-  Out: DPCPPExtension(${args}, include_dirs=cpp_extension.include_paths(),)
+  In: CppExtension(${args})
+  Out: CppExtension(${args}, include_dirs=cpp_extension.include_paths('xpu'),)
 
 - Rule: rule_cpp_extension_load_no_extra_cflags
   Kind: PythonRule
@@ -128,14 +48,6 @@
   PythonSyntax: cpp_extension_load_no_extra_ldflags
   In: torch.utils.cpp_extension.load(${args})
   Out: torch.utils.cpp_extension.load(${args}, extra_ldflags=['-fsycl'])
-
-- Rule: rule_BuildExtension
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: BuildExtension
-  In: BuildExtension
-  Out: DpcppBuildExtension
 
 # src file ext rules
 - Rule: rule_cpp_file_in_func

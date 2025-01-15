@@ -355,8 +355,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cooperative_groups::__v1::grid_group",
                   "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
                   "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
-                  "cudaGraphicsResource_t", "cudaExternalMemory_t",
-                  "cudaExternalMemoryHandleDesc",
+                  "cudaGraphicsResource_t", "CUgraphicsResource",
+                  "cudaExternalMemory_t", "cudaExternalMemoryHandleDesc",
                   "cudaExternalMemoryMipmappedArrayDesc",
                   "cudaExternalMemoryBufferDesc"))))))
           .bind("cudaTypeDefEA"),

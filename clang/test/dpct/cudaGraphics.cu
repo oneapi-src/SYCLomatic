@@ -50,6 +50,9 @@ int main() {
   resources_arr[0] = resource;
   resources_arr[1] = resource1;
 
+  void *devPtr;
+  size_t size;
+
   // CHECK: int mapFlags = 0;
   // CHECK-NEXT: int mapFlags1 = 0;
   // CHECK-NEXT: int mapFlags2 = 0;
@@ -93,6 +96,9 @@ int main() {
 
   // CHECK: *array_ptr = resource->get_sub_resource_mapped_array(arrayIndex, mipLevel);
   cudaGraphicsSubResourceGetMappedArray(array_ptr, resource, arrayIndex, mipLevel);
+
+  // CHECK: resource->get_mapped_pointer(&devPtr, &size);
+  cudaGraphicsResourceGetMappedPointer(&devPtr, &size, resource);
 
 #ifdef _WIN32
   // CHECK-WINDOWS: dpct::experimental::unmap_resources(1, &resource);

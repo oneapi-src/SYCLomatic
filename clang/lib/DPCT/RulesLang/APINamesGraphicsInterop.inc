@@ -51,12 +51,33 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("cuGraphicsMapResources",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::map_resources",
+                            ARG(0), ARG(1), ARG(2))),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cuGraphicsMapResources", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cuGraphicsMapResources"),
+        ARG("--use-experimental-features=bindless_images"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
     MEMBER_CALL_FACTORY_ENTRY(
         "cudaGraphicsResourceGetMappedPointer",
         ARG(2), true, "get_mapped_pointer", ARG(0), ARG(1)),
     UNSUPPORT_FACTORY_ENTRY(
         "cudaGraphicsResourceGetMappedPointer", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("cudaGraphicsResourceGetMappedPointer"),
+        ARG("--use-experimental-features=bindless_images"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cuGraphicsResourceGetMappedPointer_v2",
+        ARG(2), true, "get_mapped_pointer", CAST(makeLiteral("void **"), ARG(0)), ARG(1)),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cuGraphicsResourceGetMappedPointer_v2", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cuGraphicsResourceGetMappedPointer_v2"),
         ARG("--use-experimental-features=bindless_images"))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
@@ -98,10 +119,29 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("cuGraphicsUnmapResources",
+                        CALL(MapNames::getDpctNamespace() +
+                                "experimental::unmap_resources",
+                            ARG(0), ARG(1), ARG(2))),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cuGraphicsUnmapResources", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cuGraphicsUnmapResources"),
+        ARG("--use-experimental-features=bindless_images"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
     DELETER_FACTORY_ENTRY("cudaGraphicsUnregisterResource", ARG(0)),
     UNSUPPORT_FACTORY_ENTRY(
         "cudaGraphicsUnregisterResource", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("cudaGraphicsUnregisterResource"),
+        ARG("--use-experimental-features=bindless_images"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    DELETER_FACTORY_ENTRY("cuGraphicsUnregisterResource", ARG(0)),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cuGraphicsUnregisterResource", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cuGraphicsUnregisterResource"),
         ARG("--use-experimental-features=bindless_images"))))
 
 // External Resource APIs

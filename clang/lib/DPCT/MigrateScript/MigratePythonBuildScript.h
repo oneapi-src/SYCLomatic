@@ -13,16 +13,10 @@
 
 namespace clang {
 namespace dpct {
-void collectPythonBuildScripts(const clang::tooling::UnifiedPath &InRoot,
-                               const clang::tooling::UnifiedPath &OutRoot);
-void collectPythonBuildScriptsSpecified(
-    const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot);
 void doPythonBuildScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                                   const clang::tooling::UnifiedPath &OutRoot);
 void registerPythonMigrationRule(MetaRuleObject &R);
-bool pythonBuildScriptNotFound();
+bool pythonMigrationRulesRegistered();
 void addPythonWarningMsg(const std::string &WarningMsg,
                          const std::string FileName);
 } // namespace dpct

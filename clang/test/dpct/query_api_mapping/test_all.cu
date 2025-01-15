@@ -643,6 +643,10 @@
 // CHECK-NEXT: cuFuncSetAttribute
 // CHECK-NEXT: cuFuncSetCacheConfig
 // CHECK-NEXT: cuGetErrorString
+// CHECK-NEXT: cuGraphicsMapResources
+// CHECK-NEXT: cuGraphicsResourceGetMappedPointer
+// CHECK-NEXT: cuGraphicsUnmapResources
+// CHECK-NEXT: cuGraphicsUnregisterResource
 // CHECK-NEXT: cuInit
 // CHECK-NEXT: cuLaunchKernel
 // CHECK-NEXT: cuMemAddressFree

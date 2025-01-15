@@ -17,6 +17,8 @@
 namespace clang {
 namespace dpct {
 
+bool cmakeScriptNotFound();
+bool pythonBuildScriptNotFound();
 std::string readFile(const clang::tooling::UnifiedPath &Name);
 std::vector<std::string> split(const std::string &Input,
                                const std::string &Delimiter);
@@ -24,11 +26,8 @@ void storeBufferToFile(
     std::map<clang::tooling::UnifiedPath, std::string>
         &BuildScriptFileBufferMap,
     std::map<clang::tooling::UnifiedPath, bool> &ScriptFileCRLFMap);
-void collectBuildScripts(
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot,
-    std::vector<clang::tooling::UnifiedPath> &BuildScriptFilesSet,
-    BuildScriptKind BuildScript);
+void collectBuildScripts(const clang::tooling::UnifiedPath &InRoot,
+                         const clang::tooling::UnifiedPath &OutRoot);
 bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot,
                               const clang::tooling::UnifiedPath OutRoot,
                               clang::tooling::UnifiedPath InFileName,
@@ -38,15 +37,12 @@ bool buildScriptFileSpecified(const std::vector<std::string> &SourceFiles);
 void collectBuildScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot,
-    std::vector<clang::tooling::UnifiedPath> &BuildScriptFilesSet,
-    BuildScriptKind BuildScript);
-void loadBufferFromFile(
-    const clang::tooling::UnifiedPath &InRoot,
-    const clang::tooling::UnifiedPath &OutRoot,
-    std::vector<clang::tooling::UnifiedPath> &BuildScriptFilesSet,
-    std::map<clang::tooling::UnifiedPath, std::string>
-        &BuildScriptFileBufferMap);
+    const clang::tooling::UnifiedPath &OutRoot);
+void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
+                        const clang::tooling::UnifiedPath &OutRoot,
+                        std::map<clang::tooling::UnifiedPath, std::string>
+                            &BuildScriptFileBufferMap,
+                        bool isCMake = true);
 void unifyInputFileFormat(
     std::map<clang::tooling::UnifiedPath, std::string>
         &BuildScriptFileBufferMap,
@@ -56,4 +52,4 @@ void unifyInputFileFormat(
 } // namespace dpct
 } // namespace clang
 
-#endif //!DPCT_MIGRATE_BUILD_SCRIPT_H
+#endif //! DPCT_MIGRATE_BUILD_SCRIPT_H
