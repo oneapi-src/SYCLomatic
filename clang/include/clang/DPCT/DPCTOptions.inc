@@ -437,8 +437,8 @@ DPCT_OPTION(clang::dpct::list, std::string, RuleFile,
             "rule-file",
             llvm::cl::desc(
                 "Specify the rule file path that "
-                "contains rules used for migration. Reference rule examples in "
-                "directory \"extensions\" under this tool install folder.\n"),
+                "contains rules used for migration. Also, reference to predefined rules in"
+                " \"extensions\" directory in the root folder of the tool.\n"),
             llvm::cl::value_desc("file"), llvm::cl::cat(CtHelpCatAdvanced),
             llvm::cl::ZeroOrMore)
 
