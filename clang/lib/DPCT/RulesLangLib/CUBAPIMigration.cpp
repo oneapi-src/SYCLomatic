@@ -278,7 +278,7 @@ void CubMemberCallRule::runRule(
       auto *ClassSpecDecl = dyn_cast<ClassTemplateSpecializationDecl>(
           CanTy->getAs<RecordType>()->getDecl());
       const auto &ValueTyArg = ClassSpecDecl->getTemplateArgs()[0];
-      
+
       ValueTyArg.getAsType().getAsString();
       std::string Fn;
       llvm::raw_string_ostream OS(Fn);
