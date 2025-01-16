@@ -1,11 +1,5 @@
 ---
 # ATen cuda rules
-- Rule: rule_ATen_core_Tensor_h
-  Kind: Header
-  Priority: Takeover
-  In: ATen/core/Tensor.h
-  Out: "<ATen/core/Tensor.h>"
-
 - Rule: rule_ATen_cuda_CUDAContext_h
   Kind: Header
   Priority: Takeover
