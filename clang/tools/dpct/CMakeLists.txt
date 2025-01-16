@@ -61,8 +61,7 @@ if (NOT CMAKE_CONFIGURATION_TYPES)
                              COMPONENT dpct-setvars)
 endif()
 
-add_subdirectory(DpctOptRules)
-add_subdirectory(RuleTemplates)
+add_subdirectory(extensions)
 
 set(dpct_cmake_helper_file
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/cmake/dpct.cmake
