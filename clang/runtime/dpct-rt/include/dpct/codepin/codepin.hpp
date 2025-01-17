@@ -150,8 +150,8 @@ public:
     print_args(cp_obj, ofs_bin, queue, 0, args...);
     json_ss.flush();
     ofs_bin.flush();
-    read_value(ifs_bin, old_offset, args...);
-    offset = bin_offset;
+    // read_value(ifs_bin, old_offset, args...);
+    // offset = bin_offset;
   }
 
 
@@ -173,11 +173,15 @@ public:
       // type_obj.value(length);
       type_obj.key("Offset");
       type_obj.value(static_cast<size_t>(ofst.tellp()));
-      type_obj.key("Data");
-      detail::data_ser<First>::dump(json_ss, ofst, arg, queue);
-    
-      
-      std::cout << "===========================\n"  << typeid(First).name() << std::endl; 
+
+      if (std::is_arithmetic_v<First> || is_expand_to_dump<std::remove_pointer_t<First>>()) {
+      // if (std::is_arithmetic_v<First> || (std::is_pointer_v<First> && std::is_arithmetic_v<std::remove_pointer_t<First>>)) {
+        detail::data_ser<First>::dump(json_ss, ofst, arg, queue);
+      } else {
+        type_obj.key("Data");
+        detail::data_ser<First>::dump(json_ss, ofst, arg, queue);
+      }
+  
     }
     print_args(obj, ofst, queue, index + 1, args...);
   }
@@ -256,7 +260,7 @@ public:
         }
         type_name += type[i];
       }
-      std::cout << "Type name " << type_name << " Array size " << array_size
+      std::cout << "Type name " << type_name << "  size " << array_size
                 << std::endl;
       std::cout << "Length " << length << std::endl;
       T *data = new T[length / sizeof(T)];
@@ -320,7 +324,7 @@ template <class T>
 class data_ser<T*, void> {
 public:
   static size_t dump(json_stringstream &ss, std::ofstream &ofst, T* value,
-                   queue_t queue) {
+                   queue_t queue, bool top_run = true) {
 
     size_t length = 0;
     using PointeeType = std::remove_cv_t<std::remove_pointer_t<T>>;
@@ -345,8 +349,7 @@ public:
 #endif
       dump_addr = h_data;
     }
-    auto arr = ss.array();
-    
+    // auto arr = ss.array();
     std::string tag = get_demangle_type_name<PointeeType>(true);
     ofst.write(&tag[0], tag.length()+1);
     std::cout << "tag " << tag << std::endl;
@@ -354,35 +357,22 @@ public:
     ofst.write(reinterpret_cast<char *>(&ptr_size), sizeof(size_t));
     ofst.flush();
     length += tag.length() + 1 + sizeof(size_t) + sizeof(PointeeType) * size;
-    for (int i = 0; i < size; ++i) {
-      // if (size > CODEPIN_SAMPLING_THRESHOLD && i != 0) {
-      //   float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-      //   if (r > (float)CODEPIN_SAMPLING_PERCENT/(float)100)
-      //     continue;
-      // }
-      // auto obj = arr.object();
-      // detail::data_ser<PointeeType>::print_type_name(obj);
-      // obj.key("Data");
-      if (std::is_arithmetic_v<PointeeType>) {
-        detail::data_ser<PointeeType>::dump(
-          ss, ofst, *(dump_addr + i), queue, false);
-      } else {
+
+    if (std::is_arithmetic_v<PointeeType> || is_expand_to_dump<PointeeType>()) {
+      for (int i = 0; i < size; ++i) {
+        detail::data_ser<PointeeType>::dump(ss, ofst, *(dump_addr + i), queue,
+                                            false);
+      }
+    } else {
+      auto arr = ss.array();
+      for (int i = 0; i < size; ++i) {
         auto obj = arr.object();
-        detail::data_ser<PointeeType>::print_type_name(obj);
-        obj.key("Offset");
-        obj.value(static_cast<size_t>(ofst.tellp()));
-        obj.key("Data");
-        detail::data_ser<PointeeType>::dump(
-            ss, ofst, *(dump_addr + i), queue, false);
+        std::string key = "Mem" + std::to_string(i);
+        obj.key(key);
+        detail::data_ser<PointeeType>::dump(ss, ofst, *(dump_addr + i), queue,
+                                            false);
       }
     }
-    //    length = write_tlv_to_file<PointeeType>(ofst, dump_addr, size * sizeof(PointeeType));
-    // ofst.flush();
-    // if (std::is_arithmetic_v<PointeeType>) {
-    //   length = write_tlv_to_file<PointeeType>(ofst, dump_addr, size * sizeof(PointeeType));
-    // } else {
-    //   length = data_ser<PointeeType>::dump(ss, ofst, dump_addr, size * sizeof(PointeeType), queue);
-    // }
 
     if(is_dev)
       delete[] dump_addr;
@@ -398,10 +388,11 @@ public:
 template <class T>
 class data_ser<T, typename std::enable_if<std::is_array<T>::value>::type> {
 public:
-  static size_t dump(detail::json_stringstream &ss, T value,
-                   queue_t queue) {
+  static size_t dump(detail::json_stringstream &ss, std::ofstream &ofst, T value,
+                   queue_t queue, bool top_run = true) {
     size_t length = 0;
-    auto arr = ss.array();
+    // auto arr = ss.array();
+    auto obj = ss.object();
     size_t size = sizeof(T) / sizeof(value[0]);
     for (size_t i = 0; i < size; ++i) {
       if (size > CODEPIN_SAMPLING_THRESHOLD && i != 0) {
@@ -409,12 +400,15 @@ public:
         if (r > (float)CODEPIN_SAMPLING_PERCENT/(float)100)
           continue;
       }
-      auto obj = arr.object();
+      // auto obj = arr.object();
+      
       detail::data_ser<
           std::remove_extent_t<T>>::print_type_name(obj);
-      obj.key("Data");
-      detail::data_ser<std::remove_extent_t<T>>::dump(
-          ss, value[i], queue);
+      // obj.key("Data222");
+      obj.key("Offset");
+      obj.value(static_cast<size_t>(ofst.tellp()));
+      detail::data_ser<std::remove_extent_t<T>>::dump(ss, ofst,
+           value[i], queue, true);
     }
   return length;
   }

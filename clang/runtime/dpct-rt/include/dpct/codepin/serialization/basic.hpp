@@ -68,11 +68,40 @@ std::string get_demangle_type_name(bool is_pointer = false) {
   return type;
 }
 
-   // If pointer, how many?  // size + type.
-      // len 1: if build in type, then generate the build array size. 2: if user defined type, then generate all the needed size;
-      // Value: if build in type, then generate the value. 2: if user defined type, then need to generate value recursively
-      // When the write is build in type, like the vector add.
-  // template <class T, typename std::enable_if<std::is_arithmetic<T>::value>::type>
+template <typename T>
+inline bool is_expand_to_dump() {
+    if (std::is_arithmetic_v<T>) {
+      return true;
+    }
+    static std::vector<std::string> type_list = {
+#ifdef __NVCC__
+        demangle_name<__half>(),
+        demangle_name<__nv_bfloat16>(),
+        demangle_name<int3>(),
+        demangle_name<float3>(),
+
+#else 
+        demangle_name<sycl::int3>(),
+        demangle_name<sycl::float3>(),
+        demangle_name<sycl::half>(),
+        demangle_name<sycl::ext::oneapi::bfloat16>(),
+        
+#endif
+      demangle_name<char*>(),
+      demangle_name<std::string>()
+    };
+
+    std::string type_name = demangle_name<T>();
+    std::cout << "TTTT " << type_name << std::endl;
+    return std::find(type_list.begin(), type_list.end(), type_name) != type_list.end();
+}
+
+
+// If pointer, how many?  // size + type.
+// len 1: if build in type, then generate the build array size. 2: if user defined type, then generate all the needed size;
+// Value: if build in type, then generate the value. 2: if user defined type, then need to generate value recursively
+// When the write is build in type, like the vector add.
+// template <class T, typename std::enable_if<std::is_arithmetic<T>::value>::type>
   template <class T>
   static size_t write_tlv_to_file(std::ofstream &ofst, T*data, size_t size) {
     std::string tag = get_demangle_type_name<T>(true);
@@ -414,11 +443,9 @@ public:
       ofst.write(&tag[0], tag.length() + 1);
       ofst.write(reinterpret_cast<char *>(&sizeof(float3)), sizeof(size_t));
     }
-    // for (size_t i = 0; i < items; i++) {
       ofst.write(reinterpret_cast<const char *>(&value.x), sizeof(float));
       ofst.write(reinterpret_cast<const char *>(&value.y), sizeof(float));
       ofst.write(reinterpret_cast<const char *>(&value.z), sizeof(float));
-    // }
     ofst.flush();
   }
   static void print_type_name(json_stringstream::json_obj &obj){
@@ -483,15 +510,12 @@ public:
       ofst.write(&tag[0], tag.length() + 1);
       ofst.write(reinterpret_cast<char *>(&size), sizeof(size_t));
     }
-      ofst.write(reinterpret_cast<const char *>(&value.x()), sizeof(float));
-      ofst.write(reinterpret_cast<const char *>(&value.y()), sizeof(float));
-      ofst.write(reinterpret_cast<const char *>(&value.z()), sizeof(float));
-    // }
+    ofst.write(reinterpret_cast<const char *>(&value.x()), sizeof(float));
+    ofst.write(reinterpret_cast<const char *>(&value.y()), sizeof(float));
+    ofst.write(reinterpret_cast<const char *>(&value.z()), sizeof(float));
     ofst.flush();
-    // return total_len;
-    
   }
-  static void print_type_name(json_stringstream::json_obj &obj){
+  static void print_type_name(json_stringstream::json_obj &obj) {
     obj.key("Type");
     obj.value("sycl::float3");
   }
