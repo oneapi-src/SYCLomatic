@@ -4,7 +4,7 @@
 // RUN: cp -r %S/pytorch_inc %T/pytorch/ATen/
 // RUN: cd %T/pytorch/ATen
 // RUN: mkdir dpct_out
-// RUN: dpct --out-root dpct_out %T/pytorch/ATen/src/ATen.cu --extra-arg="-I%T/pytorch/ATen/pytorch_inc" --cuda-include-path="%cuda-path/include" --rule-file=%S/../../../tools/dpct/DpctOptRules/pytorch_api.yaml --analysis-scope-path %T/pytorch/ATen/pytorch_inc --analysis-scope-path %T/pytorch/ATen/src --in-root %T/pytorch/ATen/src
+// RUN: dpct --out-root dpct_out %T/pytorch/ATen/src/ATen.cu --extra-arg="-I%T/pytorch/ATen/pytorch_inc" --cuda-include-path="%cuda-path/include" --rule-file=%S/../../../tools/dpct/extensions/pytorch_api_rules/pytorch_api.yaml --analysis-scope-path %T/pytorch/ATen/pytorch_inc --analysis-scope-path %T/pytorch/ATen/src --in-root %T/pytorch/ATen/src
 // RUN: FileCheck --input-file %T/pytorch/ATen/dpct_out/ATen.dp.cpp --match-full-lines %T/pytorch/ATen/src/ATen.cu
 
 // CHECK: #include <c10/xpu/XPUStream.h>
