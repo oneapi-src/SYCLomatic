@@ -1,4 +1,4 @@
-USAGE: dpct.exe [options] [<source0> ... <sourceN>]
+USAGE: dpct [options] [<source0> ... <sourceN>]
 
 OPTIONS: Advanced
 Advanced DPCT options
@@ -28,7 +28,7 @@ Advanced DPCT options
     =assert                               -   Disable the assert extension.
     =queue_empty                          -   Disable the queue empty extension.
     =all                                  -   Disable all extensions listed in this option.
-  --rule-file=<file>                      - Specify the rule file path that contains rules used for migration.
+  --rule-file=<file>                      - Specify the rule file for migration. Also, reference to the predefined rules in "extensions" directory in the root folder of the tool.
   --use-dpcpp-extensions=<value>          - A comma-separated list of extensions to be used in migrated code.
                                             By default, these extensions are not used in migrated code.
     =c_cxx_standard_library               -   Use std functions from the libdevice library (provided by Intel(R) oneAPI DPC++/C++ Compiler)

@@ -5,11 +5,11 @@
 
 // RUN: echo "begin" > %T/diff.txt
 // RUN: dpct --help > output.txt
-// RUN: diff --strip-trailing-cr %S/help_all_win.txt %T/help_option_check/output.txt >> %T/diff.txt
+// RUN: diff --strip-trailing-cr %S/win/help_all.txt %T/help_option_check/output.txt >> %T/diff.txt
 // RUN: dpct --help=basic > output.txt
-// RUN: diff --strip-trailing-cr %S/help_basic_win.txt %T/help_option_check/output.txt >> %T/diff.txt
+// RUN: diff --strip-trailing-cr %S/win/help_basic.txt %T/help_option_check/output.txt >> %T/diff.txt
 // RUN: dpct --help=advanced > output.txt
-// RUN: diff --strip-trailing-cr %S/help_advanced_win.txt %T/help_option_check/output.txt >> %T/diff.txt
+// RUN: diff --strip-trailing-cr %S/win/help_advanced.txt %T/help_option_check/output.txt >> %T/diff.txt
 // RUN: echo "end" >> %T/diff.txt
 
 // RUN: cat %T/diff.txt | FileCheck %s

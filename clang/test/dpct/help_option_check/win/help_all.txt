@@ -123,7 +123,7 @@ All DPCT options
                                               SYCL, LOC migrated to SYCL with helper functions, LOC not needing migration,
                                               LOC needing migration but are not migrated. The report file name has the .stats
                                               suffix added (default)
-  --rule-file=<file>                      - Specify the rule file path that contains rules used for migration.
+  --rule-file=<file>                      - Specify the rule file for migration. Also, reference to the predefined rules in "extensions" directory in the root folder of the tool.
   --stop-on-parse-err                     - Stop migration and generation of reports if parsing errors happened. Default: off. 
   --suppress-warnings=<value>             - A comma separated list of migration warnings to suppress. Valid warning IDs range
                                             from 1000 to 1135. Hyphen separated ranges are also allowed. For example:
