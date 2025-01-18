@@ -7,27 +7,28 @@
 //===----------------------------------------------------------------------===//
 
 #include "ASTTraversal.h"
-#include "RulesLang/RulesLang.h"
 #include "AnalysisInfo.h"
+#include "CodePin/GenCodePinHeader.h"
+#include "MigrationRuleManager.h"
 #include "RulesAsm/AsmMigration.h"
+#include "RulesCCL/NCCLAPIMigration.h"
 #include "RulesDNN/DNNAPIMigration.h"
+#include "RulesLang/OptimizeMigration.h"
+#include "RulesLang/RulesLang.h"
+#include "RulesLang/WMMAAPIMigration.h"
+#include "RulesLangLib/LIBCUAPIMigration.h"
+#include "RulesLangLib/NvtxAPIMigration.h"
+#include "RulesLangLib/ThrustAPIMigration.h"
+#include "RulesMathLib/BLASAPIMigration.h"
 #include "RulesMathLib/FFTAPIMigration.h"
 #include "RulesMathLib/RandomAPIMigration.h"
 #include "RulesMathLib/SolverAPIMigration.h"
-#include "RulesMathLib/BLASAPIMigration.h"
-#include "CodePin/GenCodePinHeader.h"
-#include "RulesSecurity/Homoglyph.h"
-#include "RulesLangLib/LIBCUAPIMigration.h"
-#include "RulesLangLib/NvtxAPIMigration.h"
-#include "MigrationRuleManager.h"
-#include "RulesSecurity/MisleadingBidirectional.h"
-#include "RulesCCL/NCCLAPIMigration.h"
-#include "RulesLang/OptimizeMigration.h"
 #include "RulesMathLib/SpBLASAPIMigration.h"
+#include "RulesSHMEM/NVSHMEMAPIMigration.h"
+#include "RulesSecurity/Homoglyph.h"
+#include "RulesSecurity/MisleadingBidirectional.h"
 #include "TextModification.h"
-#include "RulesLangLib/ThrustAPIMigration.h"
 #include "Utility.h"
-#include "RulesLang/WMMAAPIMigration.h"
 
 #include <string>
 #include <unordered_map>
@@ -160,17 +161,22 @@ REGISTER_RULE(GraphicsInteropRule, PassKind::PK_Migration)
 REGISTER_RULE(RulesLangAddrSpaceConvRule, PassKind::PK_Migration)
 
 REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_BLas)
-REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_BLas)
+REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_BLas)
 
 REGISTER_RULE(SPBLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Sparse)
-REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Sparse)
+REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Sparse)
 
 REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
-REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Rng)
-REGISTER_RULE(DeviceRandomFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Rng)
+REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Rng)
+REGISTER_RULE(DeviceRandomFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Rng)
 
 REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Solver)
-REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Solver)
+REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Solver)
 
 REGISTER_RULE(LIBCURule, PassKind::PK_Migration, RuleGroupKind::RK_Libcu)
 REGISTER_RULE(NvtxRule, PassKind::PK_Migration)
@@ -178,14 +184,18 @@ REGISTER_RULE(NvtxRule, PassKind::PK_Migration)
 REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 
-REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_NCCL)
+REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_NCCL)
 REGISTER_RULE(NCCLRule, PassKind::PK_Migration, RuleGroupKind::RK_NCCL)
 
 REGISTER_RULE(FFTEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_FFT)
-REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_FFT)
+REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_FFT)
 
 REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
+
+REGISTER_RULE(NVSHMEMRule, PassKind::PK_Migration, RuleGroupKind::RK_NVSHMEM)
 
 } // namespace dpct
 } // namespace clang
