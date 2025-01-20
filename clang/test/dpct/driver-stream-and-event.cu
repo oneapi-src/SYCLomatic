@@ -130,6 +130,11 @@ void test_stream() {
   // CHECK: int result = DPCT_CHECK_ERROR(std::async([&]() { hStream->wait(); callback<char>(hStream, 0, data); }));
   CUresult result = cuStreamAddCallback(hStream, callback<char>, data, flag);
 
+  // CHECK dpct::queue_callback cbptr = callback<char>;
+  CUstreamCallback cbptr = callback<char>;
+  // CHECK: std::async([&]() { hStream->wait(); cbptr(hStream, 0, data); });
+  cuStreamAddCallback(hStream, cbptr, data, flag);
+
   //CHECK: /*
   //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuStreamAttachMemAsync was removed because SYCL currently does not support associating USM with a specific queue.
   //CHECK-NEXT: */

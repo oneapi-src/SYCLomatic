@@ -733,7 +733,8 @@ const Expr *TextureRule::getAssignedBO(const Expr *E, ASTContext &Context) {
   } else if (auto BO = dyn_cast<BinaryOperator>(E)) {
     // If E is BinaryOperator, return E only when it is assign expression,
     // otherwise return nullptr.
-    if (BO->getOpcode() == BO_Assign)
+    auto Opcode = BO->getOpcode();
+    if (Opcode == BO_Assign || Opcode == BO_OrAssign)
       return BO;
   } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
     if (COCE->getOperator() == OO_Equal) {
