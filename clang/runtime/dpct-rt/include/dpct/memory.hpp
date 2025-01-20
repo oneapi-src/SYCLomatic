@@ -677,14 +677,14 @@ namespace experimental {
 typedef sycl::ext::oneapi::experimental::physical_mem *physical_mem_ptr;
 
 struct mem_location {
-  int id;
-  int type; // Location type. Value 1 means device location, and thus, id is a
-            // device id.
+  int id = 0;
+  // Location type. Value 1 means device location, and thus, id is a device id.
+  int type = 1;
 };
 
 struct mem_prop {
   mem_location location;
-  int type; // Memory type. Value 1 means default device memory.
+  int type = 1; // Memory type. Value 1 means default device memory.
 };
 
 struct mem_access_desc {

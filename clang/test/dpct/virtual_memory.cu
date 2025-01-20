@@ -38,14 +38,17 @@ int main() {
     cuMemCreate(&allocHandle, POOL_SIZE, &prop, 0);
     cuMemMap(reserved_addr, POOL_SIZE, 0, allocHandle, 0);
 
+    // CHECK: prop.location.id = dpct::get_device_id(allocHandle->get_device());
+    cuMemGetAllocationPropertiesFromHandle(&prop, allocHandle);
+
 // CHECK:  dpct::experimental::mem_access_desc accessDesc = {};
 // CHECK:  accessDesc.location.type = 1;
-// CHECK:  accessDesc.location.id = device;
+// CHECK:  accessDesc.location.id = prop.location.id;
 // CHECK:  accessDesc.flags = sycl::ext::oneapi::experimental::address_access_mode::read_write;
 // CHECK:  sycl::ext::oneapi::experimental::set_access_mode(reserved_addr, POOL_SIZE, accessDesc.flags, dpct::get_device(accessDesc.location.id).get_context());
     CUmemAccessDesc accessDesc = {};
     accessDesc.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-    accessDesc.location.id = device;
+    accessDesc.location.id = prop.location.id;
     accessDesc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
     cuMemSetAccess(reserved_addr, POOL_SIZE, &accessDesc, 1);
     int* host_data = new int[SIZE];

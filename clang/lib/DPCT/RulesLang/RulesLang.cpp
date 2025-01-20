@@ -8055,7 +8055,8 @@ void VirtualMemRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto virtualmemoryAPI = [&]() {
     return hasAnyName("cuMemCreate", "cuMemAddressReserve", "cuMemMap",
                       "cuMemUnmap", "cuMemAddressFree", "cuMemRelease",
-                      "cuMemSetAccess", "cuMemGetAllocationGranularity");
+                      "cuMemSetAccess", "cuMemGetAllocationGranularity",
+                      "cuMemGetAllocationPropertiesFromHandle");
   };
   auto virtualmemoryType = [&]() {
     return hasAnyName("CUmemAllocationProp", "CUmemGenericAllocationHandle",
