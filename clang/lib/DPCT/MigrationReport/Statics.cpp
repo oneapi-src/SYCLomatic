@@ -279,6 +279,7 @@ private:
 class AnalysisModeStats {
   static const std::string LastMsg;
   static llvm::StringMap<AnalysisModeStats> AnalysisModeStaticsMap;
+  static llvm::StringMap<unsigned> UnsupportedAPIsAndTypes;
 
   static struct {
     uint8_t Flag = 0;
@@ -286,6 +287,7 @@ class AnalysisModeStats {
   } DependencyBits;
 
   struct EffortLevelWrap {
+    bool Unsupported = false;
     unsigned EL;
     EffortLevelWrap() : EL(NoEffort) {}
     EffortLevelWrap &operator=(EffortLevel Other) {
@@ -311,7 +313,14 @@ class AnalysisModeStats {
   void recordEffort(unsigned Offset, EffortLevel Level) {
     FileEffortsMap[Offset] = Level;
   }
-  void recordApisOrTypes(unsigned Offset) { (void)FileEffortsMap[Offset]; }
+  void recordApisOrTypes(unsigned Offset, StringRef Name,
+                         bool IsMigrated) {
+    auto &Value = FileEffortsMap[Offset];
+    if (!IsMigrated && !Value.Unsupported){
+      ++UnsupportedAPIsAndTypes[Name];
+      Value.Unsupported = true;
+    }
+  }
 
 public:
   static void dump(llvm::raw_ostream &OS) {
@@ -343,13 +352,24 @@ public:
           LineStream(OS, EntryIndent) << "- The Intel " << Names.Strs[i];
       }
     }
+    if (!UnsupportedAPIsAndTypes.empty()) {
+      LineStream(OS, Indent)
+          << llvm::raw_ostream::Colors::BLUE
+          << "Unsupported APIs and Types:" << llvm::raw_ostream::Colors::RESET;
+      auto EntryIndent = Indent + AnalysisModeSummary::IndentIncremental;
+      for (const auto &Entry : UnsupportedAPIsAndTypes) {
+        LineStream(OS, EntryIndent) << "- " << Entry.first() << " Occurrences "
+                                    << Entry.second << " times";
+      }
+    }
     LineStream(OS, Indent) << LastMsg;
   }
 
-  static void recordApisOrTypes(SourceLocation SL) {
+  static void recordApisOrTypes(SourceLocation SL, StringRef Name,
+                                bool IsMigrated) {
     auto LocInfo = DpctGlobalInfo::getLocInfo(SL);
     AnalysisModeStaticsMap[LocInfo.first.getPath()].recordApisOrTypes(
-        LocInfo.second);
+        LocInfo.second, Name, IsMigrated);
   }
   static void recordEffort(SourceLocation SL, EffortLevel EL) {
     auto LocInfo = DpctGlobalInfo::getLocInfo(SL);
@@ -375,6 +395,7 @@ const std::string AnalysisModeStats::LastMsg =
     "https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/"
     "developer-guide-reference/current/overview.html for more details.";
 llvm::StringMap<AnalysisModeStats> AnalysisModeStats::AnalysisModeStaticsMap;
+llvm::StringMap<unsigned> AnalysisModeStats::UnsupportedAPIsAndTypes;
 
 void dumpAnalysisModeStatics(llvm::raw_ostream &OS) {
   if (!DpctGlobalInfo::isAnalysisModeEnabled())
@@ -391,13 +412,13 @@ void recordAnalysisModeEffort(const clang::tooling::UnifiedPath &Filename,
   AnalysisModeStats::recordEffort(Filename, Offset, EL);
 }
 
-void recordRecognizedAPI(const CallExpr *CE) {
+void recordRecognizedAPI(const CallExpr *CE, StringRef Name, bool IsMigrated) {
   if (DpctGlobalInfo::isAnalysisModeEnabled())
-    AnalysisModeStats::recordApisOrTypes(CE->getBeginLoc());
+    AnalysisModeStats::recordApisOrTypes(CE->getBeginLoc(), Name, IsMigrated);
 }
-void recordRecognizedType(TypeLoc TL) {
+void recordRecognizedType(TypeLoc TL, StringRef Name, bool IsMigrated) {
   if (DpctGlobalInfo::isAnalysisModeEnabled())
-    AnalysisModeStats::recordApisOrTypes(TL.getBeginLoc());
+    AnalysisModeStats::recordApisOrTypes(TL.getBeginLoc(), Name, IsMigrated);
 }
 void setDependenciesInfo(const RuleGroups &Group) noexcept {
   AnalysisModeStats::setDependencies(Group);
