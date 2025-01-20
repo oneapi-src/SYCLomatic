@@ -239,18 +239,7 @@ public:
   // This function is not re-enterable, if caller need to check if it returns
   // nullptr, caller need to use temp variable to save the return value, then
   // check. Don't call twice for same Replacement.
-  inline TextModification *getReplacement() {
-    bool hasRepl = hasReplacement();
-    std::string Repl = getReplacedString();
-    if (E) {
-      auto Range = getDefinitionRange(E->getBeginLoc(), E->getEndLoc());
-      if (!isSameLocation(Range.getBegin(), Range.getEnd())) {
-        return hasRepl ? new ReplaceStmt(E, true, Repl) : nullptr;
-      }
-    }
-    return hasRepl ? new ReplaceText(SrcBeginLoc, SrcLength, std::move(Repl))
-                   : nullptr;
-  }
+  TextModification *getReplacement();
 
   inline void clearReplacement() { ReplSet.reset(); }
 
@@ -385,6 +374,7 @@ public:
   }
 
   void applyAllSubExprRepl();
+  void applySubExprReplToParent();
   inline std::vector<std::shared_ptr<ExtReplacement>> &getSubExprRepl() {
     return SubExprRepl;
   };

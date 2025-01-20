@@ -82,7 +82,6 @@ DerefExpr::DerefExpr(const Expr *E, const CallExpr *C) {
 }
 
 std::string CallExprRewriter::getMigratedArg(unsigned Idx) {
-  Analyzer.setCallSpelling(Call);
   Analyzer.analyze(Call->getArg(Idx));
   return Analyzer.getRewritePrefix() + Analyzer.getRewriteString() +
          Analyzer.getRewritePostfix();
@@ -96,13 +95,14 @@ std::string CallExprRewriter::getMigratedArgWithExtraParens(unsigned Idx) {
 
 std::vector<std::string> CallExprRewriter::getMigratedArgs() {
   std::vector<std::string> ArgList;
-  Analyzer.setCallSpelling(Call);
   for (unsigned i = 0; i < Call->getNumArgs(); ++i)
     ArgList.emplace_back(getMigratedArg(i));
   return ArgList;
 }
 
-std::optional<std::string> FuncCallExprRewriter::rewrite() {
+std::optional<std::string>
+FuncCallExprRewriter::rewrite(ExprAnalysis *Analysis) {
+  ParentAnalysisGuard Guard(Analysis);
   RewriteArgList = getMigratedArgs();
   return buildRewriteString();
 }
@@ -127,6 +127,8 @@ std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
     CallExprRewriterFactoryBase::MethodRewriterMap = std::make_unique<std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
+
+ExprAnalysis *CallExprRewriter::ParentAnalysis = nullptr;
 
 void CallExprRewriterFactoryBase::initRewriterMap() {
   if (DpctGlobalInfo::useSYCLCompat()) {

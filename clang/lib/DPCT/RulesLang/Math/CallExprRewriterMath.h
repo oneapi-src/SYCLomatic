@@ -35,7 +35,7 @@ using NoRewriteFuncNameRewriterFactory =
 /// Base class for rewriting math function calls
 class MathCallExprRewriter : public FuncCallExprRewriter {
 public:
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite(ExprAnalysis *) override;
 
 protected:
   MathCallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
@@ -53,7 +53,7 @@ protected:
                           StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite(ExprAnalysis *) override;
 
   friend MathUnsupportedRewriterFactory;
 };
@@ -66,7 +66,7 @@ protected:
                        StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite(ExprAnalysis *) override;
 
   friend MathTypeCastRewriterFactory;
 };
@@ -79,7 +79,7 @@ protected:
                         StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite(ExprAnalysis *) override;
 
   friend MathSimulatedRewriterFactory;
 };
@@ -98,7 +98,7 @@ protected:
 public:
   virtual ~MathBinaryOperatorRewriter() {}
 
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite(ExprAnalysis *) override;
 
 protected:
   void setLHS(std::string L) { LHS = L; }
@@ -122,7 +122,7 @@ protected:
       : MathCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
 
 public:
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite(ExprAnalysis *) override;
 
 protected:
   std::string getNewFuncName();

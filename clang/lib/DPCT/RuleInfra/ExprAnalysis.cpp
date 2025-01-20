@@ -339,7 +339,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
   } else {
     // If the Expr is FileID or is macro arg
     // e.g. CALL(expr)
-    auto Range = getStmtExpansionSourceRange(E);
+    auto Range = getDefinitionRange(E->getBeginLoc(), E->getEndLoc());
     BeginLoc = Range.getBegin();
     EndLoc = Range.getEnd();
     End = getOffset(EndLoc) + Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
@@ -885,7 +885,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     }
 
     auto Rewriter = Itr->second->create(CE);
-    auto Result = Rewriter->rewrite();
+    auto Result = Rewriter->rewrite(this);
     BlockLevelFormatFlag = Rewriter->getBlockLevelFormatFlag();
 
     if (Rewriter->isNoRewrite()) {
@@ -1001,7 +1001,7 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
           BaseType + "." + MethodName);
       if (Itr != CallExprRewriterFactoryBase::MethodRewriterMap->end()) {
         auto Rewriter = Itr->second->create(CMCE);
-        auto Result = Rewriter->rewrite();
+        auto Result = Rewriter->rewrite(this);
         if (Result.has_value()) {
           auto ResultStr = Result.value();
           addReplacement(CMCE, ResultStr);
@@ -1271,9 +1271,57 @@ void ExprAnalysis::applyAllSubExprRepl() {
   for (std::shared_ptr<ExtReplacement> Repl : SubExprRepl) {
     if (BlockLevelFormatFlag)
       Repl->setBlockLevelFormatFlag();
-
     DpctGlobalInfo::getInstance().addReplacement(Repl);
   }
+  SubExprRepl.clear();
+}
+
+bool needCleanUp(const Expr *E){
+  return DpctGlobalInfo::findAncestor<CompoundStmt>(
+      E, [&](const DynTypedNode &Node) {
+        return Node.get<CompoundStmt>() || !Node.get<ExprWithCleanups>();
+      });
+}
+
+TextModification *removeWithCleanUp(SourceLocation Begin, unsigned Length,
+                                    const SourceManager &SM) {
+  Token NextToken;
+  if (!Lexer::getRawToken(Begin.getLocWithOffset(Length), NextToken, SM,
+                          DpctGlobalInfo::getContext().getLangOpts(), true) &&
+      NextToken.getKind() == tok::semi) {
+    Length += NextToken.getLength();
+    auto BeginData = SM.getCharacterData(Begin),
+         EndData = BeginData + Length;
+    unsigned Indent = 0, Trailing = 0;
+    auto Ch= *--BeginData;
+    while (isspace(Ch) && Ch != '\n' && Ch != '\r' && Ch != '{') {
+      ++Indent;
+      Ch = *--BeginData;
+    }
+    Ch = *EndData;
+    while (isspace(Ch) || Ch == '\\') {
+      ++Trailing;
+      if (Ch == '\n' || Ch == '\r') {
+        Ch = *++EndData;
+        if (Ch == '\n' || Ch == '\r')
+          ++Trailing;
+        break;
+      }
+      Ch = *++EndData;
+    }
+    Begin = Begin.getLocWithOffset(-Indent);
+    Length += Indent + Trailing;
+  }
+  return new ReplaceText(Begin, Length, "");
+}
+
+TextModification *ExprAnalysis::getReplacement() {
+  if (!hasReplacement())
+    return nullptr;
+  std::string Repl = getReplacedString();
+  if (E && Repl.empty() && needCleanUp(E))
+    return removeWithCleanUp(SrcBeginLoc, SrcLength, SM);
+  return new ReplaceText(SrcBeginLoc, SrcLength, std::move(Repl));
 }
 
 const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {
@@ -2168,6 +2216,25 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
   ArgumentAnalysis::analyze(E);
 }
 
+void ExprAnalysis::applySubExprReplToParent() {
+  if (auto Parent = CallExprRewriter::getParentAnalysis()) {
+    for (const auto &Repl : SubExprRepl) {
+      auto File = SM.getFileManager().getFileRef(Repl->getFilePath());
+      if (!File || Parent->FileId != SM.translateFile(File.get()) ||
+          Repl->getOffset() < Parent->SrcBegin ||
+          Repl->getOffset() + Repl->getLength() >
+              Parent->SrcBegin + Parent->SrcLength) {
+        Parent->addExtReplacement(Repl);
+      } else {
+        Parent->addReplacement(Repl->getOffset() - Parent->SrcBegin,
+                               Repl->getLength(),
+                               Repl->getReplacementText().str());
+      }
+    }
+    SubExprRepl.clear();
+  }
+}
+
 std::string ArgumentAnalysis::getRewriteString() {
   // Find rewrite range
   auto RewriteRange = getLocInCallSpelling(getTargetExpr());
@@ -2182,16 +2249,20 @@ std::string ArgumentAnalysis::getRewriteString() {
 
   StringReplacements SRs;
   SRs.init(std::move(OriginalStr));
-  for (std::shared_ptr<ExtReplacement> SubRepl : SubExprRepl) {
-    if (isInRange(RewriteRangeBegin, RewriteRangeEnd, SubRepl->getFilePath(),
-                  SubRepl->getOffset()) &&
-        isInRange(RewriteRangeBegin, RewriteRangeEnd, SubRepl->getFilePath(),
-                  SubRepl->getOffset() + SubRepl->getLength())) {
-      SRs.addStringReplacement(
-          SubRepl->getOffset() - SM.getDecomposedLoc(RewriteRangeBegin).second,
-          SubRepl->getLength(), SubRepl->getReplacementText().str());
+  for (auto Iter = SubExprRepl.begin(); Iter != SubExprRepl.end();) {
+    auto &Repl = **Iter;
+    if (isInRange(RewriteRangeBegin, RewriteRangeEnd, Repl.getFilePath(),
+                  Repl.getOffset()) &&
+        isInRange(RewriteRangeBegin, RewriteRangeEnd, Repl.getFilePath(),
+                  Repl.getOffset() + Repl.getLength())) {
+      SRs.addStringReplacement(Repl.getOffset() - DL.second, Repl.getLength(),
+                               Repl.getReplacementText().str());
+      Iter = SubExprRepl.erase(Iter);
+    } else {
+      ++Iter;
     }
   }
+  applySubExprReplToParent();
   return SRs.getReplacedString();
 }
 
