@@ -1087,7 +1087,7 @@ public:
       output[0] = _local_memory[id - 1];
   }
   /// Performs a shuffle operation to move data to the right across the
-  /// work-items, storing the suffix of the block after the shuffle operation.
+  /// work-items, storing the suffix of the group after the shuffle operation.
   ///
   /// \tparam ElementsPerWorkItem The number of data elements per work-item.
   /// \tparam ItemT The work-item identifier type.
@@ -1129,7 +1129,7 @@ public:
       output[ElementsPerWorkItem - 1] = _local_memory[id + 1];
   }
   /// Performs a shuffle operation to move data to the left across the
-  /// work-items, storing the prefix of the block before the shuffle operation.
+  /// work-items, storing the prefix of the group before the shuffle operation.
   ///
   /// \tparam ElementsPerWorkItem The number of data elements per work-item.
   /// \tparam ItemT The work-item identifier type.
