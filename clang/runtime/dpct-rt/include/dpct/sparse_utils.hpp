@@ -50,6 +50,7 @@ enum class conversion_scope : int { index = 0, index_and_value };
 // Forward declaration
 namespace detail {
 template <typename T> struct optimize_csrsv_impl;
+template <typename T> struct optimize_csrsm_impl;
 }
 
 /// Saving the optimization information for solving a system of linear
@@ -74,6 +75,7 @@ public:
   }
 #ifdef DPCT_USM_LEVEL_NONE
   template <typename T> friend struct detail::optimize_csrsv_impl;
+  template <typename T> friend struct detail::optimize_csrsm_impl;
 #endif
 
 private:
@@ -828,6 +830,26 @@ inline void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
   detail::spblas_shim<detail::csrsv_impl>(val_type, queue, trans, row_col,
                                           alpha, info, val, row_ptr, col_ind,
                                           optimize_info, x, y);
+}
+
+template <typename T>
+void optimize_csrsm(sycl::queue &queue, oneapi::mkl::transpose transa,
+                    oneapi::mkl::transpose transb, int row_col, int nrhs,
+                    const std::shared_ptr<matrix_info> info, const T *val,
+                    const int *row_ptr, const int *col_ind,
+                    std::shared_ptr<optimize_info> optimize_info) {
+  detail::optimize_csrsm_impl<T>()(queue, transa, transb, row_col, nrhs, info,
+                                   val, row_ptr, col_ind, optimize_info);
+}
+
+template <typename T>
+void csrsm(sycl::queue &queue, oneapi::mkl::transpose transa,
+           oneapi::mkl::transpose transb, int row_col, int nrhs, const T *alpha,
+           const std::shared_ptr<matrix_info> info, const T *val,
+           const int *row_ptr, const int *col_ind, T *b, int ldb,
+           std::shared_ptr<optimize_info> optimize_info) {
+  detail::csrsm_impl<T>()(queue, transa, transb, row_col, nrhs, alpha, info,
+                          val, row_ptr, col_ind, b, ldb, optimize_info);
 }
 
 /// Computes a sparse matrix-dense vector product: y = alpha * op(a) * x + beta * y.
