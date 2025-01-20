@@ -11,6 +11,8 @@ import argparse
 import json
 import os
 import sys
+import re
+import struct
 from collections.abc import Container
 import math
 from argparse import RawTextHelpFormatter
@@ -40,6 +42,29 @@ CODEPIN_RANDOM_SEED_VALUE = "N/A"
 CODEPIN_SAMPLING_THRESHOLD_VALUE = "N/A"
 CODEPIN_SAMPLING_PERCENT_VALUE = "N/A"
 
+sycl_bin_file_handle = None
+cuda_bin_file_handle = None
+
+def open_bin_file(bin_filename):
+    global_bin_file_handle = open(bin_filename, 'rb')
+    return global_bin_file_handle
+
+def close_bin_file(global_bin_file_handle):
+    if global_bin_file_handle:
+        global_bin_file_handle.close()
+        global_bin_file_handle = None
+
+def read_data_len(global_bin_file_handle, size):
+    if not global_bin_file_handle:
+        raise ValueError("Binary file is not opened.")
+    
+    length_data = global_bin_file_handle.read(struct.calcsize('P'))
+    length = struct.unpack('P', length_data)[0]
+    return length
+    # print(str(global_bin_file_handle.read(size)))
+
+def get_bin_filename(json_file):
+    return json_file.replace(".json", ".bin")
 # Reference: https://en.wikipedia.org/wiki/Machine_epsilon
 # bfloat16 reference: https://en.wikipedia.org/wiki/Bfloat16_floating-point_format
 default_epsilons = {
@@ -51,6 +76,7 @@ default_epsilons = {
 }
 
 mismatch_var_map = {"epi" : {}, "pro" : {}}
+
 
 # Raise the warning message when the data is not matched.
 def data_value_dismatch_error(value1, value2):
@@ -125,6 +151,7 @@ class comparison_error(Exception):
         super().__init__(self.message)
 
 
+
 def compare_float_value(data1, data2, type):
     global EPSILON_FILE
     if EPSILON_FILE is None:
@@ -151,18 +178,113 @@ def compare_float_value(data1, data2, type):
 
     return True
 
+def compare_float_list(cuda_list, sycl_list, var_type):
+    for a, b in zip(cuda_list, sycl_list):
+        if not compare_float_value(a, b, var_type):
+            return False
+    return True
+def parse_type_name(type_name):
+    pattern = r'^(P?)(\d+)([A-Za-z]+)$'
+    print("----------")
+    match = re.match(pattern, type_name)
+    
+    if match:
+        pointer = match.group(1)
+        length = int(match.group(2))
+        content = match.group(3)
+        if len(content) == length:
+            return pointer, length, content
+        else:
+            raise ValueError("The length of the content does not match the specified length.")
+    else:
+        raise ValueError("String format is incorrect")
+def read_from_bin_file_until_null(global_bin_file_handle, offset):
+
+    if not global_bin_file_handle:
+        raise ValueError("Binary file is not opened.")
+    
+    global_bin_file_handle.seek(int(offset))
+
+    data = bytearray()
+
+    while True:
+        byte =  global_bin_file_handle.read(1)
+        if not byte or byte == b'\0':
+            break
+        data.extend(byte)
+    
+    type = data.decode("utf-8")
+
+    pointer, len, type_name = parse_type_name(type)
+    return pointer, type_name
+
+def read_floats_from_file(file_handle, length, float_size = 4):
+    if not file_handle:
+        raise ValueError("Binary file is not opened.")
+    print(length)
+    float_data = file_handle.read(length)
+    print(len(float_data))
+  
+    if len(float_data) != length:
+        raise ValueError("Failed to read float data from file.")
+    
+    floats = []
+    for i in range(0, length, float_size):
+        float_value = struct.unpack('f', float_data[i:i+float_size])[0]
+        floats.append(float_value)
+    return floats
+
+def compare_data_with_offset(cuda_off, sycl_off, var_name, var_type):
+    global sycl_bin_file_handle, cuda_bin_file_handle
+    if not sycl_bin_file_handle or not cuda_bin_file_handle:
+        raise ValueError("Binary file is not opened.")  
+    cuda_pointer, cuda_type = read_from_bin_file_until_null(cuda_bin_file_handle, cuda_off)
+    print("FFFFFFFFFFFFF")
+
+    sycl_pointer, sycl_type = read_from_bin_file_until_null(sycl_bin_file_handle, sycl_off)
+    # print(cuda_off)
+    print(cuda_type)
+    cuda_len = read_data_len(cuda_bin_file_handle,  8) 
+    sycl_len = read_data_len(sycl_bin_file_handle,  8) 
+    print("CUDA length " + str(cuda_len))
+    # cuda_bin = cuda_bin_file_handle.read(val)
+    # sycl_bin = sycl_bin_file_handle.read(val)
+    if (cuda_type not in ["bf16", "fp16", "float", "double"]):
+        if (cuda_bin == sycl_bin):
+            print("EEEE ")
+    else:
+        float_size = 4
+        if cuda_type in ["bf16", "fp16"]:
+            float_size = 2
+        elif cuda_type == "double":
+            float_size = 8
+        cuda_data = read_floats_from_file(cuda_bin_file_handle, cuda_len, float_size)
+        sycl_data = read_floats_from_file(sycl_bin_file_handle, cuda_len, float_size)
+        if compare_float_list(cuda_data, sycl_data, cuda_type):
+            print("The result is match")
+        else:
+            print("The data is variant. not match\n")
 
 def compare_data_value(data1, data2, var_name, var_type):
+    print("DD1: " + data1)
+    print("DD2: " + var_type)
+    print("DD3: " + var_name)
+
     if data1 == ERROR_MATCH_PATTERN or data2 == ERROR_MATCH_PATTERN:
         raise no_serialization_function_error()
     try:
         if var_type in ["bf16", "fp16", "float", "double"]:
             compare_float_value(data1, data2, var_type)
-        elif data1 != data2:
-            raise data_value_dismatch_error(data1, data2)
+        # elif data1 != data2:
+        # elif var_type in ["Offset"]:
+        else:
+            print("DCCCDDCCCDDD")
+            compare_data_with_offset(data1, data2, var_name, var_type)
+            # raise data_value_dismatch_error(data1, data2)
     except comparison_error as e:
         raise comparison_error(f"{var_name}{e.message}")
-
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
 def compare_list_value(cuda_list, sycl_list, var_name, var_type):
     for i in range(len(cuda_list)):
@@ -243,6 +365,7 @@ def compare_checkpoint_list(
     dismatch_checkpoint_num,
     checkpoint_size,
 ):
+    print("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
     failed_log = ""
     is_checkpoint_length_dismatch(
         cuda_prolog_checkpoint_list, sycl_prolog_checkpoint_list
@@ -633,12 +756,20 @@ def main():
         ordered_pro_id_sycl,
         ordered_epi_id_sycl
     ) = get_checkpoint_list_from_json_file(args.instrumented_sycl_log)
+    cuda_bin = get_bin_filename(args.instrumented_cuda_log)
+    sycl_bin = get_bin_filename(args.instrumented_sycl_log)
+    global sycl_bin_file_handle
+    global cuda_bin_file_handle
+    print("cuda_bin  " + cuda_bin)
+    print("sycl_bin  " + sycl_bin)
+    cuda_bin_file_handle = open_bin_file(cuda_bin)
+    sycl_bin_file_handle = open_bin_file(sycl_bin)
 
     bottleneck_cuda = get_bottleneck(time_cuda)
     bottleneck_sycl = get_bottleneck(time_sycl)
     max_device_memory_cuda = get_memory_used(mem_used_cuda)
     max_device_memory_sycl = get_memory_used(mem_used_sycl)
-
+    print("--------------------------")
     match_checkpoint_num, dismatch_checkpoint_num, checkpoint_size, failed_log = (
         compare_checkpoint_list(
             ordered_pro_id_cuda,
@@ -716,6 +847,8 @@ def main():
     print(
         f"Finished comparison of the two files and data is identical. Please check 'CodePin_Report.csv' file" + graph_file + " located in your project directory.\n"
     )
+    close_bin_file(cuda_bin_file_handle)
+    close_bin_file(sycl_bin_file_handle)
     sys.exit(0)
 
 
