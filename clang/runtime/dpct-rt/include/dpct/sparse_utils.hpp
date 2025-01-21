@@ -832,6 +832,20 @@ inline void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
                                           optimize_info, x, y);
 }
 
+/// Performs internal optimizations for dpct::sparse::csrsm by analyzing
+/// the provided matrix structure and operation parameters.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] transa The operation applied to A.
+/// \param [in] transb The operation applied to B and X.
+/// \param [in] row_col Number of rows and columns of A.
+/// \param [in] nrhs Number of columns op_b(B).
+/// \param [in] info Matrix info of A.
+/// \param [in] val An array containing the non-zero elements of A.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [out] optimize_info The result of the optimizations.
 template <typename T>
 void optimize_csrsm(sycl::queue &queue, oneapi::mkl::transpose transa,
                     oneapi::mkl::transpose transb, int row_col, int nrhs,
@@ -842,6 +856,23 @@ void optimize_csrsm(sycl::queue &queue, oneapi::mkl::transpose transa,
                                    val, row_ptr, col_ind, optimize_info);
 }
 
+/// Solves the sparse triangular system op_a(A) * op_b(X) = alpha * op_b(B)
+/// where A is a sparse triangular matrix of size \p row_col by \p row_col .
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] transa The operation applied to A.
+/// \param [in] transb The operation applied to B and X.
+/// \param [in] row_col Number of rows and columns of A.
+/// \param [in] nrhs Number of columns op_b(B).
+/// \param [in] alpha Specifies the scalar.
+/// \param [in] info Matrix info of A.
+/// \param [in] val An array containing the non-zero elements of A.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [in, out] b The RHS matrix. It will be overwritten by the X.
+/// \param [in] ldb The leading dimension of B and X.
+/// \param [in] optimize_info The result of the optimizations.
 template <typename T>
 void csrsm(sycl::queue &queue, oneapi::mkl::transpose transa,
            oneapi::mkl::transpose transb, int row_col, int nrhs, const T *alpha,
