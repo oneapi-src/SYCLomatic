@@ -9,9 +9,9 @@
 // clang-format off
 /*
 There are 3 macros that can be used to control the behavior of the helper
-functions.
+function files.
 +========================+=========================+===========================+
-|                        | Helper function         | Helper function           |
+|                        | Helper function files   | Helper function files     |
 | Macro Name             | Used in dpct migrated   | Used in direct            |
 |                        | code                    | programming               |
 +========================+=========================+===========================+
