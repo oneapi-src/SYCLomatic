@@ -62,6 +62,11 @@ int main() {
     // CHECK-NEXT: ishmemx_init_attr(&attr);
     nvshmemx_init_attr(NVSHMEMX_INIT_WITH_MPI_COMM, &attr);
 
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of nvshmemx_init_attr is not supported.
+    // CHECK-NEXT: */
+    nvshmemx_init_attr(NVSHMEMX_INIT_WITH_MPI_COMM | NVSHMEMX_INIT_WITH_SHMEM, &attr);
+
     // CHECK: unsigned int rt = ISHMEMX_RUNTIME_MPI;
     // CHECK-NEXT: (&attr)->runtime = static_cast<ishmemx_runtime_type_t>(rt);
     // CHECK-NEXT: ishmemx_init_attr(&attr);
@@ -73,6 +78,9 @@ int main() {
     // CHECK-NEXT: ishmemx_init_attr(&attr);
     rt = NVSHMEMX_INIT_WITH_SHMEM;
     nvshmemx_init_attr(rt, &attr);
+
+    // CHECK: ishmem_init();
+    nvshmemx_init_attr(0, &attr);
 
     // CHECK: ishmem_init();
     nvshmem_init();

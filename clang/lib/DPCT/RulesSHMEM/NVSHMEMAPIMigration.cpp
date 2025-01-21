@@ -102,40 +102,42 @@ void clang::dpct::NVSHMEMRule::runRule(
     if (!FuncName.empty()) {
       if (FuncName == "nvshmemx_init_attr") {
         // Get function arguments
-        std::string ArgStr;
-        llvm::raw_string_ostream ArgStream(ArgStr);
-
-        // Get the first argument
-        const Expr *Arg0 = CE->getArg(0);
-        Arg0->printPretty(ArgStream, nullptr,
-                          Result.Context->getPrintingPolicy());
+        std::string nvshmem_rt = "";
         std::string nvshmem_init_rt = "";
-        auto nvshmem_rt = ArgStream.str();
-        ArgStr.clear();
-        ArgStream.flush();
+        std::string attr_arg = "";
 
-        // Get the second argument
-        const Expr *Arg1 = CE->getArg(1);
-        Arg1->printPretty(ArgStream, nullptr,
-                          Result.Context->getPrintingPolicy());
-        auto attr_arg = ArgStream.str();
-        ArgStr.clear();
-        ArgStream.flush();
+        // Get the first argument's data
+        const Expr *Arg0 = CE->getArg(0);
 
-        if (const DeclRefExpr *DRE =
-                dyn_cast<DeclRefExpr>(Arg0->IgnoreImpCasts())) {
+        // Binary op on first argument is not supported
+        if (dyn_cast<BinaryOperator>(Arg0->IgnoreImpCasts())) {
+          report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+                 FuncName);
+          return;
+        }
+
+        // Get first argument's init value
+        if (auto DRE = dyn_cast<DeclRefExpr>(Arg0->IgnoreImpCasts())) {
           if (const VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-            if (const Expr *Init = VD->getInit()) {
-              std::string InitStr;
-              llvm::raw_string_ostream InitStream(InitStr);
-              Init->printPretty(InitStream, nullptr,
-                                Result.Context->getPrintingPolicy());
-              nvshmem_init_rt = InitStream.str();
+            if (VD->hasInit()) {
+              // get the init value from definition
+              if (auto Init =
+                      dyn_cast<DeclRefExpr>(VD->getInit()->IgnoreImplicit())) {
+                nvshmem_init_rt = Init->getNameInfo().getName().getAsString();
+              }
             }
           }
         }
 
-        llvm::outs() << "nvshmem_rt: " << nvshmem_rt << "\n";
+        // Get the first argument as string
+        nvshmem_rt = Lexer::getSourceText(
+            CharSourceRange::getTokenRange(Arg0->getSourceRange()),
+            DpctGlobalInfo::getSourceManager(), LangOptions());
+
+        if (nvshmem_rt == "0" || nvshmem_init_rt == "0") {
+          emplaceTransformation(new ReplaceStmt(CE, "ishmem_init()"));
+          return;
+        }
 
         std::string ishmem_rt = "";
         if (nvshmem_rt == "NVSHMEMX_INIT_WITH_MPI_COMM") {
@@ -148,6 +150,11 @@ void clang::dpct::NVSHMEMRule::runRule(
             nvshmem_init_rt == "NVSHMEMX_INIT_WITH_SHMEM") {
           ishmem_rt = "static_cast<ishmemx_runtime_type_t>(" + nvshmem_rt + ")";
         }
+
+        // Get the second argument as string
+        attr_arg = Lexer::getSourceText(
+            CharSourceRange::getTokenRange(CE->getArg(1)->getSourceRange()),
+            DpctGlobalInfo::getSourceManager(), LangOptions());
 
         if (ishmem_rt.empty()) {
           report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
