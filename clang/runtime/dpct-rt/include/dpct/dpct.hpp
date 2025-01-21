@@ -20,7 +20,7 @@ function files.
 | buffer)                | running dpct with       | use the SYCL buffer.      |
 |                        | "--use-level=none".     |                           |
 +------------------------+-------------------------+---------------------------+
-| DPCT_HELPER_VERBOSE    | Enabled heuristically   | Disable by default.       |
+| DPCT_PROFILING_ENABLED | Enabled heuristically   | Disable by default.       |
 | (Enable SYCL queue     | depends on the input    | Define it explicitly to   |
 | profiling)             | code.                   | enable.                   |
 |                        | Enable explicitly by    |                           |
@@ -30,7 +30,7 @@ function files.
 |                        | macro definition        |                           |
 |                        | manually.               |                           |
 +------------------------+-------------------------+---------------------------+
-| DPCT_PROFILING_ENABLED | Disable by default.     | Disable by default.       |
+| DPCT_HELPER_VERBOSE    | Disable by default.     | Disable by default.       |
 | (Verbose option)       | Define it explicitly to | Define it explicitly to   |
 |                        | enable.                 | enable.                   |
 +========================+=========================+===========================+
