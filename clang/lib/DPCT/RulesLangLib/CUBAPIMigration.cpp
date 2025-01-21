@@ -100,7 +100,7 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cub::ArgIndexInputIterator", "cub::DiscardOutputIterator",
         "cub::DoubleBuffer", "cub::NullType", "cub::ArgMax", "cub::ArgMin",
         "cub::BlockRadixSort", "cub::BlockExchange", "cub::BlockLoad",
-        "cub::BlockStore");
+        "cub::BlockStore", "cub::BlockShuffle");
   };
 
   MF.addMatcher(
@@ -158,15 +158,16 @@ void CubDeviceLevelRule::runRule(
 void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       cxxMemberCallExpr(
-          allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(
-                    hasAnyName("cub::ArgIndexInputIterator",
-                               "cub::BlockRadixSort", "cub::BlockExchange",
-                               "cub::BlockLoad", "cub::BlockStore"))))))),
+          allOf(on(hasType(hasCanonicalType(
+                    qualType(hasDeclaration(namedDecl(hasAnyName(
+                        "cub::ArgIndexInputIterator", "cub::BlockRadixSort",
+                        "cub::BlockExchange", "cub::BlockLoad",
+                        "cub::BlockStore", "cub::BlockShuffle"))))))),
                 callee(cxxMethodDecl(hasAnyName(
                     "normalize", "Sort", "SortDescending", "BlockedToStriped",
                     "StripedToBlocked", "ScatterToBlocked", "ScatterToStriped",
                     "SortBlockedToStriped", "SortDescendingBlockedToStriped",
-                    "Load", "Store")))))
+                    "Load", "Store", "Offset", "Rotate", "Up", "Down")))))
           .bind("memberCall"),
       this);
 
@@ -253,13 +254,17 @@ void CubMemberCallRule::runRule(
         Name == "BlockedToStriped" || Name == "StripedToBlocked" ||
         Name == "StripedToBlocked" || Name == "ScatterToBlocked" ||
         Name == "ScatterToStriped";
-    if (isBlockRadixSort || isBlockExchange || Name == "Load" ||
-        Name == "Store") {
+    bool isBlockShuffle =
+        Name == "Offset" || Name == "Rotate" || Name == "Up" || Name == "Down";
+    if (isBlockRadixSort || isBlockExchange || isBlockShuffle ||
+        Name == "Load" || Name == "Store") {
       std::string HelpFuncName;
       if (isBlockRadixSort)
         HelpFuncName = "group_radix_sort";
       else if (isBlockExchange)
         HelpFuncName = "exchange";
+      else if (isBlockShuffle)
+        HelpFuncName = "group_shuffle";
       else if (Name == "Load")
         HelpFuncName = "group_load";
       else if (Name == "Store")
@@ -273,20 +278,36 @@ void CubMemberCallRule::runRule(
       auto *ClassSpecDecl = dyn_cast<ClassTemplateSpecializationDecl>(
           CanTy->getAs<RecordType>()->getDecl());
       const auto &ValueTyArg = ClassSpecDecl->getTemplateArgs()[0];
-      const auto &ItemsPreThreadArg = ClassSpecDecl->getTemplateArgs()[2];
+
       ValueTyArg.getAsType().getAsString();
       std::string Fn;
       llvm::raw_string_ostream OS(Fn);
       OS << MapNames::getDpctNamespace() << "group::" << HelpFuncName << "<"
-         << ValueTyArg.getAsType().getAsString() << ", "
-         << ItemsPreThreadArg.getAsIntegral() << ">::get_local_memory_size";
+         << ValueTyArg.getAsType().getAsString();
+      if (isBlockShuffle) {
+        if (!ClassSpecDecl->getTemplateArgs()[1].getIsDefaulted()) {
+          OS << ", " << ClassSpecDecl->getTemplateArgs()[1].getAsIntegral();
+        }
+        if (!ClassSpecDecl->getTemplateArgs()[2].getIsDefaulted()) {
+          OS << ", " << ClassSpecDecl->getTemplateArgs()[2].getAsIntegral();
+        }
+        if (!ClassSpecDecl->getTemplateArgs()[3].getIsDefaulted()) {
+          OS << ", " << ClassSpecDecl->getTemplateArgs()[3].getAsIntegral();
+        }
+      } else {
+        const auto &ItemsPreThreadArg = ClassSpecDecl->getTemplateArgs()[2];
+        OS << ", " << ItemsPreThreadArg.getAsIntegral();
+      }
+      OS << ">::get_local_memory_size";
       if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
         auto LocInfo = DpctGlobalInfo::getLocInfo(TempStorage);
         ExprAnalysis EA;
         EA.analyze(DataTypeLoc);
         FuncInfo->getVarMap().addCUBTempStorage(
             std::make_shared<TempStorageVarInfo>(
-                LocInfo.second, TempStorageVarInfo::BlockRadixSort,
+                LocInfo.second,
+                isBlockShuffle ? TempStorageVarInfo::BlockShuffle
+                               : TempStorageVarInfo::BlockRadixSort,
                 TempStorage->getName(), Fn,
                 EA.getTemplateDependentStringInfo()));
       }
