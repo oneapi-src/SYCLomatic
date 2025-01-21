@@ -137,6 +137,18 @@ const char *test_function() {
 //CHECK-NEXT:  err_s = dpct::get_error_string_dummy(e);
   cuGetErrorString(e, &err_s);
 
+//CHECK:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  err_s = dpct::get_error_string_dummy(e);
+  cuGetErrorName(e, &err_s);
+
+//CHECK:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  err_s = dpct::get_error_string_dummy({{[0-9]+}});
+  cuGetErrorName(CUDA_ERROR_OUT_OF_MEMORY, &err_s);
+
 //CHECK:/*
 //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
 //CHECK-NEXT:*/
