@@ -5,27 +5,35 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-//
+
 // clang-format off
-// There are 3 macros that can be used to control the behavior of the helper functions.
-// +====================+========================================+===========================================+===========================================+
-// |                    |   DPCT_USM_LEVEL_NONE                  | DPCT_HELPER_VERBOSE                       | DPCT_PROFILING_ENABLED                    |
-// +====================+========================================+===========================================+===========================================+
-// | Description        | Controls if the helper functions use   | Controls if the enable_profiling property | Controls if the devices’ names are        |
-// |                    | the Unified shared memory (USM) or     | is set for sycl::queue and if the         | printed after execution and after         |
-// |                    | not.                                   | ext_oneapi_submit_barrier is used.        | filtering any device.                     |
-// +--------------------+----------------------------------------+-------------------------------------------+-------------------------------------------+
-// | Using the helper   | USM is enabled by default. Users can   | If the tool deduces that profiling is     | N/A                                       |
-// | functions with the | specify --usm-level=none to disable    | required during migration, this macro     |                                           |
-// | tool               | the usage of USM.                      | will be defined automatically.To turn on, |                                           |
-// |                    |                                        | specify --enable-profiling; to turn off,  |                                           |
-// |                    |                                        | specify --no-enable-profiling.            |                                           |
-// +--------------------+----------------------------------------+-------------------------------------------+-------------------------------------------+
-// | Using the helper   | USM is enabled by default. To          | The functionality is disabled by default. | The functionality is disabled by default. |
-// | functions directly | disable USM, the user can add          | To enable it, the user can add            | To enable it, the user can add            |
-// |                    | #define  DPCT_USM_LEVEL_NONE           | #define DPCT_PROFILING_ENABLED at the     | #define DPCT_HELPER_VERBOSE at the        |
-// |                    | at the beginning of the dpct.hpp file. | beginning of the dpct.hpp file.           | beginning of the dpct.hpp file.           |
-// +====================+========================================+===========================================+===========================================+
+/*
+There are 3 macros that can be used to control the behavior of the helper
+functions.
++========================+=========================+===========================+
+| Macro Name             | Used in dpct migrated   | Used in direct            |
+|                        | code                    | programming               |
++========================+=========================+===========================+
+| DPCT_USM_LEVEL_NONE    | USM by default.         | USM by default.           |
+| (Use USM or SYCL       | Use SYCL Buffer by      | Define it explicitly to   |
+| buffer)                | running dpct with       | use the SYCL buffer.      |
+|                        | "--use-level=none".     |                           |
++------------------------+-------------------------+---------------------------+
+| DPCT_HELPER_VERBOSE    | Enabled heuristically   | Disable by default.       |
+| (Enable SYCL queue     | depends on the input    | Define it explicitly to   |
+| profiling)             | code.                   | enable.                   |
+|                        | Enable explicitly by    |                           |
+|                        | running dpct with       |                           |
+|                        | "--enable-profiling".   |                           |
+|                        | Disable by removing the |                           |
+|                        | macro definition        |                           |
+|                        | manually.               |                           |
++------------------------+-------------------------+---------------------------+
+| DPCT_PROFILING_ENABLED | Disable by default.     | Disable by default.       |
+| (Verbose option)       | Define it explicitly to | Define it explicitly to   |
+|                        | enable.                 | enable.                   |
++========================+=========================+===========================+
+*/
 // clang-format on
 
 #ifndef __DPCT_HPP__
