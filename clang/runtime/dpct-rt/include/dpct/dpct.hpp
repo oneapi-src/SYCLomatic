@@ -11,6 +11,7 @@
 There are 3 macros that can be used to control the behavior of the helper
 functions.
 +========================+=========================+===========================+
+|                        | Helper function         | Helper function           |
 | Macro Name             | Used in dpct migrated   | Used in direct            |
 |                        | code                    | programming               |
 +========================+=========================+===========================+
