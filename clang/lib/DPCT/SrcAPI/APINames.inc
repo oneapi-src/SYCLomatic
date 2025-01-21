@@ -1536,7 +1536,7 @@ ENTRY(__match_any_sync, __match_any_sync, true, NO_FLAG, P4, "comment")
 ENTRY(__match_all_sync, __match_all_sync, true, NO_FLAG, P4, "comment")
 
 // Error Handling
-ENTRY(cuGetErrorName, cuGetErrorName, false, NO_FLAG, P4, "comment")
+ENTRY(cuGetErrorName, cuGetErrorName, true, NO_FLAG, P4, "Successful")
 ENTRY(cuGetErrorString, cuGetErrorString, true, NO_FLAG, P4, "comment")
 
 // Initialization

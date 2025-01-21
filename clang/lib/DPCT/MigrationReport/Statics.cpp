@@ -322,7 +322,8 @@ public:
       Summary.dump(OS, Indent);
       Total += Summary;
     }
-    Total.dump(OS, Indent);
+    if (AnalysisModeStaticsMap.size() > 1)
+      Total.dump(OS, Indent);
     if (DependencyBits.Flag) {
       LineStream(OS, Indent) << llvm::raw_ostream::Colors::BLUE
                              << "Library Dependencies of SYCL Project:"

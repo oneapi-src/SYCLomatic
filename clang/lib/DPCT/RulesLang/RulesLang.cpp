@@ -8199,10 +8199,11 @@ void DriverModuleAPIRule::runRule(
 void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   auto DriverDeviceAPI = [&]() {
-    return hasAnyName(
-        "cuDeviceGet", "cuDeviceComputeCapability", "cuDriverGetVersion",
-        "cuDeviceGetCount", "cuDeviceGetAttribute", "cuDeviceGetName",
-        "cuDeviceGetUuid", "cuDeviceGetUuid_v2", "cuGetErrorString");
+    return hasAnyName("cuDeviceGet", "cuDeviceComputeCapability",
+                      "cuDriverGetVersion", "cuDeviceGetCount",
+                      "cuDeviceGetAttribute", "cuDeviceGetName",
+                      "cuDeviceGetUuid", "cuDeviceGetUuid_v2",
+                      "cuGetErrorString", "cuGetErrorName");
   };
 
   MF.addMatcher(
