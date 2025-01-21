@@ -99,7 +99,7 @@ bool isOutRootEmpty(SmallString<256> &OutRoot) {
 
 // Set OutRoot to the current working directory.
 bool getDefaultOutRoot(clang::tooling::UnifiedPath &DefaultOutRoot,
-                       bool NeedCheckOutRootEmpty) {
+                       bool NeedCheckOutRootEmpty, bool EnableCodePin) {
   SmallString<256> OutRoot;
   if (fs::current_path(OutRoot) != std::error_code()) {
     llvm::errs() << "Could not get current path.\n";
@@ -114,6 +114,8 @@ bool getDefaultOutRoot(clang::tooling::UnifiedPath &DefaultOutRoot,
       }
     }
   } else {
+    if (EnableCodePin)
+      return true;
     clang::dpct::createDirectories(OutRoot, false);
   }
   clang::dpct::PrintMsg(
