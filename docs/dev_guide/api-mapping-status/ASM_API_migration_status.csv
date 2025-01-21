@@ -33,7 +33,7 @@ dp4a,YES,
 elect,NO,
 ex2,YES,
 exit,NO,
-fence,NO,
+fence,YES,
 fma,YES, Partial
 fns,NO,
 getctarank,NO,

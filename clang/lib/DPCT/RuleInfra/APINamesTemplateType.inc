@@ -131,6 +131,31 @@ TYPE_REWRITE_ENTRY(
             TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
                              "group::exchange"),
                          TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
+
+// cub::BlockShuffle
+TYPE_REWRITE_ENTRY(
+    "cub::BlockShuffle",
+    TYPE_CONDITIONAL_FACTORY(
+        UseSYCLCompat(),
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT, TYPESTR),
+        HEADER_INSERTION_FACTORY(
+            HeaderType::HT_DPCT_GROUP_Utils,
+            TYPE_CONDITIONAL_FACTORY(
+                CheckTemplateArgCount(2, false),
+                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                 "group::group_shuffle"),
+                             TEMPLATE_ARG(0), TEMPLATE_ARG(1)),
+                TYPE_CONDITIONAL_FACTORY(
+                    CheckTemplateArgCount(3, false),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_shuffle"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(1),
+                                 TEMPLATE_ARG(2)),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_shuffle"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(1),
+                                 TEMPLATE_ARG(2), TEMPLATE_ARG(3)))))))
+
 // cub::BlockLoad
 TYPE_REWRITE_ENTRY(
     "cub::BlockLoad",

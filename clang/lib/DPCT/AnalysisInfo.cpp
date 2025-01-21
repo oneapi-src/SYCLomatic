@@ -3812,6 +3812,7 @@ void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
     OS << '(' << LocalSize << ".size() * sizeof("
        << ValueType->getSourceString() << ')' << ')';
     break;
+  case BlockShuffle:
   case BlockRadixSort:
     OS << MapNames::getClNamespace() << "local_accessor<uint8_t, 1> " << Name
        << "_acc(";
@@ -3831,6 +3832,7 @@ ParameterStream &TempStorageVarInfo::getFuncDecl(ParameterStream &PS) {
   case BlockReduce:
     PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> ";
     break;
+  case BlockShuffle:
   case BlockRadixSort:
     PS << "uint8_t *";
     break;

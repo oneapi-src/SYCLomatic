@@ -183,9 +183,3 @@ unsigned getEventFlags(bool enabledSyncBlock) {
 
   return flags;
 }
-
-// CHECK: void test_stream_and_context(dpct::queue_ptr stream, int &context) {
-void test_stream_and_context(CUstream stream, CUcontext& context) {
-  // CHECK: context = dpct::get_device_id(stream->get_device());
-  cuStreamGetCtx(stream, &context);
-}
