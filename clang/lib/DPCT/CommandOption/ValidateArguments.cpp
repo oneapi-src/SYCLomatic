@@ -105,7 +105,11 @@ bool getDefaultOutRoot(clang::tooling::UnifiedPath &DefaultOutRoot,
     llvm::errs() << "Could not get current path.\n";
     return false;
   }
-  OutRoot.append("/dpct_output");
+
+  if (EnableCodePin)
+    OutRoot.append("/dpct_output_codepin_sycl");
+  else
+    OutRoot.append("/dpct_output");
   DefaultOutRoot.setPath(OutRoot.str().str());
   if (fs::is_directory(OutRoot) && isOutRootAccess(OutRoot)) {
     if (NeedCheckOutRootEmpty) {
@@ -114,8 +118,6 @@ bool getDefaultOutRoot(clang::tooling::UnifiedPath &DefaultOutRoot,
       }
     }
   } else {
-    if (EnableCodePin)
-      return true;
     clang::dpct::createDirectories(OutRoot, false);
   }
   clang::dpct::PrintMsg(
