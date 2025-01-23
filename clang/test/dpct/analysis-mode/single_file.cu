@@ -1,4 +1,4 @@
-// RUN: dpct -in-root=%S -analysis-modev--cuda-include-path="%cuda-path/include" -analysis-mode-output-file=%T/single_file.out %S/single_file.cu
+// RUN: dpct -in-root=%S -analysis-mode --cuda-include-path="%cuda-path/include" -analysis-mode-output-file=%T/single_file.out %S/single_file.cu
 
 // RUN: echo "// CHECK: %S/single_file.cu:" > %T/single_file.check
 // RUN: cat %S/single_file.check >> %T/single_file.check
