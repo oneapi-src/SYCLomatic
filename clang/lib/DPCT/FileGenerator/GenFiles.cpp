@@ -1188,12 +1188,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesInfo,
                                    YamlFile, SrcFile, MainSrcFileMap);
   if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
-    if (dpct::DpctGlobalInfo::IsMigrateBuildScriptOnlyEnabled() ||
-        dpct::DpctGlobalInfo::migrateCMakeScripts()) {
-      copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "MAKEFILE");
-      copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "CMAKELISTS.TXT");
-      copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, ".CMAKE");
-    }
+    copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "MAKEFILE");
+    copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "CMAKELISTS.TXT");
+    copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, ".CMAKE");
     std::string SchemaPathCUDA = CUDAMigratedOutRoot.getCanonicalPath().str() +
                                  "/codepin_autogen_util.hpp";
     std::string SchemaPathSYCL =
