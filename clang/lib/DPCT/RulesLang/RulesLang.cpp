@@ -7904,7 +7904,6 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
       return;
   }
 
-  recordRecognizedAPI(CE);
   auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
   Namespace = getNameSpace(NSD);
   APIName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
@@ -7914,6 +7913,7 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
     APIName = Namespace + "::" + APIName;
   SrcAPIStaticsMap[getFunctionSignature(CE->getCalleeDecl()->getAsFunction(),
                                         "")]++;
+  recordRecognizedAPI(CE, APIName, MigrationStatistics::IsMigrated(APIName));
 
   if (!MigrationStatistics::IsMigrated(APIName)) {
     const SourceManager &SM = DpctGlobalInfo::getSourceManager();
@@ -7998,12 +7998,13 @@ void RecognizeTypeRule::runRule(
         PointeeTy + " *");
       return;
     }
+    recordRecognizedType(*TL, TypeName, false);
     report(TL->getBeginLoc(), Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
       TypeName);
     return;
   }
   if (const TypeLoc *TL = getNodeAsType<TypeLoc>(Result, "alltypeloc")) {
-    recordRecognizedType(*TL);
+    recordRecognizedType(*TL, "", true);
   }
 }
 

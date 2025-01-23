@@ -63,8 +63,8 @@ void recordAnalysisModeEffort(SourceLocation SL, EffortLevel EL);
 void recordAnalysisModeEffort(const clang::tooling::UnifiedPath &Filename, unsigned Offset,
                               EffortLevel EL);
 
-void recordRecognizedAPI(const CallExpr *CE);
-void recordRecognizedType(TypeLoc TL);
+void recordRecognizedAPI(const CallExpr *CE, StringRef Name, bool IsMigrated);
+void recordRecognizedType(TypeLoc TL, StringRef Name, bool IsMigrated);
 
 class RuleGroups;
 void setDependenciesInfo(const RuleGroups &) noexcept;
