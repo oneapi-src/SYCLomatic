@@ -38,6 +38,41 @@ struct csrgemm_args_info_hash {
     return std::hash<std::string>{}(ss.str());
   }
 };
+
+using csrgemm2_args_info =
+    std::tuple<int, int, int,
+               const std::shared_ptr<matrix_info>, const void *, const int *,
+               const int *,
+               const std::shared_ptr<matrix_info>, const void *, const int *,
+               const int *,
+               const std::shared_ptr<matrix_info>, const void *, const int *,
+               const int *,
+               const std::shared_ptr<matrix_info>,
+               const int *>;
+struct csrgemm2_args_info_hash {
+  size_t operator()(const csrgemm2_args_info &args) const {
+    std::stringstream ss;
+    ss << std::get<0>(args) << ":";
+    ss << std::get<1>(args) << ":";
+    ss << std::get<2>(args) << ":";
+    ss << std::get<3>(args).get() << ":";
+    ss << std::get<4>(args) << ":";
+    ss << std::get<5>(args) << ":";
+    ss << std::get<6>(args) << ":";
+    ss << std::get<7>(args).get() << ":";
+    ss << std::get<8>(args) << ":";
+    ss << std::get<9>(args) << ":";
+    ss << std::get<10>(args) << ":";
+    ss << std::get<11>(args).get() << ":";
+    ss << std::get<12>(args) << ":";
+    ss << std::get<12>(args) << ":";
+    ss << std::get<14>(args) << ":";
+    ss << std::get<15>(args).get() << ":";
+    ss << std::get<16>(args) << ":";
+    return std::hash<std::string>{}(ss.str());
+  }
+};
+
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 template <typename handle_t> class handle_manager {
 public:
@@ -58,7 +93,7 @@ public:
   void init(sycl::queue *q) {
     _q = q;
     _h = new handle_t;
-    _init_func(_h);
+    _init_func(*_q, _h);
   }
   handle_t &get_handle() { return *_h; }
   void add_dependency(sycl::event e) { _deps.push_back(e); }
@@ -68,7 +103,7 @@ protected:
   sycl::queue *_q = nullptr;
 
 private:
-  using init_func_t = std::function<void(handle_t *)>;
+  using init_func_t = std::function<void(sycl::queue &, handle_t *)>;
   using rel_func_t = std::function<sycl::event(
       sycl::queue &, handle_t *, const std::vector<sycl::event> &dependencies)>;
   handle_t *_h = nullptr;
@@ -79,16 +114,33 @@ private:
 template <>
 inline handle_manager<oneapi::mkl::sparse::matrix_handle_t>::init_func_t
     handle_manager<oneapi::mkl::sparse::matrix_handle_t>::_init_func =
-        oneapi::mkl::sparse::init_matrix_handle;
+        [](sycl::queue &queue, oneapi::mkl::sparse::matrix_handle_t *p_desc) {
+          oneapi::mkl::sparse::init_matrix_handle(p_desc);
+        };
 template <>
 inline handle_manager<oneapi::mkl::sparse::matrix_handle_t>::rel_func_t
     handle_manager<oneapi::mkl::sparse::matrix_handle_t>::_rel_func =
         oneapi::mkl::sparse::release_matrix_handle;
 
 template <>
+inline handle_manager<oneapi::mkl::sparse::omatadd_descr_t>::init_func_t
+    handle_manager<oneapi::mkl::sparse::omatadd_descr_t>::_init_func =
+        oneapi::mkl::sparse::init_omatadd_descr;
+template <>
+inline handle_manager<oneapi::mkl::sparse::omatadd_descr_t>::rel_func_t
+    handle_manager<oneapi::mkl::sparse::omatadd_descr_t>::_rel_func =
+        [](sycl::queue &queue, oneapi::mkl::sparse::omatadd_descr_t *p_desc,
+           const std::vector<sycl::event> &dependencies) -> sycl::event {
+  return oneapi::mkl::sparse::release_omatadd_descr(queue, *p_desc,
+                                                    dependencies);
+};
+
+template <>
 inline handle_manager<oneapi::mkl::sparse::matmat_descr_t>::init_func_t
     handle_manager<oneapi::mkl::sparse::matmat_descr_t>::_init_func =
-        oneapi::mkl::sparse::init_matmat_descr;
+        [](sycl::queue &queue, oneapi::mkl::sparse::matmat_descr_t *p_desc) {
+          oneapi::mkl::sparse::init_matmat_descr(p_desc);
+        };
 template <>
 inline handle_manager<oneapi::mkl::sparse::matmat_descr_t>::rel_func_t
     handle_manager<oneapi::mkl::sparse::matmat_descr_t>::_rel_func =
