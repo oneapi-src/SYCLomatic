@@ -1494,6 +1494,8 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
 
   queue.wait();
   oneapi::mkl::sparse::release_matmat_descr(&matmat_desc);
+  oneapi::mkl::sparse::release_matrix_handle(queue, &a).wait();
+  oneapi::mkl::sparse::release_matrix_handle(queue, &b).wait();
 
   std::int64_t ws_size = 0;
   oneapi::mkl::sparse::omatadd_buffer_size(
@@ -1532,11 +1534,6 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
   ::dpct::cs::memcpy(::dpct::cs::get_default_queue(), row_ptr_c + m, &c_nnz_int,
                      sizeof(int))
       .wait();
-
-  oneapi::mkl::sparse::release_matmat_descr(&matmat_desc);
-  oneapi::mkl::sparse::release_matrix_handle(queue, &a);
-  oneapi::mkl::sparse::release_matrix_handle(queue, &b);
-  queue.wait();
 }
 
 template <typename T>
