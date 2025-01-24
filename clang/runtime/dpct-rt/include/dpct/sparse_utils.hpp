@@ -1442,9 +1442,9 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
 
   oneapi::mkl::sparse::matrix_handle_t b = nullptr;
   oneapi::mkl::sparse::init_matrix_handle(&b);
-  auto data_row_ptr_b = dpct::detail::get_memory<int>(row_ptr_a);
-  auto data_col_ind_b = dpct::detail::get_memory<int>(col_ind_a);
-  auto data_val_b = dpct::detail::get_memory<Ty>(val_a);
+  auto data_row_ptr_b = dpct::detail::get_memory<int>(row_ptr_b);
+  auto data_col_ind_b = dpct::detail::get_memory<int>(col_ind_b);
+  auto data_val_b = dpct::detail::get_memory<Ty>(val_b);
   oneapi::mkl::sparse::set_csr_data(queue, b, k, n, info_b->get_index_base(),
                                     data_row_ptr_b, data_col_ind_b, data_val_b);
 
