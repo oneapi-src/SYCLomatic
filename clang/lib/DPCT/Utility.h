@@ -269,7 +269,7 @@ inline bool isChildOrSamePath(clang::tooling::UnifiedPath Root,
   return Ret;
 }
 inline bool isPatternInPath(clang::tooling::UnifiedPath Path,
-                               const std::string &Pattern) {
+                            const std::string &Pattern) {
   return Path.getPath().contains(Pattern);
 }
 std::string getCanonicalPath(clang::SourceLocation Loc);
