@@ -1052,7 +1052,7 @@ int runDPCT(int argc, const char **argv) {
     bool NeedCheckOutRootEmpty =
         !(MigrateBuildScriptOnly || BuildScriptsSpecified);
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
-        !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
+        !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty, EnableCodePin)) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
