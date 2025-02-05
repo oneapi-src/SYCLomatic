@@ -9,6 +9,8 @@ Analysis Mode generates a summary report that shows:
 * Lines of code that are migrated imperfectly due to the language gap between
   CUDA\* and SYCL\*
 * An estimation of how much human effort will be required to complete the code migration
+* Library dependencies of the migrated SYCL project
+* Unsupported APIs/Types occurrences
 
 All migration issues are classified into one of three levels of manual effort:
 
@@ -43,6 +45,14 @@ An example analysis report can be seen as follows:
         -  7 APIs/Types - Medium manual effort for code fixing.
       +  9 lines of code (  8%) will not be automatically migrated.
         -  9 APIs/Types - High manual effort for code fixing.
+    Library Dependencies of SYCL Project:
+      - The Intel oneAPI Math Kernel Library (oneMKL)
+      - The Intel oneAPI DPC++ Library (oneDPL)
+      - The Intel oneAPI Deep Neural Network Library (oneDNN)
+      - The Intel oneAPI Collective Communications Library (oneCCL)
+    Unsupported APIs and Types:
+      - cudaDeviceGetPCIBusId Occurrences 2 times
+      - cudnnReduceTensorIndices_t Occurrences 1 times
 
 
 |tool_name| provides a command line option to enable this feature:
