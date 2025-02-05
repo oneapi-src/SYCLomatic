@@ -34,7 +34,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
-#include <set>
 #include <string>
 
 using namespace llvm;
