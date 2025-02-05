@@ -1095,3 +1095,29 @@ int foo17() {
   cudaMemcpy(d_in_data_2, h_data, mem_size, cudaMemcpyHostToDevice);
   return 0;
 }
+
+#define MAX_MASK_WIDTH 10
+
+template <typename T>
+__constant__ T mask[MAX_MASK_WIDTH];
+
+template <typename T>
+void foo18() {
+  size_t size_bytes = sizeof(double);
+  double *a = (T *)malloc(size_bytes);
+  double *d_a;
+  cudaMalloc((void **)&d_a, size_bytes);
+  // CHECK: q_ct1.memcpy(d_a, a, size_bytes);
+  // CHECK-NEXT: T h_mask[MAX_MASK_WIDTH];
+  // CHECK-NEXT: q_ct1.memcpy(mask.get_ptr(), h_mask, sizeof(double)).wait();
+  cudaMemcpy(d_a, a, size_bytes, cudaMemcpyHostToDevice);
+  T h_mask[MAX_MASK_WIDTH];
+  cudaMemcpyToSymbol(mask<double>, h_mask, sizeof(double));
+}
+
+int foo19() {
+  foo18<double>();
+  return 0;
+}
+
+#undef MAX_MASK_WIDTH
