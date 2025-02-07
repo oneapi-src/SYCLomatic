@@ -431,13 +431,6 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
           *q_ptr, (void *)new_a, a, a_elm_size * a_desc->_cols * new_lda,
           ::dpct::cs::memcpy_direction::device_to_device);
 
-#ifndef DPCT_USM_LEVEL_NONE
-    // WA to avoid incorrect result on CPU with USM
-    if (q_ptr->get_device().is_cpu()) {
-      q_ptr->wait();
-    }
-#endif
-
     // alpha = alpha * scale_a * scale_b
     sycl::event e_scale_new_a = detail::scale_new_a(
         q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
@@ -704,6 +697,13 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
           {matmul_prim_event});
     }
 
+#ifndef DPCT_USM_LEVEL_NONE
+    // WA to avoid incorrect result on CPU with USM
+    if (q_ptr->get_device().is_cpu()) {
+      matmul_prim_event.wait();
+      post_op_prim_event.wait();
+    }
+#endif
     // end of calling oneDNN
 
     sycl::event absmax_d_event;
