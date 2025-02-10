@@ -471,3 +471,143 @@ void foo7_1(int c_nnz,
 #endif
   foo7_2(c_nnz, descrB, descrC, val_a_s, row_ptr_a, col_ind_a, val_b_s, row_ptr_b, col_ind_b, val_c_s, row_ptr_c, col_ind_c);
 }
+
+void foo8(){
+  cusparseMatDescr_t descrB;
+  cusparseMatDescr_t descrD;
+  cusparseMatDescr_t descrC;
+
+  const float* val_a_s;
+  const double* val_a_d;
+  const float2* val_a_c;
+  const double2* val_a_z;
+  const int* row_ptr_a;
+  const int* col_ind_a;
+
+  const float* val_b_s;
+  const double* val_b_d;
+  const float2* val_b_c;
+  const double2* val_b_z;
+  const int* row_ptr_b;
+  const int* col_ind_b;
+
+  const float* val_d_s;
+  const double* val_d_d;
+  const float2* val_d_c;
+  const double2* val_d_z;
+  const int* row_ptr_d;
+  const int* col_ind_d;
+
+  float* val_c_s;
+  double* val_c_d;
+  float2* val_c_c;
+  double2* val_c_z;
+  int* row_ptr_c;
+  int* col_ind_c;
+
+  int nnzA, nnzB, nnzD;
+  float* alpha_s;
+  double* alpha_d;
+  float2* alpha_c;
+  double2* alpha_z;
+  float* beta_s;
+  double* beta_d;
+  float2* beta_c;
+  double2* beta_z;
+
+  int nnzC;
+  csrgemm2Info_t info_s, info_d, info_c, info_z;
+  void *ws_s;
+  void *ws_d;
+  void *ws_c;
+  void *ws_z;
+  
+  size_t ws_size;
+  // CHECK: ws_size = 0;
+  // CHECK-NEXT: ws_size = 0;
+  // CHECK-NEXT: ws_size = 0;
+  // CHECK-NEXT: ws_size = 0;
+  cusparseScsrgemm2_bufferSizeExt(handle, 3, 4, 3, alpha_s, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_s, descrD, nnzD, row_ptr_d, col_ind_d, info_s, &ws_size);
+  cusparseDcsrgemm2_bufferSizeExt(handle, 3, 4, 3, alpha_d, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_d, descrD, nnzD, row_ptr_d, col_ind_d, info_d, &ws_size);
+  cusparseCcsrgemm2_bufferSizeExt(handle, 3, 4, 3, alpha_c, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_c, descrD, nnzD, row_ptr_d, col_ind_d, info_c, &ws_size);
+  cusparseZcsrgemm2_bufferSizeExt(handle, 3, 4, 3, alpha_z, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_z, descrD, nnzD, row_ptr_d, col_ind_d, info_z, &ws_size);
+
+  // CHECK: dpct::sparse::csrgemm_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_s, row_ptr_a, col_ind_a, descrB, nnzB, val_b_s, row_ptr_b, col_ind_b, descrD, nnzD, val_d_s, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_s, ws_s);
+  // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_d, row_ptr_a, col_ind_a, descrB, nnzB, val_b_d, row_ptr_b, col_ind_b, descrD, nnzD, val_d_d, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_d, ws_d);
+  // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_c, row_ptr_a, col_ind_a, descrB, nnzB, val_b_c, row_ptr_b, col_ind_b, descrD, nnzD, val_d_c, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_c, ws_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_z, row_ptr_a, col_ind_a, descrB, nnzB, val_b_z, row_ptr_b, col_ind_b, descrD, nnzD, val_d_z, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_z, ws_z);
+  cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_s, ws_s);
+  cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_d, ws_d);
+  cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_c, ws_c);
+  cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_z, ws_z);
+
+  // CHECK: dpct::sparse::csrgemm2(handle, 3, 4, 3, alpha_s, descrA, val_a_s, row_ptr_a, col_ind_a, descrB, val_b_s, row_ptr_b, col_ind_b, beta_s, descrD, val_d_s, row_ptr_d, col_ind_d, descrC, val_c_s, row_ptr_c, col_ind_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm2(handle, 3, 4, 3, alpha_d, descrA, val_a_d, row_ptr_a, col_ind_a, descrB, val_b_d, row_ptr_b, col_ind_b, beta_d, descrD, val_d_d, row_ptr_d, col_ind_d, descrC, val_c_d, row_ptr_c, col_ind_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm2(handle, 3, 4, 3, alpha_c, descrA, val_a_c, row_ptr_a, col_ind_a, descrB, val_b_c, row_ptr_b, col_ind_b, beta_c, descrD, val_d_c, row_ptr_d, col_ind_d, descrC, val_c_c, row_ptr_c, col_ind_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm2(handle, 3, 4, 3, alpha_z, descrA, val_a_z, row_ptr_a, col_ind_a, descrB, val_b_z, row_ptr_b, col_ind_b, beta_z, descrD, val_d_z, row_ptr_d, col_ind_d, descrC, val_c_z, row_ptr_c, col_ind_c);
+  cusparseScsrgemm2(handle, 3, 4, 3, alpha_s, descrA, nnzA, val_a_s, row_ptr_a, col_ind_a, descrB, nnzB, val_b_s, row_ptr_b, col_ind_b, beta_s, descrD, nnzD, val_d_s, row_ptr_d, col_ind_d, descrC, val_c_s, row_ptr_c, col_ind_c, info_s, ws_s);
+  cusparseDcsrgemm2(handle, 3, 4, 3, alpha_d, descrA, nnzA, val_a_d, row_ptr_a, col_ind_a, descrB, nnzB, val_b_d, row_ptr_b, col_ind_b, beta_d, descrD, nnzD, val_d_d, row_ptr_d, col_ind_d, descrC, val_c_d, row_ptr_c, col_ind_c, info_d, ws_d);
+  cusparseCcsrgemm2(handle, 3, 4, 3, alpha_c, descrA, nnzA, val_a_c, row_ptr_a, col_ind_a, descrB, nnzB, val_b_c, row_ptr_b, col_ind_b, beta_c, descrD, nnzD, val_d_c, row_ptr_d, col_ind_d, descrC, val_c_c, row_ptr_c, col_ind_c, info_c, ws_c);
+  cusparseZcsrgemm2(handle, 3, 4, 3, alpha_z, descrA, nnzA, val_a_z, row_ptr_a, col_ind_a, descrB, nnzB, val_b_z, row_ptr_b, col_ind_b, beta_z, descrD, nnzD, val_d_z, row_ptr_d, col_ind_d, descrC, val_c_z, row_ptr_c, col_ind_c, info_z, ws_z);
+}
+
+void foo9_2(cusparseMatDescr_t descrB,
+            cusparseMatDescr_t descrC,
+            cusparseMatDescr_t descrD,
+            const float *alpha_s,
+            const float *beta_s,
+            const float* val_a_s,
+            const int* row_ptr_a,
+            const int* col_ind_a,
+            const float* val_b_s,
+            const int* row_ptr_b,
+            const int* col_ind_b,
+            const float* val_d_s,
+            const int* row_ptr_d,
+            const int* col_ind_d,
+            float* val_c_s,
+            int* row_ptr_c,
+            int* col_ind_c,
+            int nnzA,
+            int nnzB,
+            int nnzD,
+            int nnzC,
+            csrgemm2Info_t info_s,
+            void *ws) {
+  // CHECK: dpct::sparse::csrgemm2(handle, 3, 4, 3, alpha_s, descrA, val_a_s, row_ptr_a, col_ind_a, descrB, val_b_s, row_ptr_b, col_ind_b, beta_s, descrD, val_d_s, row_ptr_d, col_ind_d, descrC, val_c_s, row_ptr_c, col_ind_c);
+  cusparseScsrgemm2(handle, 3, 4, 3, alpha_s, descrA, nnzA, val_a_s, row_ptr_a, col_ind_a, descrB, nnzB, val_b_s, row_ptr_b, col_ind_b, beta_s, descrD, nnzD, val_d_s, row_ptr_d, col_ind_d, descrC, val_c_s, row_ptr_c, col_ind_c, info_s, ws);
+}
+
+void foo9_1(cusparseMatDescr_t descrB,
+            cusparseMatDescr_t descrC,
+            cusparseMatDescr_t descrD,
+            const float *alpha_s,
+            const float *beta_s,
+            const float* val_a_s,
+            const int* row_ptr_a,
+            const int* col_ind_a,
+            const float* val_b_s,
+            const int* row_ptr_b,
+            const int* col_ind_b,
+            const float* val_d_s,
+            const int* row_ptr_d,
+            const int* col_ind_d,
+            float* val_c_s,
+            int* row_ptr_c,
+            int* col_ind_c,
+            int nnzA,
+            int nnzB,
+            int nnzD,
+            int nnzC,
+            csrgemm2Info_t info_s,
+            size_t ws_s) {
+#ifndef NO_BUILD_TEST
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1134:{{[0-9]+}}: The tool cannot deduce the consumer API ("dpct::sparse::csrgemm") of this API, and this API has 2 arguments depending on the 8th and the 12th parameters of the consumer API. Please replace the 2 arguments tagged as "dpct_placeholder" with the corresponding value.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, 3, 4, 3, descrA, nnzA, dpct_placeholder, row_ptr_a, col_ind_a, descrB, nnzB, dpct_placeholder, row_ptr_b, col_ind_b, descrD, nnzD, dpct_placeholder, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_s, &ws_s);
+  cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_s, &ws_s);
+#endif
+  void *ws;
+  foo9_2(descrB, descrC, descrD, alpha_s, beta_s, val_a_s, row_ptr_a, col_ind_a, val_b_s, row_ptr_b, col_ind_b, val_d_s, row_ptr_d, col_ind_d, val_c_s, row_ptr_c, col_ind_c, nnzA, nnzB, nnzD, nnzC, info_s, ws);
+}
