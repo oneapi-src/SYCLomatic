@@ -3047,8 +3047,11 @@ MemVarInfo::MemVarInfo(unsigned Offset,
   }
   if (Var->hasInit())
     setInitList(Var->getInit(), Var);
-  if (Var->getStorageClass() == SC_Static || getScope() == Global) {
+  if (Var->getStorageClass() == SC_Static) {
     IsStatic = true;
+  }
+  if (getScope() == Global) {
+    IsInline = true;
   }
 
   if (auto Func = Var->getParentFunctionOrMethod()) {
@@ -3204,8 +3207,8 @@ std::string MemVarInfo::getInitStmt(StringRef QueueString) {
   return buildString(getConstVarName(), ".init(", QueueString, ");");
 }
 std::string MemVarInfo::getMemoryDecl(const std::string &MemSize) {
-  return buildString(isStatic() ? "static " : "", getMemoryType(), " ",
-                     getConstVarName(),
+  return buildString(isStatic() ? "static " : "", isInline() ? "inline " : "",
+                     getMemoryType(), " ", getConstVarName(),
                      PointerAsArray ? "" : getInitArguments(MemSize), ";");
 }
 std::string MemVarInfo::getMemoryDecl() {

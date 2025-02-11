@@ -2,9 +2,9 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/constant_pointer/constant_pointer.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/constant_pointer/constant_pointer.dp.cpp -o %T/constant_pointer/constant_pointer.dp.o %}
 
-// CHECK: static dpct::global_memory<int, 1> schsfirst;
+// CHECK: static inline dpct::global_memory<int, 1> schsfirst;
 static __constant__ const int *schsfirst;
-// CHECK: static dpct::global_memory<sycl::double2, 1> zm;
+// CHECK: static inline dpct::global_memory<sycl::double2, 1> zm;
 static __constant__ const double2 *zm;
 
 static int *schsfirstD;

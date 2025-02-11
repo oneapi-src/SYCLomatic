@@ -8,7 +8,7 @@
 
 // CHECK-NOT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 
-// CHECK: static dpct::global_memory<int, 4> dev_mem(10, 10, 10, 10);
+// CHECK: inline dpct::global_memory<int, 4> dev_mem(10, 10, 10, 10);
 __device__ int dev_mem[10][10][10][10];
 
 __shared__ int sha1_mem[10][10][10][10];
@@ -16,13 +16,13 @@ __shared__ int sha1_mem[10][10][10][10];
 
 // CHECK-NOT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 
-// CHECK: static dpct::shared_memory<int, 4> man_mem(10, 10, 10, 10);
+// CHECK: inline dpct::shared_memory<int, 4> man_mem(10, 10, 10, 10);
 __managed__ int man_mem[10][10][10][10];
 
 
 // CHECK-NOT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 
-// CHECK: static dpct::constant_memory<int, 4> con_mem(10, 10, 10, 10);
+// CHECK: inline dpct::constant_memory<int, 4> con_mem(10, 10, 10, 10);
 __constant__ int con_mem[10][10][10][10];
 
 __global__ void staticReverse()

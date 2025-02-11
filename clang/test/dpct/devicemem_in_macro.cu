@@ -6,8 +6,8 @@
 
 // CHECK: #define TABLE_BEGIN(type, name, size) static const type name[size] = {
 // CHECK: #define TABLE_END() };
-// CHECK: static dpct::global_memory<const uint8_t, 1> mem(sycl::range<1>(8), {1, 2, 4, 8, 16, 32, 64, 128});
-// CHECK: static dpct::global_memory<const int, 1> a(sycl::range<1>(1), {1});
+// CHECK: static inline dpct::global_memory<const uint8_t, 1> mem(sycl::range<1>(8), {1, 2, 4, 8, 16, 32, 64, 128});
+// CHECK: static inline dpct::global_memory<const int, 1> a(sycl::range<1>(1), {1});
 #define TABLE_BEGIN(type, name, size) static const __device__ type name[size] = {
 #define TABLE_END() };
 TABLE_BEGIN(uint8_t, mem, 8)
