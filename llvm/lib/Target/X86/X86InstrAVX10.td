@@ -1003,9 +1003,9 @@ defm VCVTNE2PH2HF8 : avx512_binop_all<0x18, "vcvtne2ph2hf8", SchedWriteCvtPD2PS,
                                      avx512vl_f16_info, avx512vl_i8_info,
                                      X86vcvtne2ph2hf8, [HasAVX10_2_512], [HasAVX10_2]>,
                                     EVEX_CD8<16, CD8VF>, T_MAP5, XD;
-defm VCVTNE2PH2HF8S : avx512_binop_all<0x1b, "vcvtne2ph2hf8s", SchedWriteCvtPD2PS,
+defm VCVT2PH2HF8S : avx512_binop_all<0x1b, "vcvt2ph2hf8s", SchedWriteCvtPD2PS,
                                       avx512vl_f16_info, avx512vl_i8_info,
-                                      X86vcvtne2ph2hf8s, [HasAVX10_2_512], [HasAVX10_2]>,
+                                      X86vcvt2ph2hf8s, [HasAVX10_2_512], [HasAVX10_2]>,
                                      EVEX_CD8<16, CD8VF>, T_MAP5, XD;
 
 //TODO: Merge into avx512_vcvt_fp, diffrence is one more source register here.
@@ -1227,7 +1227,7 @@ defm VCVTHF82PH : avx10_convert_2op_nomb<"vcvthf82ph", avx512vl_f16_info,
 // AVX10 BF16 instructions
 //-------------------------------------------------
 
-// VADDNEPBF16, VSUBNEPBF16, VMULNEPBF16, VDIVNEPBF16, VMAXPBF16, VMINPBF16
+// VADDNEPBF16, VSUBBF16, VMULNEPBF16, VDIVNEPBF16, VMAXPBF16, VMINPBF16
 multiclass avx10_fp_binopne_int_pbf16<bits<8> opc, string OpcodeStr,
                                       X86SchedWriteSizes sched,
                                       bit IsCommutable = 0> {
@@ -1271,7 +1271,7 @@ multiclass avx10_fp_binop_pbf16<bits<8> opc, string OpcodeStr, SDPatternOperator
 
 let Uses = []<Register>, mayRaiseFPException = 0 in {
 defm VADDNEPBF16 : avx10_fp_binop_pbf16<0x58, "vaddne", fadd, SchedWriteFAddSizes, 1>;
-defm VSUBNEPBF16 : avx10_fp_binop_pbf16<0x5C, "vsubne", fsub, SchedWriteFAddSizes, 0>;
+defm VSUBBF16 : avx10_fp_binop_pbf16<0x5C, "vsubne", fsub, SchedWriteFAddSizes, 0>;
 defm VMULNEPBF16 : avx10_fp_binop_pbf16<0x59, "vmulne", fmul, SchedWriteFMulSizes, 1>;
 defm VDIVNEPBF16 : avx10_fp_binop_pbf16<0x5E, "vdivne", fdiv, SchedWriteFDivSizes, 0>;
 defm VMINPBF16 : avx10_fp_binopne_int_pbf16<0x5D, "vmin", SchedWriteFCmpSizes, 0>;
@@ -1294,7 +1294,7 @@ let Uses = []<Register>, mayRaiseFPException = 0,
   }
 }
 
-// VCMPPBF16
+// VCMPBF16
 multiclass avx10_vcmp_common_bf16<X86FoldableSchedWrite sched, X86VectorVTInfo _> {
   let mayRaiseFPException = 0 in {
   defm rri  : AVX512_maskable_cmp<0xC2, MRMSrcReg, _,
@@ -1340,7 +1340,7 @@ multiclass avx10_vcmp_bf16<X86SchedWriteWidths sched, AVX512VLVectorVTInfo _> {
   }
 }
 
-defm VCMPPBF16 : avx10_vcmp_bf16<SchedWriteFCmp, avx512vl_bf16_info>,
+defm VCMPBF16 : avx10_vcmp_bf16<SchedWriteFCmp, avx512vl_bf16_info>,
                                  AVX512XDIi8Base, EVEX, VVVV,
                                  EVEX_CD8<16, CD8VF>, TA;
 
@@ -1365,7 +1365,7 @@ multiclass avx10_sqrt_packed_bf16<bits<8> opc, string OpcodeStr,
 let Uses = []<Register>, mayRaiseFPException = 0 in
 defm VSQRTNEPBF16 : avx10_sqrt_packed_bf16<0x51, "vsqrtne", SchedWriteFSqrtSizes>;
 
-// VRSQRTPBF16, VRCPPBF16, VSRQTPBF16, VGETEXPPBF16
+// VRSQRTBF16, VRCPPBF16, VSRQTPBF16, VGETEXPPBF16
 multiclass avx10_fp14_pbf16<bits<8> opc, string OpcodeStr, SDNode OpNode,
                             X86SchedWriteWidths sched> {
   let Predicates = [HasAVX10_2_512] in
@@ -1406,7 +1406,7 @@ multiclass avx10_fp_scalef_bf16<bits<8> opc, string OpcodeStr,
 let Uses = []<Register>, mayRaiseFPException = 0 in
 defm VSCALEFPBF16 : avx10_fp_scalef_bf16<0x2C, "vscalef", SchedWriteFAdd>;
 
-// VREDUCENEPBF16, VRNDSCALENEPBF16, VGETMANTPBF16
+// VREDUCEBF16, VRNDSCALEBF16, VGETMANTPBF16
 multiclass avx10_common_unary_fp_packed_imm_bf16<string OpcodeStr,
             AVX512VLVectorVTInfo _, bits<8> opc, SDPatternOperator OpNode,
             SDPatternOperator MaskOpNode, X86SchedWriteWidths sched> {
@@ -1422,10 +1422,10 @@ multiclass avx10_common_unary_fp_packed_imm_bf16<string OpcodeStr,
 }
 
 let Uses = []<Register>, mayRaiseFPException = 0 in {
-defm VREDUCENEPBF16 : avx10_common_unary_fp_packed_imm_bf16<"vreducene", avx512vl_bf16_info, 0x56,
+defm VREDUCEBF16 : avx10_common_unary_fp_packed_imm_bf16<"vreducene", avx512vl_bf16_info, 0x56,
                             X86VReduce, X86VReduce, SchedWriteFRnd>,
                             AVX512XDIi8Base, TA, EVEX, EVEX_CD8<16, CD8VF>;
-defm VRNDSCALENEPBF16 : avx10_common_unary_fp_packed_imm_bf16<"vrndscalene", avx512vl_bf16_info, 0x08,
+defm VRNDSCALEBF16 : avx10_common_unary_fp_packed_imm_bf16<"vrndscalene", avx512vl_bf16_info, 0x08,
                             X86any_VRndScale, X86VRndScale, SchedWriteFRnd>,
                             AVX512XDIi8Base, TA, EVEX, EVEX_CD8<16, CD8VF>;
 defm VGETMANTPBF16 : avx10_common_unary_fp_packed_imm_bf16<"vgetmant", avx512vl_bf16_info, 0x26,
@@ -1433,7 +1433,7 @@ defm VGETMANTPBF16 : avx10_common_unary_fp_packed_imm_bf16<"vgetmant", avx512vl_
                             AVX512XDIi8Base, TA, EVEX, EVEX_CD8<16, CD8VF>;
 }
 
-// VFPCLASSPBF16
+// VFPCLASSBF16
 multiclass avx10_fp_fpclass_bf16<string OpcodeStr, bits<8> opcVec,
                                   X86SchedWriteWidths sched> {
   let Predicates = [HasAVX10_2_512] in
@@ -1450,7 +1450,7 @@ multiclass avx10_fp_fpclass_bf16<string OpcodeStr, bits<8> opcVec,
   }
 }
 
-defm VFPCLASSPBF16 : avx10_fp_fpclass_bf16<"vfpclass", 0x66, SchedWriteFCmp>,
+defm VFPCLASSBF16 : avx10_fp_fpclass_bf16<"vfpclass", 0x66, SchedWriteFCmp>,
                                       AVX512XDIi8Base, TA, EVEX, EVEX_CD8<16, CD8VF>;
 
 // VF[,N]M[ADD,SUB][132,213,231]NEPBF16
