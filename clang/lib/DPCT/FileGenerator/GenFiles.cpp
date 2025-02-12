@@ -1088,16 +1088,12 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   }
 
   // Copy the necessary files (header files, src files without replacements) to
-  // OutRootFolder
-  auto copyNecessaryFile = [&](clang::tooling::UnifiedPath OutRootFolder,
-                               bool CUDAOutRoot = false) {
+  // OutRoot
+  auto copyNecessaryFiles = [&](clang::tooling::UnifiedPath OutRoot,
+                                bool IsCUDAMigrationOutRoot = false) {
     for (const auto &Entry : IncludeFileMap) {
       // Generated SYCL file in outroot. E.g., /path/to/outroot/a.dp.cpp
       clang::tooling::UnifiedPath FilePath = Entry.first;
-      // Generated CUDA file in outroot_debug. E.g., /path/to/outroot_debug/a.cu
-      clang::tooling::UnifiedPath DebugFilePath = Entry.first;
-      // Original CUDA file in inroot. E.g., /path/to/inroot/a.cu
-      clang::tooling::UnifiedPath OriginalFilePath = Entry.first;
       if (!Entry.second) {
         bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
         if (IsExcluded) {
@@ -1107,16 +1103,16 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         // Always migrate *.cu files to *.dp.cpp files.
         SourceProcessType FileType = GetSourceFileType(FilePath);
         SmallString<512> TempFilePath(FilePath.getCanonicalPath());
-        if ((FileType & SPT_CudaHeader) && !CUDAOutRoot) {
+        if ((FileType & SPT_CudaHeader) && !IsCUDAMigrationOutRoot) {
           path::replace_extension(TempFilePath,
                                   DpctGlobalInfo::getSYCLHeaderExtension());
-        } else if ((FileType & SPT_CudaSource) && !CUDAOutRoot) {
+        } else if ((FileType & SPT_CudaSource) && !IsCUDAMigrationOutRoot) {
           path::replace_extension(TempFilePath,
                                   DpctGlobalInfo::getSYCLSourceExtension());
         }
         FilePath = TempFilePath;
 
-        if (!rewriteCanonicalDir(FilePath, InRoot, OutRootFolder)) {
+        if (!rewriteCanonicalDir(FilePath, InRoot, OutRoot)) {
           continue;
         }
 
@@ -1148,7 +1144,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         if (auto E = Result.takeError()) {
           continue;
         }
-        if (MapNames::PatternRewriters.empty()) {
+        if (MapNames::PatternRewriters.empty() || IsCUDAMigrationOutRoot) {
           Rewrite
               .getEditBuffer(Sources.getOrCreateFileID(
                   *Result, clang::SrcMgr::C_User /*normal user code*/))
@@ -1170,9 +1166,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
     }
   };
-  copyNecessaryFile(OutRoot);
+  copyNecessaryFiles(OutRoot);
   if (dpct::DpctGlobalInfo::isCodePinEnabled())
-    copyNecessaryFile(CUDAMigratedOutRoot);
+    copyNecessaryFiles(CUDAMigratedOutRoot, true);
 
   std::string ScriptFineName = "Makefile.dpct";
   if (!BuildScriptFile.empty())
