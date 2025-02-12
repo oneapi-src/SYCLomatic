@@ -697,6 +697,13 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
           {matmul_prim_event});
     }
 
+#ifndef DPCT_USM_LEVEL_NONE
+    // WA to avoid incorrect result on CPU with USM
+    if (q_ptr->get_device().is_cpu()) {
+      matmul_prim_event.wait();
+      post_op_prim_event.wait();
+    }
+#endif
     // end of calling oneDNN
 
     sycl::event absmax_d_event;

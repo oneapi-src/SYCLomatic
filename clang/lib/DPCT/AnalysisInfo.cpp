@@ -5775,7 +5775,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
             RequiredSubGroupSize.isEvaluated = false;
             RequiredSubGroupSize.SizeStr = std::get<4>(Element);
             ExecutionConfig.SubGroupSize =
-                " [[intel::reqd_sub_group_size(dpct_placeholder)]]";
+                " [[sycl::reqd_sub_group_size(dpct_placeholder)]]";
             SubGroupSizeWarning =
                 DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
                     Diagnostics::SUBGROUP_SIZE_NOT_EVALUATED,
@@ -5783,7 +5783,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
           } else {
             RequiredSubGroupSize.Size = Size;
             ExecutionConfig.SubGroupSize =
-                " [[intel::reqd_sub_group_size(" + std::to_string(Size) + ")]]";
+                " [[sycl::reqd_sub_group_size(" + std::to_string(Size) + ")]]";
           }
         } else {
           bool isNeedEmitWarning = true;

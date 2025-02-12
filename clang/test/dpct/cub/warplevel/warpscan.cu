@@ -413,7 +413,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           ExclusiveScanKernel1(dev_data, item_ct1);
 //CHECK-NEXT:         });
   ExclusiveScanKernel1<<<GridSize, BlockSize>>>(dev_data);
@@ -423,7 +423,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           ExclusiveScanKernel2(dev_data, item_ct1);
 //CHECK-NEXT:         });
   ExclusiveScanKernel2<<<GridSize, BlockSize>>>(dev_data);
@@ -433,7 +433,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           ExclusiveScanKernel3(dev_data, item_ct1);
 //CHECK-NEXT:         });
   ExclusiveScanKernel3<<<GridSize, BlockSize>>>(dev_data);
@@ -443,7 +443,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           ExclusiveScanKernel4(dev_data, item_ct1);
 //CHECK-NEXT:         });
   ExclusiveScanKernel4<<<GridSize, BlockSize>>>(dev_data);
@@ -454,7 +454,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           InclusiveScanKernel(dev_data, item_ct1);
 //CHECK-NEXT:         });
   InclusiveScanKernel<<<GridSize, BlockSize>>>(dev_data);
@@ -464,7 +464,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           InclusiveScanKernel2(dev_data, item_ct1);
 //CHECK-NEXT:         });
   InclusiveScanKernel2<<<GridSize, BlockSize>>>(dev_data);
@@ -474,7 +474,7 @@ int main() {
 init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           InclusiveScanKernel3(dev_data, item_ct1);
 //CHECK-NEXT:         });
   InclusiveScanKernel3<<<GridSize, BlockSize>>>(dev_data);
@@ -484,7 +484,7 @@ init_data(dev_data, TotalThread);
   init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           ExclusiveSumKernel(dev_data, item_ct1);
 //CHECK-NEXT:         });
   ExclusiveSumKernel<<<GridSize, BlockSize>>>(dev_data);
@@ -494,7 +494,7 @@ init_data(dev_data, TotalThread);
   init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           InclusiveSumKernel(dev_data, item_ct1);
 //CHECK-NEXT:         });
   InclusiveSumKernel<<<GridSize, BlockSize>>>(dev_data);
@@ -504,7 +504,7 @@ init_data(dev_data, TotalThread);
   init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           BroadcastKernel(dev_data, item_ct1);
 //CHECK-NEXT:         });
   BroadcastKernel<<<GridSize, BlockSize>>>(dev_data);
@@ -515,7 +515,7 @@ init_data(dev_data, TotalThread);
   init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:          WarningTestKernel1(dev_data, item_ct1);
 //CHECK-NEXT:        });
   WarningTestKernel1<<<GridSize, BlockSize>>>(dev_data);
@@ -525,7 +525,7 @@ init_data(dev_data, TotalThread);
   init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(8){{\]\]}} {
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(8){{\]\]}} {
 //CHECK-NEXT:          WarningTestKernel2(dev_data, item_ct1);
 //CHECK-NEXT:        });
   WarningTestKernel2<<<GridSize, BlockSize>>>(dev_data);
@@ -535,7 +535,7 @@ init_data(dev_data, TotalThread);
   init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:          TemplateKernel1(dev_data, item_ct1);
 //CHECK-NEXT:        });
   TemplateKernel1<<<GridSize, BlockSize>>>(dev_data);

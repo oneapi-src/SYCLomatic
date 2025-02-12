@@ -521,7 +521,7 @@ const char *get_intercept_stub_path(void) {
 }
 
 static int call_stat(const char *pathname, struct stat *statbuf) {
-  typedef int (*func)(const char *, struct statbuf *);
+  typedef int (*func)(const char *, struct stat *);
   DLSYM(func, fp, "stat");
   int const result = (*fp)(pathname, statbuf);
   return result;
