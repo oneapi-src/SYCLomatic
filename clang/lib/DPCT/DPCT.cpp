@@ -49,7 +49,6 @@
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
-#include "llvm/Support/Signals.h"
 #include "llvm/TargetParser/Host.h"
 
 #include <string>
@@ -684,14 +683,13 @@ int showAPIMapping(StringRef SrcAPI, StringRef Option, RefactoringTool &Tool,
 }
 
 int runDPCT(int argc, const char **argv) {
-  llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
   isDPCT = true;
 
   if (argc < 2) {
     std::cout << CtHelpHint;
     return MigrationErrorShowHelp;
   }
-  //clang::dpct::initCrashRecovery();
+  clang::dpct::initCrashRecovery();
 
   clang::dpct::DpctOptionBase::init();
 

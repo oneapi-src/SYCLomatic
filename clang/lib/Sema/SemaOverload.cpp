@@ -5600,7 +5600,7 @@ TryListConversion(Sema &S, InitListExpr *From, QualType ToType,
                                     AllowedExplicit::None,
                                     InOverloadResolution, /*CStyle=*/false,
                                     AllowObjCWritebackConversion,
-                                    /*AllowObjCConversionOnExplicit=*/false); // !!!
+                                    /*AllowObjCConversionOnExplicit=*/false);
   }
 
   // C++14 [over.ics.list]p5:
@@ -10687,11 +10687,12 @@ bool clang::isBetterOverloadCandidate(
     return S.CUDA().IdentifyPreference(Caller, Cand1.Function) >
            S.CUDA().IdentifyPreference(Caller, Cand2.Function);
 #else
-    bool PreferenceResult =
-        S.CUDA().IdentifyPreference(Caller, Cand1.Function) >
-        S.CUDA().IdentifyPreference(Caller, Cand2.Function);
-    if (PreferenceResult)
+    auto Preference1 = S.CUDA().IdentifyPreference(Caller, Cand1.Function);
+    auto Preference2 = S.CUDA().IdentifyPreference(Caller, Cand2.Function);
+    if (Preference1 > Preference2)
       return true;
+    if (Preference1 < Preference2)
+      return false;
     // This is a workaround to align to the behavior of nvcc
     const CXXMethodDecl *MD1 = dyn_cast<CXXMethodDecl>(Cand1.Function);
     const CXXMethodDecl *MD2 = dyn_cast<CXXMethodDecl>(Cand2.Function);
@@ -10699,7 +10700,7 @@ bool clang::isBetterOverloadCandidate(
       if (MD1->isMoveAssignmentOperator() && !MD2->isMoveAssignmentOperator())
         return true;
     }
-    return PreferenceResult;
+    return false;
 #endif // SYCLomatic_CUSTOMIZATION
   }
 
