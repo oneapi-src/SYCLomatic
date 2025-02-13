@@ -760,11 +760,11 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                           MapNames::getClNamespace() + "range<1>(1));" +
                           getNL() + IndentStr + CallExprReplStr + ", " +
                           ResultTempBuf + ");" + getNL() + IndentStr;
-        ReturnValueParamsStr =
-            "(" + ResultTempBuf + ".get_access<" + MapNames::getClNamespace() +
-            "access_mode::read>()[0].real(), " + ResultTempBuf +
-            ".get_access<" + MapNames::getClNamespace() +
-            "access_mode::read>()[0].imag())";
+        ReturnValueParamsStr = "(" + ResultTempBuf + ".get_host_access(" +
+                               MapNames::getClNamespace() +
+                               "read)[0].real(), " + ResultTempBuf +
+                               ".get_host_access(" +
+                               MapNames::getClNamespace() + "read)[0].imag())";
       }
 
       std::string Repl;
@@ -779,8 +779,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           else
             Repl = "*" + ResultTempPtr;
         } else {
-          Repl = ResultTempBuf + ".get_access<" + MapNames::getClNamespace() +
-                 "access_mode::read>()[0]";
+          Repl = ResultTempBuf + ".get_host_access(" +
+                 MapNames::getClNamespace() + "read)[0]";
         }
       }
       if (NeedUseLambda) {
@@ -1080,12 +1080,12 @@ BLASFunctionCallRule::getParamsAsStrs(const CallExpr *CE,
 //   {
 //   buffer res_buffer;
 //   mklAPI(res_buffer);
-//   res1 = res_buffer.get_access()[0];
+//   res1 = res_buffer.get_host_access()[0];
 //   }
 //   {
 //   buffer res_buffer;
 //   mklAPI(res_buffer);
-//   res2 = res_buffer.get_access()[0];
+//   res2 = res_buffer.get_host_access()[0];
 //   }
 //
 // If the API return value initializes the var declaration, we need to put the
