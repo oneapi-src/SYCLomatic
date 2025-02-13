@@ -28,7 +28,7 @@
 // CHECK-NEXT: aaa_host_ct1.
 // CHECK-NEXT: */
 // CHECK-NEXT: static const float aaa_host_ct1 = (float)(1ll << 40);
-// CHECK-NEXT: static inline dpct::constant_memory<const float, 0> aaa((float)(1ll << 40));
+// CHECK-NEXT: static dpct::constant_memory<const float, 0> aaa((float)(1ll << 40));
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1057:{{[0-9]+}}: Variable bbb was used in host code and device code. bbb type was
 // CHECK-NEXT: updated to be used in SYCL device code and new bbb_host_ct1 was generated to be
@@ -36,6 +36,6 @@
 // CHECK-NEXT: bbb_host_ct1.
 // CHECK-NEXT: */
 // CHECK-NEXT: static const float bbb_host_ct1 = (float)(1ll << 20);
-// CHECK-NEXT: static inline dpct::constant_memory<const float, 0> bbb((float)(1ll << 20));
+// CHECK-NEXT: static dpct::constant_memory<const float, 0> bbb((float)(1ll << 20));
 
 #include "constant_header.h"

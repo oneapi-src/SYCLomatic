@@ -9,7 +9,7 @@
 // RUN: cd ..
 // RUN: rm -rf ./dd_constant
 
-// CHECK: static inline dpct::constant_memory<const float, 0> aaa((float)(1ll << 40));
-// CHECK-NEXT: static inline dpct::constant_memory<const float, 0> bbb((float)(1ll << 20));
+// CHECK: static dpct::constant_memory<const float, 0> aaa((float)(1ll << 40));
+// CHECK-NEXT: static dpct::constant_memory<const float, 0> bbb((float)(1ll << 20));
 
 #include "constant_header.h"

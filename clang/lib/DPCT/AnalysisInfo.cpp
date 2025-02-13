@@ -3049,8 +3049,7 @@ MemVarInfo::MemVarInfo(unsigned Offset,
     setInitList(Var->getInit(), Var);
   if (Var->getStorageClass() == SC_Static) {
     IsStatic = true;
-  }
-  if (getScope() == Global) {
+  } else if (getScope() == Global) {
     IsInline = true;
   }
 

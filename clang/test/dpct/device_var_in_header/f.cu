@@ -6,7 +6,7 @@
 
 //CHECK: inline dpct::constant_memory<int, 1> arr4(sycl::range<1>(2), {1, 2});
 __device__ __constant__ int arr4[2] = {1, 2};
-//CHECK: static inline dpct::constant_memory<int, 1> arr5(sycl::range<1>(2), {1, 2});
+//CHECK: static dpct::constant_memory<int, 1> arr5(sycl::range<1>(2), {1, 2});
 static __device__ __constant__ int arr5[2] = {1, 2};
 
 __global__ void f() {
