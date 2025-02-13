@@ -5600,7 +5600,7 @@ TryListConversion(Sema &S, InitListExpr *From, QualType ToType,
                                     AllowedExplicit::None,
                                     InOverloadResolution, /*CStyle=*/false,
                                     AllowObjCWritebackConversion,
-                                    /*AllowObjCConversionOnExplicit=*/false);
+                                    /*AllowObjCConversionOnExplicit=*/false); // !!!
   }
 
   // C++14 [over.ics.list]p5:
@@ -10683,8 +10683,24 @@ bool clang::isBetterOverloadCandidate(
   // to determine which is better.
   if (S.getLangOpts().CUDA && Cand1.Function && Cand2.Function) {
     FunctionDecl *Caller = S.getCurFunctionDecl(/*AllowLambda=*/true);
+#ifdef SYCLomatic_CUSTOMIZATION
     return S.CUDA().IdentifyPreference(Caller, Cand1.Function) >
            S.CUDA().IdentifyPreference(Caller, Cand2.Function);
+#else
+    bool PreferenceResult =
+        S.CUDA().IdentifyPreference(Caller, Cand1.Function) >
+        S.CUDA().IdentifyPreference(Caller, Cand2.Function);
+    if (PreferenceResult)
+      return true;
+    // This is a workaround to align to the behavior of nvcc
+    const CXXMethodDecl *MD1 = dyn_cast<CXXMethodDecl>(Cand1.Function);
+    const CXXMethodDecl *MD2 = dyn_cast<CXXMethodDecl>(Cand2.Function);
+    if (MD1 && MD2 && Caller && !Caller->hasAttr<CUDAHostAttr>()) {
+      if (MD1->isMoveAssignmentOperator() && !MD2->isMoveAssignmentOperator())
+        return true;
+    }
+    return PreferenceResult;
+#endif // SYCLomatic_CUSTOMIZATION
   }
 
   // General member function overloading is handled above, so this only handles
