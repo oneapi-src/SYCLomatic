@@ -344,17 +344,61 @@ MetaRuleObject::PatternRewriter::PatternRewriter(
   Subrules = S;
 }
 
+// Read a YAML file recursively and substitute any "!include <filename>"
+// directive with the contents of the referenced file.
+std::unique_ptr<llvm::MemoryBuffer>
+readYAMLFile(const llvm::StringRef &ruleFilePath) {
+  // Load the rule file into a MemoryBuffer
+  llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
+      llvm::MemoryBuffer::getFile(ruleFilePath);
+  if (!Buffer) {
+    llvm::errs() << "Error: failed to read " << ruleFilePath << ": "
+                 << Buffer.getError().message() << "\n";
+    clang::dpct::ShowStatus(MigrationErrorInvalidRuleFilePath);
+    dpctExit(MigrationErrorInvalidRuleFilePath);
+  }
+
+  llvm::SmallString<128> directoryPath(ruleFilePath);
+  llvm::sys::path::remove_filename(directoryPath);
+
+  // Split the file content into lines using newline as the delimiter.
+  llvm::StringRef buffContent = std::move(*Buffer)->getBuffer();
+  llvm::SmallVector<StringRef, 16> lines;
+  buffContent.split(lines, "\n");
+
+  std::stringstream output;
+  for (auto line : lines) {
+    auto lineStr = line.str();
+
+    // Check if this line starts with "!include"
+    if (lineStr.compare(0, 8, "!include") == 0) {
+      // Extract the filename following !include.
+      std::istringstream iss(lineStr);
+      std::string incDirective, incRuleFilePath;
+      iss >> incDirective >> incRuleFilePath;
+
+      if (incDirective == "!include" && !incRuleFilePath.empty()) {
+        // Recursively process the included file.
+        llvm::SmallString<128> incRuleFileAbsPath = directoryPath;
+        llvm::sys::path::append(incRuleFileAbsPath, incRuleFilePath);
+        output << readYAMLFile(incRuleFileAbsPath.str())->getBuffer().str()
+               << "\n";
+      } else {
+        output << lineStr << "\n";
+      }
+    } else {
+      output << lineStr << "\n";
+    }
+  }
+
+  return llvm::MemoryBuffer::getMemBufferCopy(output.str(), ruleFilePath);
+}
+
 void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
     // open the yaml file
     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
-        llvm::MemoryBuffer::getFile(RuleFile.getCanonicalPath());
-    if (!Buffer) {
-      llvm::errs() << "Error: failed to read " << RuleFile << ": "
-                   << Buffer.getError().message() << "\n";
-      clang::dpct::ShowStatus(MigrationErrorInvalidRuleFilePath);
-      dpctExit(MigrationErrorInvalidRuleFilePath);
-    }
+        readYAMLFile(RuleFile.getCanonicalPath());
 
     // load rules
     std::vector<std::shared_ptr<MetaRuleObject>> CurrentRules;

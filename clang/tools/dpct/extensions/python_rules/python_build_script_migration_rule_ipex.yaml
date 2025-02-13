@@ -7,6 +7,8 @@
 # The rule specified in this file can be imported with commandline option:
 # --rule-file={dpct_install_folder}/extensions/python_rules/python_build_script_migration_rule_ipex.yaml
 
+!include python_build_script_migration_rule.yaml
+
 # torch import rules
 - Rule: rule_import_torch
   Kind: PythonRule
@@ -52,15 +54,6 @@
   Out: |
     from ${mod_prefix}cpp_extension import${ws1}(${class_prefix}${class_suffix})
     from torch.utils.cpp_extension import CppExtension
-
-# CUDA_HOME rules
-- Rule: rule_CUDA_HOME
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: CUDA_HOME
-  In: CUDA_HOME
-  Out: SYCL_HOME
 
 - Rule: rule_torch_utils_cpp_extension_CUDA_HOME
   Kind: PythonRule

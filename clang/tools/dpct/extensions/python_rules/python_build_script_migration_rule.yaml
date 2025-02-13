@@ -212,3 +212,12 @@
   PythonSyntax: cuda_set_stream
   In: cuda.set_stream
   Out: xpu.set_stream
+
+# CUDA_HOME rules
+- Rule: rule_CUDA_HOME
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: CUDA_HOME
+  In: CUDA_HOME
+  Out: SYCL_HOME

@@ -7,14 +7,7 @@
 # The rule specified in this file can be imported with commandline option:
 # --rule-file={dpct_install_folder}/extensions/python_rules/python_build_script_migration_rule_pytorch.yaml
 
-# CUDA_HOME rules
-- Rule: rule_CUDA_HOME
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: CUDA_HOME
-  In: CUDA_HOME
-  Out: SYCL_HOME
+!include python_build_script_migration_rule.yaml
 
 # Extension rules
 - Rule: rule_CUDAExtension

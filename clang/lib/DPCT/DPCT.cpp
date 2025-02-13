@@ -1238,14 +1238,6 @@ int runDPCT(int argc, const char **argv) {
       }
 
       llvm::errs() << getPythonRuleFileNotProvidedWarning();
-    } else {
-      SmallString<128> RuleFilePath(DpctInstallPath.getCanonicalPath());
-      llvm::sys::path::append(RuleFilePath,
-                              Twine("extensions/python_rules/"
-                                    "python_build_script_migration_rule.yaml"));
-      std::vector<clang::tooling::UnifiedPath> PythonRuleFiles{
-          RuleFilePath.c_str()};
-      importRules(PythonRuleFiles);
     }
   }
 
