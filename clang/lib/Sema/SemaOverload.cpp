@@ -10684,9 +10684,6 @@ bool clang::isBetterOverloadCandidate(
   if (S.getLangOpts().CUDA && Cand1.Function && Cand2.Function) {
     FunctionDecl *Caller = S.getCurFunctionDecl(/*AllowLambda=*/true);
 #ifdef SYCLomatic_CUSTOMIZATION
-    return S.CUDA().IdentifyPreference(Caller, Cand1.Function) >
-           S.CUDA().IdentifyPreference(Caller, Cand2.Function);
-#else
     auto Preference1 = S.CUDA().IdentifyPreference(Caller, Cand1.Function);
     auto Preference2 = S.CUDA().IdentifyPreference(Caller, Cand2.Function);
     if (Preference1 > Preference2)
@@ -10701,6 +10698,9 @@ bool clang::isBetterOverloadCandidate(
         return true;
     }
     return false;
+#else
+    return S.CUDA().IdentifyPreference(Caller, Cand1.Function) >
+           S.CUDA().IdentifyPreference(Caller, Cand2.Function);
 #endif // SYCLomatic_CUSTOMIZATION
   }
 
