@@ -258,7 +258,7 @@ class TypeLocEmitWarningRewriterFactory<> : public TypeLocRewriterFactoryBase {
 public:
   TypeLocEmitWarningRewriterFactory(
       std::shared_ptr<TypeLocRewriterFactoryBase> InnerFactory, Diagnostics ID)
-      : Inner(InnerFactory), MsgID(ID) {}
+      : Inner(std::move(InnerFactory)), MsgID(ID) {}
   std::shared_ptr<TypeLocRewriter> create(const TypeLoc TL) const override {
     report(TL, MsgID, false);
     return Inner->create(TL);
