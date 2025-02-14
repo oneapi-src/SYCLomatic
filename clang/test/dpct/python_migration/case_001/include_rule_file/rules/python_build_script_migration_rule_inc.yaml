@@ -1,0 +1,26 @@
+!include a.yaml
+
+- Rule: rule_import_a
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: import_a
+  In: import a
+  Out: import a_repl
+
+!include b/b.yaml
+
+- Rule: rule_import_b
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: import_b
+  In: import b
+  Out: import b_repl
+
+!include "b/b1.yaml"
+
+!include b/b2.yaml    
+
+    !include b/b3.yaml
+

@@ -358,6 +358,7 @@ readYAMLFile(const llvm::StringRef &ruleFilePath) {
     dpctExit(MigrationErrorInvalidRuleFilePath);
   }
 
+  // Get the directory path of the rule file.
   llvm::SmallString<128> directoryPath(ruleFilePath);
   llvm::sys::path::remove_filename(directoryPath);
 
@@ -370,21 +371,28 @@ readYAMLFile(const llvm::StringRef &ruleFilePath) {
   for (auto line : lines) {
     auto lineStr = line.str();
 
-    // Check if this line starts with "!include"
-    if (lineStr.compare(0, 8, "!include") == 0) {
-      // Extract the filename following !include.
-      std::istringstream iss(lineStr);
-      std::string incDirective, incRuleFilePath;
-      iss >> incDirective >> incRuleFilePath;
+    // Extract the filename following !include.
+    std::istringstream iss(lineStr);
+    std::string incDirective, incRuleFilePath;
+    iss >> incDirective >> incRuleFilePath;
 
-      if (incDirective == "!include" && !incRuleFilePath.empty()) {
-        // Recursively process the included file.
-        llvm::SmallString<128> incRuleFileAbsPath = directoryPath;
-        llvm::sys::path::append(incRuleFileAbsPath, incRuleFilePath);
+    if (incDirective == "!include" && !incRuleFilePath.empty()) {
+      // Remove surrounding quotes if they exist.
+      if (incRuleFilePath.front() == '"' && incRuleFilePath.back() == '"') {
+        incRuleFilePath = incRuleFilePath.substr(1, incRuleFilePath.size() - 2);
+      }
+
+      // Calculate the absolute path of the included file based on its parent
+      // rule file
+      llvm::SmallString<128> incRuleFileAbsPath = directoryPath;
+      llvm::sys::path::append(incRuleFileAbsPath, incRuleFilePath);
+
+      // Recursively process the included file.
+      if (llvm::sys::fs::exists(incRuleFileAbsPath)) {
         output << readYAMLFile(incRuleFileAbsPath.str())->getBuffer().str()
                << "\n";
       } else {
-        output << lineStr << "\n";
+        output << readYAMLFile(incRuleFilePath)->getBuffer().str() << "\n";
       }
     } else {
       output << lineStr << "\n";
