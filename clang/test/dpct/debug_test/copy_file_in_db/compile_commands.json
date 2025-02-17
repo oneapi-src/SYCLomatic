@@ -1,0 +1,17 @@
+[
+    {
+        "command": "g++ common/test1.cpp",
+        "directory": "./",
+        "file": "./common/test1.cpp"
+    },
+    {
+        "command": "g++ test2.cpp",
+        "directory": "./",
+        "file": "./test2.cpp"
+    },
+    {
+        "command": "nvcc test3.cu",
+        "directory": "./",
+        "file": "./test3.cu"
+    }
+]

@@ -61,7 +61,7 @@ __device__ void foo() {
   cg::sync(ct);
   cg::sync(cct);
 
-  // CHECK-COUNT-5: item_ct1.get_sub_group().barrier();
+  // CHECK-COUNT-5: sycl::group_barrier(item_ct1.get_sub_group());
   cg::sync(cg::tiled_partition<32>(block));
   cg::sync(catile32);
   cg::sync(atile32);
@@ -115,7 +115,7 @@ __device__ void foo() {
   (&cct)->sync();
   (&ct)->sync();
 
-  // CHECK-COUNT-5: item_ct1.get_sub_group().barrier();
+  // CHECK-COUNT-5: sycl::group_barrier(item_ct1.get_sub_group());
   cg::tiled_partition<32>(block).sync();
   catile32.sync();
   atile32.sync();

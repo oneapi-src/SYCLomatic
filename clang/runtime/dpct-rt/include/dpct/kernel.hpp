@@ -318,8 +318,10 @@ class kernel_library {
 public:
   constexpr kernel_library() : ptr{nullptr} {}
   constexpr kernel_library(void *ptr) : ptr{ptr} {}
+  kernel_library(uint64_t addr) : ptr(reinterpret_cast<void *>(addr)) {}
 
   operator void *() const { return ptr; }
+  explicit operator uint64_t() const { return reinterpret_cast<uint64_t>(ptr); }
 
 private:
   void *ptr;
@@ -393,15 +395,17 @@ class kernel_function {
 public:
   constexpr kernel_function() : ptr{nullptr} {}
   constexpr kernel_function(dpct::kernel_functor ptr) : ptr{ptr} {}
+  kernel_function(uint64_t addr)
+      : ptr(reinterpret_cast<dpct::kernel_functor>(addr)) {}
 
   operator void *() const { return ((void *)ptr); }
 
   void operator()(sycl::queue &q, const sycl::nd_range<3> &range,
-                  unsigned int a, void **args, void **extra) {
+                  unsigned int a, void **args, void **extra) const {
     ptr(q, range, a, args, extra);
   }
 
-  explicit operator uint64_t() const { return (uint64_t)this; }
+  explicit operator uint64_t() const { return reinterpret_cast<uint64_t>(ptr); }
 
 private:
   dpct::kernel_functor ptr;
@@ -411,7 +415,7 @@ private:
 /// \param [in] library Handle to the kernel library.
 /// \param [in] name Name of the kernel function.
 static inline dpct::kernel_function
-get_kernel_function(kernel_library &library, const std::string &name) {
+get_kernel_function(const kernel_library &library, const std::string &name) {
 #ifdef _WIN32
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
       GetProcAddress(static_cast<HMODULE>(static_cast<void *>(library)),
@@ -434,7 +438,7 @@ get_kernel_function(kernel_library &library, const std::string &name) {
 ///             function.
 /// \param [in] kernelParams Array of pointers to kernel arguments.
 /// \param [in] extra Extra arguments.
-static inline void invoke_kernel_function(dpct::kernel_function &function,
+static inline void invoke_kernel_function(const dpct::kernel_function &function,
                                           sycl::queue &queue,
                                           sycl::range<3> groupRange,
                                           sycl::range<3> localRange,

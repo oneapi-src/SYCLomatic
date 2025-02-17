@@ -38,7 +38,7 @@ enum class OutputVerbosityLevel {
   OVL_Detailed,
   OVL_Diagnostics
 };
-enum class BuildScriptKind { BS_None, BS_Cmake, BS_Python };
+enum class BuildScriptKind { BS_CMake = 0, BS_Python };
 enum class DPCTFormatStyle { FS_LLVM, FS_Google, FS_Custom };
 enum class ReportFormatEnum { RFE_NotSetFormat, RFE_CSV, RFE_Formatted };
 enum class HelperFilesCustomizationLevel {
@@ -100,6 +100,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_InOrderQueueEvents,
   Exp_ExperimentalFeaturesEnumSize,
   Exp_NonStandardSYCLBuiltins,
+  Exp_Prefetch,
   Exp_All
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
@@ -112,7 +113,8 @@ bool makeAnalysisScopeCanonicalOrSetDefaults(
     clang::tooling::UnifiedPath &AnalysisScope,
     const clang::tooling::UnifiedPath &InRoot);
 bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar,
-                       bool NeedCheckOutRootEmpty = true);
+                       bool NeedCheckOutRootEmpty = true,
+                       bool EnableCodePin = false);
 /// Make sure files passed to tool are under the
 /// input root directory and have an extension.
 /// return value:

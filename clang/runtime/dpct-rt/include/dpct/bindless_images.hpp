@@ -122,7 +122,15 @@ public:
 
   /// size setter
   /// \param [in] img_dims The dimensions of the imported image resource
-  void set_size(sycl::range<3> img_dims) { size = img_dims; }
+  void set_size(sycl::range<3> img_dims) {
+    size = img_dims;
+
+    for (int i = 0; i < 3; i++) {
+      if (size[i] == 1) {
+        size[i] = 0;
+      }
+    }
+  }
 
   /// image_channel setter
   /// \param [in] img_ch The channel info of the imported image resource
@@ -130,7 +138,13 @@ public:
 
   /// num_levels setter
   /// \param [in] numLevels The no. of levels in the imported image resource
-  void set_num_levels(unsigned int numLevels) { num_levels = numLevels; }
+  void set_num_levels(unsigned int num_levels) {
+    this->num_levels = num_levels;
+
+    if (num_levels > 1) {
+      set_image_type(sycl::ext::oneapi::experimental::image_type::mipmap);
+    }
+  }
 
   /// type setter
   /// \param [in] img_type The type of the imported image resource
@@ -303,6 +317,11 @@ public:
   /// Get the image mip level of the bindless image memory.
   /// \returns The image mip level of the bindless image memory.
   image_mem_wrapper *get_mip_level(unsigned int level) {
+    if (_desc.type == sycl::ext::oneapi::experimental::image_type::standard) {
+      assert(level == 0);
+      return this;
+    }
+
     assert(_desc.type == sycl::ext::oneapi::experimental::image_type::mipmap);
     return _sub_wrappers + level;
   }
@@ -1063,13 +1082,9 @@ import_external_memory(sycl::ext::oneapi::experimental::external_mem *extMem,
             memHandleDesc->get_res_size()},
         get_default_queue());
   } else if (memHandleDesc->get_win32_obj_name()) {
-    *extMem = sycl::ext::oneapi::experimental::import_external_memory(
-        sycl::ext::oneapi::experimental::external_mem_descriptor<
-            sycl::ext::oneapi::experimental::resource_win32_name>{
-            {memHandleDesc->get_win32_obj_name()},
-            memHandleDesc->get_handle_type(),
-            memHandleDesc->get_res_size()},
-        get_default_queue());
+    throw std::runtime_error("Importing external resource using Windows NT name"
+                             " type is not supported. Only NT handle type is"
+                             " supported");
   }
 #else
   if (memHandleDesc->get_fd_handle() != -1) {

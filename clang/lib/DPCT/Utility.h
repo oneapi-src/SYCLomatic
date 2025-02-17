@@ -268,6 +268,10 @@ inline bool isChildOrSamePath(clang::tooling::UnifiedPath Root,
   ChildOrSameCache[Key] = Ret;
   return Ret;
 }
+inline bool isPatternInPath(clang::tooling::UnifiedPath Path,
+                            const std::string &Pattern) {
+  return Path.getPath().contains(Pattern);
+}
 std::string getCanonicalPath(clang::SourceLocation Loc);
 std::string appendPath(const std::string &P1, const std::string &P2);
 
@@ -615,6 +619,10 @@ namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {
   const DeclRefExpr *DRE = &Node;
   return DRE->getDecl() == TargetVD;
+}
+
+AST_MATCHER_P(QualType, typeContainsString, std::string, substring) {
+  return Node.getAsString().find(substring) != std::string::npos;
 }
 
 } // namespace ast_matchers

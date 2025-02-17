@@ -345,7 +345,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtEpilogue_t", "cublasLtMatmulPreference_t",
               "cublasLtMatmulHeuristicResult_t", "CUjit_target",
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
-              "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType"))))))
+              "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
+              "CUstreamCallback"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -355,8 +356,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cooperative_groups::__v1::grid_group",
                   "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
                   "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
-                  "cudaGraphicsResource_t", "cudaExternalMemory_t",
-                  "cudaExternalMemoryHandleDesc",
+                  "cudaGraphicsResource_t", "CUgraphicsResource",
+                  "cudaExternalMemory_t", "cudaExternalMemoryHandleDesc",
                   "cudaExternalMemoryMipmappedArrayDesc",
                   "cudaExternalMemoryBufferDesc"))))))
           .bind("cudaTypeDefEA"),
@@ -4177,7 +4178,7 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
         "cudaStreamIsCapturing", "cudaStreamQuery", "cudaStreamWaitEvent",
         "cudaStreamAddCallback", "cuStreamCreate", "cuStreamSynchronize",
         "cuStreamWaitEvent", "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
-        "cuStreamAddCallback", "cuStreamQuery");
+        "cuStreamAddCallback", "cuStreamQuery", "cuStreamGetCtx");
   };
 
   MF.addMatcher(
@@ -6269,47 +6270,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
     return;
   }
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-  if (Name == "cudaFree" || Name == "cublasFree") {
-    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
-      ArgumentAnalysis AA;
-      AA.setCallSpelling(C);
-      AA.analyze(C->getArg(0));
-      auto ArgStr = AA.getRewritePrefix() + AA.getRewriteString() +
-                    AA.getRewritePostfix();
-      std::ostringstream Repl;
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      if (hasManagedAttr(0)(C)) {
-        ArgStr = "*(" + ArgStr + ".get_ptr())";
-      }
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Indent = getIndent(SM.getExpansionLoc(C->getBeginLoc()), SM).str();
-      if (DpctGlobalInfo::isOptimizeMigration()) {
-        Repl << MapNames::getClNamespace() << "free";
-      } else {
-        if (DpctGlobalInfo::useNoQueueDevice()) {
-          Repl << Indent << "{{NEEDREPLACEQ" << std::to_string(Index)
-               << "}}.wait_and_throw();\n"
-               << Indent << MapNames::getClNamespace() << "free";
-        } else {
-          requestFeature(HelperFeatureEnum::device_ext);
-          Repl << MapNames::getDpctNamespace();
-          if (DpctGlobalInfo::useSYCLCompat())
-            Repl << "wait_and_free";
-          else
-            Repl << "dpct_free";
-        }
-      }
-      Repl << "(" << ArgStr
-           << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
-    } else {
-      requestFeature(HelperFeatureEnum::device_ext);
-      emplaceTransformation(new ReplaceCalleeName(
-          C, MapNames::getDpctNamespace() + (DpctGlobalInfo::useSYCLCompat()
-                                                 ? "wait_and_free"
-                                                 : "dpct_free")));
-    }
-  } else if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
+  if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
     if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       CheckCanUseCLibraryMallocOrFree Checker(0, true);
       ExprAnalysis EA;
@@ -6819,7 +6780,8 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemAllocPitch_v2") && Name.compare("cuMemAlloc_v2") &&
         Name.compare("cudaMallocMipmappedArray") &&
         Name.compare("cudaGetMipmappedArrayLevel") &&
-        Name.compare("cudaFreeMipmappedArray") && Name.compare("cudaMemcpy")) {
+        Name.compare("cudaFreeMipmappedArray") && Name.compare("cudaMemcpy") &&
+        Name.compare("cudaFree") && Name.compare("cublasFree")) {
       requestFeature(HelperFeatureEnum::device_ext);
       insertAroundStmt(C, MapNames::getCheckErrorMacroName() + "(", ")");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -7944,7 +7906,6 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
       return;
   }
 
-  recordRecognizedAPI(CE);
   auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
   Namespace = getNameSpace(NSD);
   APIName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
@@ -7954,6 +7915,7 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
     APIName = Namespace + "::" + APIName;
   SrcAPIStaticsMap[getFunctionSignature(CE->getCalleeDecl()->getAsFunction(),
                                         "")]++;
+  recordRecognizedAPI(CE, APIName, MigrationStatistics::IsMigrated(APIName));
 
   if (!MigrationStatistics::IsMigrated(APIName)) {
     const SourceManager &SM = DpctGlobalInfo::getSourceManager();
@@ -8038,12 +8000,13 @@ void RecognizeTypeRule::runRule(
         PointeeTy + " *");
       return;
     }
+    recordRecognizedType(*TL, TypeName, false);
     report(TL->getBeginLoc(), Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
       TypeName);
     return;
   }
   if (const TypeLoc *TL = getNodeAsType<TypeLoc>(Result, "alltypeloc")) {
-    recordRecognizedType(*TL);
+    recordRecognizedType(*TL, "", true);
   }
 }
 
@@ -8095,7 +8058,8 @@ void VirtualMemRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto virtualmemoryAPI = [&]() {
     return hasAnyName("cuMemCreate", "cuMemAddressReserve", "cuMemMap",
                       "cuMemUnmap", "cuMemAddressFree", "cuMemRelease",
-                      "cuMemSetAccess", "cuMemGetAllocationGranularity");
+                      "cuMemSetAccess", "cuMemGetAllocationGranularity",
+                      "cuMemGetAllocationPropertiesFromHandle");
   };
   auto virtualmemoryType = [&]() {
     return hasAnyName("CUmemAllocationProp", "CUmemGenericAllocationHandle",
@@ -8238,10 +8202,11 @@ void DriverModuleAPIRule::runRule(
 void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   auto DriverDeviceAPI = [&]() {
-    return hasAnyName(
-        "cuDeviceGet", "cuDeviceComputeCapability", "cuDriverGetVersion",
-        "cuDeviceGetCount", "cuDeviceGetAttribute", "cuDeviceGetName",
-        "cuDeviceGetUuid", "cuDeviceGetUuid_v2", "cuGetErrorString");
+    return hasAnyName("cuDeviceGet", "cuDeviceComputeCapability",
+                      "cuDriverGetVersion", "cuDeviceGetCount",
+                      "cuDeviceGetAttribute", "cuDeviceGetName",
+                      "cuDeviceGetUuid", "cuDeviceGetUuid_v2",
+                      "cuGetErrorString", "cuGetErrorName");
   };
 
   MF.addMatcher(

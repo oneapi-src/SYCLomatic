@@ -89,7 +89,20 @@ int main() {
   dim3 BlockSize(1 , 1, 128);
   int TotalThread = GridSize.x * BlockSize.x * BlockSize.y * BlockSize.z;
 
-  cudaMallocManaged(&dev_data, TotalThread * sizeof(int));
+  auto s = cudaMallocManaged(&dev_data, TotalThread * sizeof(int));
+  int* dev_data2 = nullptr;
+// CHECK: DPCT_CHECK_ERROR(DPCT_CHECK_ERROR(dev_data2 = sycl::malloc_device<int>(TotalThread, q_ct1)));
+// CHECK: DPCT_CHECK_ERROR(s);
+  cub::Debug(cudaMalloc(&dev_data2, TotalThread * sizeof(int)), __FILE__, __LINE__);
+  cub::Debug(s, __FILE__, __LINE__);
+// CHECK: DPCT_CHECK_ERROR(DPCT_CHECK_ERROR(dev_data2 = sycl::malloc_device<int>(TotalThread, q_ct1)));
+// CHECK: DPCT_CHECK_ERROR(s);
+  CubDebug(cudaMalloc(&dev_data2, TotalThread * sizeof(int)));
+  CubDebug(s);
+// CHECK: DPCT_CHECK_ERROR(DPCT_CHECK_ERROR(dev_data2 = sycl::malloc_device<int>(TotalThread, q_ct1)));
+// CHECK: DPCT_CHECK_ERROR(s);
+  CubDebugExit(cudaMalloc(&dev_data2, TotalThread * sizeof(int)));
+  CubDebugExit(s);
 
   init_data(dev_data, TotalThread);
   // CHECK:  q_ct1.parallel_for(

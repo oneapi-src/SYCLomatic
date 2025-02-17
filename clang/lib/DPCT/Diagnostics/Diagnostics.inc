@@ -50,8 +50,8 @@ DEF_WARNING(API_NOT_MIGRATED_SYCL_UNDEF, 1008, HIGH_LEVEL, "%0 function is not d
 DEF_COMMENT(API_NOT_MIGRATED_SYCL_UNDEF, 1008, HIGH_LEVEL, "{0} function is not defined in SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.")
 DEF_WARNING(ERROR_HANDLING_API_REPLACED_BY_DUMMY, 1009, LOW_LEVEL, "SYCL reports errors using exceptions and does not use error codes. Please replace the \"get_error_string_dummy(...)\" with a real error-handling function.")
 DEF_COMMENT(ERROR_HANDLING_API_REPLACED_BY_DUMMY, 1009, LOW_LEVEL, "SYCL reports errors using exceptions and does not use error codes. Please replace the \"get_error_string_dummy(...)\" with a real error-handling function.")
-DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.")
-DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.")
+DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The %0 function call was %1. You need to rewrite this code.")
+DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The {0} function call was {1}. You need to rewrite this code.")
 DEF_WARNING(TRNA_WARNING_OVERLOADED_API_FOUND, 1011, LOW_LEVEL, "The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 2020 standard operators (see 4.14.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 2020 standard operators instead.")
 DEF_COMMENT(TRNA_WARNING_OVERLOADED_API_FOUND, 1011, LOW_LEVEL, "The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 2020 standard operators (see 4.14.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 2020 standard operators instead.")
 DEF_WARNING(TIME_MEASUREMENT_FOUND, 1012, MEDIUM_LEVEL, "Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.")
@@ -296,6 +296,8 @@ DEF_WARNING(SPARSE_NNZ, 1134, MEDIUM_LEVEL, "The tool cannot deduce the consumer
 DEF_COMMENT(SPARSE_NNZ, 1134, MEDIUM_LEVEL, "The tool cannot deduce the consumer API (\"dpct::sparse::csrgemm\") of this API, and this API has 2 arguments depending on the 8th and the 12th parameters of the consumer API. Please replace the 2 arguments tagged as \"dpct_placeholder\" with the corresponding value.")
 DEF_WARNING(JOINT_MATRIX_SHAPE, 1135, HIGH_LEVEL, "Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.")
 DEF_COMMENT(JOINT_MATRIX_SHAPE, 1135, HIGH_LEVEL, "Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.")
+DEF_WARNING(UNSUPPORTED_EXTMEM_WIN_HANDLE, 1136, HIGH_LEVEL, "SYCL Bindless Images extension only supports importing external resource memory using NT handle on Windows. If assert(%0.get_win32_handle()) fails, you may need to adjust the code to use (%0.get_win32_handle()).")
+DEF_COMMENT(UNSUPPORTED_EXTMEM_WIN_HANDLE, 1136, HIGH_LEVEL, "SYCL Bindless Images extension only supports importing external resource memory using NT handle on Windows. If assert({0}.get_win32_handle()) fails, you may need to adjust the code to use ({0}.get_win32_handle()).")
 // clang-format on
 
 #undef DEF_COMMENT

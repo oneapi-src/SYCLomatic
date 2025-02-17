@@ -389,6 +389,9 @@ public:
   static bool classof(const InlineAsmStmt *S) {
     return InstructionClass <= S->getStmtClass();
   }
+  AsmStateSpace getStateSpace() const {
+    return StateSpace.value_or(AsmStateSpace::none);
+  }
 };
 
 /// This represents a device conditional instruction, e.g. instruction @%p

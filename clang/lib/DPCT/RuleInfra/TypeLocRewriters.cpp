@@ -102,12 +102,24 @@ makeUserDefinedTypeStrCreator(MetaRuleObject &R,
 
 class CheckTemplateArgCount {
   unsigned Count;
+  bool IsIncludeDefault;
 
 public:
-  CheckTemplateArgCount(unsigned I) : Count(I) {}
+  CheckTemplateArgCount(unsigned I, bool D = true)
+      : Count(I), IsIncludeDefault(D) {}
   bool operator()(const TypeLoc TL) {
-    if(auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()){
-      return TSTL.getNumArgs() == Count;
+    if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+      size_t Num = TSTL.getNumArgs();
+      if (IsIncludeDefault) {
+        return Num == Count;
+      }
+      size_t NoneDefaultNum = 0;
+      for (int i = 0; i < Num; i++) {
+        if (!TSTL.getArgLoc(i).getArgument().getIsDefaulted()) {
+          NoneDefaultNum++;
+        }
+      }
+      return NoneDefaultNum == Count;
     }
     return false;
   }
@@ -343,6 +355,7 @@ void initTypeLocSYCLCompatRewriterMap(
   SYCLCOMPAT_UNSUPPORT("cudaGraphNode_t")
   SYCLCOMPAT_UNSUPPORT("cudaGraphicsResource")
   SYCLCOMPAT_UNSUPPORT("cudaGraphicsResource_t")
+  SYCLCOMPAT_UNSUPPORT("CUgraphicsResource")
   SYCLCOMPAT_UNSUPPORT("cudaExternalMemory_t")
   SYCLCOMPAT_UNSUPPORT("cudaExternalMemoryHandleDesc")
   SYCLCOMPAT_UNSUPPORT("cudaExternalMemoryMipmappedArrayDesc")

@@ -1,0 +1,11 @@
+// CHECK: Total Project:
+// CHECK-NEXT:  +  {{[0-9]+}} lines of code ( {{[0-9]+}}%) will be automatically migrated.
+// CHECK-NEXT:    -  {{[0-9]+}} APIs/Types - No manual effort.
+// CHECK-NEXT:    -  {{[0-9]+}} APIs/Types - Low manual effort for checking and code fixing.
+// CHECK-NEXT:    -  {{[0-9]+}} APIs/Types - Medium manual effort for code fixing.
+// CHECK-NEXT:  +  {{[0-9]+}} lines of code ( {{[0-9]+}}%) will not be automatically migrated.
+// CHECK-NEXT:    -  {{[0-9]+}} APIs/Types - High manual effort for code fixing.
+// CHECK: Library Dependencies of SYCL Project:
+// CHECK-NEXT:   - The Intel oneAPI Math Kernel Library (oneMKL)
+// CHECK-NEXT: Unsupported APIs and Types:
+// CHECK-NEXT:   - cudaDeviceGetPCIBusId Occurrences 2 times

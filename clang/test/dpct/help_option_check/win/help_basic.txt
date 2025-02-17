@@ -1,0 +1,27 @@
+USAGE: dpct.exe [options] [<source0> ... <sourceN>]
+
+OPTIONS: Basic
+Basic DPCT options
+
+  --analysis-mode                    - Only generate a report for porting effort. Default: off.
+  --analysis-mode-output-file=<file> - Specify the file where the analysis mode report is saved. Default: Output to stdout.
+  --analysis-scope-path=<dir>        - The directory path for the analysis scope of the source tree that needs to be migrated.
+                                       Default: the value of --in-root.
+  --cuda-include-path=<dir>          - The directory path of the CUDA header files.
+  --in-root=<dir>                    - The directory path for the root of the source tree that needs to be migrated.
+                                       Only files under this root are migrated. Default: Current directory, if input
+                                       source files are not provided. If input source files are provided, the directory
+                                       of the first input source file is used.
+  --in-root-exclude=<dir|file>       - Exclude the specified directory or file from processing.
+  --migrate-build-script-only        - EXPERIMENTAL: Only migrate the build script(s). Default: off.
+  --out-root=<dir>                   - The directory path for root of generated files. A directory is created if it
+                                       does not exist. Default: dpct_output.
+  --process-all                      - Migrate or copies all files, except hidden, from the --in-root directory
+                                       to the --out-root directory. The --in-root option should be explicitly specified.
+                                       Default: off.
+  --stop-on-parse-err                - Stop migration and generation of reports if parsing errors happened. Default: off. 
+
+<source0> ... Paths of input source files. These paths are looked up in the compilation database.
+
+See Diagnostics Reference to resolve warnings and complete the migration:
+https://oneapi-src.github.io/SYCLomatic/dev_guide/reference/diagnostics-reference.html

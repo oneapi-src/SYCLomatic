@@ -284,6 +284,12 @@ void MapNames::setExplicitNamespaceMap(
                           DpctGlobalInfo::useExtBindlessImages()
                               ? getExpNamespace() + "image_type::mipmap"
                               : "cudaArraySurfaceLoadStore")},
+      {"CubDebug",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CubDebug", MapNames::getCheckErrorMacroName())},
+      {"CubDebugExit",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CubDebugExit", MapNames::getCheckErrorMacroName())},
       //...
   };
   // Type names mapping.
@@ -337,6 +343,9 @@ void MapNames::setExplicitNamespaceMap(
                                       HelperFeatureEnum::device_ext)},
       {"CUstream_st",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue")},
+      {"CUstreamCallback",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_callback",
+                                      HelperFeatureEnum::device_ext)},
       {"char1", std::make_shared<TypeNameRule>("int8_t")},
       {"char2", std::make_shared<TypeNameRule>(getClNamespace() + "char2")},
       {"char3", std::make_shared<TypeNameRule>(getClNamespace() + "char3")},
@@ -1151,9 +1160,9 @@ void MapNames::setExplicitNamespaceMap(
       {"CU_DEVICE_ATTRIBUTE_MAX_PITCH",
        std::make_shared<EnumNameRule>("get_max_pitch",
                                       HelperFeatureEnum::device_ext)},
+      {"CU_CTX_LMEM_RESIZE_TO_MAX", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_MAP_HOST", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_SCHED_BLOCKING_SYNC", std::make_shared<EnumNameRule>("0")},
-      {"CU_CTX_SCHED_SPIN", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_SCHED_SPIN", std::make_shared<EnumNameRule>("0")},
       {"CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK",
        std::make_shared<EnumNameRule>("get_device_info().get_local_mem_size",

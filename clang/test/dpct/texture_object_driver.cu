@@ -258,4 +258,36 @@ REDEF_CUDA_RESOURCE_DESC check_typedefed_cuda_type(CUarray arr) {
   rdesc.res.array.hArray = arr;
   return rdesc;
 }
+
+enum TexSurfaceAttrType {
+  UnpackIntegersAsNormalizedFloats,
+  NormalizedAddressing,
+  PerformSRGBToLinearConversion
+};
+
+// CHECK: void checkOrAssign(TexSurfaceAttrType setting) {
+// CHECK-NEXT:   dpct::sampling_info texDesc;
+// CHECK-NEXT:   if (setting == UnpackIntegersAsNormalizedFloats)
+// CHECK-NEXT:     texDesc.set(sycl::coordinate_normalization_mode::unnormalized);
+// CHECK-NEXT:   if (setting == NormalizedAddressing)
+// CHECK-NEXT:     /*
+// CHECK-NEXT:     DPCT1074:{{[0-9]+}}: The SYCL Image class does not support some of the flags used in the original code. Unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
+// CHECK-NEXT:     */
+// CHECK-NEXT:     texDesc.set(sycl::coordinate_normalization_mode::normalized);
+// CHECK-NEXT:   if (setting == PerformSRGBToLinearConversion)
+// CHECK-NEXT:     /*
+// CHECK-NEXT:     DPCT1074:{{[0-9]+}}: The SYCL Image class does not support some of the flags used in the original code. Unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
+// CHECK-NEXT:     */
+// CHECK-NEXT:     texDesc.set(sycl::coordinate_normalization_mode::unnormalized);
+// CHECK-NEXT: }
+void checkOrAssign(TexSurfaceAttrType setting) {
+  CUDA_TEXTURE_DESC texDesc;
+  if (setting == UnpackIntegersAsNormalizedFloats)
+    texDesc.flags |= CU_TRSF_READ_AS_INTEGER;
+  if (setting == NormalizedAddressing)
+    texDesc.flags |= CU_TRSF_NORMALIZED_COORDINATES;
+  if (setting == PerformSRGBToLinearConversion)
+    texDesc.flags |= CU_TRSF_SRGB;
+}
+
 #undef REDEF_CUDA_RESOURCE_DESC

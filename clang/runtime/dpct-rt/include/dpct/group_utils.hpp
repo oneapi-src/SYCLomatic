@@ -992,6 +992,159 @@ public:
     }
   }
 };
+
+/// The work-group wide shuffle operations that allow work-items to exchange
+/// data elements with other work-items within the same work-group.
+///
+/// \tparam T The type of the data elements.
+/// \tparam group_dim_0 The first dimension size of the work-group.
+/// \tparam group_dim_1 The second dimension size of the work-group.
+/// \tparam group_dim_2 The third dimension size of the work-group.
+template <typename T, int group_dim_0, int group_dim_1 = 1, int group_dim_2 = 1>
+class group_shuffle {
+  T *_local_memory = nullptr;
+  static constexpr size_t group_work_items =
+      group_dim_0 * group_dim_1 * group_dim_2;
+
+public:
+  static constexpr size_t get_local_memory_size(size_t work_group_size) {
+    return sizeof(T) * work_group_size;
+  }
+  group_shuffle(uint8_t *local_memory) : _local_memory((T *)local_memory) {}
+
+  /// Selects a value from a work-item at a given distance in the work-group
+  /// and stores the value in the output.
+  ///
+  /// \tparam ItemT The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input from the calling work-item.
+  /// \param output The output where the selected data will be stored.
+  /// \param distance The distance of work-items to look ahead or behind in the
+  /// work-group.
+  template <typename ItemT>
+  __dpct_inline__ void select(const ItemT &item, T input, T &output,
+                              int distance = 1) {
+    auto g = item.get_group();
+    size_t id = g.get_local_linear_id();
+    _local_memory[id] = input;
+
+    sycl::group_barrier(g, sycl::memory_scope::work_group);
+
+    const int target_id = static_cast<int>(id) + distance;
+    if ((target_id >= 0) && (target_id < group_work_items)) {
+      output = _local_memory[static_cast<size_t>(target_id)];
+    }
+  }
+  /// Selects a value from a work-item at a given distance in the work-group
+  /// and stores the value in the output, using a wrapped index to handle
+  /// overflow.
+  ///
+  /// \tparam ItemT The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data to be selected.
+  /// \param output The output where the selected data will be stored.
+  /// \param distance The number of work-items to look ahead in the
+  /// work-group.
+  template <typename ItemT>
+  __dpct_inline__ void select2(const ItemT &item, T input, T &output,
+                               unsigned int distance = 1) {
+    auto g = item.get_group();
+    size_t id = g.get_local_linear_id();
+    _local_memory[id] = input;
+
+    sycl::group_barrier(g, sycl::memory_scope::work_group);
+
+    unsigned int offset = id + distance;
+    if (offset >= group_work_items)
+      offset -= group_work_items;
+
+    output = _local_memory[offset];
+  }
+  /// Performs a shuffle operation to move data to the right across the
+  /// work-items, shifting elements in a work-item array by one position to the
+  /// right.
+  ///
+  /// \tparam ElementsPerWorkItem The number of data elements per work-item.
+  /// \tparam ItemT The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data to be shuffled.
+  /// \param output The array that will store the shuffle result.
+  template <int ElementsPerWorkItem, typename ItemT>
+  __dpct_inline__ void shuffle_right(const ItemT &item,
+                                     T (&input)[ElementsPerWorkItem],
+                                     T (&output)[ElementsPerWorkItem]) {
+    auto g = item.get_group();
+    size_t id = g.get_local_linear_id();
+    _local_memory[id] = input[ElementsPerWorkItem - 1];
+
+    sycl::group_barrier(g, sycl::memory_scope::work_group);
+
+#pragma unroll
+    for (int index = ElementsPerWorkItem - 1; index > 0; --index)
+      output[index] = input[index - 1];
+
+    if (id > 0)
+      output[0] = _local_memory[id - 1];
+  }
+  /// Performs a shuffle operation to move data to the right across the
+  /// work-items, storing the suffix of the group after the shuffle operation.
+  ///
+  /// \tparam ElementsPerWorkItem The number of data elements per work-item.
+  /// \tparam ItemT The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data to be shuffled.
+  /// \param output The array that will store the shuffle result.
+  /// \param group_suffix The suffix of the group after the shuffle.
+  template <int ElementsPerWorkItem, typename ItemT>
+  __dpct_inline__ void
+  shuffle_right(const ItemT &item, T (&input)[ElementsPerWorkItem],
+                T (&output)[ElementsPerWorkItem], T &group_suffix) {
+    shuffle_right(item, input, output);
+    group_suffix = _local_memory[group_work_items - 1];
+  }
+  /// Performs a shuffle operation to move data to the left across the
+  /// work-items, shifting elements in a work-item array by one position to the
+  /// left.
+  ///
+  /// \tparam ElementsPerWorkItem The number of data elements per work-item.
+  /// \tparam ItemT The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data to be shuffled.
+  /// \param output The array that will store the shuffle result.
+  template <int ElementsPerWorkItem, typename ItemT>
+  __dpct_inline__ void shuffle_left(const ItemT &item,
+                                    T (&input)[ElementsPerWorkItem],
+                                    T (&output)[ElementsPerWorkItem]) {
+    auto g = item.get_group();
+    size_t id = g.get_local_linear_id();
+    _local_memory[id] = input[0];
+
+    sycl::group_barrier(g, sycl::memory_scope::work_group);
+
+#pragma unroll
+    for (int index = 0; index < ElementsPerWorkItem - 1; index++)
+      output[index] = input[index + 1];
+
+    if (id < group_work_items - 1)
+      output[ElementsPerWorkItem - 1] = _local_memory[id + 1];
+  }
+  /// Performs a shuffle operation to move data to the left across the
+  /// work-items, storing the prefix of the group before the shuffle operation.
+  ///
+  /// \tparam ElementsPerWorkItem The number of data elements per work-item.
+  /// \tparam ItemT The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data to be shuffled.
+  /// \param output The array that will store the shuffle result.
+  /// \param group_prefix The prefix of the group before the shuffle.
+  template <int ElementsPerWorkItem, typename ItemT>
+  __dpct_inline__ void
+  shuffle_left(const ItemT &item, T (&input)[ElementsPerWorkItem],
+               T (&output)[ElementsPerWorkItem], T &group_prefix) {
+    shuffle_left(item, input, output);
+    group_prefix = _local_memory[0];
+  }
+};
 } // namespace group
 } // namespace dpct
 

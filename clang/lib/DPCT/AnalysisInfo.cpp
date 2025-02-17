@@ -955,8 +955,12 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
       if (auto Iter = FirstIncludeOffset.find(
               DpctGlobalInfo::getInstance().getMainFile());
           Iter != FirstIncludeOffset.end())
-        insertHeader("#include \"" + File + +"\"" + getNL(), Iter->second,
-                     InsertPosition::IP_Right);
+        if (!File.empty() && File[0] == '<')
+          insertHeader("#include " + File + getNL(), Iter->second,
+                       InsertPosition::IP_Right);
+        else
+          insertHeader("#include \"" + File + "\"" + getNL(), Iter->second,
+                       InsertPosition::IP_Right);
     }
     return;
 
@@ -983,9 +987,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
   case HT_DPCT_DPL_Utils:
     insertHeader(HT_DPL_Execution);
     insertHeader(HT_DPL_Algorithm);
-    break;
-  case HT_MKL_RNG:
-    insertHeader(HT_MKL_Mkl);
     break;
   case HT_DPCT_CodePin_CUDA:
   case HT_DPCT_CodePin_SYCL: {
@@ -1187,7 +1188,7 @@ std::string DpctGlobalInfo::removeSymlinks(clang::FileManager &FM,
   }
   return NoSymlinks.str().str();
 }
-bool DpctGlobalInfo::isInRoot(clang::tooling::UnifiedPath FilePath) {
+bool DpctGlobalInfo::isInRoot(const clang::tooling::UnifiedPath &FilePath) {
   if (isChildPath(InRoot, FilePath)) {
     return !isExcluded(FilePath);
   } else {
@@ -2392,7 +2393,7 @@ std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();
 clang::tooling::UnifiedPath DpctGlobalInfo::CudaPath;
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
-BuildScriptKind DpctGlobalInfo::BuildScriptVal = BuildScriptKind::BS_None;
+unsigned DpctGlobalInfo::BuildScriptType = 0;
 clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
@@ -3811,6 +3812,7 @@ void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
     OS << '(' << LocalSize << ".size() * sizeof("
        << ValueType->getSourceString() << ')' << ')';
     break;
+  case BlockShuffle:
   case BlockRadixSort:
     OS << MapNames::getClNamespace() << "local_accessor<uint8_t, 1> " << Name
        << "_acc(";
@@ -3830,6 +3832,7 @@ ParameterStream &TempStorageVarInfo::getFuncDecl(ParameterStream &PS) {
   case BlockReduce:
     PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> ";
     break;
+  case BlockShuffle:
   case BlockRadixSort:
     PS << "uint8_t *";
     break;
@@ -5294,7 +5297,7 @@ void DeviceFunctionDecl::insertWrapper() {
   auto Repl = std::make_shared<ExtReplacement>(FilePath, DeclEnd, 0, WrapperStr,
                                                nullptr);
   Repl->setBlockLevelFormatFlag();
-  DpctGlobalInfo::getInstance().addReplacement(Repl);
+  DpctGlobalInfo::getInstance().addReplacement(std::move(Repl));
 }
 void DeviceFunctionDecl::collectInfoForWrapper(const FunctionDecl *FD) {
   if ((FD->getTemplatedKind() != FunctionDecl::TemplatedKind::TK_NonTemplate) &&
@@ -5308,12 +5311,6 @@ void DeviceFunctionDecl::collectInfoForWrapper(const FunctionDecl *FD) {
     HasBody = false;
   }
 
-  auto analyzeTypeLoc = [](const TypeLoc &TL) {
-    ExprAnalysis EA;
-    EA.analyze(TL);
-    return EA.getReplacedString();
-  };
-
   if (auto FTD = FD->getDescribedFunctionTemplate()) {
     if (auto TemplateParmsList = FTD->getTemplateParameters()) {
       for (size_t i = 0; i < TemplateParmsList->size(); ++i) {
@@ -5321,10 +5318,11 @@ void DeviceFunctionDecl::collectInfoForWrapper(const FunctionDecl *FD) {
         if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
           if (TTPD->hasDefaultArgument() &&
               !TTPD->defaultArgumentWasInherited()) {
+            ExprAnalysis EA;
+            EA.analyze(
+                TTPD->getDefaultArgument().getTypeSourceInfo()->getTypeLoc());
             TemplateParameterDefaultValueMap[i] =
-                " = " + analyzeTypeLoc(TTPD->getDefaultArgument()
-                                           .getTypeSourceInfo()
-                                           ->getTypeLoc());
+                " = " + EA.getReplacedString();
           }
         } else if (auto NTTPD =
                        dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
@@ -5384,11 +5382,6 @@ void DeviceFunctionInfo::collectInfoForWrapper(const FunctionDecl *FD) {
     auto LocInfo = DpctGlobalInfo::getLocInfo(FD->getBeginLoc());
     auto &TemplateParametersInfo = DFInfoForWrapper->TemplateParametersInfo;
     auto &ParametersInfo = DFInfoForWrapper->ParametersInfo;
-    auto analyzeTypeLoc = [](const TypeLoc &TL) {
-      ExprAnalysis EA;
-      EA.analyze(TL);
-      return EA.getReplacedString();
-    };
 
     auto &Context = dpct::DpctGlobalInfo::getContext();
     auto Parents = Context.getParents(*FD);
@@ -5407,8 +5400,10 @@ void DeviceFunctionInfo::collectInfoForWrapper(const FunctionDecl *FD) {
             } else if (auto NTTPD =
                            dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
               std::string DefVal;
+              ExprAnalysis EA;
+              EA.analyze(NTTPD->getTypeSourceInfo()->getTypeLoc());
               TemplateParametersInfo.push_back(
-                  {analyzeTypeLoc(NTTPD->getTypeSourceInfo()->getTypeLoc()),
+                  {EA.getReplacedString(),
                    NTTPD->getNameAsString()});
             }
           }
@@ -5424,7 +5419,7 @@ void DeviceFunctionInfo::collectInfoForWrapper(const FunctionDecl *FD) {
     }
     if (!TemplateArgsStr.empty()) {
       DFInfoForWrapper->KernelForWrapper->setTemplateArgsStrForWrapper(
-          TemplateArgsStr);
+          std::move(TemplateArgsStr));
     }
     for (auto It = FD->param_begin(); It != FD->param_end(); It++) {
       ParametersInfo.push_back(
@@ -5780,7 +5775,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
             RequiredSubGroupSize.isEvaluated = false;
             RequiredSubGroupSize.SizeStr = std::get<4>(Element);
             ExecutionConfig.SubGroupSize =
-                " [[intel::reqd_sub_group_size(dpct_placeholder)]]";
+                " [[sycl::reqd_sub_group_size(dpct_placeholder)]]";
             SubGroupSizeWarning =
                 DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
                     Diagnostics::SUBGROUP_SIZE_NOT_EVALUATED,
@@ -5788,7 +5783,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
           } else {
             RequiredSubGroupSize.Size = Size;
             ExecutionConfig.SubGroupSize =
-                " [[intel::reqd_sub_group_size(" + std::to_string(Size) + ")]]";
+                " [[sycl::reqd_sub_group_size(" + std::to_string(Size) + ")]]";
           }
         } else {
           bool isNeedEmitWarning = true;
@@ -6268,7 +6263,8 @@ std::string KernelCallExpr::getQueueStr() const {
 }
 void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   buildLocationInfo(KernelCall);
-  buildExecutionConfig(KernelCall->getConfig()->arguments(), KernelCall);
+  if (auto Config = KernelCall->getConfig())
+    buildExecutionConfig(Config->arguments(), KernelCall);
   buildNeedBracesInfo(KernelCall);
 }
 void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {

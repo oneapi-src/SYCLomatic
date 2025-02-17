@@ -334,7 +334,6 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   SmallVector<InlineAsmType *, 4> Types;
   SmallVector<InlineAsmExpr *, 4> Ops;
   std::optional<AsmStateSpace> StateSpace;
-
   while (Tok.startOfDot()) {
     switch (Tok.getIdentifier()->getFlags()) {
     case InlineAsmIdentifierInfo::BuiltinType:
@@ -376,6 +375,12 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   if (Opcode->getTokenID() == asmtok::op_bar) {
     Ops.push_back(Out.get());
     Out = nullptr;
+  }
+  // prefetch{.state}.{level} [%0] has only one input operand and no type.
+  if (Opcode->getTokenID() == asmtok::op_prefetch) {
+    Ops.push_back(Out.get());
+    Out = nullptr;
+    Types.push_back(Context.getBuiltinType(InlineAsmBuiltinType::byte));
   }
 
   return ::new (Context) InlineAsmInstruction(Opcode, StateSpace, Attrs, Types,

@@ -196,12 +196,12 @@ cudaError_t err = cudaDeviceSynchronize();
 checkError(cudaDeviceSynchronize());
 return cudaDeviceSynchronize();
 // CHECK:/*
-// CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+// CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaGetLastError function call was replaced with 0. You need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT: int e = 0;
 int e = cudaGetLastError();
 // CHECK:/*
-// CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+// CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaPeekAtLastError function call was replaced with 0. You need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT: int e1 = 0;
 // CHECK-NEXT:/*

@@ -2408,36 +2408,28 @@ void nontrivial_run_length_encode(ExecutionPolicy &&policy,
                last_idx_mask;
       });
   auto count_beg = oneapi::dpl::counting_iterator<offsets_t>(0);
-  auto const_it = dpct::make_constant_iterator(lengths_t(1));
   // Check for presence of nontrivial element at current index
   auto tr_nontrivial_flags = make_transform_iterator(
-      make_zip_iterator(left_shifted_input_beg, input_beg),
-      [](const auto &zip) {
+      make_zip_iterator(left_shifted_input_beg, input_beg,
+                        right_shifted_input_beg, count_beg),
+      [num_items](const auto &zip) {
         using ::std::get;
-        return get<0>(zip) == get<1>(zip);
+        // Flag all elements in a run with special handling for padding
+        return lengths_t{
+            get<0>(zip) == get<1>(zip) ||
+            (get<1>(zip) == get<2>(zip) && get<3>(zip) != num_items - 1)};
       });
-  auto zipped_vals_beg =
-      make_zip_iterator(tr_nontrivial_flags, count_beg, const_it);
+  auto zipped_vals_beg = make_zip_iterator(tr_nontrivial_flags, count_beg);
   auto pred = [](bool lhs, bool rhs) { return !rhs; };
   auto op = [](auto lhs, const auto &rhs) {
-    using ::std::get;
-
-    // Update length count of run.
-    // The first call to this op will use the first element of the input as lhs
-    // and second element as rhs. get<0>(first_element) is ignored in favor of a
-    // constant `1` in get<2>, avoiding the need for special casing the first
-    // element. The constant `1` utilizes the knowledge that each segment begins
-    // with a nontrivial run.
-    get<2>(lhs) += get<0>(rhs);
-
-    // A run's starting index is stored in get<1>(lhs) as the initial value in
-    // the segment and is preserved throughout the segment's reduction as the
-    // nontrivial run's offset.
-
-    return ::std::move(lhs);
+    using std::get;
+    // Update the left-hand side length of the run and return the lhs tuple.
+    // This ensures that get<1> of the result contains the starting offset of
+    // the run.
+    get<0>(lhs) += get<0>(rhs);
+    return std::move(lhs);
   };
-  auto zipped_out_beg = make_zip_iterator(oneapi::dpl::discard_iterator(),
-                                          offsets_out, lengths_out);
+  auto zipped_out_beg = make_zip_iterator(lengths_out, offsets_out);
   auto [_, zipped_out_vals_end] = oneapi::dpl::reduce_by_segment(
       policy, key_flags_beg + first_adj_idx, key_flags_beg + num_items,
       zipped_vals_beg + first_adj_idx, oneapi::dpl::discard_iterator(),

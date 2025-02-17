@@ -181,13 +181,13 @@ __m512i test_mm512_maskz_cvtne2ph_phf8(__mmask64 __U, __m512h __A, __m512h __B) 
 
 __m512i test_mm512_cvtnes2ph_phf8(__m512h __A, __m512h __B) {
   // CHECK-LABEL: @test_mm512_cvtnes2ph_phf8(
-  // CHECK: call <64 x i8> @llvm.x86.avx10.vcvtne2ph2hf8s512(
+  // CHECK: call <64 x i8> @llvm.x86.avx10.vcvt2ph2hf8s512(
   return _mm512_cvtnes2ph_phf8(__A, __B);
 }
 
 __m512i test_mm512_mask_cvtnes2ph_phf8(__m512i __W, __mmask64 __U, __m512h __A, __m512h __B) {
   // CHECK-LABEL: @test_mm512_mask_cvtnes2ph_phf8(
-  // CHECK: call <64 x i8> @llvm.x86.avx10.vcvtne2ph2hf8s512(
+  // CHECK: call <64 x i8> @llvm.x86.avx10.vcvt2ph2hf8s512(
   // CHECK: select <64 x i1> %{{.*}}, <64 x i8> %{{.*}}, <64 x i8> %{{.*}}
   // CHECK: ret <8 x i64> %{{.*}}
   return _mm512_mask_cvtnes2ph_phf8(__W, __U, __A, __B);
@@ -195,7 +195,7 @@ __m512i test_mm512_mask_cvtnes2ph_phf8(__m512i __W, __mmask64 __U, __m512h __A, 
 
 __m512i test_mm512_maskz_cvtnes2ph_phf8(__mmask64 __U, __m512h __A, __m512h __B) {
   // CHECK-LABEL: @test_mm512_maskz_cvtnes2ph_phf8(
-  // CHECK: call <64 x i8> @llvm.x86.avx10.vcvtne2ph2hf8s512(
+  // CHECK: call <64 x i8> @llvm.x86.avx10.vcvt2ph2hf8s512(
   // CHECK: zeroinitializer
   // CHECK: select <64 x i1> %{{.*}}, <64 x i8> %{{.*}}, <64 x i8> %{{.*}}
   return _mm512_maskz_cvtnes2ph_phf8(__U, __A, __B);

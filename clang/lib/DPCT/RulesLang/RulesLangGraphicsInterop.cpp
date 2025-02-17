@@ -50,10 +50,13 @@ void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto graphicsInteropAPI = [&]() {
     return hasAnyName(
         "cudaGraphicsD3D11RegisterResource", "cudaGraphicsResourceSetMapFlags",
-        "cudaGraphicsMapResources", "cudaGraphicsResourceGetMappedPointer",
+        "cudaGraphicsMapResources", "cuGraphicsMapResources",
+        "cudaGraphicsResourceGetMappedPointer",
+        "cuGraphicsResourceGetMappedPointer_v2",
         "cudaGraphicsResourceGetMappedMipmappedArray",
         "cudaGraphicsSubResourceGetMappedArray", "cudaGraphicsUnmapResources",
-        "cudaGraphicsUnregisterResource", "cudaImportExternalMemory",
+        "cuGraphicsUnmapResources", "cudaGraphicsUnregisterResource",
+        "cuGraphicsUnregisterResource", "cudaImportExternalMemory",
         "cudaExternalMemoryGetMappedMipmappedArray",
         "cudaExternalMemoryGetMappedBuffer", "cudaDestroyExternalMemory");
   };
@@ -100,8 +103,9 @@ void GraphicsInteropRule::runRule(
 
           if (FieldName == "flags") {
             clang::Expr::EvalResult evalResult;
-            if (dyn_cast<BinaryOperator>(BO)->getRHS()->EvaluateAsInt(
-                    evalResult, *Result.Context)) {
+            if (auto BinOp = dyn_cast<BinaryOperator>(BO);
+                BinOp &&
+                BinOp->getRHS()->EvaluateAsInt(evalResult, *Result.Context)) {
               ReplacedArg = "0";
             }
           }
@@ -145,8 +149,9 @@ void GraphicsInteropRule::runRule(
               {0x80, "cudaArrayDeferredMapping"}};
 
           clang::Expr::EvalResult evalResult;
-          if (dyn_cast<BinaryOperator>(BO)->getRHS()->EvaluateAsInt(
-                  evalResult, *Result.Context)) {
+          if (auto BinOp = dyn_cast<BinaryOperator>(BO);
+              BinOp &&
+              BinOp->getRHS()->EvaluateAsInt(evalResult, *Result.Context)) {
             int flag = evalResult.Val.getInt().getSExtValue();
             ReplacedArg = image_types.at(flag);
 
@@ -187,6 +192,23 @@ void GraphicsInteropRule::runRule(
       report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false, Name);
       return;
     }
+
+#ifdef __WIN32
+    if (Name == "cudaImportExternalMemory") {
+      if (auto ICE = dyn_cast<ImplicitCastExpr>(CE->getArg(1))) {
+        if (auto UO = dyn_cast<UnaryOperator>(ICE->getSubExpr())) {
+          if (UO->getOpcode() == UO_AddrOf) {
+            if (auto MemHandleDescDRE =
+                    dyn_cast<DeclRefExpr>(UO->getSubExpr())) {
+              report(CE->getBeginLoc(),
+                     Diagnostics::UNSUPPORTED_EXTMEM_WIN_HANDLE, false,
+                     MemHandleDescDRE->getDecl()->getNameAsString());
+            }
+          }
+        }
+      }
+    }
+#endif // __WIN32
 
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());

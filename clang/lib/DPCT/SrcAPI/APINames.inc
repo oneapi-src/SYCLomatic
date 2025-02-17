@@ -1536,7 +1536,7 @@ ENTRY(__match_any_sync, __match_any_sync, true, NO_FLAG, P4, "comment")
 ENTRY(__match_all_sync, __match_all_sync, true, NO_FLAG, P4, "comment")
 
 // Error Handling
-ENTRY(cuGetErrorName, cuGetErrorName, false, NO_FLAG, P4, "comment")
+ENTRY(cuGetErrorName, cuGetErrorName, true, NO_FLAG, P4, "Successful")
 ENTRY(cuGetErrorString, cuGetErrorString, true, NO_FLAG, P4, "comment")
 
 // Initialization
@@ -1725,7 +1725,7 @@ ENTRY(cuMemCreate, cuMemCreate, true, NO_FLAG, P4, "comment")
 ENTRY(cuMemExportToShareableHandle, cuMemExportToShareableHandle, false, NO_FLAG, P4, "comment")
 ENTRY(cuMemGetAccess, cuMemGetAccess, false, NO_FLAG, P4, "comment")
 ENTRY(cuMemGetAllocationGranularity, cuMemGetAllocationGranularity, true, NO_FLAG, P4, "comment")
-ENTRY(cuMemGetAllocationPropertiesFromHandle, cuMemGetAllocationPropertiesFromHandle, false, NO_FLAG, P4, "comment")
+ENTRY(cuMemGetAllocationPropertiesFromHandle, cuMemGetAllocationPropertiesFromHandle, true, NO_FLAG, P4, "Successful")
 ENTRY(cuMemImportFromShareableHandle, cuMemImportFromShareableHandle, false, NO_FLAG, P4, "comment")
 ENTRY(cuMemMap, cuMemMap, true, NO_FLAG, P4, "comment")
 ENTRY(cuMemMapArrayAsync, cuMemMapArrayAsync, false, NO_FLAG, P7, "comment")
@@ -1783,7 +1783,7 @@ ENTRY(cuStreamEndCapture, cuStreamEndCapture, false, NO_FLAG, P4, "comment")
 ENTRY(cuStreamGetAttribute, cuStreamGetAttribute, false, NO_FLAG, P7, "comment")
 ENTRY(cuStreamGetCaptureInfo, cuStreamGetCaptureInfo_v2, false, NO_FLAG, P7, "comment")
 ENTRY(cuStreamGetCaptureInfo_v3, cuStreamGetCaptureInfo_v3, false, NO_FLAG, P7, "comment")
-ENTRY(cuStreamGetCtx, cuStreamGetCtx, false, NO_FLAG, P4, "comment")
+ENTRY(cuStreamGetCtx, cuStreamGetCtx, true, NO_FLAG, P4, "Successful")
 ENTRY(cuStreamGetCtx_v2, cuStreamGetCtx_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cuStreamGetFlags, cuStreamGetFlags, false, NO_FLAG, P4, "comment")
 ENTRY(cuStreamGetId, cuStreamGetId, false, NO_FLAG, P4, "comment")
@@ -2008,13 +2008,13 @@ ENTRY(cuDeviceCanAccessPeer, cuDeviceCanAccessPeer, true, NO_FLAG, P4, "DPCT1031
 ENTRY(cuDeviceGetP2PAttribute, cuDeviceGetP2PAttribute, false, NO_FLAG, P4, "comment")
 
 // Graphics Interoperability
-ENTRY(cuGraphicsMapResources, cuGraphicsMapResources, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphicsMapResources, cuGraphicsMapResources, true, NO_FLAG, P4, "successful/DPCT1119")
 ENTRY(cuGraphicsResourceGetMappedMipmappedArray, cuGraphicsResourceGetMappedMipmappedArray, false, NO_FLAG, P4, "comment")
-ENTRY(cuGraphicsResourceGetMappedPointer, cuGraphicsResourceGetMappedPointer_v2, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphicsResourceGetMappedPointer, cuGraphicsResourceGetMappedPointer_v2, true, NO_FLAG, P4, "successful/DPCT1119")
 ENTRY(cuGraphicsResourceSetMapFlags, cuGraphicsResourceSetMapFlags_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cuGraphicsSubResourceGetMappedArray, cuGraphicsSubResourceGetMappedArray, false, NO_FLAG, P4, "comment")
-ENTRY(cuGraphicsUnmapResources, cuGraphicsUnmapResources, false, NO_FLAG, P4, "comment")
-ENTRY(cuGraphicsUnregisterResource, cuGraphicsUnregisterResource, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphicsUnmapResources, cuGraphicsUnmapResources, true, NO_FLAG, P4, "successful/DPCT1119")
+ENTRY(cuGraphicsUnregisterResource, cuGraphicsUnregisterResource, true, NO_FLAG, P4, "successful/DPCT1119")
 
 // Driver Entry Point Access
 ENTRY(cuGetProcAddress, cuGetProcAddress, false, NO_FLAG, P7, "comment")

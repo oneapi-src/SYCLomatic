@@ -126,6 +126,8 @@ int main(){
   flags += CU_CTX_SCHED_BLOCKING_SYNC;
   // CHECK: flags += 0;
   flags += CU_CTX_SCHED_SPIN;
+  // CHECK: flags |= 0;
+  flags |= CU_CTX_LMEM_RESIZE_TO_MAX;
   if (cuCtxCreate(&context, flags, device) == CUDA_SUCCESS) {
     return 0;
   }

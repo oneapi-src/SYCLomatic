@@ -62,28 +62,28 @@ int main() {
   auto BS = dim3(1);
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(BS, BS),
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel1(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   kernel1<<<1,BS>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel2(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   kernel2<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel3(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   kernel3<<<1,32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     kernel4(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   kernel4<<<1,32>>>();

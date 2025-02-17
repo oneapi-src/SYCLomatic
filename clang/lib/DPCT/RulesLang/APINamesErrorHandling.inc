@@ -34,7 +34,8 @@ CONDITIONAL_FACTORY_ENTRY(
     WARNING_FACTORY_ENTRY(
         "cudaGetLastError",
         TOSTRING_FACTORY_ENTRY("cudaGetLastError", LITERAL("0")),
-        Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0))
+        Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0,
+        std::string("cudaGetLastError"), std::string("replaced with 0")))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),
@@ -46,7 +47,8 @@ CONDITIONAL_FACTORY_ENTRY(
     WARNING_FACTORY_ENTRY(
         "cudaPeekAtLastError",
         TOSTRING_FACTORY_ENTRY("cudaPeekAtLastError", LITERAL("0")),
-        Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0))
+        Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0,
+        std::string("cudaPeekAtLastError"), std::string("replaced with 0")))
 
 WARNING_FACTORY_ENTRY(
     "ncclGetErrorString",
@@ -65,7 +67,8 @@ CONDITIONAL_FACTORY_ENTRY(
     WARNING_FACTORY_ENTRY(
         "ncclGetLastError",
         TOSTRING_FACTORY_ENTRY("ncclGetLastError", LITERAL("0")),
-        Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0))
+        Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0,
+        std::string("cudaGetLastError"), std::string("replaced with 0")))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),
@@ -77,4 +80,5 @@ CONDITIONAL_FACTORY_ENTRY(
     WARNING_FACTORY_ENTRY(
         "ncclCommGetAsyncError",
         TOSTRING_FACTORY_ENTRY("ncclCommGetAsyncError", LITERAL("0")),
-        Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0))
+        Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0,
+        std::string("cudaGetLastError"), std::string("replaced with 0")))

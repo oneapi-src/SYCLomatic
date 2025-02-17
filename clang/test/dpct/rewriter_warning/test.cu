@@ -3,7 +3,7 @@
 #include "test.h"
 
 // CHECK: /*
-// CHECK: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+// CHECK: DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The cudaGetLastError function call was replaced with 0. You need to rewrite this code.
 // CHECK: */
 int main()
 {

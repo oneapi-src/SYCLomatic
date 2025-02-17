@@ -161,3 +161,16 @@ void transpose_2d(size_t m, size_t n, thrust::device_vector<T> &src, thrust::dev
                   thrust::make_transform_iterator(indices, transpose_10_index(m, n)),
                   dst.begin());
 }
+
+void bar(void) {
+  thrust::device_vector<thrust::complex<double>> d_complex;
+  thrust::device_vector<double> d_results(4);
+
+  // CHECK:    std::transform(oneapi::dpl::execution::make_device_policy(dpct::get_in_order_queue()), d_complex.begin(), d_complex.end(), d_results.begin(), []  (std::complex<double> z) {
+  // CHECK-NEXT:                          return std::arg(z);
+  // CHECK-NEXT:                      });
+  thrust::transform(d_complex.begin(), d_complex.end(), d_results.begin(),
+                    [] __device__(thrust::complex<double> z) {
+                      return thrust::arg(z);
+                    });
+}

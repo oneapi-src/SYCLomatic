@@ -712,7 +712,7 @@ public:
   static bool isInRoot(SourceLocation SL) {
     return isInRoot(DpctGlobalInfo::getLocInfo(SL).first);
   }
-  static bool isInRoot(clang::tooling::UnifiedPath FilePath);
+  static bool isInRoot(const clang::tooling::UnifiedPath &FilePath);
   static bool isInAnalysisScope(SourceLocation SL) {
     return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
   }
@@ -832,8 +832,17 @@ public:
   static unsigned int getKCIndentWidth();
   static UsmLevel getUsmLevel() { return UsmLvl; }
   static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
-  static BuildScriptKind getBuildScript() { return BuildScriptVal; }
-  static void setBuildScript(BuildScriptKind BSVal) { BuildScriptVal = BSVal; }
+  static unsigned getBuildScript() { return BuildScriptType; }
+  static void setBuildScript(unsigned BS_type) { BuildScriptType = BS_type; }
+  template <BuildScriptKind BS_kind> static bool getMigrateBuildScriptType() {
+    return BuildScriptType & (1 << static_cast<unsigned>(BS_kind));
+  }
+  static bool migrateCMakeScripts() {
+    return getMigrateBuildScriptType<BuildScriptKind::BS_CMake>();
+  }
+  static bool migratePythonScripts() {
+    return getMigrateBuildScriptType<BuildScriptKind::BS_Python>();
+  }
   static clang::CudaVersion getSDKVersion() { return SDKVersion; }
   static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
   static bool isIncMigration() { return IsIncMigration; }
@@ -1347,6 +1356,9 @@ public:
     return getUsingExperimental<
         ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();
   }
+  static bool useExtPrefetch() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_Prefetch>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
@@ -1567,7 +1579,7 @@ private:
   static clang::tooling::UnifiedPath CudaPath;
   static std::string RuleFile;
   static UsmLevel UsmLvl;
-  static BuildScriptKind BuildScriptVal;
+  static unsigned BuildScriptType;
   static clang::CudaVersion SDKVersion;
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
@@ -2225,6 +2237,7 @@ public:
   enum APIKind {
     BlockReduce,
     BlockRadixSort,
+    BlockShuffle,
   };
 
 private:
@@ -2603,7 +2616,7 @@ protected:
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   FormatInfo FormatInformation;
   bool HasBody = false;
-  size_t DeclEnd;
+  size_t DeclEnd = 0;
   std::map<int, std::string> TemplateParameterDefaultValueMap;
   std::map<int, std::string> ParameterDefaultValueMap;
   static std::shared_ptr<DeviceFunctionInfo> &getFuncInfo(const FunctionDecl *);

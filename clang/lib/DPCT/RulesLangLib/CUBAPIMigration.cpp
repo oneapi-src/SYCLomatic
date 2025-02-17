@@ -100,7 +100,7 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cub::ArgIndexInputIterator", "cub::DiscardOutputIterator",
         "cub::DoubleBuffer", "cub::NullType", "cub::ArgMax", "cub::ArgMin",
         "cub::BlockRadixSort", "cub::BlockExchange", "cub::BlockLoad",
-        "cub::BlockStore");
+        "cub::BlockStore", "cub::BlockShuffle");
   };
 
   MF.addMatcher(
@@ -158,15 +158,16 @@ void CubDeviceLevelRule::runRule(
 void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       cxxMemberCallExpr(
-          allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(
-                    hasAnyName("cub::ArgIndexInputIterator",
-                               "cub::BlockRadixSort", "cub::BlockExchange",
-                               "cub::BlockLoad", "cub::BlockStore"))))))),
+          allOf(on(hasType(hasCanonicalType(
+                    qualType(hasDeclaration(namedDecl(hasAnyName(
+                        "cub::ArgIndexInputIterator", "cub::BlockRadixSort",
+                        "cub::BlockExchange", "cub::BlockLoad",
+                        "cub::BlockStore", "cub::BlockShuffle"))))))),
                 callee(cxxMethodDecl(hasAnyName(
                     "normalize", "Sort", "SortDescending", "BlockedToStriped",
                     "StripedToBlocked", "ScatterToBlocked", "ScatterToStriped",
                     "SortBlockedToStriped", "SortDescendingBlockedToStriped",
-                    "Load", "Store")))))
+                    "Load", "Store", "Offset", "Rotate", "Up", "Down")))))
           .bind("memberCall"),
       this);
 
@@ -253,13 +254,17 @@ void CubMemberCallRule::runRule(
         Name == "BlockedToStriped" || Name == "StripedToBlocked" ||
         Name == "StripedToBlocked" || Name == "ScatterToBlocked" ||
         Name == "ScatterToStriped";
-    if (isBlockRadixSort || isBlockExchange || Name == "Load" ||
-        Name == "Store") {
+    bool isBlockShuffle =
+        Name == "Offset" || Name == "Rotate" || Name == "Up" || Name == "Down";
+    if (isBlockRadixSort || isBlockExchange || isBlockShuffle ||
+        Name == "Load" || Name == "Store") {
       std::string HelpFuncName;
       if (isBlockRadixSort)
         HelpFuncName = "group_radix_sort";
       else if (isBlockExchange)
         HelpFuncName = "exchange";
+      else if (isBlockShuffle)
+        HelpFuncName = "group_shuffle";
       else if (Name == "Load")
         HelpFuncName = "group_load";
       else if (Name == "Store")
@@ -273,20 +278,36 @@ void CubMemberCallRule::runRule(
       auto *ClassSpecDecl = dyn_cast<ClassTemplateSpecializationDecl>(
           CanTy->getAs<RecordType>()->getDecl());
       const auto &ValueTyArg = ClassSpecDecl->getTemplateArgs()[0];
-      const auto &ItemsPreThreadArg = ClassSpecDecl->getTemplateArgs()[2];
+
       ValueTyArg.getAsType().getAsString();
       std::string Fn;
       llvm::raw_string_ostream OS(Fn);
       OS << MapNames::getDpctNamespace() << "group::" << HelpFuncName << "<"
-         << ValueTyArg.getAsType().getAsString() << ", "
-         << ItemsPreThreadArg.getAsIntegral() << ">::get_local_memory_size";
+         << ValueTyArg.getAsType().getAsString();
+      if (isBlockShuffle) {
+        if (!ClassSpecDecl->getTemplateArgs()[1].getIsDefaulted()) {
+          OS << ", " << ClassSpecDecl->getTemplateArgs()[1].getAsIntegral();
+        }
+        if (!ClassSpecDecl->getTemplateArgs()[2].getIsDefaulted()) {
+          OS << ", " << ClassSpecDecl->getTemplateArgs()[2].getAsIntegral();
+        }
+        if (!ClassSpecDecl->getTemplateArgs()[3].getIsDefaulted()) {
+          OS << ", " << ClassSpecDecl->getTemplateArgs()[3].getAsIntegral();
+        }
+      } else {
+        const auto &ItemsPreThreadArg = ClassSpecDecl->getTemplateArgs()[2];
+        OS << ", " << ItemsPreThreadArg.getAsIntegral();
+      }
+      OS << ">::get_local_memory_size";
       if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
         auto LocInfo = DpctGlobalInfo::getLocInfo(TempStorage);
         ExprAnalysis EA;
         EA.analyze(DataTypeLoc);
         FuncInfo->getVarMap().addCUBTempStorage(
             std::make_shared<TempStorageVarInfo>(
-                LocInfo.second, TempStorageVarInfo::BlockRadixSort,
+                LocInfo.second,
+                isBlockShuffle ? TempStorageVarInfo::BlockShuffle
+                               : TempStorageVarInfo::BlockRadixSort,
                 TempStorage->getName(), Fn,
                 EA.getTemplateDependentStringInfo()));
       }
@@ -300,16 +321,17 @@ void CubMemberCallRule::runRule(
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(callee(functionDecl(allOf(
-                   hasAnyName(
-                       "IADD3", "SHR_ADD", "SHL_ADD", "BFE", "BFI", "LaneId",
-                       "WarpId", "SyncStream", "CurrentDevice", "DeviceCount",
-                       "DeviceCountUncached", "DeviceCountCachedValue",
-                       "PtxVersion", "PtxVersionUncached", "SmVersion",
-                       "SmVersionUncached", "RowMajorTid", "LoadDirectBlocked",
-                       "LoadDirectStriped", "StoreDirectBlocked",
-                       "StoreDirectStriped", "ShuffleDown", "ShuffleUp"),
-                   hasAncestor(namespaceDecl(hasName("cub")))))))
+      callExpr(
+          callee(functionDecl(allOf(
+              hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "BFE", "BFI", "LaneId",
+                         "WarpId", "SyncStream", "CurrentDevice", "DeviceCount",
+                         "DeviceCountUncached", "DeviceCountCachedValue",
+                         "PtxVersion", "PtxVersionUncached", "SmVersion",
+                         "SmVersionUncached", "RowMajorTid",
+                         "LoadDirectBlocked", "LoadDirectStriped",
+                         "StoreDirectBlocked", "StoreDirectStriped",
+                         "ShuffleDown", "ShuffleUp", "Debug"),
+              hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
 }
@@ -317,6 +339,11 @@ void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 void CubIntrinsicRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const auto *CE = getNodeAsType<CallExpr>(Result, "IntrinsicCall")) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    if (!DpctGlobalInfo::isInAnalysisScope(
+            SM.getSpellingLoc(CE->getBeginLoc()))) {
+      return;
+    }
     ExprAnalysis EA;
     EA.analyze(CE);
     emplaceTransformation(EA.getReplacement());
@@ -737,7 +764,8 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                              hasType(arrayType(hasElementType(
                                  hasCanonicalType(qualType(isTempStorage))))),
                              hasType(hasCanonicalType(qualType(hasDeclaration(
-                                 recordDecl(isUnion(), has(fieldDecl()))))))))))
+                                 recordDecl(isUnion(), has(fieldDecl())))))),
+                             hasType(typeContainsString("TempStorage"))))))
                     .bind("DeclStmt"),
                 this);
 
@@ -747,6 +775,15 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                                       "Reduce", "Sum", "Broadcast", "Scan")))))
                     .bind("MemberCall"),
                 this);
+
+  MF.addMatcher(
+      cxxDependentScopeMemberExpr(
+          anyOf(hasMemberName("InclusiveSum"), hasMemberName("ExclusiveSum"),
+                hasMemberName("InclusiveScan"), hasMemberName("ExclusiveScan"),
+                hasMemberName("Reduce"), hasMemberName("Sum"),
+                hasMemberName("Broadcast"), hasMemberName("Scan")))
+          .bind("DependentMemberCall"),
+      this);
 
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasAnyName(
@@ -1611,13 +1648,34 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
   }
 }
 
+void CubRule::processDependentMemberCall(
+    const CXXDependentScopeMemberExpr *DMC) {
+  if (!isCubCollectiveRecordType(DMC->getBaseType())) {
+    return;
+  }
+  if (auto FTD = DpctGlobalInfo::findAncestor<FunctionTemplateDecl>(DMC)) {
+    if (FTD->spec_end() == FTD->spec_begin()) {
+      auto MemeberName = DMC->getMember().getAsString();
+      report(DMC->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,
+             MemeberName + " member function call",
+             "the caller function may not instantiated");
+    }
+  }
+  return;
+}
+
 int CubRule::PlaceholderIndex = 1;
 
 void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const CXXMemberCallExpr *MC =
           getNodeAsType<CXXMemberCallExpr>(Result, "MemberCall")) {
     processCubMemberCall(MC);
-  } else if (const DeclStmt *DS = getNodeAsType<DeclStmt>(Result, "DeclStmt")) {
+  } else if (const CXXDependentScopeMemberExpr *DMC =
+                 getNodeAsType<CXXDependentScopeMemberExpr>(
+                     Result, "DependentMemberCall")) {
+    processDependentMemberCall(DMC);
+  } else if (const DeclStmt *DS =
+                 getAssistNodeAsType<DeclStmt>(Result, "DeclStmt")) {
     processCubDeclStmt(DS);
   } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall")) {
     processCubFuncCall(CE);

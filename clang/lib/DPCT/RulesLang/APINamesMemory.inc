@@ -717,7 +717,21 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemCreate",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemCreate"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        ASSIGN_FACTORY_ENTRY(
+            "cuMemGetAllocationPropertiesFromHandle",
+            MEMBER_EXPR(DEREF(0), false, LITERAL("location.id")),
+            CALL(MapNames::getDpctNamespace() + "get_device_id",
+                 MEMBER_CALL(ARG(1), true, "get_device"))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemGetAllocationPropertiesFromHandle",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemGetAllocationPropertiesFromHandle"),
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -734,7 +748,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemAddressReserve",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemAddressReserve"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -750,7 +764,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemAddressFree",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemAddressFree"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -770,7 +784,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemGetAllocationGranularity",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemGetAllocationGranularity"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -780,7 +794,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemRelease",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemRelease"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -795,7 +809,7 @@ CONDITIONAL_FACTORY_ENTRY(
             ARG(2)))),
     UNSUPPORT_FACTORY_ENTRY("cuMemMap", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemMap"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -810,7 +824,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          "get_current_device().get_context()"))))),
     UNSUPPORT_FACTORY_ENTRY("cuMemUnmap", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemUnmap"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -828,7 +842,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemSetAccess",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemSetAccess"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UsePeerAccess(),
@@ -932,3 +946,93 @@ CONDITIONAL_FACTORY_ENTRY(
             "cudaMemcpy", CALL(MemoryMigrationRule::getMemoryHelperFunctionName(
                                    "memcpy", false),
                                MEM_ARG(0), MEM_ARG(1), ARG(2), ARG(3))))))
+
+#define CUDA_FREE(NAME)                                                        \
+  CONDITIONAL_FACTORY_ENTRY(                                                   \
+      hasManagedAttr(0),                                                       \
+      CONDITIONAL_FACTORY_ENTRY(                                               \
+          checkIsUSM(),                                                        \
+          CONDITIONAL_FACTORY_ENTRY(                                           \
+              [](const CallExpr *) {                                           \
+                return DpctGlobalInfo::isOptimizeMigration();                  \
+              },                                                               \
+              ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                      \
+                  HelperFeatureEnum::device_ext,                               \
+                  CALL_FACTORY_ENTRY(                                          \
+                      NAME, CALL(MapNames::getClNamespace() + "free",          \
+                                 makeCombinedArg(                              \
+                                     makeCombinedArg(ARG("*("), ARG_WC(0)),    \
+                                     ARG(".get_ptr())")),                      \
+                                 QUEUESTR)))),                                 \
+              CONDITIONAL_FACTORY_ENTRY(                                       \
+                  [](const CallExpr *) {                                       \
+                    return DpctGlobalInfo::useNoQueueDevice();                 \
+                  },                                                           \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      NAME, true, true, true, true,                            \
+                      MEMBER_CALL(QUEUESTR, false, "wait_and_throw"),          \
+                      CALL(MapNames::getClNamespace() + "free",                \
+                           makeCombinedArg(                                    \
+                               makeCombinedArg(ARG("*("), ARG_WC(0)),          \
+                               ARG(".get_ptr())")),                            \
+                           QUEUESTR)),                                         \
+                  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                  \
+                      HelperFeatureEnum::device_ext,                           \
+                      CALL_FACTORY_ENTRY(                                      \
+                          NAME,                                                \
+                          CALL(MapNames::getDpctNamespace() +                  \
+                                   (DpctGlobalInfo::useSYCLCompat()            \
+                                        ? "wait_and_free"                      \
+                                        : "dpct_free"),                        \
+                               makeCombinedArg(                                \
+                                   makeCombinedArg(ARG("*("), ARG_WC(0)),      \
+                                   ARG(".get_ptr())")),                        \
+                               QUEUESTR)))))),                                 \
+          ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                          \
+              HelperFeatureEnum::device_ext,                                   \
+              CALL_FACTORY_ENTRY(                                              \
+                  NAME,                                                        \
+                  CALL(MapNames::getDpctNamespace() +                          \
+                           (DpctGlobalInfo::useSYCLCompat() ? "wait_and_free"  \
+                                                            : "dpct_free"),    \
+                       makeCombinedArg(makeCombinedArg(ARG("*("), ARG_WC(0)),  \
+                                       ARG(".get_ptr())"))))))),               \
+      CONDITIONAL_FACTORY_ENTRY(                                               \
+          checkIsUSM(),                                                        \
+          CONDITIONAL_FACTORY_ENTRY(                                           \
+              [](const CallExpr *) {                                           \
+                return DpctGlobalInfo::isOptimizeMigration();                  \
+              },                                                               \
+              ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                      \
+                  HelperFeatureEnum::device_ext,                               \
+                  CALL_FACTORY_ENTRY(NAME,                                     \
+                                     CALL(MapNames::getClNamespace() + "free", \
+                                          ARG_WC(0), QUEUESTR)))),             \
+              CONDITIONAL_FACTORY_ENTRY(                                       \
+                  [](const CallExpr *) {                                       \
+                    return DpctGlobalInfo::useNoQueueDevice();                 \
+                  },                                                           \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      NAME, true, true, true, true,                            \
+                      MEMBER_CALL(QUEUESTR, false, "wait_and_throw"),          \
+                      CALL(MapNames::getClNamespace() + "free", ARG_WC(0),     \
+                           QUEUESTR)),                                         \
+                  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                  \
+                      HelperFeatureEnum::device_ext,                           \
+                      CALL_FACTORY_ENTRY(                                      \
+                          NAME, CALL(MapNames::getDpctNamespace() +            \
+                                         (DpctGlobalInfo::useSYCLCompat()      \
+                                              ? "wait_and_free"                \
+                                              : "dpct_free"),                  \
+                                     ARG_WC(0), QUEUESTR)))))),                \
+          ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                          \
+              HelperFeatureEnum::device_ext,                                   \
+              CALL_FACTORY_ENTRY(                                              \
+                  NAME,                                                        \
+                  CALL(MapNames::getDpctNamespace() +                          \
+                           (DpctGlobalInfo::useSYCLCompat() ? "wait_and_free"  \
+                                                            : "dpct_free"),    \
+                       ARG_WC(0)))))))
+CUDA_FREE("cudaFree")
+CUDA_FREE("cublasFree")
+#undef CUDA_FREE

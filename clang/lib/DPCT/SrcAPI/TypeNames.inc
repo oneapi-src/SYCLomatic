@@ -38,7 +38,7 @@ ENTRY_TYPE(CUexternalSemaphore, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUgraph, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUgraphExec, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUgraphNode, false, NO_FLAG, P4, "comment")
-ENTRY_TYPE(CUgraphicsResource, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(CUgraphicsResource, true, NO_FLAG, P4, "successful")
 
 // CUDA Runtime Library
 ENTRY_TYPE(cudaKernelNodeParams, false, NO_FLAG, P4, "comment")

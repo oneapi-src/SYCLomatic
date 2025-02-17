@@ -1030,6 +1030,9 @@ void ExprAnalysis::analyzeExpr(const ReturnStmt *RS) {
   dispatch(RS->getRetValue());
 }
 
+void ExprAnalysis::analyzeExpr(const ImplicitCastExpr *ICE) {
+  dispatch(ICE->getSubExpr());
+}
 
 void ExprAnalysis::removeCUDADeviceAttr(const LambdaExpr *LE) {
   // E.g.,
@@ -1858,9 +1861,7 @@ void FunctorAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (!Tp)
     return;
   const CXXRecordDecl *CRD = Tp->getAsCXXRecordDecl();
-  if (!CRD)
-    return;
-  if (DpctGlobalInfo::isInAnalysisScope(CRD->getBeginLoc())) {
+  if (CRD && DpctGlobalInfo::isInAnalysisScope(CRD->getBeginLoc())) {
     addConstQuailfier(CRD);
   }
   ArgumentAnalysis::analyzeExpr(DRE);

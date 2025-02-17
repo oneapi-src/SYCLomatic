@@ -118,6 +118,7 @@ private:
   void processThreadLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processBlockLevelMemberCall(const CXXMemberCallExpr *MC);
+  void processDependentMemberCall(const CXXDependentScopeMemberExpr *DMC);
   void processWarpLevelMemberCall(const CXXMemberCallExpr *MC);
 };
 

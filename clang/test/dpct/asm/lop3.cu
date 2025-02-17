@@ -35,4 +35,17 @@ __device__  int hard(int a) {
   asm("lop3.b32 %0, %1, %2, 3, 0x1C;" : "=r"(d4) : "r"(a + B), "r"(B));
   return d4;
 }
+
+// CHECK: template <int lut, typename T> inline T lop3(T a, T b, T c) {
+// CHECK-NEXT:  T res;
+// CHECK-NEXT:  res = dpct::ternary_logic_op(a, b, c, lut);
+// CHECK-NEXT:  return res;
+// CHECK-NEXT:}
+template <int lut, typename T> __device__ inline T lop3(T a, T b, T c) {
+  T res;
+  asm volatile("lop3.b32 %0, %1, %2, %3, %4;\n"
+               : "=r"(res)
+               : "r"(a), "r"(b), "r"(c), "n"(lut));
+  return res;
+}
 // clang-format on

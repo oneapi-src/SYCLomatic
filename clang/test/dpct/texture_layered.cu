@@ -103,7 +103,7 @@ int main() {
   cudaMalloc(&d, sizeof(float4) * 4);
   // CHECK:  tex42.create_image();
   // CHECK:  tex21.create_image();
-  // CHECK:   dpct::get_out_of_order_queue().submit(
+  // CHECK:  dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_acc_ct0 = dpct::get_access(d, cgh);
   // CHECK-EMPTY:

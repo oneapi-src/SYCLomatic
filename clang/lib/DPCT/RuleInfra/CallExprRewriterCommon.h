@@ -280,16 +280,20 @@ class MemArgExpr {
   MemArgExpr() = default;
   std::pair<std::string, std::string>
   getMemAPIVarNameAndArrayOffset(const Expr *) const;
+  const Expr *E = nullptr;
+  const CallExpr *CE = nullptr;
 
 public:
-  const Expr *E = nullptr;
-
   template <class StreamT> void print(StreamT &Stream) const {
     auto P = getMemAPIVarNameAndArrayOffset(E);
     std::string VarName = P.first;
     std::string ArrayOffset = P.second;
 
-    clang::dpct::print(Stream, E);
+    ArgumentAnalysis AA;
+    AA.setCallSpelling(CE);
+    AA.analyze(E);
+    Stream << AA.getRewritePrefix() << AA.getRewriteString()
+           << AA.getRewritePostfix();
     if (VarName.empty())
       return;
 
@@ -301,13 +305,13 @@ public:
       Stream << " + " << ArrayOffset;
   }
 
-  static MemArgExpr create(const Expr *E);
+  static MemArgExpr create(const CallExpr *CE, const Expr *E);
 };
 
 inline std::function<MemArgExpr(const CallExpr *)>
 makeMemArgCallArgCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> MemArgExpr {
-    return MemArgExpr::create(C->getArg(Idx));
+    return MemArgExpr::create(C, C->getArg(Idx));
   };
 }
 

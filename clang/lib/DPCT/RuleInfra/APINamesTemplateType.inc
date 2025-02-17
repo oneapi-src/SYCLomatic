@@ -131,6 +131,31 @@ TYPE_REWRITE_ENTRY(
             TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
                              "group::exchange"),
                          TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
+
+// cub::BlockShuffle
+TYPE_REWRITE_ENTRY(
+    "cub::BlockShuffle",
+    TYPE_CONDITIONAL_FACTORY(
+        UseSYCLCompat(),
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT, TYPESTR),
+        HEADER_INSERTION_FACTORY(
+            HeaderType::HT_DPCT_GROUP_Utils,
+            TYPE_CONDITIONAL_FACTORY(
+                CheckTemplateArgCount(2, false),
+                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                 "group::group_shuffle"),
+                             TEMPLATE_ARG(0), TEMPLATE_ARG(1)),
+                TYPE_CONDITIONAL_FACTORY(
+                    CheckTemplateArgCount(3, false),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_shuffle"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(1),
+                                 TEMPLATE_ARG(2)),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_shuffle"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(1),
+                                 TEMPLATE_ARG(2), TEMPLATE_ARG(3)))))))
+
 // cub::BlockLoad
 TYPE_REWRITE_ENTRY(
     "cub::BlockLoad",
@@ -474,6 +499,7 @@ TYPE_REWRITE_ENTRY(
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=graph"))))
 
+// Graphics Interop Handle
 TYPE_REWRITE_ENTRY(
     "cudaGraphicsResource",
     TYPE_CONDITIONAL_FACTORY(
@@ -489,6 +515,20 @@ TYPE_REWRITE_ENTRY(
         [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
         WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
                         STR("cudaGraphicsResource_t")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_mem_wrapper_ptr")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+TYPE_REWRITE_ENTRY(
+    "CUgraphicsResource",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("CUgraphicsResource")),
         TYPE_CONDITIONAL_FACTORY(
             checkEnableBindlessImagesForType(),
             TYPE_FACTORY(STR(MapNames::getDpctNamespace() +

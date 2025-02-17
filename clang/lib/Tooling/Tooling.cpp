@@ -720,7 +720,7 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
 // if return value is -1, means current input file \p File is not processed,
 // if return value < -1, report return value to upper caller,
 // other values are ignored.
-int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
+int ClangTool::processFiles(llvm::StringRef File, bool &ProcessingFailed,
                      bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
     //clear error# counter
     CurFileParseErrCnt=0;

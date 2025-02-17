@@ -141,9 +141,11 @@ __global__ void cvt() {
   // CHECK-INTEL-EXT: u16 = sycl::vec<uint16_t, 1>(sycl::ext::intel::math::ull2bfloat16_rn(u64)).template as<sycl::vec<uint16_t, 1>>().x();
   // CHECK-INTEL-EXT: u16 = sycl::vec<uint16_t, 1>(sycl::ext::intel::math::uint2bfloat16_rn(u32)).template as<sycl::vec<uint16_t, 1>>().x();
   // CHECK-INTEL-EXT: u16 = sycl::vec<uint16_t, 1>(sycl::ext::intel::math::ushort2bfloat16_rn(u16)).template as<sycl::vec<uint16_t, 1>>().x();
+  // CHECK-INTEL-EXT: u16 = sycl::vec<uint16_t, 1>(sycl::ext::intel::math::float2bfloat16_rn(f32)).template as<sycl::vec<uint16_t, 1>>().x();
   asm volatile ("cvt.rn.bf16.u64 %0, %1;" : "=h"(u16) : "l"(u64));
   asm volatile ("cvt.rn.bf16.u32 %0, %1;" : "=h"(u16) : "r"(u32));
   asm volatile ("cvt.rn.bf16.u16 %0, %1;" : "=h"(u16) : "h"(u16));
+  asm volatile ("cvt.rn.bf16.f32 %0, %1;" : "=h"(u16) : "f"(f32));
 
   // Test integer to bfloat16 conversion with rz
   // CHECK-INTEL-EXT: u16 = sycl::vec<uint16_t, 1>(sycl::ext::intel::math::ull2bfloat16_rz(u64)).template as<sycl::vec<uint16_t, 1>>().x();

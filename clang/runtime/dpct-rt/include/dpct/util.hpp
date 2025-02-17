@@ -1205,6 +1205,106 @@ template <typename Func, std::size_t N> struct nth_argument_type {
   using type = decltype(helper(std::declval<Func>()));
 };
 
+/// \brief The function performs bitwise logical operations on three input
+/// values of \p a, \p b and \p c based on the specified 8-bit truth table \p
+/// lut and return the result
+///
+/// \param [in] a Input value
+/// \param [in] b Input value
+/// \param [in] c Input value
+/// \param [in] lut truth table for looking up
+/// \returns The result
+inline uint32_t ternary_logic_op(uint32_t a, uint32_t b, uint32_t c,
+                                 uint8_t lut) {
+  uint32_t result = 0;
+
+  switch (lut) {
+  case 0x0:
+    result = 0;
+    break;
+  case 0x1:
+    result = ~a & ~b & ~c;
+    break;
+  case 0x2:
+    result = ~a & ~b & c;
+  case 0x4:
+    result = ~a & b & ~c;
+    break;
+  case 0x8:
+    result = ~a & b & c;
+    break;
+  case 0x10:
+    result = a & ~b & ~c;
+    break;
+  case 0x20:
+    result = a & ~b & c;
+    break;
+  case 0x40:
+    result = a & b & ~c;
+    break;
+  case 0x80:
+    result = a & b & c;
+    break;
+  case 0x1a:
+    result = (a & b | c) ^ a;
+    break;
+  case 0x1e:
+    result = a ^ (b | c);
+    break;
+  case 0x2d:
+    result = ~a ^ (~b & c);
+    break;
+  case 0x78:
+    result = a ^ (b & c);
+    break;
+  case 0x96:
+    result = a ^ b ^ c;
+    break;
+  case 0xb4:
+    result = a ^ (b & ~c);
+    break;
+  case 0xb8:
+    result = a ^ (b & (c ^ a));
+    break;
+  case 0xd2:
+    result = a ^ (~b & c);
+    break;
+  case 0xe8:
+    result = a & (b | c) | (b & c);
+    break;
+  case 0xea:
+    result = a & b | c;
+    break;
+  case 0xfe:
+    result = a | b | c;
+    break;
+  case 0xff:
+    result = -1;
+    break;
+  default: {
+    if (lut & 0x01)
+      result |= ~a & ~b & ~c;
+    if (lut & 0x02)
+      result |= ~a & ~b & c;
+    if (lut & 0x04)
+      result |= ~a & b & ~c;
+    if (lut & 0x08)
+      result |= ~a & b & c;
+    if (lut & 0x10)
+      result |= a & ~b & ~c;
+    if (lut & 0x20)
+      result |= a & ~b & c;
+    if (lut & 0x40)
+      result |= a & b & ~c;
+    if (lut & 0x80)
+      result |= a & b & c;
+    break;
+  }
+  }
+
+  return result;
+}
+
 #ifdef _WIN32
 #define DPCT_EXPORT __declspec(dllexport)
 #else
