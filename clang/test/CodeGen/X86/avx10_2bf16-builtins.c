@@ -650,37 +650,37 @@ __m128bh test_mm_maskz_min_pbh(__mmask16 __U, __m128bh __A, __m128bh __B) {
 
 int test_mm_comeqsbh(__m128bh __A, __m128bh __B) {
   // CHECK-LABEL: test_mm_comeqsbh
-  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomsbf16eq(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
+  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomisbf16eq(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
   return _mm_comeqsbh(__A, __B);
 }
 
 int test_mm_comltsbh(__m128bh __A, __m128bh __B) {
   // CHECK-LABEL: test_mm_comltsbh
-  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomsbf16lt(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
+  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomisbf16lt(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
   return _mm_comltsbh(__A, __B);
 }
 
 int test_mm_comlesbh(__m128bh __A, __m128bh __B) {
   // CHECK-LABEL: test_mm_comlesbh
-  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomsbf16le(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
+  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomisbf16le(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
   return _mm_comlesbh(__A, __B);
 }
 
 int test_mm_comgtsbh(__m128bh __A, __m128bh __B) {
   // CHECK-LABEL: test_mm_comgtsbh
-  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomsbf16gt(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
+  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomisbf16gt(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
   return _mm_comgtsbh(__A, __B);
 }
 
 int test_mm_comgesbh(__m128bh __A, __m128bh __B) {
   // CHECK-LABEL: test_mm_comgesbh
-  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomsbf16ge(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
+  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomisbf16ge(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
   return _mm_comgesbh(__A, __B);
 }
 
 int test_mm_comneqsbh(__m128bh __A, __m128bh __B) {
   // CHECK-LABEL: test_mm_comneqsbh
-  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomsbf16neq(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
+  // CHECK: %{{.}} = call i32 @llvm.x86.avx10.vcomisbf16neq(<8 x bfloat> %{{.}}, <8 x bfloat> %{{.}})
   return _mm_comneqsbh(__A, __B);
 }
 

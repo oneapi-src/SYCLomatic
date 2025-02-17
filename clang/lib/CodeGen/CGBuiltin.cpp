@@ -16522,9 +16522,9 @@ Value *CodeGenFunction::EmitX86BuiltinExpr(unsigned BuiltinID,
   case X86::BI__builtin_ia32_fpclassps128_mask:
   case X86::BI__builtin_ia32_fpclassps256_mask:
   case X86::BI__builtin_ia32_fpclassps512_mask:
-  case X86::BI__builtin_ia32_vfpclasspbf16128_mask:
-  case X86::BI__builtin_ia32_vfpclasspbf16256_mask:
-  case X86::BI__builtin_ia32_vfpclasspbf16512_mask:
+  case X86::BI__builtin_ia32_vfpclassbf16128_mask:
+  case X86::BI__builtin_ia32_vfpclassbf16256_mask:
+  case X86::BI__builtin_ia32_vfpclassbf16512_mask:
   case X86::BI__builtin_ia32_fpclassph128_mask:
   case X86::BI__builtin_ia32_fpclassph256_mask:
   case X86::BI__builtin_ia32_fpclassph512_mask:
@@ -16539,13 +16539,13 @@ Value *CodeGenFunction::EmitX86BuiltinExpr(unsigned BuiltinID,
     Intrinsic::ID ID;
     switch (BuiltinID) {
     default: llvm_unreachable("Unsupported intrinsic!");
-    case X86::BI__builtin_ia32_vfpclasspbf16128_mask:
+    case X86::BI__builtin_ia32_vfpclassbf16128_mask:
       ID = Intrinsic::x86_avx10_fpclass_nepbf16_128;
       break;
-    case X86::BI__builtin_ia32_vfpclasspbf16256_mask:
+    case X86::BI__builtin_ia32_vfpclassbf16256_mask:
       ID = Intrinsic::x86_avx10_fpclass_nepbf16_256;
       break;
-    case X86::BI__builtin_ia32_vfpclasspbf16512_mask:
+    case X86::BI__builtin_ia32_vfpclassbf16512_mask:
       ID = Intrinsic::x86_avx10_fpclass_nepbf16_512;
       break;
     case X86::BI__builtin_ia32_fpclassph128_mask:
@@ -16706,9 +16706,9 @@ Value *CodeGenFunction::EmitX86BuiltinExpr(unsigned BuiltinID,
   case X86::BI__builtin_ia32_vcmppd256_round_mask:
   case X86::BI__builtin_ia32_vcmpps256_round_mask:
   case X86::BI__builtin_ia32_vcmpph256_round_mask:
-  case X86::BI__builtin_ia32_vcmppbf16512_mask:
-  case X86::BI__builtin_ia32_vcmppbf16256_mask:
-  case X86::BI__builtin_ia32_vcmppbf16128_mask:
+  case X86::BI__builtin_ia32_vcmpbf16512_mask:
+  case X86::BI__builtin_ia32_vcmpbf16256_mask:
+  case X86::BI__builtin_ia32_vcmpbf16128_mask:
     IsMaskFCmp = true;
     [[fallthrough]];
   case X86::BI__builtin_ia32_cmpps:
