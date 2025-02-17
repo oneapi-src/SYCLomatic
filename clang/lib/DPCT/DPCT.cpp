@@ -1322,7 +1322,10 @@ int runDPCT(int argc, const char **argv) {
   }
   // OC_Action: only migrate Build scripts.
   if (MigrateBuildScriptOnly) {
-    doBuildScriptMigration();
+    loadMainSrcFileInfo(OutRootPath);
+    collectBuildScriptsSpecified(OptParser, InRootPath, OutRootPath);
+    migrateBuildScripts(InRootPath, OutRootPath);
+
     ShowStatus(MigrationBuildScriptCompleted);
     dpctExit(MigrationSucceeded, false);
   }

@@ -1087,97 +1087,88 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         "continues.\n");
   }
 
-  // The necessary header files which have no replacements will be copied to
-  // "-out-root" directory.
-  for (const auto &Entry : IncludeFileMap) {
-    // Generated SYCL file in outroot. E.g., /path/to/outroot/a.dp.cpp
-    clang::tooling::UnifiedPath FilePath = Entry.first;
-    // Generated CUDA file in outroot_debug. E.g., /path/to/outroot_debug/a.cu
-    clang::tooling::UnifiedPath DebugFilePath = Entry.first;
-    // Original CUDA file in inroot. E.g., /path/to/inroot/a.cu
-    clang::tooling::UnifiedPath OriginalFilePath = Entry.first;
-    if (!Entry.second) {
-      bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
-      if (IsExcluded) {
-        continue;
-      }
-      // Always migrate *.cuh files to *.dp.hpp files,
-      // Always migrate *.cu files to *.dp.cpp files.
-      SourceProcessType FileType = GetSourceFileType(FilePath);
-      SmallString<512> TempFilePath(FilePath.getCanonicalPath());
-      if (FileType & SPT_CudaHeader) {
-        path::replace_extension(TempFilePath,
-                                DpctGlobalInfo::getSYCLHeaderExtension());
-      } else if (FileType & SPT_CudaSource) {
-        path::replace_extension(TempFilePath,
-                                DpctGlobalInfo::getSYCLSourceExtension());
-      }
-      FilePath = TempFilePath;
+  // Copy the necessary files (header files, src files without replacements) to
+  // OutRoot
+  auto copyNecessaryFiles = [&](clang::tooling::UnifiedPath OutRoot,
+                                bool IsCUDAMigrationOutRoot = false) {
+    for (const auto &Entry : IncludeFileMap) {
+      // Generated SYCL file in outroot. E.g., /path/to/outroot/a.dp.cpp
+      clang::tooling::UnifiedPath FilePath = Entry.first;
+      if (!Entry.second) {
+        bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
+        if (IsExcluded) {
+          continue;
+        }
+        // Always migrate *.cuh files to *.dp.hpp files,
+        // Always migrate *.cu files to *.dp.cpp files.
+        SourceProcessType FileType = GetSourceFileType(FilePath);
+        SmallString<512> TempFilePath(FilePath.getCanonicalPath());
+        if ((FileType & SPT_CudaHeader) && !IsCUDAMigrationOutRoot) {
+          path::replace_extension(TempFilePath,
+                                  DpctGlobalInfo::getSYCLHeaderExtension());
+        } else if ((FileType & SPT_CudaSource) && !IsCUDAMigrationOutRoot) {
+          path::replace_extension(TempFilePath,
+                                  DpctGlobalInfo::getSYCLSourceExtension());
+        }
+        FilePath = TempFilePath;
 
-      if (!rewriteCanonicalDir(FilePath, InRoot, OutRoot)) {
-        continue;
-      }
+        if (!rewriteCanonicalDir(FilePath, InRoot, OutRoot)) {
+          continue;
+        }
 
-      if (dpct::DpctGlobalInfo::isCodePinEnabled() &&
-          !rewriteCanonicalDir(DebugFilePath, InRoot, CUDAMigratedOutRoot)) {
-        continue;
-      }
+        // Check for another file with SYCL extension. For example
+        // In in-root we have
+        //  * src.cpp
+        //  * src.cu
+        // After migration we will end up replacing src.cpp with migrated src.cu
+        // when the --sycl-file-extension is cpp
+        // In such a case warn the user.
+        if (checkOverwriteAndWarn(FilePath.getCanonicalPath(),
+                                  Entry.first.getCanonicalPath()))
+          continue;
 
-      // Check for another file with SYCL extension. For example
-      // In in-root we have
-      //  * src.cpp
-      //  * src.cu
-      // After migration we will end up replacing src.cpp with migrated src.cu
-      // when the --sycl-file-extension is cpp
-      // In such a case warn the user.
-      if (checkOverwriteAndWarn(FilePath.getCanonicalPath(),
-                                Entry.first.getCanonicalPath()))
-        continue;
+        // If the file needs no replacement and it already exist, don't
+        // make any changes
+        if (fs::exists(FilePath.getCanonicalPath())) {
+          // A header file with this name already exists.
+          llvm::errs() << "File '" << FilePath
+                       << "' already exists; skipping it.\n";
+          continue;
+        }
 
-      // If the file needs no replacement and it already exist, don't
-      // make any changes
-      if (fs::exists(FilePath.getCanonicalPath())) {
-        // A header file with this name already exists.
-        llvm::errs() << "File '" << FilePath
-                     << "' already exists; skipping it.\n";
-        continue;
-      }
+        createDirectories(path::parent_path(FilePath.getCanonicalPath()));
+        dpct::RawFDOStream Stream(FilePath.getCanonicalPath());
 
-      createDirectories(path::parent_path(FilePath.getCanonicalPath()));
-      dpct::RawFDOStream Stream(FilePath.getCanonicalPath());
+        llvm::Expected<FileEntryRef> Result =
+            Tool.getFiles().getFileRef(Entry.first.getCanonicalPath());
+        if (auto E = Result.takeError()) {
+          continue;
+        }
+        if (MapNames::PatternRewriters.empty() || IsCUDAMigrationOutRoot) {
+          Rewrite
+              .getEditBuffer(Sources.getOrCreateFileID(
+                  *Result, clang::SrcMgr::C_User /*normal user code*/))
+              .write(Stream);
+        } else {
+          std::string OutputString;
+          llvm::raw_string_ostream RSW(OutputString);
+          Rewrite
+              .getEditBuffer(Sources.getOrCreateFileID(
+                  *Result, clang::SrcMgr::C_User /*normal user code*/))
+              .write(RSW);
+          applyPatternRewriter(OutputString, Stream);
+        }
 
-      llvm::Expected<FileEntryRef> Result =
-          Tool.getFiles().getFileRef(Entry.first.getCanonicalPath());
-      if (auto E = Result.takeError()) {
-        continue;
-      }
-      if (MapNames::PatternRewriters.empty()) {
-        Rewrite
-            .getEditBuffer(Sources.getOrCreateFileID(
-                *Result, clang::SrcMgr::C_User /*normal user code*/))
-            .write(Stream);
-      } else {
-        std::string OutputString;
-        llvm::raw_string_ostream RSW(OutputString);
-        Rewrite
-            .getEditBuffer(Sources.getOrCreateFileID(
-                *Result, clang::SrcMgr::C_User /*normal user code*/))
-            .write(RSW);
-        applyPatternRewriter(OutputString, Stream);
-      }
-
-      // This will help us to detect the same output filename
-      // for two different input files
-      OutFilePath2InFilePath[FilePath.getCanonicalPath().str()] =
-          Entry.first.getCanonicalPath().str();
-
-      if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
-        // Copy non-replacement CUDA files into debug folder
-        fs::copy_file(OriginalFilePath.getCanonicalPath(),
-                      DebugFilePath.getCanonicalPath());
+        // This will help us to detect the same output filename
+        // for two different input files
+        OutFilePath2InFilePath[FilePath.getCanonicalPath().str()] =
+            Entry.first.getCanonicalPath().str();
       }
     }
-  }
+  };
+  copyNecessaryFiles(OutRoot);
+  if (dpct::DpctGlobalInfo::isCodePinEnabled())
+    copyNecessaryFiles(CUDAMigratedOutRoot, true);
 
   std::string ScriptFineName = "Makefile.dpct";
   if (!BuildScriptFile.empty())

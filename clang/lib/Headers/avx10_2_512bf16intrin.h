@@ -287,21 +287,21 @@ _mm512_maskz_min_pbh(__mmask32 __U, __m512bh __A, __m512bh __B) {
 }
 
 #define _mm512_cmp_pbh_mask(__A, __B, __P)                                     \
-  ((__mmask32)__builtin_ia32_vcmppbf16512_mask((__v32bf)(__m512bh)(__A),       \
+  ((__mmask32)__builtin_ia32_vcmpbf16512_mask((__v32bf)(__m512bh)(__A),       \
                                                (__v32bf)(__m512bh)(__B),       \
                                                (int)(__P), (__mmask32) - 1))
 
 #define _mm512_mask_cmp_pbh_mask(__U, __A, __B, __P)                           \
-  ((__mmask32)__builtin_ia32_vcmppbf16512_mask((__v32bf)(__m512bh)(__A),       \
+  ((__mmask32)__builtin_ia32_vcmpbf16512_mask((__v32bf)(__m512bh)(__A),       \
                                                (__v32bf)(__m512bh)(__B),       \
                                                (int)(__P), (__mmask32)(__U)))
 
 #define _mm512_mask_fpclass_pbh_mask(__U, __A, imm)                            \
-  ((__mmask32)__builtin_ia32_vfpclasspbf16512_mask(                            \
+  ((__mmask32)__builtin_ia32_vfpclassbf16512_mask(                            \
       (__v32bf)(__m512bh)(__A), (int)(imm), (__mmask32)(__U)))
 
 #define _mm512_fpclass_pbh_mask(__A, imm)                                      \
-  ((__mmask32)__builtin_ia32_vfpclasspbf16512_mask(                            \
+  ((__mmask32)__builtin_ia32_vfpclassbf16512_mask(                            \
       (__v32bf)(__m512bh)(__A), (int)(imm), (__mmask32) - 1))
 
 static __inline__ __m512bh __DEFAULT_FN_ATTRS512
@@ -361,49 +361,49 @@ _mm512_maskz_getexp_pbh(__mmask32 __U, __m512bh __A) {
 
 static __inline__ __m512bh __DEFAULT_FN_ATTRS512
 _mm512_rsqrt_pbh(__m512bh __A) {
-  return (__m512bh)__builtin_ia32_vrsqrtpbf16512_mask(
+  return (__m512bh)__builtin_ia32_vrsqrtbf16512_mask(
       (__v32bf)__A, (__v32bf)_mm512_undefined_pbh(), (__mmask32)-1);
 }
 
 static __inline__ __m512bh __DEFAULT_FN_ATTRS512
 _mm512_mask_rsqrt_pbh(__m512bh __W, __mmask32 __U, __m512bh __A) {
-  return (__m512bh)__builtin_ia32_vrsqrtpbf16512_mask(
+  return (__m512bh)__builtin_ia32_vrsqrtbf16512_mask(
       (__v32bf)__A, (__v32bf)__W, (__mmask32)__U);
 }
 
 static __inline__ __m512bh __DEFAULT_FN_ATTRS512
 _mm512_maskz_rsqrt_pbh(__mmask32 __U, __m512bh __A) {
-  return (__m512bh)__builtin_ia32_vrsqrtpbf16512_mask(
+  return (__m512bh)__builtin_ia32_vrsqrtbf16512_mask(
       (__v32bf)__A, (__v32bf)_mm512_setzero_pbh(), (__mmask32)__U);
 }
 
 #define _mm512_reducene_pbh(__A, imm)                                          \
-  ((__m512bh)__builtin_ia32_vreducenepbf16512_mask(                            \
+  ((__m512bh)__builtin_ia32_vreducebf16512_mask(                            \
       (__v32bf)(__m512bh)(__A), (int)(imm), (__v32bf)_mm512_undefined_pbh(),   \
       (__mmask32) - 1))
 
 #define _mm512_mask_reducene_pbh(__W, __U, __A, imm)                           \
-  ((__m512bh)__builtin_ia32_vreducenepbf16512_mask(                            \
+  ((__m512bh)__builtin_ia32_vreducebf16512_mask(                            \
       (__v32bf)(__m512bh)(__A), (int)(imm), (__v32bf)(__m512bh)(__W),          \
       (__mmask32)(__U)))
 
 #define _mm512_maskz_reducene_pbh(__U, __A, imm)                               \
-  ((__m512bh)__builtin_ia32_vreducenepbf16512_mask(                            \
+  ((__m512bh)__builtin_ia32_vreducebf16512_mask(                            \
       (__v32bf)(__m512bh)(__A), (int)(imm), (__v32bf)_mm512_setzero_pbh(),     \
       (__mmask32)(__U)))
 
 #define _mm512_roundscalene_pbh(__A, imm)                                      \
-  ((__m512bh)__builtin_ia32_vrndscalenepbf16_mask(                             \
+  ((__m512bh)__builtin_ia32_vrndscalebf16_mask(                             \
       (__v32bf)(__m512bh)(__A), (int)(imm), (__v32bf)_mm512_setzero_pbh(),     \
       (__mmask32) - 1))
 
 #define _mm512_mask_roundscalene_pbh(__W, __U, __A, imm)                       \
-  ((__m512bh)__builtin_ia32_vrndscalenepbf16_mask(                             \
+  ((__m512bh)__builtin_ia32_vrndscalebf16_mask(                             \
       (__v32bf)(__m512bh)(__A), (int)(imm), (__v32bf)(__m512bh)(__W),          \
       (__mmask32)(__U)))
 
 #define _mm512_maskz_roundscalene_pbh(__U, __A, imm)                           \
-  ((__m512bh)__builtin_ia32_vrndscalenepbf16_mask(                             \
+  ((__m512bh)__builtin_ia32_vrndscalebf16_mask(                             \
       (__v32bf)(__m512bh)(__A), (int)(imm), (__v32bf)_mm512_setzero_pbh(),     \
       (__mmask32)(__U)))
 
