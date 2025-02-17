@@ -913,7 +913,7 @@ def X86vcvtne2ph2bf8s : SDNode<"X86ISD::VCVTNE2PH2BF8S",
                                SDTAVX10CONVERT_I82F16>;
 def X86vcvtne2ph2hf8 : SDNode<"X86ISD::VCVTNE2PH2HF8",
                               SDTAVX10CONVERT_I82F16>;
-def X86vcvtne2ph2hf8s : SDNode<"X86ISD::VCVTNE2PH2HF8S",
+def X86vcvt2ph2hf8s : SDNode<"X86ISD::VCVT2PH2HF8S",
                                SDTAVX10CONVERT_I82F16>;
 // 2op no broadcast
 def X86vcvthf82ph : SDNode<"X86ISD::VCVTHF82PH",

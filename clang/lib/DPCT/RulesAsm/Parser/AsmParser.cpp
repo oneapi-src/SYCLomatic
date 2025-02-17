@@ -334,7 +334,6 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   SmallVector<InlineAsmType *, 4> Types;
   SmallVector<InlineAsmExpr *, 4> Ops;
   std::optional<AsmStateSpace> StateSpace;
-
   while (Tok.startOfDot()) {
     switch (Tok.getIdentifier()->getFlags()) {
     case InlineAsmIdentifierInfo::BuiltinType:

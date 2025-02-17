@@ -349,7 +349,7 @@ _mm256_maskz_cvtne2ph_phf8(__mmask32 __U, __m256h __A, __m256h __B) {
 
 static __inline__ __m128i __DEFAULT_FN_ATTRS128
 _mm_cvtnes2ph_phf8(__m128h __A, __m128h __B) {
-  return (__m128i)__builtin_ia32_vcvtne2ph2hf8s_128((__v8hf)(__A),
+  return (__m128i)__builtin_ia32_vcvt2ph2hf8s_128((__v8hf)(__A),
                                                     (__v8hf)(__B));
 }
 
@@ -368,7 +368,7 @@ _mm_maskz_cvtnes2ph_phf8(__mmask16 __U, __m128h __A, __m128h __B) {
 
 static __inline__ __m256i __DEFAULT_FN_ATTRS256
 _mm256_cvtnes2ph_phf8(__m256h __A, __m256h __B) {
-  return (__m256i)__builtin_ia32_vcvtne2ph2hf8s_256((__v16hf)(__A),
+  return (__m256i)__builtin_ia32_vcvt2ph2hf8s_256((__v16hf)(__A),
                                                     (__v16hf)(__B));
 }
 

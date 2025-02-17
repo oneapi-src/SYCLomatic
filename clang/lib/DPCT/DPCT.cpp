@@ -1052,7 +1052,7 @@ int runDPCT(int argc, const char **argv) {
     bool NeedCheckOutRootEmpty =
         !(MigrateBuildScriptOnly || BuildScriptsSpecified);
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
-        !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
+        !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty, EnableCodePin)) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
@@ -1322,7 +1322,10 @@ int runDPCT(int argc, const char **argv) {
   }
   // OC_Action: only migrate Build scripts.
   if (MigrateBuildScriptOnly) {
-    doBuildScriptMigration();
+    loadMainSrcFileInfo(OutRootPath);
+    collectBuildScriptsSpecified(OptParser, InRootPath, OutRootPath);
+    migrateBuildScripts(InRootPath, OutRootPath);
+
     ShowStatus(MigrationBuildScriptCompleted);
     dpctExit(MigrationSucceeded, false);
   }

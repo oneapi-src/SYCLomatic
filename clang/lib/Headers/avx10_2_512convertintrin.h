@@ -196,7 +196,7 @@ _mm512_maskz_cvtne2ph_phf8(__mmask64 __U, __m512h __A, __m512h __B) {
 
 static __inline__ __m512i __DEFAULT_FN_ATTRS512
 _mm512_cvtnes2ph_phf8(__m512h __A, __m512h __B) {
-  return (__m512i)__builtin_ia32_vcvtne2ph2hf8s_512((__v32hf)(__A),
+  return (__m512i)__builtin_ia32_vcvt2ph2hf8s_512((__v32hf)(__A),
                                                     (__v32hf)(__B));
 }
 

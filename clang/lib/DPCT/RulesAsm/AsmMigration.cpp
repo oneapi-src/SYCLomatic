@@ -588,9 +588,9 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVarDecl *D) {
 }
 
 bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
-  // Address expression only support ld/st & atom instructions.
+  // Address expression only support ld/st/red & atom instructions.
   if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom,
-                                 asmtok::op_prefetch))
+                                 asmtok::op_prefetch, asmtok::op_red))
     return SYCLGenError();
   std::string Type;
   if (tryEmitType(Type, CurrInst->getType(0)))
@@ -607,7 +607,7 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     return false;
   };
 
-  if (CurrInst->is(asmtok::op_st, asmtok::op_ld))
+  if (CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_red))
     OS() << "*";
   switch (Dst->getMemoryOpKind()) {
   case InlineAsmAddressExpr::Imm:
@@ -618,7 +618,8 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     std::string Reg;
     if (tryEmitStmt(Reg, Dst->getSymbol()))
       return SYCLGenSuccess();
-    if (CurrInst->is(asmtok::op_prefetch) || CanSuppressCast(Dst->getSymbol()))
+    if (CurrInst->is(asmtok::op_prefetch, asmtok::op_red) ||
+        CanSuppressCast(Dst->getSymbol()))
       OS() << llvm::formatv("{0}", Reg);
     else
       OS() << llvm::formatv("(({0} *)(uintptr_t){1})", Type, Reg);
@@ -2710,6 +2711,62 @@ protected:
     OS() << ')';
     endstmt();
     insertHeader(HeaderType::HT_DPCT_Atomic);
+    return SYCLGenSuccess();
+  }
+
+  bool handle_red(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+
+    const auto *Src = Inst->getInputOperand(0);
+    const auto *Dst =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getOutputOperand());
+    if (!Dst)
+      return false;
+
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!Type ||
+        (Type->getKind() != InlineAsmBuiltinType::s32 &&
+         Type->getKind() != InlineAsmBuiltinType::b32 &&
+         Type->getKind() != InlineAsmBuiltinType::u32 &&
+         Type->getKind() != InlineAsmBuiltinType::f32) ||
+        !Inst->hasAttr(InstAttr::gpu))
+      return SYCLGenError();
+
+    if (emitStmt(Dst))
+      return SYCLGenError();
+
+    std::string a;
+    if (tryEmitStmt(a, Dst))
+      return SYCLGenError();
+    std::string b;
+    if (tryEmitStmt(b, Src))
+      return SYCLGenError();
+
+    OS() << " = ";
+    OS() << MapNames::getClNamespace() + "reduce_over_group(";
+    OS() << DpctGlobalInfo::getItem(GAS) << ".get_group(), " << b << ",";
+
+    if (Inst->hasAttr(InstAttr::add))
+      OS() << MapNames::getClNamespace() + "plus<>()";
+    else if (Inst->hasAttr(InstAttr::op_or))
+      OS() << MapNames::getClNamespace() + "bit_or<>()";
+    else if (Inst->hasAttr(InstAttr::op_xor))
+      OS() << MapNames::getClNamespace() + "bit_xor<>()";
+    else if (Inst->hasAttr(InstAttr::op_and))
+      OS() << MapNames::getClNamespace() + "bit_and<>()";
+    else if (Inst->hasAttr(InstAttr::min))
+      OS() << MapNames::getClNamespace() + "minimum<>()";
+    else if (Inst->hasAttr(InstAttr::max))
+      OS() << MapNames::getClNamespace() + "maximum<>()";
+    else
+      return SYCLGenError();
+
+    OS() << ")";
+    endstmt();
     return SYCLGenSuccess();
   }
 };
