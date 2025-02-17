@@ -4622,7 +4622,8 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 
   auto launchAPIName = [&]() {
-    return hasAnyName("cudaLaunchKernel", "cudaLaunchCooperativeKernel");
+    return hasAnyName("cudaLaunchKernel", "cudaLaunchCooperativeKernel",
+                      "cudaLaunchHostFunc");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(launchAPIName())), parentStmt()))
@@ -4837,56 +4838,99 @@ void KernelCallRule::runRule(
       LaunchKernelCall = getNodeAsType<CallExpr>(Result, "launchUsed");
       IsAssigned = true;
     }
-    if (!LaunchKernelCall)
+    auto FD = LaunchKernelCall->getDirectCallee();
+    if (!LaunchKernelCall || !FD)
       return;
-    const Expr *CalleeDRE = LaunchKernelCall->getArg(0);
-    bool IsFuncTypeErased = true;
-    auto QT = CalleeDRE->getType();
-
-    if (QT->isPointerType()) {
-      QT = QT->getPointeeType();
-    }
-    if (QT->isFunctionType()) {
-      IsFuncTypeErased = false;
-    }
-
-    if (!getAddressedRef(CalleeDRE)) {
-      if (IsFuncTypeErased) {
-        DpctGlobalInfo::setCVersionCUDALaunchUsed();
+    std::string FuncName = FD->getNameAsString();
+    std::cout << FuncName << std::endl;
+    if (FuncName == "cudaLaunchHostFunc") {
+      if (DpctGlobalInfo::getUsmLevel() != UsmLevel::UL_Restricted) {
+        report(LaunchKernelCall->getBeginLoc(), Diagnostics::API_NOT_MIGRATED,
+               false, "cudaLaunchHostFunc");
+        return;
+      }
+      if (!DpctGlobalInfo::useExpInOrderQueueEvents()) {
+        report(LaunchKernelCall->getBeginLoc(),
+               Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               "cudaLaunchHostFunc",
+               "--use-experimental-features=in_order_queue_events");
+        return;
       }
       std::string ReplStr;
       llvm::raw_string_ostream OS(ReplStr);
+      std::string IndentStr = getIndent(LaunchKernelCall->getBeginLoc(),
+                                        DpctGlobalInfo::getSourceManager())
+                                  .str();
       if (IsAssigned) {
         OS << MapNames::getCheckErrorMacroName() << "(";
       }
-      OS << MapNames::getDpctNamespace() << "kernel_launcher::launch(";
-      size_t ArgsNum = LaunchKernelCall->getNumArgs();
-      for (size_t i = 0; i < ArgsNum; i++) {
-        if (auto Arg = LaunchKernelCall->getArg(i)) {
-          if (i == 0) {
-            if (auto E = getAddressedRef(CalleeDRE, false, nullptr)) {
-              OS << ExprAnalysis::ref(E);
-            } else {
-              OS << ExprAnalysis::ref(Arg);
-            }
-          } else {
-            OS << ", " << ExprAnalysis::ref(Arg);
-          }
-        }
-      }
-      OS << ")";
+      OS << ExprAnalysis::ref(LaunchKernelCall->getArg(0))
+         << "->submit([&](sycl::handler &cgh) {" << getNL() << IndentStr
+         << "  cgh.depends_on("
+         << ExprAnalysis::ref(LaunchKernelCall->getArg(0))
+         << "->ext_oneapi_get_last_event());" << getNL() << IndentStr
+         << "  cgh.host_task([=](){" << getNL() << IndentStr << "    "
+         << ExprAnalysis::ref(LaunchKernelCall->getArg(1)) << "("
+         << ExprAnalysis::ref(LaunchKernelCall->getArg(2)) << ");" << getNL()
+         << IndentStr << "  });" << getNL() << IndentStr << "})";
       if (IsAssigned) {
         OS << ")";
       }
-      emplaceTransformation(new ReplaceStmt(LaunchKernelCall, OS.str()));
+      auto Repl = new ReplaceStmt(LaunchKernelCall, OS.str());
+      Repl->setBlockLevelFormatFlag();
+      emplaceTransformation(Repl);
       return;
-    }
+    } else {
+      const Expr *CalleeDRE = LaunchKernelCall->getArg(0);
+      bool IsFuncTypeErased = true;
+      auto QT = CalleeDRE->getType();
 
-    if (!IsAssigned)
-      findAndRemoveTrailingSemicolon(LaunchKernelCall, Result);
-    if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall,
-                                                            IsAssigned)) {
-      emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true, false, ""));
+      if (QT->isPointerType()) {
+        QT = QT->getPointeeType();
+      }
+      if (QT->isFunctionType()) {
+        IsFuncTypeErased = false;
+      }
+
+      if (!getAddressedRef(CalleeDRE)) {
+        if (IsFuncTypeErased) {
+          DpctGlobalInfo::setCVersionCUDALaunchUsed();
+        }
+        std::string ReplStr;
+        llvm::raw_string_ostream OS(ReplStr);
+        if (IsAssigned) {
+          OS << MapNames::getCheckErrorMacroName() << "(";
+        }
+        OS << MapNames::getDpctNamespace() << "kernel_launcher::launch(";
+        size_t ArgsNum = LaunchKernelCall->getNumArgs();
+        for (size_t i = 0; i < ArgsNum; i++) {
+          if (auto Arg = LaunchKernelCall->getArg(i)) {
+            if (i == 0) {
+              if (auto E = getAddressedRef(CalleeDRE, false, nullptr)) {
+                OS << ExprAnalysis::ref(E);
+              } else {
+                OS << ExprAnalysis::ref(Arg);
+              }
+            } else {
+              OS << ", " << ExprAnalysis::ref(Arg);
+            }
+          }
+        }
+        OS << ")";
+        if (IsAssigned) {
+          OS << ")";
+        }
+        emplaceTransformation(new ReplaceStmt(LaunchKernelCall, OS.str()));
+        return;
+      }
+
+      if (!IsAssigned)
+        findAndRemoveTrailingSemicolon(LaunchKernelCall, Result);
+      if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall,
+                                                              IsAssigned)) {
+        emplaceTransformation(
+            new ReplaceStmt(LaunchKernelCall, true, false, ""));
+      }
     }
   }
 }

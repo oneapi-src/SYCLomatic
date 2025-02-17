@@ -2,9 +2,14 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel_implicit_sync/kernel_implicit_sync.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/kernel_implicit_sync/kernel_implicit_sync.dp.cpp -o %T/kernel_implicit_sync/kernel_implicit_sync.dp.o %}
 #include<cuda_runtime.h>
-
+#include<iostream>
 __global__ void kernel(int *a){
 
+}
+
+void hostCallback(void *userData) {
+  const char *msg = static_cast<const char*>(userData);
+  std::cout << "Host callback executed. Message: " << msg << std::endl;
 }
 
 int main() {
@@ -35,6 +40,24 @@ int main() {
 // CHECK:          });
 // CHECK:      });  
   kernel<<<1, 1, 0, s1>>>(b);
+
+  cudaError_t err;
+  const char *message = "Kernel execution finished.";
+  cudaStream_t stream;
+// CHECK:  err = DPCT_CHECK_ERROR(stream->submit([&](sycl::handler &cgh) {
+// CHECK:    cgh.depends_on(stream->ext_oneapi_get_last_event());
+// CHECK:    cgh.host_task([=](){
+// CHECK:      hostCallback((void*)message);
+// CHECK:    });
+// CHECK:  }));
+
+  err = cudaLaunchHostFunc(stream, hostCallback, (void*)message);
+// CHECK: stream->submit([&](sycl::handler &cgh) {
+// CHECK:   cgh.depends_on(stream->ext_oneapi_get_last_event());
+// CHECK:   cgh.host_task([=](){
+// CHECK:     hostCallback((void*)message);
+// CHECK: });
+  cudaLaunchHostFunc(stream, hostCallback, (void*)message);
 
   return 0;
 }

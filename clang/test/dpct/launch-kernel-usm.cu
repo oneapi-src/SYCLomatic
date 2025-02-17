@@ -22,6 +22,11 @@ __global__ void kernel(int *d, cudaTextureObject_t tex) {
   tex1D(d + gtid, tex, gtid);
 }
 
+void hostCallback(void *userData) {
+  const char *msg = static_cast<const char*>(userData);
+  std::cout << "Host callback executed. Message: " << msg << std::endl;
+}
+
 int main() {
   int *d_data;
   cudaMalloc(&d_data, sizeof(int));
@@ -86,6 +91,17 @@ int main() {
   kernel_array[10] = (void *)&kernel;
   // CHECK: dpct::kernel_launcher::launch(kernel_array[10], dpct::dim3(16), dpct::dim3(16), args, 0, 0);
   cudaLaunchKernel(kernel_array[10], dim3(16), dim3(16), args, 0, 0);
+
+  cudaError_t err;
+  const char *message = "Kernel execution finished.";
+// CHECK:  /*
+// CHECK:  DPCT1119:{{[0-9]+}}: Migration of cudaLaunchHostFunc is not supported, please try to remigrate with option: --use-experimental-features=in_order_queue_events.
+// CHECK:  */
+  err = cudaLaunchHostFunc(stream, hostCallback, (void*)message);
+// CHECK:  /*
+// CHECK:  DPCT1119:{{[0-9]+}}: Migration of cudaLaunchHostFunc is not supported, please try to remigrate with option: --use-experimental-features=in_order_queue_events.
+// CHECK:  */
+  cudaLaunchHostFunc(stream, hostCallback, (void*)message);
 
   cudaStreamDestroy(stream);
   cudaDestroyTextureObject(tex);
