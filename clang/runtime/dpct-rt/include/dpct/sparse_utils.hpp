@@ -1476,7 +1476,7 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<std::int64_t, 1> nnz_buf_c1(1);
   __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, &nnz_buf_c1);
-  nnz_c1_int = nnz_buf_c.get_host_access(sycl::read_only)[0];
+  nnz_c1_int = nnz_buf_c1.get_host_access(sycl::read_only)[0];
 #else
   std::int64_t *nnz_c1 = sycl::malloc_host<std::int64_t>(1, queue);
   __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, nnz_c1);
