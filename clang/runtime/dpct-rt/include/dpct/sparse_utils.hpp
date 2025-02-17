@@ -564,6 +564,9 @@ private:
     detail::matrix_handle_manager matrix_handle_d;
     detail::matrix_handle_manager matrix_handle_c;
     detail::handle_manager<oneapi::mkl::sparse::omatadd_descr_t> omatadd_desc;
+    void *row_ptr_c1 = nullptr;
+    void *col_ind_c1 = nullptr;
+    void *val_c1 = nullptr;
     bool is_empty() { return omatadd_desc.is_empty(); }
     void init(sycl::queue *q_ptr) {
       omatadd_desc.init(q_ptr);
@@ -1420,6 +1423,7 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
 
   int *row_ptr_c1 = (int *)::dpct::cs::malloc((m + 1) * sizeof(int), queue);
   if (info.is_empty()) {
+    info.row_ptr_c1 = row_ptr_c1;
     info.init(&queue);
     info.matrix_handle_c1.set_matrix_data<Ty>(
         m, n, oneapi::mkl::index_base::zero, row_ptr_c1, nullptr, nullptr);
@@ -1482,10 +1486,13 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
   __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, nnz_c1);
   queue.wait();
   nnz_c1_int = *nnz_c1;
+  sycl::free(nnz_c1, queue);
 #endif
 
   int *col_ind_c1 = (int *)::dpct::cs::malloc(nnz_c1_int * sizeof(int), queue);
   Ty *val_c1 = (Ty *)::dpct::cs::malloc(nnz_c1_int * sizeof(Ty), queue);
+  info.col_ind_c1 = col_ind_c1;
+  info.val_c1 = val_c1;
   info.matrix_handle_c1.set_matrix_data<Ty>(m, n, oneapi::mkl::index_base::zero,
                                             row_ptr_c1, col_ind_c1, val_c1);
 
@@ -1534,6 +1541,7 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
   ::dpct::cs::memcpy(::dpct::cs::get_default_queue(), row_ptr_c + m, &c_nnz_int,
                      sizeof(int))
       .wait();
+  ::dpct::cs::free(ws, queue);
 }
 
 template <typename T>
@@ -1579,6 +1587,15 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
   info.matrix_handle_d.add_dependency(e);
   info.matrix_handle_c.add_dependency(e);
   info.omatadd_desc.add_dependency(e);
+  queue.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task(
+        [p1 = info.row_ptr_c1, p2 = info.col_ind_c1, p3 = info.val_c1] {
+          ::dpct::cs::free(p1, queue);
+          ::dpct::cs::free(p2, queue);
+          ::dpct::cs::free(p3, queue);
+        });
+  });
   desc->get_csrgemm2_info_map().erase(args);
 }
 
