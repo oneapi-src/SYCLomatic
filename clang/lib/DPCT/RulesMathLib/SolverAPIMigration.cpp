@@ -335,10 +335,10 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                 "range<1>(1));" + getNL();
             SuffixInsertStr = SuffixInsertStr + BufferName +
                               ".get_host_access(" + MapNames::getClNamespace() +
-                              "write)[0] = "
+                              "write_only)[0] = "
                               "(int)result_temp_buffer" +
                               std::to_string(i) + ".get_host_access(" +
-                              MapNames::getClNamespace() + "read)[0];" +
+                              MapNames::getClNamespace() + "read_only)[0];" +
                               getNL() + IndentStr;
             BufferName = "result_temp_buffer" + std::to_string(i);
           }

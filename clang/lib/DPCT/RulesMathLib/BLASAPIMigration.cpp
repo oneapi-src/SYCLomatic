@@ -760,11 +760,11 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                           MapNames::getClNamespace() + "range<1>(1));" +
                           getNL() + IndentStr + CallExprReplStr + ", " +
                           ResultTempBuf + ");" + getNL() + IndentStr;
-        ReturnValueParamsStr = "(" + ResultTempBuf + ".get_host_access(" +
-                               MapNames::getClNamespace() +
-                               "read)[0].real(), " + ResultTempBuf +
-                               ".get_host_access(" +
-                               MapNames::getClNamespace() + "read)[0].imag())";
+        ReturnValueParamsStr =
+            "(" + ResultTempBuf + ".get_host_access(" +
+            MapNames::getClNamespace() + "read_only)[0].real(), " +
+            ResultTempBuf + ".get_host_access(" + MapNames::getClNamespace() +
+            "read_only)[0].imag())";
       }
 
       std::string Repl;
@@ -780,7 +780,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             Repl = "*" + ResultTempPtr;
         } else {
           Repl = ResultTempBuf + ".get_host_access(" +
-                 MapNames::getClNamespace() + "read)[0]";
+                 MapNames::getClNamespace() + "read_only)[0]";
         }
       }
       if (NeedUseLambda) {
