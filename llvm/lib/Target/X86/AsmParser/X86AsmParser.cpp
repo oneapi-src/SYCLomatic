@@ -3377,7 +3377,7 @@ bool X86AsmParser::parseInstruction(ParseInstructionInfo &Info, StringRef Name,
       else if (PatchedName.ends_with("ph"))
         PatchedName = "vcmpph";
       else if (PatchedName.ends_with("pbf16"))
-        PatchedName = "vcmppbf16";
+        PatchedName = "vcmpbf16";
       else
         llvm_unreachable("Unexpected suffix!");
 

@@ -296,6 +296,8 @@ DEF_WARNING(SPARSE_NNZ, 1134, MEDIUM_LEVEL, "The tool cannot deduce the consumer
 DEF_COMMENT(SPARSE_NNZ, 1134, MEDIUM_LEVEL, "The tool cannot deduce the consumer API (\"dpct::sparse::csrgemm\") of this API, and this API has 2 arguments depending on the 8th and the 12th parameters of the consumer API. Please replace the 2 arguments tagged as \"dpct_placeholder\" with the corresponding value.")
 DEF_WARNING(JOINT_MATRIX_SHAPE, 1135, HIGH_LEVEL, "Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.")
 DEF_COMMENT(JOINT_MATRIX_SHAPE, 1135, HIGH_LEVEL, "Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.")
+DEF_WARNING(UNSUPPORTED_EXTMEM_WIN_HANDLE, 1136, HIGH_LEVEL, "SYCL Bindless Images extension only supports importing external resource memory using NT handle on Windows. If assert(%0.get_win32_handle()) fails, you may need to adjust the code to use (%0.get_win32_handle()).")
+DEF_COMMENT(UNSUPPORTED_EXTMEM_WIN_HANDLE, 1136, HIGH_LEVEL, "SYCL Bindless Images extension only supports importing external resource memory using NT handle on Windows. If assert({0}.get_win32_handle()) fails, you may need to adjust the code to use ({0}.get_win32_handle()).")
 // clang-format on
 
 #undef DEF_COMMENT
