@@ -92,7 +92,7 @@ inline bool is_expand_to_dump() {
     };
 
     std::string type_name = demangle_name<T>();
-    std::cout << "TTTT " << type_name << std::endl;
+    std::cout << "TTTTaaaa " << type_name << std::endl;
     return std::find(type_list.begin(), type_list.end(), type_name) != type_list.end();
 }
 
@@ -286,7 +286,7 @@ json_stringstream::json_obj::value<json_stringstream::json_obj>() {
 template <class T, class T2 = void> class data_ser {
 
 public:
-  static size_t dump(json_stringstream &ss, std::ofstream &ofst, T &value, queue_t queue) {
+  static size_t dump(json_stringstream &ss, std::ofstream &ofst, T &value, queue_t queue, bool top_call = true) {
     // auto obj = ss.object();
     // obj.key("Data");
     // obj.value("CODEPIN:ERROR:1: Unable to find the corresponding serialization "

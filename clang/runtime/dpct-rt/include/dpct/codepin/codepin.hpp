@@ -173,7 +173,8 @@ public:
       // type_obj.value(length);
       type_obj.key("Offset");
       type_obj.value(static_cast<size_t>(ofst.tellp()));
-
+      std::cout << "CCCCVVVV \n";
+      std::cout << is_expand_to_dump<std::remove_pointer_t<First>>() << std::endl;
       if (std::is_arithmetic_v<First> || is_expand_to_dump<std::remove_pointer_t<First>>()) {
       // if (std::is_arithmetic_v<First> || (std::is_pointer_v<First> && std::is_arithmetic_v<std::remove_pointer_t<First>>)) {
         detail::data_ser<First>::dump(json_ss, ofst, arg, queue);
@@ -349,7 +350,8 @@ public:
 #endif
       dump_addr = h_data;
     }
-    // auto arr = ss.array();
+
+
     std::string tag = get_demangle_type_name<PointeeType>(true);
     ofst.write(&tag[0], tag.length()+1);
     std::cout << "tag " << tag << std::endl;

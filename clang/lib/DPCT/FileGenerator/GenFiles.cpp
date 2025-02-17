@@ -870,12 +870,14 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
         }
         RS << ">::print_type_name(value" << i << ");" << getNL() << "      obj.key(\"Offset\");" << getNL();
         RS << "      obj.value(static_cast<size_t>(ofst.tellp()));" << getNL();
-        RS << " if(!is_expand_to_dump<" 
+        RS << "      obj.key(\"Size\");" << getNL();
+        RS << "      obj.value(sizeof(" << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
+        RS << " if(!is_expand_to_dump<std::remove_pointer_t<"
         << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
         for (auto &D : Info.Members[i].Dims) {
           RS << "[" << std::to_string(D) << "]";
         }
-        RS << ">())  obj.key(\"Data\");" << getNL();
+        RS << ">>())  obj.key(\"Data\");" << getNL();
         RS << "      dpctexp::codepin::detail::data_ser<"
            << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
         for (auto &D : Info.Members[i].Dims) {
