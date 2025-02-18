@@ -46,6 +46,14 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "THRUST_200500___CUDA_ARCH_LIST___NS::system");
   };
 
+  // THRUST_200700___CUDA_ARCH_LIST___NS is newly imported inline
+  // namespace by thrust library in CUDA header file 12.6.
+  auto thrustFuncNameCuda128 = [&]() {
+    return hasAnyName("THRUST_200700___CUDA_ARCH_LIST___NS",
+                      "THRUST_200700___CUDA_ARCH_LIST___NS::detail",
+                      "THRUST_200700___CUDA_ARCH_LIST___NS::system");
+  };
+
   auto thrustFuncNameCudaCommon = [&]() {
     return hasAnyName("thrust", "thrust::detail", "thrust::system", "__4");
   };
@@ -93,6 +101,20 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                   callee(unresolvedLookupExpr(
                       hasAnyDeclaration(namedDecl(hasDeclContext(namespaceDecl(
                           anyOf(thrustFuncNameCuda126(),
+                                thrustFuncNameCudaCommon())))))))))
+            .bind("thrustFuncCall"),
+        this);
+  } else if (ThrustMajorVersion == 2 && ThrustMinorVersion == 7) {
+    // For CUDA-12.8
+    MF.addMatcher(
+        callExpr(
+            anyOf(callee(functionDecl(anyOf(
+                      hasDeclContext(namespaceDecl(thrustFuncNameCuda128())),
+                      hasDeclContext(namespaceDecl(thrustFuncNameCudaCommon())),
+                      functionName()))),
+                  callee(unresolvedLookupExpr(
+                      hasAnyDeclaration(namedDecl(hasDeclContext(namespaceDecl(
+                          anyOf(thrustFuncNameCuda128(),
                                 thrustFuncNameCudaCommon())))))))))
             .bind("thrustFuncCall"),
         this);
