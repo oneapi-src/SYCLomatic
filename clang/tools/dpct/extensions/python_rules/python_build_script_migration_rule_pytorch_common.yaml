@@ -5,7 +5,7 @@
 # This file will be installed to folder:
 # {dpct_install_folder}/extensions/python_rules.
 # The rule specified in this file can be imported with commandline option:
-# --rule-file={dpct_install_folder}/extensions/python_rules/python_build_script_migration_rule.yaml
+# --rule-file={dpct_install_folder}/extensions/python_rules/python_build_script_migration_rule_pytorch_common.yaml
 
 # src file ext rules
 - Rule: rule_cpp_file_in_func

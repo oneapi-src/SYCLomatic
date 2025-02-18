@@ -374,25 +374,35 @@ readYAMLFile(const llvm::StringRef &ruleFilePath) {
     // Extract the filename following !include.
     std::istringstream iss(lineStr);
     std::string incDirective, incRuleFilePath;
-    iss >> incDirective >> incRuleFilePath;
+    // iss >> incDirective >> incRuleFilePath;
+    iss >> incDirective;
+    std::getline(iss >> std::ws, incRuleFilePath);
 
-    if (incDirective == "!include" && !incRuleFilePath.empty()) {
-      // Remove surrounding quotes if they exist.
-      if (incRuleFilePath.front() == '"' && incRuleFilePath.back() == '"') {
-        incRuleFilePath = incRuleFilePath.substr(1, incRuleFilePath.size() - 2);
-      }
+    // Trim trailing spaces from incRuleFilePath
+    incRuleFilePath.erase(incRuleFilePath.find_last_not_of(" \t\n\r\f\v") + 1);
 
-      // Calculate the absolute path of the included file based on its parent
-      // rule file
-      llvm::SmallString<128> incRuleFileAbsPath = directoryPath;
-      llvm::sys::path::append(incRuleFileAbsPath, incRuleFilePath);
+    if (incDirective == "!include") {
+      if (!incRuleFilePath.empty()) {
+        // Remove surrounding quotes if they exist.
+        if (incRuleFilePath.front() == '"' && incRuleFilePath.back() == '"') {
+          incRuleFilePath =
+              incRuleFilePath.substr(1, incRuleFilePath.size() - 2);
+        }
 
-      // Recursively process the included file.
-      if (llvm::sys::fs::exists(incRuleFileAbsPath)) {
-        output << readYAMLFile(incRuleFileAbsPath.str())->getBuffer().str()
-               << "\n";
+        // Calculate the absolute path of the included file based on its parent
+        // rule file
+        llvm::SmallString<128> incRuleFileAbsPath = directoryPath;
+        llvm::sys::path::append(incRuleFileAbsPath, incRuleFilePath);
+
+        // Recursively process the included file.
+        if (llvm::sys::fs::exists(incRuleFileAbsPath)) {
+          output << readYAMLFile(incRuleFileAbsPath.str())->getBuffer().str()
+                 << "\n";
+        } else {
+          output << readYAMLFile(incRuleFilePath)->getBuffer().str() << "\n";
+        }
       } else {
-        output << readYAMLFile(incRuleFilePath)->getBuffer().str() << "\n";
+        continue;
       }
     } else {
       output << lineStr << "\n";
