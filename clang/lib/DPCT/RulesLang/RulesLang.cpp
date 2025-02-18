@@ -346,7 +346,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatmulHeuristicResult_t", "CUjit_target",
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
-              "CUstreamCallback"))))))
+              "CUstreamCallback", "cudaHostFn_t"))))))
           .bind("cudaTypeDef"),
       this);
 
