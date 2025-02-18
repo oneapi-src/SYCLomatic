@@ -10694,7 +10694,9 @@ bool clang::isBetterOverloadCandidate(
     const CXXMethodDecl *MD1 = dyn_cast<CXXMethodDecl>(Cand1.Function);
     const CXXMethodDecl *MD2 = dyn_cast<CXXMethodDecl>(Cand2.Function);
     if (MD1 && MD2 && Caller && !Caller->hasAttr<CUDAHostAttr>()) {
-      if (MD1->isMoveAssignmentOperator() && !MD2->isMoveAssignmentOperator())
+      if ((MD1->isMoveAssignmentOperator() ||
+           MD1->isCopyAssignmentOperator()) &&
+          !(MD2->isMoveAssignmentOperator() || MD2->isCopyAssignmentOperator()))
         return true;
     }
     return false;
