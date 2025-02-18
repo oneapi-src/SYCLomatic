@@ -1589,12 +1589,12 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
   info.omatadd_desc.add_dependency(e);
   queue.submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
-    cgh.host_task(
-        [p1 = info.row_ptr_c1, p2 = info.col_ind_c1, p3 = info.val_c1] {
-          ::dpct::cs::free(p1, queue);
-          ::dpct::cs::free(p2, queue);
-          ::dpct::cs::free(p3, queue);
-        });
+    cgh.host_task([_p1 = info.row_ptr_c1, _p2 = info.col_ind_c1,
+                   _p3 = info.val_c1, _q = queue] {
+      ::dpct::cs::free(_p1, _q);
+      ::dpct::cs::free(_p2, _q);
+      ::dpct::cs::free(_p3, _q);
+    });
   });
   desc->get_csrgemm2_info_map().erase(args);
 }
