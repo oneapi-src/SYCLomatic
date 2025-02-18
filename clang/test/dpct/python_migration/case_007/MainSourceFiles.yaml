@@ -19,11 +19,35 @@ Replacements:
     InitStr:         ''
     NewHostVarName:  ''
     BlockLevelFormatFlag: false
+  - FilePath:        '/path/to/src/bar.cpp'
+    Offset:          0
+    Length:          0
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/path/to/dst/bar.cpp'
+    Offset:          0
+    Length:          0
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
 
 MainSourceFilesDigest:
   - MainSourceFile:  '/path/to/src/foo.cpp'
     Digest:          e2636fb8d174ac319083b0306294d3bd
     HasCUDASyntax:   true
+  - MainSourceFile:  '/path/to/src/bar.cpp'
+    Digest:          e2636fb8d174ac319083b0306294d3bd
+    HasCUDASyntax:   true
+  - MainSourceFile:  '/path/to/dst/bar.cpp'
+    Digest:          e2636fb8d174ac319083b0306294d3bd
+    HasCUDASyntax:   false
   - MainSourceFile:  '/path/to/src/baz.cpp'
     Digest:          991d7e4825fc597205bf68f2eda27acd
     HasCUDASyntax:   false
