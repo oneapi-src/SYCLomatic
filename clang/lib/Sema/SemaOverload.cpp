@@ -10686,10 +10686,8 @@ bool clang::isBetterOverloadCandidate(
 #ifdef SYCLomatic_CUSTOMIZATION
     auto Preference1 = S.CUDA().IdentifyPreference(Caller, Cand1.Function);
     auto Preference2 = S.CUDA().IdentifyPreference(Caller, Cand2.Function);
-    if (Preference1 > Preference2)
-      return true;
-    if (Preference1 < Preference2)
-      return false;
+    if (Preference1 != Preference2)
+      return Preference1 > Preference2;
     // This is a workaround to align to the behavior of nvcc
     const CXXMethodDecl *MD1 = dyn_cast<CXXMethodDecl>(Cand1.Function);
     const CXXMethodDecl *MD2 = dyn_cast<CXXMethodDecl>(Cand2.Function);
