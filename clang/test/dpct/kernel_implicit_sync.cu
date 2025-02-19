@@ -13,6 +13,7 @@ int main() {
   cudaStreamCreate(&s1);
   cudaMallocManaged(&a, 100);
   cudaMallocManaged(&b, 100);
+
 // CHECK:  q_ct1.submit(
 // CHECK:      [&](sycl::handler &cgh) {
 // CHECK:        cgh.depends_on(dpct::get_current_device().get_in_order_queues_last_events());
@@ -23,6 +24,7 @@ int main() {
 // CHECK:          });
 // CHECK:      });
   kernel<<<1,1>>>(a);
+
 // CHECK:  s1->submit(
 // CHECK:      [&](sycl::handler &cgh) {
 // CHECK:        cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_last_event());
