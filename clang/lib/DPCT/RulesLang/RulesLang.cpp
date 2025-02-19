@@ -4849,13 +4849,6 @@ void KernelCallRule::runRule(
                false, "cudaLaunchHostFunc");
         return;
       }
-      if (!DpctGlobalInfo::useExpInOrderQueueEvents()) {
-        report(LaunchKernelCall->getBeginLoc(),
-               Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
-               "cudaLaunchHostFunc",
-               "--use-experimental-features=in_order_queue_events");
-        return;
-      }
       std::string ReplStr;
       llvm::raw_string_ostream OS(ReplStr);
       std::string IndentStr = getIndent(LaunchKernelCall->getBeginLoc(),
@@ -4866,9 +4859,6 @@ void KernelCallRule::runRule(
       }
       OS << ExprAnalysis::ref(LaunchKernelCall->getArg(0))
          << "->submit([&](sycl::handler &cgh) {" << getNL() << IndentStr
-         << "  cgh.depends_on("
-         << ExprAnalysis::ref(LaunchKernelCall->getArg(0))
-         << "->ext_oneapi_get_last_event());" << getNL() << IndentStr
          << "  cgh.host_task([=](){" << getNL() << IndentStr << "    "
          << ExprAnalysis::ref(LaunchKernelCall->getArg(1)) << "("
          << ExprAnalysis::ref(LaunchKernelCall->getArg(2)) << ");" << getNL()

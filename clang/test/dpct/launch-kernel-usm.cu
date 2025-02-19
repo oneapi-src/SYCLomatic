@@ -3,6 +3,9 @@
 // RUN: dpct --format-range=none -out-root %T/launch-kernel-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel-usm/launch-kernel-usm.dp.cpp
 
+#include<cuda_runtime.h>
+#include<iostream>
+
 // CHECK: void template_device(T *d, T *s) {
 template<class T>
 __device__ void template_device(T *d) {
@@ -96,14 +99,21 @@ int main() {
 
   cudaError_t err;
   const char *message = "Kernel execution finished.";
-// CHECK:  /*
-// CHECK:  DPCT1119:{{[0-9]+}}: Migration of cudaLaunchHostFunc is not supported, please try to remigrate with option: --use-experimental-features=in_order_queue_events.
-// CHECK:  */
+  cudaStream_t stream;
+// CHECK:  err = DPCT_CHECK_ERROR(stream->submit([&](sycl::handler &cgh) {
+// CHECK:    cgh.host_task([=](){
+// CHECK:      hostCallback((void*)message);
+// CHECK:    });
+// CHECK:  }));
   err = cudaLaunchHostFunc(stream, hostCallback, (void*)message);
-// CHECK:  /*
-// CHECK:  DPCT1119:{{[0-9]+}}: Migration of cudaLaunchHostFunc is not supported, please try to remigrate with option: --use-experimental-features=in_order_queue_events.
-// CHECK:  */
-  cudaLaunchHostFunc(stream, hostCallback, (void*)message);
+
+// CHECK: dpct::host_callback fn = hostCallback;
+  cudaHostFn_t fn = hostCallback;
+// CHECK: stream->submit([&](sycl::handler &cgh) {
+// CHECK:   cgh.host_task([=](){
+// CHECK:     fn((void*)message);
+// CHECK: });
+  cudaLaunchHostFunc(stream, fn, (void*)message);
 
   cudaStreamDestroy(stream);
   cudaDestroyTextureObject(tex);

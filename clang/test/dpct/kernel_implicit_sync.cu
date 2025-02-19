@@ -1,17 +1,10 @@
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --format-range=none --use-experimental-features=in_order_queue_events -out-root %T/kernel_implicit_sync %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel_implicit_sync/kernel_implicit_sync.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/kernel_implicit_sync/kernel_implicit_sync.dp.cpp -o %T/kernel_implicit_sync/kernel_implicit_sync.dp.o %}
 #include<cuda_runtime.h>
-#include<iostream>
+
 __global__ void kernel(int *a){
 
-}
-
-void hostCallback(void *userData) {
-  const char *msg = static_cast<const char*>(userData);
-  std::cout << "Host callback executed. Message: " << msg << std::endl;
 }
 
 int main() {
@@ -20,7 +13,6 @@ int main() {
   cudaStreamCreate(&s1);
   cudaMallocManaged(&a, 100);
   cudaMallocManaged(&b, 100);
-
 // CHECK:  q_ct1.submit(
 // CHECK:      [&](sycl::handler &cgh) {
 // CHECK:        cgh.depends_on(dpct::get_current_device().get_in_order_queues_last_events());
@@ -31,7 +23,6 @@ int main() {
 // CHECK:          });
 // CHECK:      });
   kernel<<<1,1>>>(a);
-
 // CHECK:  s1->submit(
 // CHECK:      [&](sycl::handler &cgh) {
 // CHECK:        cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_last_event());
@@ -42,27 +33,6 @@ int main() {
 // CHECK:          });
 // CHECK:      });  
   kernel<<<1, 1, 0, s1>>>(b);
-
-  cudaError_t err;
-  const char *message = "Kernel execution finished.";
-  cudaStream_t stream;
-// CHECK:  err = DPCT_CHECK_ERROR(stream->submit([&](sycl::handler &cgh) {
-// CHECK:    cgh.depends_on(stream->ext_oneapi_get_last_event());
-// CHECK:    cgh.host_task([=](){
-// CHECK:      hostCallback((void*)message);
-// CHECK:    });
-// CHECK:  }));
-
-  err = cudaLaunchHostFunc(stream, hostCallback, (void*)message);
-
-// CHECK: dpct::host_callback fn = hostCallback;
-  cudaHostFn_t fn = hostCallback;
-// CHECK: stream->submit([&](sycl::handler &cgh) {
-// CHECK:   cgh.depends_on(stream->ext_oneapi_get_last_event());
-// CHECK:   cgh.host_task([=](){
-// CHECK:     fn((void*)message);
-// CHECK: });
-  cudaLaunchHostFunc(stream, fn, (void*)message);
 
   return 0;
 }
