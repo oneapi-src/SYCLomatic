@@ -1,0 +1,25 @@
+[
+  {
+    "CodePin Random Seed": "0",
+    "CodePin Sampling Threshold": "20",
+    "CodePin Sampling Percent": "1"
+  },
+  {
+    "ID": "test_gen.cu:40:5:epilog",
+    "Device Name": "Intel(R) Arc(TM) A770 Graphics",
+    "Device ID": "0",
+    "Stream Address": "0x40aab40",
+    "Free Device Memory": "16225243136",
+    "Total Device Memory": "16225243136",
+    "Elapse Time(ms)": "0",
+    "CheckPoint": {
+      "device_data": {
+        "Type": "P1f",
+        "Address": "0xffffc001ffac0000",
+        "Index": "0",
+        "Offset": "0",
+        "Size": "40"
+      }
+    }
+  }
+]

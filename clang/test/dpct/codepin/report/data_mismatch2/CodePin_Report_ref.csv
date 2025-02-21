@@ -1,0 +1,12 @@
+// CHECK: CodePin Summary
+// CHECK: Total API count, 1
+// CHECK: CodePin Random Seed, 0
+// CHECK: CodePin Sampling Threshold, 20
+// CHECK: CodePin Sampling Percent, 1
+// CHECK: Consistent API count, 1
+// CHECK: Most Time-consuming Kernel(CUDA), test_gen.cu:40:5:epilog, time:0.0
+// CHECK: Most Time-consuming Kernel(SYCL), test_gen.cu:40:5:epilog, time:0.0
+// CHECK: Peak Device Memory Used(CUDA), 0
+// CHECK: Peak Device Memory Used(SYCL), 0
+// CHECK: CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
+// CHECK: test_gen.cu:40:5:epilog,test_gen.cu:40:5:epilog,Data value,The location of failed ID Errors occurred during comparison: device_data: float values 9.0 and 0.0 are not close enough [Floating Point comparison fail]
