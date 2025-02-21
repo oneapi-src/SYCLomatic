@@ -1241,8 +1241,7 @@ inline void csr2csc(sycl::queue queue, int m, int n, int nnz,
 /// Calculate the non-zero elements number of the result of a
 /// sparse matrix (CSR format)-sparse matrix (CSR format) product:
 /// C = op(A) * op(B)
-/// \param [in] queue The queue where the routine should be executed. It must
-/// have the in_order property when using the USM mode.
+/// \param [in] desc The descriptor of this calculation.
 /// \param [in] trans_a The operation applied to the matrix A.
 /// \param [in] trans_b The operation applied to the matrix B.
 /// \param [in] m The rows number of op(A) and C.
@@ -1344,8 +1343,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
 
 /// Computes a sparse matrix (CSR format)-sparse matrix (CSR format) product:
 /// C = op(A) * op(B)
-/// \param [in] queue The queue where the routine should be executed. It must
-/// have the in_order property when using the USM mode.
+/// \param [in] desc The descriptor of this calculation.
 /// \param [in] trans_a The operation applied to the matrix A.
 /// \param [in] trans_b The operation applied to the matrix B.
 /// \param [in] m The rows number of op(A) and C.
@@ -1404,6 +1402,34 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   desc->get_csrgemm_info_map().erase(args);
 }
 
+/// Calculate the non-zero elements number of the result of a
+/// sparse matrix (CSR format)-sparse matrix (CSR format) product:
+/// C = alpha * A * B + beta * D
+/// \param [in] desc The descriptor of this calculation.
+/// \param [in] m The rows number of A, D and C.
+/// \param [in] n The columns number of B, D and C.
+/// \param [in] k The columns number of A and rows number of B.
+/// \param [in] info_a Matrix info of the matrix A.
+/// \param [in] nnz_a Non-zero elements number of matrix A.
+/// \param [in] val_a An array containing the non-zero elements of the matrix A.
+/// \param [in] row_ptr_a An array of length row number + 1.
+/// \param [in] col_ind_a An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_b Matrix info of the matrix B.
+/// \param [in] nnz_b Non-zero elements number of matrix B.
+/// \param [in] val_b An array containing the non-zero elements of the matrix B.
+/// \param [in] row_ptr_b An array of length row number + 1.
+/// \param [in] col_ind_b An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_d Matrix info of the matrix D.
+/// \param [in] nnz_d Non-zero elements number of matrix D.
+/// \param [in] val_d An array containing the non-zero elements of the matrix D.
+/// \param [in] row_ptr_d An array of length row number + 1.
+/// \param [in] col_ind_d An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_c Matrix info of the matrix C.
+/// \param [in] row_ptr_c An array of length row number + 1.
+/// \param [out] nnz_ptr Non-zero elements number of matrix C.
 template <typename T>
 void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
                   const std::shared_ptr<matrix_info> info_a, int nnz_a,
@@ -1544,6 +1570,35 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
   ::dpct::cs::free(ws, queue);
 }
 
+/// Computes a sparse matrix (CSR format)-sparse matrix (CSR format) product:
+/// C = alpha * A * B + beta * D
+/// \param [in] desc The descriptor of this calculation.
+/// \param [in] m The rows number of A, D and C.
+/// \param [in] n The columns number of B, D and C.
+/// \param [in] k The columns number of A and rows number of B.
+/// \param [in] alpha Scaling factor.
+/// \param [in] info_a Matrix info of the matrix A.
+/// \param [in] val_a An array containing the non-zero elements of the matrix A.
+/// \param [in] row_ptr_a An array of length row number + 1.
+/// \param [in] col_ind_a An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_b Matrix info of the matrix B.
+/// \param [in] val_b An array containing the non-zero elements of the matrix B.
+/// \param [in] row_ptr_b An array of length row number + 1.
+/// \param [in] col_ind_b An array containing the column indices in index-based
+/// numbering.
+/// \param [in] beta Scaling factor.
+/// \param [in] info_d Matrix info of the matrix D.
+/// \param [in] val_d An array containing the non-zero elements of the matrix D.
+/// \param [in] row_ptr_d An array of length row number + 1.
+/// \param [in] col_ind_d An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_c Matrix info of the matrix C.
+/// \param [out] val_c An array containing the non-zero elements of the matrix
+/// C.
+/// \param [in] row_ptr_c An array of length row number + 1.
+/// \param [out] col_ind_c An array containing the column indices in index-based
+/// numbering.
 template <typename T>
 void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
               const std::shared_ptr<matrix_info> info_a, const T *val_a,
