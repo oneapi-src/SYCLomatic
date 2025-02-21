@@ -20,7 +20,7 @@ using namespace clang::ast_matchers;
 void SpBLASTypeLocRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
     return hasAnyName("csrsv2Info_t", "cusparseSolvePolicy_t",
-                      "cusparseAction_t");
+                      "cusparseAction_t", "csrgemm2Info_t");
   };
 
   MF.addMatcher(
@@ -56,7 +56,8 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseGetMatDiagType", "cusparseSetMatFillMode",
         "cusparseGetMatFillMode", "cusparseCreateSolveAnalysisInfo",
         "cusparseDestroySolveAnalysisInfo", "cusparseCreateCsrsv2Info",
-        "cusparseDestroyCsrsv2Info",
+        "cusparseDestroyCsrsv2Info", "cusparseCreateCsrgemm2Info",
+        "cusparseDestroyCsrgemm2Info",
         /*level 2*/
         "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv", "cusparseZcsrmv",
         "cusparseScsrmv_mp", "cusparseDcsrmv_mp", "cusparseCcsrmv_mp",
@@ -258,6 +259,12 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string MigratedCall;
     MigratedCall =
         MapNames::getLibraryHelperNamespace() + "sparse::csrgemm_nnz(";
+    if (FuncName == "cusparseXcsrgemm2Nnz") {
+      MigratedCall =
+          MapNames::getLibraryHelperNamespace() + "sparse::csrgemm2_nnz(";
+      MigratedArgs.pop_back();
+      MigratedArgs.pop_back();
+    }
     for (unsigned i = 0; i < MigratedArgs.size(); i++) {
       if (auto Iter = InsertBeforeIdxMap.find(i);
           Iter != InsertBeforeIdxMap.end()) {

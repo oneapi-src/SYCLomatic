@@ -516,12 +516,30 @@ void foo8(){
   double2* beta_z;
 
   int nnzC;
+  // CHECK: int info_s, info_d, info_c, info_z;
   csrgemm2Info_t info_s, info_d, info_c, info_z;
   void *ws_s;
   void *ws_d;
   void *ws_c;
   void *ws_z;
-  
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseCreateCsrgemm2Info was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseCreateCsrgemm2Info was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseCreateCsrgemm2Info was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseCreateCsrgemm2Info was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  cusparseCreateCsrgemm2Info(&info_s);
+  cusparseCreateCsrgemm2Info(&info_d);
+  cusparseCreateCsrgemm2Info(&info_c);
+  cusparseCreateCsrgemm2Info(&info_z);
+
   size_t ws_size;
   // CHECK: ws_size = 0;
   // CHECK-NEXT: ws_size = 0;
@@ -532,10 +550,10 @@ void foo8(){
   cusparseCcsrgemm2_bufferSizeExt(handle, 3, 4, 3, alpha_c, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_c, descrD, nnzD, row_ptr_d, col_ind_d, info_c, &ws_size);
   cusparseZcsrgemm2_bufferSizeExt(handle, 3, 4, 3, alpha_z, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_z, descrD, nnzD, row_ptr_d, col_ind_d, info_z, &ws_size);
 
-  // CHECK: dpct::sparse::csrgemm_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_s, row_ptr_a, col_ind_a, descrB, nnzB, val_b_s, row_ptr_b, col_ind_b, descrD, nnzD, val_d_s, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_s, ws_s);
-  // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_d, row_ptr_a, col_ind_a, descrB, nnzB, val_b_d, row_ptr_b, col_ind_b, descrD, nnzD, val_d_d, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_d, ws_d);
-  // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_c, row_ptr_a, col_ind_a, descrB, nnzB, val_b_c, row_ptr_b, col_ind_b, descrD, nnzD, val_d_c, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_c, ws_c);
-  // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_z, row_ptr_a, col_ind_a, descrB, nnzB, val_b_z, row_ptr_b, col_ind_b, descrD, nnzD, val_d_z, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_z, ws_z);
+  // CHECK: dpct::sparse::csrgemm2_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_s, row_ptr_a, col_ind_a, descrB, nnzB, val_b_s, row_ptr_b, col_ind_b, descrD, nnzD, val_d_s, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC);
+  // CHECK-NEXT: dpct::sparse::csrgemm2_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_d, row_ptr_a, col_ind_a, descrB, nnzB, val_b_d, row_ptr_b, col_ind_b, descrD, nnzD, val_d_d, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC);
+  // CHECK-NEXT: dpct::sparse::csrgemm2_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_c, row_ptr_a, col_ind_a, descrB, nnzB, val_b_c, row_ptr_b, col_ind_b, descrD, nnzD, val_d_c, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC);
+  // CHECK-NEXT: dpct::sparse::csrgemm2_nnz(handle, 3, 4, 3, descrA, nnzA, val_a_z, row_ptr_a, col_ind_a, descrB, nnzB, val_b_z, row_ptr_b, col_ind_b, descrD, nnzD, val_d_z, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC);
   cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_s, ws_s);
   cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_d, ws_d);
   cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_c, ws_c);
@@ -549,6 +567,22 @@ void foo8(){
   cusparseDcsrgemm2(handle, 3, 4, 3, alpha_d, descrA, nnzA, val_a_d, row_ptr_a, col_ind_a, descrB, nnzB, val_b_d, row_ptr_b, col_ind_b, beta_d, descrD, nnzD, val_d_d, row_ptr_d, col_ind_d, descrC, val_c_d, row_ptr_c, col_ind_c, info_d, ws_d);
   cusparseCcsrgemm2(handle, 3, 4, 3, alpha_c, descrA, nnzA, val_a_c, row_ptr_a, col_ind_a, descrB, nnzB, val_b_c, row_ptr_b, col_ind_b, beta_c, descrD, nnzD, val_d_c, row_ptr_d, col_ind_d, descrC, val_c_c, row_ptr_c, col_ind_c, info_c, ws_c);
   cusparseZcsrgemm2(handle, 3, 4, 3, alpha_z, descrA, nnzA, val_a_z, row_ptr_a, col_ind_a, descrB, nnzB, val_b_z, row_ptr_b, col_ind_b, beta_z, descrD, nnzD, val_d_z, row_ptr_d, col_ind_d, descrC, val_c_z, row_ptr_c, col_ind_c, info_z, ws_z);
+
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyCsrgemm2Info was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyCsrgemm2Info was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyCsrgemm2Info was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyCsrgemm2Info was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  cusparseDestroyCsrgemm2Info(info_s);
+  cusparseDestroyCsrgemm2Info(info_d);
+  cusparseDestroyCsrgemm2Info(info_c);
+  cusparseDestroyCsrgemm2Info(info_z);
 }
 
 void foo9_2(cusparseMatDescr_t descrB,
@@ -605,7 +639,7 @@ void foo9_1(cusparseMatDescr_t descrB,
   // CHECK: /*
   // CHECK-NEXT: DPCT1134:{{[0-9]+}}: The tool cannot deduce the consumer API ("dpct::sparse::csrgemm") of this API, and this API has 2 arguments depending on the 8th and the 12th parameters of the consumer API. Please replace the 2 arguments tagged as "dpct_placeholder" with the corresponding value.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, 3, 4, 3, descrA, nnzA, dpct_placeholder, row_ptr_a, col_ind_a, descrB, nnzB, dpct_placeholder, row_ptr_b, col_ind_b, descrD, nnzD, dpct_placeholder, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_s, &ws_s);
+  // CHECK-NEXT: dpct::sparse::csrgemm2_nnz(handle, 3, 4, 3, descrA, nnzA, dpct_placeholder, row_ptr_a, col_ind_a, descrB, nnzB, dpct_placeholder, row_ptr_b, col_ind_b, descrD, nnzD, dpct_placeholder, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC);
   cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_s, &ws_s);
 #endif
   void *ws;

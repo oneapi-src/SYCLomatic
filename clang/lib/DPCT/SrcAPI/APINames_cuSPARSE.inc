@@ -70,8 +70,8 @@ ENTRY(cusparseCreateBsric02Info, cusparseCreateBsric02Info, false, NO_FLAG, P4, 
 ENTRY(cusparseDestroyBsric02Info, cusparseDestroyBsric02Info, false, NO_FLAG, P4, "comment")
 ENTRY(cusparseCreateBsrilu02Info, cusparseCreateBsrilu02Info, false, NO_FLAG, P4, "comment")
 ENTRY(cusparseDestroyBsrilu02Info, cusparseDestroyBsrilu02Info, false, NO_FLAG, P4, "comment")
-ENTRY(cusparseCreateCsrgemm2Info, cusparseCreateCsrgemm2Info, false, NO_FLAG, P4, "comment")
-ENTRY(cusparseDestroyCsrgemm2Info, cusparseDestroyCsrgemm2Info, false, NO_FLAG, P4, "comment")
+ENTRY(cusparseCreateCsrgemm2Info, cusparseCreateCsrgemm2Info, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
+ENTRY(cusparseDestroyCsrgemm2Info, cusparseDestroyCsrgemm2Info, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 ENTRY(cusparseCreatePruneInfo, cusparseCreatePruneInfo, false, NO_FLAG, P4, "comment")
 ENTRY(cusparseDestroyPruneInfo, cusparseDestroyPruneInfo, false, NO_FLAG, P4, "comment")
 
