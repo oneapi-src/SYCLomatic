@@ -15,6 +15,7 @@ import re
 import struct
 from collections.abc import Container
 import math
+import numpy as np
 from argparse import RawTextHelpFormatter
 
 UUID = "ID"
@@ -151,7 +152,6 @@ class comparison_error(Exception):
         super().__init__(self.message)
 
 
-
 def compare_float_value(data1, data2, type):
     global EPSILON_FILE
     if EPSILON_FILE is None:
@@ -162,6 +162,10 @@ def compare_float_value(data1, data2, type):
                 epsilons = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             epsilons = default_epsilons
+    if type == "f":
+        type = "float"
+    elif type == 'd':
+        type = "double"
     abs_type = type + "_abs_tol"
     if abs_type not in epsilons:
         raise comparison_error(f" type '{type}' is not supported yet.")
@@ -175,7 +179,6 @@ def compare_float_value(data1, data2, type):
         raise comparison_error(
             f": {type} values {data1} and {data2} are not close enough [Floating Point comparison fail]"
         )
-
     return True
 
 def compare_float_list(cuda_list, sycl_list, var_type):
@@ -183,9 +186,10 @@ def compare_float_list(cuda_list, sycl_list, var_type):
         if not compare_float_value(a, b, var_type):
             return False
     return True
+
 def parse_type_name(type_name):
     pattern = r'^(P?)(\d+)([A-Za-z]+)$'
-    print("----------")
+
     match = re.match(pattern, type_name)
     
     if match:
@@ -197,8 +201,9 @@ def parse_type_name(type_name):
         else:
             raise ValueError("The length of the content does not match the specified length.")
     else:
-        raise ValueError("String format is incorrect")
-def read_from_bin_file_until_null(global_bin_file_handle, offset):
+        raise ValueError("Stringsss format is incorrect" + type_name)
+
+def read_from_bin_file_until_null(global_bin_file_handle, offset, size):
 
     if not global_bin_file_handle:
         raise ValueError("Binary file is not opened.")
@@ -218,68 +223,51 @@ def read_from_bin_file_until_null(global_bin_file_handle, offset):
     pointer, len, type_name = parse_type_name(type)
     return pointer, type_name
 
-def read_floats_from_file(file_handle, length, float_size = 4):
+def read_floats_from_file(file_handle, length, dtype):
     if not file_handle:
         raise ValueError("Binary file is not opened.")
-    print(length)
-    float_data = file_handle.read(length)
-    print(len(float_data))
-  
-    if len(float_data) != length:
-        raise ValueError("Failed to read float data from file.")
-    
-    floats = []
-    for i in range(0, length, float_size):
-        float_value = struct.unpack('f', float_data[i:i+float_size])[0]
-        floats.append(float_value)
-    return floats
+    data = file_handle.read(length)
+    float_array = np.frombuffer(data, dtype=dtype)
+    return float_array
 
-def compare_data_with_offset(cuda_off, sycl_off, var_name, var_type):
+def compare_data_with_offset(offset, size, var_name, var_type):
     global sycl_bin_file_handle, cuda_bin_file_handle
     if not sycl_bin_file_handle or not cuda_bin_file_handle:
-        raise ValueError("Binary file is not opened.")  
-    cuda_pointer, cuda_type = read_from_bin_file_until_null(cuda_bin_file_handle, cuda_off)
-    print("FFFFFFFFFFFFF")
-
-    sycl_pointer, sycl_type = read_from_bin_file_until_null(sycl_bin_file_handle, sycl_off)
-    # print(cuda_off)
-    print(cuda_type)
-    cuda_len = read_data_len(cuda_bin_file_handle,  8) 
-    sycl_len = read_data_len(sycl_bin_file_handle,  8) 
-    print("CUDA length " + str(cuda_len))
-    # cuda_bin = cuda_bin_file_handle.read(val)
-    # sycl_bin = sycl_bin_file_handle.read(val)
-    if (cuda_type not in ["bf16", "fp16", "float", "double"]):
-        if (cuda_bin == sycl_bin):
-            print("EEEE ")
+        raise ValueError("Binary file is not opened.")
+    cuda_bin_file_handle.seek(offset)
+    sycl_bin_file_handle.seek(offset)
+    # pointer, len, type_name = parse_type_name(var_type)
+  
+    if (var_type not in ["bf16", "fp16", "float", "double", "f", "d"]):
+        # if (cuda_bin == sycl_bin):
+        print("Enter here " + var_type) 
+        # Need to supprot.
     else:
-        float_size = 4
-        if cuda_type in ["bf16", "fp16"]:
-            float_size = 2
-        elif cuda_type == "double":
-            float_size = 8
-        cuda_data = read_floats_from_file(cuda_bin_file_handle, cuda_len, float_size)
-        sycl_data = read_floats_from_file(sycl_bin_file_handle, cuda_len, float_size)
-        if compare_float_list(cuda_data, sycl_data, cuda_type):
-            print("The result is match")
-        else:
-            print("The data is variant. not match\n")
+        dtype = np.float32
+        if var_type in ["bf16", "fp16"]:
+            dtype = np.float16
+        elif var_type == "double" or var_type == "d":
+            dtype = np.float64
+        cuda_data = read_floats_from_file(cuda_bin_file_handle, size, dtype)
+        sycl_data = read_floats_from_file(sycl_bin_file_handle, size, dtype)
+        try:
+            if compare_float_list(cuda_data, sycl_data, var_type):
+                print("The result is match")
+            else:
+                print("The data is variant. not match\n")
+        except Exception as e:
+            print(f"An cccc unexpected error occurred: {e}")
 
-def compare_data_value(data1, data2, var_name, var_type):
-    print("DD1: " + data1)
-    print("DD2: " + var_type)
-    print("DD3: " + var_name)
-
-    if data1 == ERROR_MATCH_PATTERN or data2 == ERROR_MATCH_PATTERN:
-        raise no_serialization_function_error()
+def compare_data_value(offset, size, var_name, var_type):
+    # if data1 == ERROR_MATCH_PATTERN or data2 == ERROR_MATCH_PATTERN:
+    #     raise no_serialization_function_error()
+    pointer, len, type_name = parse_type_name(var_type)
+    print("Type name is " + type_name)
     try:
-        if var_type in ["bf16", "fp16", "float", "double"]:
-            compare_float_value(data1, data2, var_type)
-        # elif data1 != data2:
-        # elif var_type in ["Offset"]:
-        else:
-            print("DCCCDDCCCDDD")
-            compare_data_with_offset(data1, data2, var_name, var_type)
+        if type_name in ["bf16", "fp16", "float", "double", "f", "d"]:
+            compare_data_with_offset(offset, size, var_name, type_name)
+        # elif(var_type == "P1f"):
+        #     compare_data_with_offset(offset, size, var_name, var_type)
             # raise data_value_dismatch_error(data1, data2)
     except comparison_error as e:
         raise comparison_error(f"{var_name}{e.message}")
@@ -294,27 +282,48 @@ def compare_list_value(cuda_list, sycl_list, var_name, var_type):
                 cuda_list[i], sycl_list[i], local_var_name, var_type
             )
             continue
-        else:
-            compare_data_value(cuda_list[i], sycl_list[i], local_var_name, var_type)
-            continue
+        # else:
+            # compare_data_value(cuda_list[i], sycl_list[i], local_var_name, var_type)
+            # continue
 
 
 def compare_dict_value(cuda_dict, sycl_dict, var_name, var_type):
+    # ==>
+    # "Data" means the dict has extension. 
+    # Offset + size => data type. 
+    # for value, key should be same. Offset + size should be same.
+
+    if "Data" in cuda_dict and "Data" in sycl_dict:
+        compare_container_value(cuda_dict["Data"], sycl_dict["Data"], var_name, var_type)
+    data_size = 0
+    data_offset = 0
     for name, data in cuda_dict.items():
-        if name == INDEX or name == ADDRESS:
-            continue
+        print("BBBBBB "  + var_name)
         if name not in sycl_dict:
             raise data_missed_error(name)
+        if name == "Offset":
+            data_offset = int(data)
+            if data != sycl_dict[name]:
+                raise data_value_dismatch_error(data, sycl_dict[name])
+            continue
+        if name == "Type":
+            var_type = data
+            if var_type != sycl_dict[name]:
+                raise data_value_dismatch_error(data, sycl_dict[name])
+            continue
+        if name == INDEX or name == ADDRESS:
+            continue
+
         if is_both_container(data, sycl_dict[name]):
             local_var_name = var_name + '->"' + name + '"'
+            print("LOC " + local_var_name)
             compare_container_value(data, sycl_dict[name], local_var_name, var_type)
-            continue
-        else:
-            if name == TYPE:  # Check the Data only, ignore the key is 'Type'
-                var_type = data
-                continue
-            local_var_name = var_name + '->"' + name + '"'
-            compare_data_value(data, sycl_dict[name], local_var_name, var_type)
+        #     continue
+        if name == "Size":
+            if data != sycl_dict[name]:
+                raise data_value_dismatch_error(data, sycl_dict[name])
+            print("xxxxxxxxxxxxxxxxxxxxx")
+            compare_data_value(data_offset, int(data), var_name, var_type)
 
 
 def compare_container_value(cuda_value, sycl_value, var_name, var_type=""):

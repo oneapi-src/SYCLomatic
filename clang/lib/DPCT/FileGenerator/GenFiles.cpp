@@ -848,7 +848,7 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
           "&ss, std::ofstream &ofst, "
        << CodepinTypeName << " &value," << getNL()
        << "                   dpctexp::codepin::queue_t queue, bool top_call = true) {" << getNL();
-    // RS << "    auto arr = ss.array();" << getNL();
+
     RS << "    if (top_call) {" << getNL();
     RS << "      size_t size = sizeof(" << CodepinTypeName << ");" << getNL();
     RS << "      ofst.write(get_demangle_type_name<" <<  CodepinTypeName  << ">().c_str(), get_demangle_type_name<" << CodepinTypeName << ">().length() + 1);" << getNL();
@@ -871,7 +871,11 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
         RS << ">::print_type_name(value" << i << ");" << getNL() << "      obj.key(\"Offset\");" << getNL();
         RS << "      obj.value(static_cast<size_t>(ofst.tellp()));" << getNL();
         RS << "      obj.key(\"Size\");" << getNL();
-        RS << "      obj.value(sizeof(" << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
+        // RS << "      obj.value(sizeof(" << getCodePinPostfixName(Info.Members[i], IsForCUDADebug) << "));" << getNL();  
+        // RS << "      if(std::is_pointer_v<" << getCodePinPostfixName(Info.Members[i], IsForCUDADebug)<< ">) "
+        //    << getNL();
+        RS << "      obj.value(get_size_of_type(value." << Info.Members[i].CodePinMemberName <<")); " << getNL();  
+        // RS << "      obj.value(sizeof(" << getCodePinPostfixName(Info.Members[i], IsForCUDADebug) << "));" << getNL();
         RS << " if(!is_expand_to_dump<std::remove_pointer_t<"
         << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
         for (auto &D : Info.Members[i].Dims) {

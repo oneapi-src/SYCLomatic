@@ -70,6 +70,14 @@ inline std::map<void *, size_t> &get_ptr_size_map() {
   return ptr_size_map;
 }
 
+template <class T>
+size_t get_size_of_type(T &t) {
+  if constexpr (std::is_pointer_v<T>) {
+    return get_ptr_size_map()[(void *)t];
+  }
+  return sizeof(T);
+}
+
 inline size_t &get_bin_offset() {
   static size_t bin_offset = 0;
   return bin_offset;
@@ -353,12 +361,12 @@ public:
 
 
     std::string tag = get_demangle_type_name<PointeeType>(true);
-    ofst.write(&tag[0], tag.length()+1);
+    // ofst.write(&tag[0], tag.length()+1);
     std::cout << "tag " << tag << std::endl;
     std::cout << "ptr SIZE " << ptr_size << std::endl;
-    ofst.write(reinterpret_cast<char *>(&ptr_size), sizeof(size_t));
-    ofst.flush();
-    length += tag.length() + 1 + sizeof(size_t) + sizeof(PointeeType) * size;
+    // ofst.write(reinterpret_cast<char *>(&ptr_size), sizeof(size_t));
+    // ofst.flush();
+    // length += tag.length() + 1 + sizeof(size_t) + sizeof(PointeeType) * size;
 
     if (std::is_arithmetic_v<PointeeType> || is_expand_to_dump<PointeeType>()) {
       for (int i = 0; i < size; ++i) {
