@@ -11,7 +11,7 @@
 #include "common.h"
 #include "common.cuh"
 
-//CHECK: static dpct::constant_memory<int, 1> arr6(sycl::range<1>(2), {1, 2});
+//CHECK: inline dpct::constant_memory<int, 1> arr6(sycl::range<1>(2), {1, 2});
 __device__ __constant__ int arr6[2] = {1, 2};
 //CHECK: static dpct::constant_memory<int, 1> arr7(sycl::range<1>(2), {1, 2});
 static __device__ __constant__ int arr7[2] = {1, 2};

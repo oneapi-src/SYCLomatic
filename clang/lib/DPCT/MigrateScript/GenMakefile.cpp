@@ -221,7 +221,8 @@ static void getCompileInfo(
       if (IsSystemInclude) {
         IsSystemInclude = false;
         clang::tooling::UnifiedPath IncPath = Option;
-        rewriteCanonicalDir(IncPath, InRoot, OutRoot);
+        if (!rewriteCanonicalDir(IncPath, InRoot, OutRoot))
+          continue;
 
         unsigned MissingArgIndex, MissingArgCount;
         MissingArgIndex = MissingArgCount = 0;
@@ -560,7 +561,7 @@ static void genMakefile(
       for (unsigned Idx = 0; Idx < Entry.second.size(); Idx++) {
 
         SmallString<512> Source = StringRef(Entry.second[Idx].MigratedFileName);
-        auto Option = Entry.second[Idx].CompileOptions;
+        auto &Option = Entry.second[Idx].CompileOptions;
         SmallString<512> Obj = StringRef(Source);
         path::replace_extension(Obj, "o");
 

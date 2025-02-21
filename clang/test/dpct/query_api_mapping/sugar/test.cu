@@ -26,7 +26,7 @@
 // __CONSTANT__: CUDA API:
 // __CONSTANT__-NEXT: __constant__ int v;
 // __CONSTANT__-NEXT: Is migrated to:
-// __CONSTANT__-NEXT: static dpct::constant_memory<int, 0> v;
+// __CONSTANT__-NEXT: inline dpct::constant_memory<int, 0> v;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__device__ | FileCheck %s -check-prefix=__DEVICE__
 

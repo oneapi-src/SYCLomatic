@@ -619,6 +619,7 @@ __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
 // CHECK-NEXT:   f = static_cast<float>(bf16);
 // CHECK-NEXT:   bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f2[0], f2[1]);
 // CHECK-NEXT:   bf16 = sycl::ext::oneapi::bfloat16(f);
+// CHECK-NEXT:   bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf16_1, bf16_2);
 void test_conversions() {
   float f, f_1, f_2;
   float2 f2, f2_1, f2_2;
@@ -628,6 +629,7 @@ void test_conversions() {
   f = __bfloat162float(bf16);
   bf162 = __float22bfloat162_rn(f2);
   bf16 = __float2bfloat16(f);
+  bf162 = make_bfloat162(bf16_1, bf16_2);
 }
 
 __global__ void kernelFuncBfloat16Math() {

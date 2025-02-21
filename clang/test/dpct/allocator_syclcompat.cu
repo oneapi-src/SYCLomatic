@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-8.0, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4, cuda-12.5, cuda-12.6
-// UNSUPPORTED: v8.0, v12.0, v12.1, v12.2, v12.3, v12.4, v12.5, v12.6
+// UNSUPPORTED: cuda-8.0, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4, cuda-12.5, cuda-12.6, cuda-12.8
+// UNSUPPORTED: v8.0, v12.0, v12.1, v12.2, v12.3, v12.4, v12.5, v12.6, v12.8
 // RUN: dpct --format-range=none --use-syclcompat -out-root %T/allocator_syclcompat %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/allocator_syclcompat/allocator_syclcompat.dp.cpp %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/allocator_syclcompat/allocator_syclcompat.dp.cpp -o %T/allocator_syclcompat/allocator_syclcompat.dp.o %}

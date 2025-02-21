@@ -426,7 +426,7 @@ void OutputBuilder::parse(std::string &RuleOutputString) {
       StringBuilder->Kind = Kind::String;
       StringBuilder->Str =
           RuleOutputString.substr(StrStartIdx, i - StrStartIdx);
-      SubBuilders.push_back(StringBuilder);
+      SubBuilders.push_back(std::move(StringBuilder));
       // skip "/" and set the begin of the next string
       i++;
       StrStartIdx = i;

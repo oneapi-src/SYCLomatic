@@ -51,7 +51,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: res = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: res = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   int res = cublasIsamax(n, x_S, incx);
 
@@ -59,7 +59,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result = cublasIdamax(n, x_D, incx);
 
@@ -68,7 +68,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result = cublasIsamin(n, x_S, incx);
 
@@ -76,7 +76,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(dpct::blas::descriptor::get_saved_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result = cublasIdamin(n, x_D, incx);
 
@@ -85,7 +85,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: sycl::buffer<float> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result_S = cublasSasum(n, x_S, incx);
 
@@ -93,7 +93,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: sycl::buffer<double> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(dpct::blas::descriptor::get_saved_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result_D = cublasDasum(n, x_D, incx);
 
@@ -103,7 +103,7 @@ int main() {
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: sycl::buffer<float> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result_S = cublasSdot(n, x_S, incx, y_S, incy);
 
@@ -112,7 +112,7 @@ int main() {
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: sycl::buffer<double> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::dot(dpct::blas::descriptor::get_saved_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result_D = cublasDdot(n, x_D, incx, y_D, incy);
 
@@ -121,7 +121,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: sycl::buffer<float> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result_S = cublasSnrm2(n, x_S, incx);
 
@@ -129,7 +129,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: sycl::buffer<double> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(dpct::blas::descriptor::get_saved_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result_D = cublasDnrm2(n, x_D, incx);
 
@@ -628,7 +628,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
   // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: return res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+  // CHECK-NEXT: return res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }();;){}
   for(int i = cublasIsamax(n, x_S, incx);;){}
 
@@ -641,7 +641,7 @@ int main() {
 //CHECK-NEXT:  auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
 //CHECK-NEXT:  sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
 //CHECK-NEXT:  oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
-//CHECK-NEXT:  return res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
+//CHECK-NEXT:  return res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
 //CHECK-NEXT:  }();
 //CHECK-NEXT:}
 int bar(){

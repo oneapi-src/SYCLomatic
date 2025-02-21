@@ -28,7 +28,7 @@ Advanced DPCT options
     =assert                               -   Disable the assert extension.
     =queue_empty                          -   Disable the queue empty extension.
     =all                                  -   Disable all extensions listed in this option.
-  --rule-file=<file>                      - Specify the rule file for migration. Also, reference to the predefined rules in "extensions" directory in the root folder of the tool.
+  --rule-file=<file>                      - Specify the rule file for migration. Also, reference the predefined rules in the "extensions" directory in the root folder of the tool.
   --use-dpcpp-extensions=<value>          - A comma-separated list of extensions to be used in migrated code.
                                             By default, these extensions are not used in migrated code.
     =c_cxx_standard_library               -   Use std functions from the libdevice library (provided by Intel(R) oneAPI DPC++/C++ Compiler)
@@ -59,9 +59,9 @@ Advanced DPCT options
     =non-uniform-groups                   -   Experimental extension that allows use of non-uniform groups.
     =device_global                        -   Experimental extension that allows device scoped memory allocations into SYCL that can
                                               be accessed within a kernel using syntax similar to C++ global variables.
-    =virtual_mem                          -   Experimental extension that allows map an address range onto multiple allocations of physical memory.
-    =in_order_queue_events                -   Experimental extension that allows get the event from the last command submission into the queue and set an external event as an implicit dependence on the next command submitted to the queue.
-    =non-stdandard-sycl-builtins          -   Experimental extension that allows to use non standard SYCL builtin functions.
+    =virtual_mem                          -   Experimental extension that allows for mapping of an address range onto multiple allocations of physical memory.
+    =in_order_queue_events                -   Experimental extension that allows placing the event from the last command submission into the queue and setting an external event as an implicit dependence on the next command submitted to the queue.
+    =non-stdandard-sycl-builtins          -   Experimental extension that allows use of non standard SYCL builtin functions.
     =prefetch                             -   Experimental extension that allows use of SYCL prefetch APIs.
     =all                                  -   Enable all experimental extensions listed in this option.
 

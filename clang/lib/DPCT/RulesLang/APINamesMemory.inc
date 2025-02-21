@@ -318,9 +318,18 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
-    CALL_FACTORY_ENTRY("cuMemFree_v2", CALL(MapNames::getClNamespace() + "free", ARG(0), QUEUESTR)),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-        CALL_FACTORY_ENTRY("cuMemFree_v2", CALL(MapNames::getDpctNamespace() + "dpct_free", ARG(0))))))
+    CALL_FACTORY_ENTRY(
+        "cuMemFree_v2",
+        CALL(MapNames::getClNamespace() + "free",
+             CAST_IF_NOT_SAME_AS_GIVEN(
+                 LITERAL("CUdeviceptr"),
+                 LITERAL(MapNames::getDpctNamespace() + "device_ptr"), ARG(0)),
+             QUEUESTR)),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY("cuMemFree_v2",
+                           CALL(MapNames::getDpctNamespace() + "dpct_free",
+                                ARG(0))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
