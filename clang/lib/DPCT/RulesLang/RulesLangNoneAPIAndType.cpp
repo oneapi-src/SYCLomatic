@@ -531,7 +531,7 @@ bool ConstantMemVarMigrationRule::currentIsDevice(
       auto SourceFileType = GetSourceFileType(Info->getFilePath());
       if ((SourceFileType == SPT_CudaHeader ||
            SourceFileType == SPT_CppHeader) &&
-          !Info->isStatic()) {
+          !Info->isStatic() && !Info->isInline()) {
         ReplaceStr = "inline " + ReplaceStr;
       }
       auto RVD =

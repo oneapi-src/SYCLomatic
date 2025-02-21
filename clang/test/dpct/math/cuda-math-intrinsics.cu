@@ -24,8 +24,8 @@ using namespace std;
 using ::max;
 // BBB
 
-// CHECK: static dpct::constant_memory<double, 0> d;
-// CHECK-NEXT: static dpct::constant_memory<double, 0> d2;
+// CHECK: inline dpct::constant_memory<double, 0> d;
+// CHECK-NEXT: inline dpct::constant_memory<double, 0> d2;
 __constant__ double d;
 __constant__ double d2;
 
@@ -50,7 +50,7 @@ __device__ double test3(double d4, double d5) {
   return max(d4, d5);
 }
 
-// CHECK: static dpct::constant_memory<float, 0> C;
+// CHECK: inline dpct::constant_memory<float, 0> C;
 // CHECK-NEXT:  int foo(int n, float C) {
 // CHECK-NEXT:   return n == 1 ? C : 0;
 // CHECK-NEXT: }

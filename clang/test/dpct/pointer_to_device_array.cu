@@ -2,7 +2,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/pointer_to_device_array/pointer_to_device_array.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/pointer_to_device_array/pointer_to_device_array.dp.cpp -o %T/pointer_to_device_array/pointer_to_device_array.dp.o %}
 
-// CHECK: static dpct::global_memory<int, 2> arr(sycl::range<2>(200, 4), {0});
+// CHECK: inline dpct::global_memory<int, 2> arr(sycl::range<2>(200, 4), {0});
 __device__ int arr[200][4] = {0};
 
 // CHECK: void my_kernel(dpct::accessor<int, dpct::global, 2> arr) {
@@ -15,7 +15,7 @@ __device__ void my_kernel() {
 }
 
 typedef float *aaa_t[5][6];
-// CHECK: static dpct::constant_memory<float *, 2> var1(5, 6);
+// CHECK: inline dpct::constant_memory<float *, 2> var1(5, 6);
 __constant__ aaa_t var1;
 
 // CHECK: void kernel1(dpct::accessor<float *, dpct::constant, 2> var1) {
@@ -25,7 +25,7 @@ __global__ void kernel1() {
   ptr = &var1;
 }
 
-// CHECK: static dpct::constant_memory<float *, 2> var2(5, 6);
+// CHECK: inline dpct::constant_memory<float *, 2> var2(5, 6);
 __constant__ float *var2[5][6];
 
 // CHECK: void kernel2(dpct::accessor<float *, dpct::constant, 2> var2) {
@@ -36,7 +36,7 @@ __global__ void kernel2() {
 }
 
 typedef float *bbb_t[5];
-// CHECK: static dpct::constant_memory<float *, 1> var3(5);
+// CHECK: inline dpct::constant_memory<float *, 1> var3(5);
 __constant__ bbb_t var3;
 
 // CHECK: void kernel3(float * const*var3) {
@@ -46,7 +46,7 @@ __global__ void kernel3() {
   ptr = &var3;
 }
 
-// CHECK: static dpct::constant_memory<float *, 1> var4(5);
+// CHECK: inline dpct::constant_memory<float *, 1> var4(5);
 __constant__ float *var4[5];
 
 // CHECK: void kernel4(float * const*var4) {
@@ -57,7 +57,7 @@ __global__ void kernel4() {
 }
 
 typedef float *ccc_t;
-// CHECK: static dpct::constant_memory<ccc_t, 0> var5;
+// CHECK: inline dpct::constant_memory<ccc_t, 0> var5;
 __constant__ ccc_t var5;
 
 // CHECK: void kernel5(ccc_t var5) {
@@ -67,7 +67,7 @@ __global__ void kernel5() {
   ptr = &var5;
 }
 
-// CHECK: static dpct::constant_memory<float *, 0> var6;
+// CHECK: inline dpct::constant_memory<float *, 0> var6;
 __constant__ float *var6;
 
 // CHECK: void kernel6(float * const  var6) {
@@ -80,5 +80,5 @@ __global__ void kernel6() {
 namespace ns {
 typedef float *ddd_t;
 }
-// CHECK: static dpct::constant_memory<ns::ddd_t, 0> var7;
+// CHECK: inline dpct::constant_memory<ns::ddd_t, 0> var7;
 __constant__ ns::ddd_t var7;

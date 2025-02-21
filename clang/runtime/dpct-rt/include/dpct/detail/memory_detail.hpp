@@ -874,7 +874,7 @@ public:
     auto ptr = get_ptr();
 #ifdef DPCT_USM_LEVEL_NONE
     return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(ptr)
-        .template get_access<sycl::access_mode::read_write>()[index];
+        .get_host_access(sycl::read_write)[index];
 #else
     return ptr[index];
 #endif // DPCT_USM_LEVEL_NONE

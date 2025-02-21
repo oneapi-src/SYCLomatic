@@ -2,9 +2,9 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include "test.dp.hpp"
 // CHECK-NEXT: #ifdef AAA
-// CHECK-NEXT: static dpct::constant_memory<const float, 0> bbb(1.0);
+// CHECK-NEXT: inline dpct::constant_memory<const float, 0> bbb(1.0);
 // CHECK-NEXT: #else
-// CHECK-NEXT: static dpct::constant_memory<const float, 0> ccc(1.0);
+// CHECK-NEXT: inline dpct::constant_memory<const float, 0> ccc(1.0);
 // CHECK-NEXT: #endif
 // CHECK-NEXT: int main() {
 // CHECK-NEXT:   return 0;

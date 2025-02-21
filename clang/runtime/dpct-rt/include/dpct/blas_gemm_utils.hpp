@@ -725,7 +725,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 
     sycl::event transform_d_event;
     if (d_desc->_order != order_t::col) {
-      detail::type_dispatch<detail::matrix_transform_impl>(
+      transform_d_event = detail::type_dispatch<detail::matrix_transform_impl>(
           d_desc->_type, q_ptr, d_desc->_rows, d_desc->_cols, new_ldd,
           order_t::col, new_d, d_desc->_ld, d_desc->_order, d,
           std::vector<sycl::event>{matmul_prim_event, absmax_d_event,
