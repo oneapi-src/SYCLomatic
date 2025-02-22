@@ -12,7 +12,7 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: static dpct::constant_memory<TestStruct, 0> t1;
+// CHECK: inline dpct::constant_memory<TestStruct, 0> t1;
 __constant__ TestStruct t1;
 
 // CHECK: void member_acc(TestStruct t1) {
@@ -21,10 +21,10 @@ __constant__ TestStruct t1;
 __global__ void member_acc() {
   t1.test();
 }
-// CHECK: static dpct::constant_memory<float, 1> const_angle(360);
-// CHECK: static dpct::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
+// CHECK: inline dpct::constant_memory<float, 1> const_angle(360);
+// CHECK: inline dpct::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
 __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2];
-// CHECK: static dpct::constant_memory<sycl::double2, 0> vec_d;
+// CHECK: inline dpct::constant_memory<sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 
 // CHECK: /*
@@ -33,16 +33,16 @@ __constant__ double2 vec_d;
 template<class T>
 __constant__ T template_a;
 
-// CHECK: static dpct::global_memory<int, 1> const_ptr;
+// CHECK: inline dpct::global_memory<int, 1> const_ptr;
 __constant__ int *const_ptr;
 
-// CHECK: static dpct::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
+// CHECK: inline dpct::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
 __constant__ int const_init[5] = {1, 2, 3, 7, 8};
-// CHECK: static dpct::constant_memory<int, 1> incomplete_size_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
+// CHECK: inline dpct::constant_memory<int, 1> incomplete_size_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
 __constant__ int incomplete_size_init[] = {1, 2, 3, 7, 8};
-// CHECK: static dpct::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
+// CHECK: inline dpct::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
 __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}};
-// CHECK: static dpct::constant_memory<int, 2> incomplete_size_init_2d(sycl::range<2>(3, 2), { {1,2},{3,4},{5,6}});
+// CHECK: inline dpct::constant_memory<int, 2> incomplete_size_init_2d(sycl::range<2>(3, 2), { {1,2},{3,4},{5,6}});
 __constant__ int incomplete_size_init_2d[][2] = { {1,2},{3,4},{5,6}};
 
 // CHECK: struct FuncObj {
@@ -78,7 +78,7 @@ __global__ void simple_kernel(float *d_array) {
   return;
 }
 
-// CHECK: static dpct::constant_memory<float, 0> const_one;
+// CHECK: inline dpct::constant_memory<float, 0> const_one;
 __device__ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
 }
 
 
-// CHECK: static dpct::constant_memory<float, 0> C;
+// CHECK: inline dpct::constant_memory<float, 0> C;
 __constant__ float C;
 
 // CHECK: void foo(float d, float y, float C){
@@ -232,9 +232,9 @@ __global__ void foo(float d, float y){
   float maxtemp = fmaxf(temp=(y*d)<(y==1?C:0) ? -(3*y) :-10, -10);
 }
 
-// CHECK: static dpct::constant_memory<int, 0> d_a0(1);
-// CHECK-NEXT: static dpct::constant_memory<int, 0> d_a1(2);
-// CHECK-NEXT: static dpct::constant_memory<int, 1> const_array(10);
+// CHECK: inline dpct::constant_memory<int, 0> d_a0(1);
+// CHECK-NEXT: inline dpct::constant_memory<int, 0> d_a1(2);
+// CHECK-NEXT: inline dpct::constant_memory<int, 1> const_array(10);
 __constant__ int d_a0 = 1;
 __constant__ int d_a1 = 2;
 __device__ __constant__ int const_array[10];
@@ -255,7 +255,7 @@ __device__ void foo() {
   inner_foo(&last, l_arg);
 }
 
-//CHECK:static dpct::constant_memory<float, 1> aaa(10);
+//CHECK:inline dpct::constant_memory<float, 1> aaa(10);
 //CHECK-NEXT:void kernel1(float const *aaa) {
 //CHECK-NEXT:  float *a = const_cast<float *>(aaa + 5);
 //CHECK-NEXT:}

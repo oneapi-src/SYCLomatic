@@ -437,8 +437,8 @@ DPCT_OPTION(clang::dpct::list, std::string, RuleFile,
             "rule-file",
             llvm::cl::desc(
                 "Specify the rule file "
-                "for migration. Also, reference to the predefined rules in"
-                " \"extensions\" directory in the root folder of the tool.\n"),
+                "for migration. Also, reference the predefined rules in"
+                " the \"extensions\" directory in the root folder of the tool.\n"),
             llvm::cl::value_desc("file"), llvm::cl::cat(CtHelpCatAdvanced),
             llvm::cl::ZeroOrMore)
 
@@ -805,21 +805,21 @@ DPCT_ENUM_OPTION(
             false),
         DPCT_OPTION_ENUM_VALUE(
             "virtual_mem", int(ExperimentalFeatures::Exp_VirtualMemory),
-            "Experimental extension that allows map an address range onto "
+            "Experimental extension that allows for mapping of an address range onto "
             "multiple allocations of physical memory.",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "in_order_queue_events",
             int(ExperimentalFeatures::Exp_InOrderQueueEvents),
-            "Experimental extension that allows get the event from the "
-            "last command submission into the queue and set an external "
+            "Experimental extension that allows placing the event from the "
+            "last command submission into the queue and setting an external "
             "event as an implicit dependence on the next command submitted to "
             "the queue.",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "non-stdandard-sycl-builtins",
             int(ExperimentalFeatures::Exp_NonStandardSYCLBuiltins),
-            "Experimental extension that allows to use non standard SYCL "
+            "Experimental extension that allows use of non standard SYCL "
             "builtin functions.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(

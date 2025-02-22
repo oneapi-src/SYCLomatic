@@ -349,3 +349,27 @@ int main(){
     cuCheckError(cuMemHostUnregister(h_A));
     return 0;
 }
+
+typedef unsigned long long u64;
+
+typedef struct ST {
+  public:
+    u64 ptr;
+} ST_T;
+
+u64 getPtr();
+
+void testCuMemFreeArgCast(ST_T s, u64 ptr, u64 a, u64 b, unsigned c, CUdeviceptr dptr) {
+  // CHECK: sycl::free(reinterpret_cast<dpct::device_ptr>(s.ptr), q_ct1);
+  cuMemFree(s.ptr);
+  // CHECK: sycl::free(reinterpret_cast<dpct::device_ptr>(ptr), q_ct1);
+  cuMemFree(ptr);
+  // CHECK: sycl::free(reinterpret_cast<dpct::device_ptr>(getPtr()), q_ct1);
+  cuMemFree(getPtr());
+  // CHECK: sycl::free(reinterpret_cast<dpct::device_ptr>((a + b) - c + (c + b)), q_ct1);
+  cuMemFree((a + b) - c + (c + b));
+  // CHECK: sycl::free(dptr, q_ct1);
+  cuMemFree(dptr);
+  // CHECK: sycl::free((dpct::device_ptr)ptr, q_ct1);
+  cuMemFree((CUdeviceptr)ptr);
+}

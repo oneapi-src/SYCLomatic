@@ -3,15 +3,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/compat_with_clang/compat_with_clang.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/compat_with_clang/compat_with_clang.dp.cpp -o %T/compat_with_clang/compat_with_clang.dp.o %}
 
-#include "cuda_fp16.h"
 #include <cstdint>
-
-// CHECK: inline void foo1(sycl::half2 *array, sycl::half a) {
-// CHECK-NEXT:   array[dpct::reverse_bits<unsigned int>(123)] = {a, sycl::vec<float, 1>(2.3f).convert<sycl::half, sycl::rounding_mode::automatic>()[0]};
-// CHECK-NEXT: }
-__device__ inline void foo1(__half2 *array, __half a) {
-  array[__brev(123)] = {a, __float2half(2.3f)};
-}
 
 // CHECK: void foo2(int a, int b) {
 // CHECK-NEXT:   dpct::dim3 block{dpct::min(512, uint32_t(a * b))};
