@@ -1,13 +1,12 @@
 // CHECK: CodePin Summary
 // CHECK: Total API count, 2
-// CHECK: CodePin Random Seed, N/A
-// CHECK: CodePin Sampling Threshold, N/A
-// CHECK: CodePin Sampling Percent, N/A
+// CHECK: CodePin Random Seed, 0
+// CHECK: CodePin Sampling Threshold, 20
+// CHECK: CodePin Sampling Percent, 1
 // CHECK: Consistent API count, 1
-// CHECK: Most Time-consuming Kernel(CUDA), serial1243:epilog:0, time:0.5
-// CHECK: Most Time-consuming Kernel(SYCL), serial123:prolog:0, time:0.0
-// CHECK: Peak Device Memory Used(CUDA), 300
-// CHECK: Peak Device Memory Used(SYCL), 300
+// CHECK: Most Time-consuming Kernel(CUDA), test_gen.cu:40:5:prolog, time:0.0
+// CHECK: Most Time-consuming Kernel(SYCL), test_gen.cu:40:5:prolog, time:0.0
+// CHECK: Peak Device Memory Used(CUDA), 0
+// CHECK: Peak Device Memory Used(SYCL), 0
 // CHECK: CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
-// CHECK: serial1243:epilog:0,Missing,Execution path,[ERROR: METADATA MISSING] Cannot find the checkpoint: serial1243:epilog:0 in the execution log dataset of instrumented SYCL code.
-
+// CHECK: test_gen.cu:40:5:epilog,Missing,Execution path,[ERROR: METADATA MISSING] Cannot find the checkpoint: test_gen.cu:40:5:epilog in the execution log dataset of instrumented SYCL code.
