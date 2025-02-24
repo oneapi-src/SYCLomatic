@@ -1,13 +1,12 @@
 // CHECK: CodePin Summary
 // CHECK: Total API count, 2
-// CHECK: CodePin Random Seed, N/A
-// CHECK: CodePin Sampling Threshold, N/A
-// CHECK: CodePin Sampling Percent, N/A
-// CHECK: Consistent API count, 0
-// CHECK: Most Time-consuming Kernel(CUDA), example.cu:27:3:epilog, time:0.21312
-// CHECK: Most Time-consuming Kernel(SYCL), example.cu:27:3:epilog, time:1.61086
-// CHECK: Peak Device Memory Used(CUDA), 508231680
-// CHECK: Peak Device Memory Used(SYCL), 31023112192
+// CHECK: CodePin Random Seed, 0
+// CHECK: CodePin Sampling Threshold, 20
+// CHECK: CodePin Sampling Percent, 1
+// CHECK: Consistent API count, 1
+// CHECK: Most Time-consuming Kernel(CUDA), test_gen.cu:40:5:prolog, time:0.0
+// CHECK: Most Time-consuming Kernel(SYCL), test_gen.cu:40:5:prolog, time:0.0
+// CHECK: Peak Device Memory Used(CUDA), 0
+// CHECK: Peak Device Memory Used(SYCL), 0
 // CHECK: CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
-// CHECK: example.cu:27:3:epilog,example.cu:27:3:epilog,Data value,The location of failed ID Errors occurred during comparison: d_a->"Data"->[3]->"Data"->[0]->"x"->"Data"->[0] and [ERROR: DATA VALUE MISMATCH] the CUDA value 1 differs from the SYCL value 0.; d_result->"Data"->[3]->"Data"->[0]->"x"->"Data"->[0] and [ERROR: DATA VALUE MISMATCH] the CUDA value 2 differs from the SYCL value 1.
-// CHECK: example.cu:27:3:prolog,example.cu:27:3:prolog,Data value,[WARNING: METADATA MISMATCH] The pair of prolog data example.cu:27:3:prolog are mismatched, and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API example.cu.
+// CHECK: test_gen.cu:40:5:prolog,test_gen.cu:40:5:prolog,Data value,[WARNING: METADATA MISMATCH] The pair of prolog data test_gen.cu:40:5:prolog are mismatched, and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API test_gen.cu.
