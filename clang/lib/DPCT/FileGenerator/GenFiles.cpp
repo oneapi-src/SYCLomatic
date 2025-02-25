@@ -1196,6 +1196,38 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesInfo,
                                    YamlFile, SrcFile, MainSrcFileMap);
   if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
+    auto formatAllLineRanges =
+        [&](const clang::tooling::UnifiedPath &FileName) {
+          clang::FileSystemOptions FSO;
+          FSO.WorkingDir = ".";
+          clang::FileManager FM(FSO, nullptr);
+          clang::SourceManager SM(Diagnostics, FM, false);
+          clang::Rewriter Rewrite(SM, clang::LangOptions());
+          ErrorOr<std::unique_ptr<MemoryBuffer>> ErrorOrMemoryBuffer =
+              MemoryBuffer::getFileAsStream(FileName.getCanonicalPath());
+          if (std::error_code EC = ErrorOrMemoryBuffer.getError()) {
+            return false;
+          }
+          std::unique_ptr<llvm::MemoryBuffer> FileBuffer =
+              std::move(ErrorOrMemoryBuffer.get());
+          if (FileBuffer->getBufferSize() == 0)
+            return false;
+          std::vector<clang::tooling::Range> AllLineRanges;
+          clang::format::FormatStyle Style =
+              DpctGlobalInfo::getCodeFormatStyle();
+
+          AllLineRanges.push_back(
+              clang::tooling::Range(0, FileBuffer.get()->getBufferSize()));
+          auto FormatRange = DpctGlobalInfo::getFormatRange();
+          DpctGlobalInfo::setFormatRange(clang::format::FormatRange::all);
+          clang::tooling::Replacements FormatChanges =
+              reformat(Style, FileBuffer->getBuffer(), AllLineRanges,
+                       FileName.getCanonicalPath());
+          clang::tooling::applyAllReplacements(FormatChanges, Rewrite);
+          Rewrite.overwriteChangedFiles();
+          DpctGlobalInfo::setFormatRange(FormatRange);
+          return true;
+        };
     copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "MAKEFILE");
     copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "CMAKELISTS.TXT");
     copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, ".CMAKE");
@@ -1214,6 +1246,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     genCodePinHeader(SchemaStreamSYCL, false);
 
     processallOptionAction(InRoot, CUDAMigratedOutRoot, false);
+
+    SchemaStreamCUDA.flush();
+    SchemaStreamSYCL.flush();
+    formatAllLineRanges(SchemaPathCUDA);
+    formatAllLineRanges(SchemaPathSYCL);
   }
   processallOptionAction(InRoot, OutRoot, true);
 
