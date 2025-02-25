@@ -883,3 +883,4 @@ ENTRY_RENAMED("make_double3", MapNames::getClNamespace(false, false) + "double3"
 ENTRY_RENAMED("make_double4", MapNames::getClNamespace(false, false) + "double4")
 
 ENTRY_REWRITE("make_half2")
+ENTRY_REWRITE("make_bfloat162")
