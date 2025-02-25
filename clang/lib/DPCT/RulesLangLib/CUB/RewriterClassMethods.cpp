@@ -211,6 +211,28 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
                                 "cub::BlockExchange.ScatterToStriped",
                                 MemberExprBase(), false, "scatter_to_striped",
                                 NDITEM, ARG(0), ARG(1)))
+      // cub::BlockExchange.BlockedToWarpStriped
+      SUBGROUPSIZE_FACTORY(
+          UINT_MAX,
+          MapNames::getDpctNamespace() +
+              "exchange.blocked_to_sub_group_striped",
+          HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
+                                MEMBER_CALL_FACTORY_ENTRY(
+                                    "cub::BlockExchange.BlockedToWarpStriped",
+                                    MemberExprBase(), false,
+                                    "blocked_to_sub_group_striped", NDITEM,
+                                    ARG(0), ARG(1))))
+      // cub::BlockExchange.WarpStripedToBlocked
+      SUBGROUPSIZE_FACTORY(
+          UINT_MAX,
+          MapNames::getDpctNamespace() +
+              "exchange.sub_group_striped_to_blocked",
+          HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
+                                MEMBER_CALL_FACTORY_ENTRY(
+                                    "cub::BlockExchange.WarpStripedToBlocked",
+                                    MemberExprBase(), false,
+                                    "sub_group_striped_to_blocked", NDITEM,
+                                    ARG(0), ARG(1))))
       // cub::BlockShuffle.Offset
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
