@@ -35,7 +35,7 @@ ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
         CALL_FACTORY_ENTRY("cuStreamAddCallback",
                        CALL("std::async",
                             LAMBDA(true, false,
-                                   MEMBER_CALL(QUEUESTR, true, "wait"),
+                                   MEMBER_CALL(QUEUESTR, false, "wait"),
                                    CALL(ARG(1), QUEUESTR, ARG("0"), ARG(2))))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
