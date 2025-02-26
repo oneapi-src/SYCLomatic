@@ -347,69 +347,105 @@ MetaRuleObject::PatternRewriter::PatternRewriter(
 // Read a YAML file recursively and substitute any "!include <filename>"
 // directive with the contents of the referenced file.
 std::unique_ptr<llvm::MemoryBuffer>
-readYAMLFile(const llvm::StringRef &ruleFilePath) {
+readYAMLFile(const llvm::StringRef &RuleFilePath) {
   // Load the rule file into a MemoryBuffer
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
-      llvm::MemoryBuffer::getFile(ruleFilePath);
+      llvm::MemoryBuffer::getFile(RuleFilePath);
   if (!Buffer) {
-    llvm::errs() << "Error: failed to read " << ruleFilePath << ": "
+    llvm::errs() << "Error: failed to read " << RuleFilePath << ": "
                  << Buffer.getError().message() << "\n";
     clang::dpct::ShowStatus(MigrationErrorInvalidRuleFilePath);
     dpctExit(MigrationErrorInvalidRuleFilePath);
   }
 
   // Get the directory path of the rule file.
-  llvm::SmallString<128> directoryPath(ruleFilePath);
-  llvm::sys::path::remove_filename(directoryPath);
+  llvm::SmallString<128> DirectoryPath(RuleFilePath);
+  llvm::sys::path::remove_filename(DirectoryPath);
 
   // Split the file content into lines using newline as the delimiter.
-  llvm::StringRef buffContent = std::move(*Buffer)->getBuffer();
-  llvm::SmallVector<StringRef, 16> lines;
-  buffContent.split(lines, "\n");
+  llvm::StringRef BuffContent = std::move(*Buffer)->getBuffer();
+  llvm::SmallVector<StringRef, 16> Lines;
+  BuffContent.split(Lines, "\n");
 
-  std::stringstream output;
-  for (auto line : lines) {
-    auto lineStr = line.str();
+  std::stringstream Output;
+  for (auto Line : Lines) {
+    auto LineStr = Line.str();
 
-    // Extract the filename following !include.
-    std::istringstream iss(lineStr);
-    std::string incDirective, incRuleFilePath;
-    // iss >> incDirective >> incRuleFilePath;
-    iss >> incDirective;
-    std::getline(iss >> std::ws, incRuleFilePath);
+    // Parse each line and find out if it contains
+    // an include directive and a file name
+    std::string IncRuleFilePath = "";
 
-    // Trim trailing spaces from incRuleFilePath
-    incRuleFilePath.erase(incRuleFilePath.find_last_not_of(" \t\n\r\f\v") + 1);
+    size_t Ind = 0;
+    // skip white spaces
+    for (; Ind < LineStr.length() && isWhitespace(LineStr[Ind]); Ind++)
+      ;
 
-    if (incDirective == "!include") {
-      if (!incRuleFilePath.empty()) {
-        // Remove surrounding quotes if they exist.
-        if (incRuleFilePath.front() == '"' && incRuleFilePath.back() == '"') {
-          incRuleFilePath =
-              incRuleFilePath.substr(1, incRuleFilePath.size() - 2);
-        }
+    // check if the line starts with '!'
+    if (LineStr[Ind] == '!') {
+      // check for the include directive
+      if (LineStr.substr(Ind, 8) == "!include") {
+        Ind += 8;
 
-        // Calculate the absolute path of the included file based on its parent
-        // rule file
-        llvm::SmallString<128> incRuleFileAbsPath = directoryPath;
-        llvm::sys::path::append(incRuleFileAbsPath, incRuleFilePath);
+        // skip white spaces
+        for (; Ind < LineStr.length() && isWhitespace(LineStr[Ind]); Ind++)
+          ;
 
-        // Recursively process the included file.
-        if (llvm::sys::fs::exists(incRuleFileAbsPath)) {
-          output << readYAMLFile(incRuleFileAbsPath.str())->getBuffer().str()
-                 << "\n";
+        char ch = LineStr[Ind];
+        // parse the file name with quotes
+        if (ch == '"' || ch == '\'') {
+          Ind++;
+          auto End = LineStr.find(ch, Ind);
+          if (End != std::string::npos) {
+            IncRuleFilePath = LineStr.substr(Ind, End - Ind);
+            Ind = End + 1;
+          } else {
+            // ignore the line with unbalanced quotes
+            continue;
+          }
         } else {
-          output << readYAMLFile(incRuleFilePath)->getBuffer().str() << "\n";
+          // parse the file name without quotes
+          auto End = LineStr.find_first_of(" \t\n\r\f\v", Ind);
+          if (End != std::string::npos) {
+            IncRuleFilePath = LineStr.substr(Ind, End - Ind);
+            Ind = End;
+          } else {
+            IncRuleFilePath = LineStr.substr(Ind);
+            Ind = LineStr.length();
+          }
         }
       } else {
+        // ignore the line when the directive is not "!include"
         continue;
       }
     } else {
-      output << lineStr << "\n";
+      Output << LineStr << "\n";
+    }
+
+    // parse the included file
+    if (IncRuleFilePath.empty()) {
+      // ignore the line with empty file name
+      continue;
+    } else {
+      // find the absolute path for the included rule file path
+      llvm::SmallString<128> IncRuleFileAbsPath = DirectoryPath;
+      llvm::sys::path::append(IncRuleFileAbsPath, IncRuleFilePath);
+
+      // recursively process the included file
+      if (llvm::sys::fs::exists(IncRuleFileAbsPath)) {
+        Output << readYAMLFile(IncRuleFileAbsPath.str())->getBuffer().str()
+               << "\n";
+      } else {
+        Output << readYAMLFile(IncRuleFilePath)->getBuffer().str() << "\n";
+      }
+    }
+
+    if (Ind < LineStr.length()) {
+      // ignore the line with any extra characters after the file name
+      continue;
     }
   }
 
-  return llvm::MemoryBuffer::getMemBufferCopy(output.str(), ruleFilePath);
+  return llvm::MemoryBuffer::getMemBufferCopy(Output.str(), RuleFilePath);
 }
 
 void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
