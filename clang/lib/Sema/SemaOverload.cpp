@@ -10683,8 +10683,25 @@ bool clang::isBetterOverloadCandidate(
   // to determine which is better.
   if (S.getLangOpts().CUDA && Cand1.Function && Cand2.Function) {
     FunctionDecl *Caller = S.getCurFunctionDecl(/*AllowLambda=*/true);
+#ifdef SYCLomatic_CUSTOMIZATION
+    auto Preference1 = S.CUDA().IdentifyPreference(Caller, Cand1.Function);
+    auto Preference2 = S.CUDA().IdentifyPreference(Caller, Cand2.Function);
+    if (Preference1 != Preference2)
+      return Preference1 > Preference2;
+    // This is a workaround to align to the behavior of nvcc
+    const CXXMethodDecl *MD1 = dyn_cast<CXXMethodDecl>(Cand1.Function);
+    const CXXMethodDecl *MD2 = dyn_cast<CXXMethodDecl>(Cand2.Function);
+    if (MD1 && MD2 && Caller && !Caller->hasAttr<CUDAHostAttr>()) {
+      if ((MD1->isMoveAssignmentOperator() ||
+           MD1->isCopyAssignmentOperator()) &&
+          !(MD2->isMoveAssignmentOperator() || MD2->isCopyAssignmentOperator()))
+        return true;
+    }
+    return false;
+#else
     return S.CUDA().IdentifyPreference(Caller, Cand1.Function) >
            S.CUDA().IdentifyPreference(Caller, Cand2.Function);
+#endif // SYCLomatic_CUSTOMIZATION
   }
 
   // General member function overloading is handled above, so this only handles

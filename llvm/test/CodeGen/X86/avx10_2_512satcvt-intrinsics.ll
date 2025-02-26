@@ -5,10 +5,10 @@
 define dso_local <8 x i64> @test_mm512_ipcvtnebf16_epi8(<32 x bfloat> noundef %__A) {
 ; CHECK-LABEL: test_mm512_ipcvtnebf16_epi8:
 ; CHECK:       # %bb.0: # %entry
-; CHECK-NEXT:    vcvtnebf162ibs %zmm0, %zmm0 # encoding: [0x62,0xf5,0x7f,0x48,0x69,0xc0]
+; CHECK-NEXT:    vcvtbf162ibs %zmm0, %zmm0 # encoding: [0x62,0xf5,0x7f,0x48,0x69,0xc0]
 ; CHECK-NEXT:    ret{{[l|q]}} # encoding: [0xc3]
 entry:
-  %0 = tail call <32 x i16> @llvm.x86.avx10.vcvtnebf162ibs512(<32 x bfloat> %__A)
+  %0 = tail call <32 x i16> @llvm.x86.avx10.vcvtbf162ibs512(<32 x bfloat> %__A)
   %1 = bitcast <32 x i16> %0 to <8 x i64>
   ret <8 x i64> %1
 }
@@ -17,39 +17,39 @@ define dso_local <8 x i64> @test_mm512_mask_ipcvtnebf16_epi8(<8 x i64> noundef %
 ; X64-LABEL: test_mm512_mask_ipcvtnebf16_epi8:
 ; X64:       # %bb.0: # %entry
 ; X64-NEXT:    kmovd %edi, %k1 # encoding: [0xc5,0xfb,0x92,0xcf]
-; X64-NEXT:    vcvtnebf162ibs %zmm1, %zmm0 {%k1} # encoding: [0x62,0xf5,0x7f,0x49,0x69,0xc1]
+; X64-NEXT:    vcvtbf162ibs %zmm1, %zmm0 {%k1} # encoding: [0x62,0xf5,0x7f,0x49,0x69,0xc1]
 ; X64-NEXT:    retq # encoding: [0xc3]
 ;
 ; X86-LABEL: test_mm512_mask_ipcvtnebf16_epi8:
 ; X86:       # %bb.0: # %entry
 ; X86-NEXT:    kmovd {{[0-9]+}}(%esp), %k1 # encoding: [0xc4,0xe1,0xf9,0x90,0x4c,0x24,0x04]
-; X86-NEXT:    vcvtnebf162ibs %zmm1, %zmm0 {%k1} # encoding: [0x62,0xf5,0x7f,0x49,0x69,0xc1]
+; X86-NEXT:    vcvtbf162ibs %zmm1, %zmm0 {%k1} # encoding: [0x62,0xf5,0x7f,0x49,0x69,0xc1]
 ; X86-NEXT:    retl # encoding: [0xc3]
 entry:
   %0 = bitcast <8 x i64> %__S to <32 x i16>
-  %1 = tail call <32 x i16> @llvm.x86.avx10.vcvtnebf162ibs512(<32 x bfloat> %__B)
+  %1 = tail call <32 x i16> @llvm.x86.avx10.vcvtbf162ibs512(<32 x bfloat> %__B)
   %2 = bitcast i32 %__A to <32 x i1>
   %3 = select <32 x i1> %2, <32 x i16> %1, <32 x i16> %0
   %4 = bitcast <32 x i16> %3 to <8 x i64>
   ret <8 x i64> %4
 }
 
-declare <32 x i16> @llvm.x86.avx10.vcvtnebf162ibs512(<32 x bfloat>)
+declare <32 x i16> @llvm.x86.avx10.vcvtbf162ibs512(<32 x bfloat>)
 
 define dso_local <8 x i64> @test_mm512_maskz_ipcvtnebf16_epi8(i32 noundef %__A, <32 x bfloat> noundef %__B) {
 ; X64-LABEL: test_mm512_maskz_ipcvtnebf16_epi8:
 ; X64:       # %bb.0: # %entry
 ; X64-NEXT:    kmovd %edi, %k1 # encoding: [0xc5,0xfb,0x92,0xcf]
-; X64-NEXT:    vcvtnebf162ibs %zmm0, %zmm0 {%k1} {z} # encoding: [0x62,0xf5,0x7f,0xc9,0x69,0xc0]
+; X64-NEXT:    vcvtbf162ibs %zmm0, %zmm0 {%k1} {z} # encoding: [0x62,0xf5,0x7f,0xc9,0x69,0xc0]
 ; X64-NEXT:    retq # encoding: [0xc3]
 ;
 ; X86-LABEL: test_mm512_maskz_ipcvtnebf16_epi8:
 ; X86:       # %bb.0: # %entry
 ; X86-NEXT:    kmovd {{[0-9]+}}(%esp), %k1 # encoding: [0xc4,0xe1,0xf9,0x90,0x4c,0x24,0x04]
-; X86-NEXT:    vcvtnebf162ibs %zmm0, %zmm0 {%k1} {z} # encoding: [0x62,0xf5,0x7f,0xc9,0x69,0xc0]
+; X86-NEXT:    vcvtbf162ibs %zmm0, %zmm0 {%k1} {z} # encoding: [0x62,0xf5,0x7f,0xc9,0x69,0xc0]
 ; X86-NEXT:    retl # encoding: [0xc3]
 entry:
-  %0 = tail call <32 x i16> @llvm.x86.avx10.vcvtnebf162ibs512(<32 x bfloat> %__B)
+  %0 = tail call <32 x i16> @llvm.x86.avx10.vcvtbf162ibs512(<32 x bfloat> %__B)
   %1 = bitcast i32 %__A to <32 x i1>
   %2 = select <32 x i1> %1, <32 x i16> %0, <32 x i16> zeroinitializer
   %3 = bitcast <32 x i16> %2 to <8 x i64>
@@ -59,10 +59,10 @@ entry:
 define dso_local <8 x i64> @test_mm512_ipcvtnebf16_epu8(<32 x bfloat> noundef %__A) {
 ; CHECK-LABEL: test_mm512_ipcvtnebf16_epu8:
 ; CHECK:       # %bb.0: # %entry
-; CHECK-NEXT:    vcvtnebf162iubs %zmm0, %zmm0 # encoding: [0x62,0xf5,0x7f,0x48,0x6b,0xc0]
+; CHECK-NEXT:    vcvtbf162iubs %zmm0, %zmm0 # encoding: [0x62,0xf5,0x7f,0x48,0x6b,0xc0]
 ; CHECK-NEXT:    ret{{[l|q]}} # encoding: [0xc3]
 entry:
-  %0 = tail call <32 x i16> @llvm.x86.avx10.vcvtnebf162iubs512(<32 x bfloat> %__A)
+  %0 = tail call <32 x i16> @llvm.x86.avx10.vcvtbf162iubs512(<32 x bfloat> %__A)
   %1 = bitcast <32 x i16> %0 to <8 x i64>
   ret <8 x i64> %1
 }
@@ -71,39 +71,39 @@ define dso_local <8 x i64> @test_mm512_mask_ipcvtnebf16_epu8(<8 x i64> noundef %
 ; X64-LABEL: test_mm512_mask_ipcvtnebf16_epu8:
 ; X64:       # %bb.0: # %entry
 ; X64-NEXT:    kmovd %edi, %k1 # encoding: [0xc5,0xfb,0x92,0xcf]
-; X64-NEXT:    vcvtnebf162iubs %zmm1, %zmm0 {%k1} # encoding: [0x62,0xf5,0x7f,0x49,0x6b,0xc1]
+; X64-NEXT:    vcvtbf162iubs %zmm1, %zmm0 {%k1} # encoding: [0x62,0xf5,0x7f,0x49,0x6b,0xc1]
 ; X64-NEXT:    retq # encoding: [0xc3]
 ;
 ; X86-LABEL: test_mm512_mask_ipcvtnebf16_epu8:
 ; X86:       # %bb.0: # %entry
 ; X86-NEXT:    kmovd {{[0-9]+}}(%esp), %k1 # encoding: [0xc4,0xe1,0xf9,0x90,0x4c,0x24,0x04]
-; X86-NEXT:    vcvtnebf162iubs %zmm1, %zmm0 {%k1} # encoding: [0x62,0xf5,0x7f,0x49,0x6b,0xc1]
+; X86-NEXT:    vcvtbf162iubs %zmm1, %zmm0 {%k1} # encoding: [0x62,0xf5,0x7f,0x49,0x6b,0xc1]
 ; X86-NEXT:    retl # encoding: [0xc3]
 entry:
   %0 = bitcast <8 x i64> %__S to <32 x i16>
-  %1 = tail call <32 x i16> @llvm.x86.avx10.vcvtnebf162iubs512(<32 x bfloat> %__B)
+  %1 = tail call <32 x i16> @llvm.x86.avx10.vcvtbf162iubs512(<32 x bfloat> %__B)
   %2 = bitcast i32 %__A to <32 x i1>
   %3 = select <32 x i1> %2, <32 x i16> %1, <32 x i16> %0
   %4 = bitcast <32 x i16> %3 to <8 x i64>
   ret <8 x i64> %4
 }
 
-declare <32 x i16> @llvm.x86.avx10.vcvtnebf162iubs512(<32 x bfloat>)
+declare <32 x i16> @llvm.x86.avx10.vcvtbf162iubs512(<32 x bfloat>)
 
 define dso_local <8 x i64> @test_mm512_maskz_ipcvtnebf16_epu8(i32 noundef %__A, <32 x bfloat> noundef %__B) {
 ; X64-LABEL: test_mm512_maskz_ipcvtnebf16_epu8:
 ; X64:       # %bb.0: # %entry
 ; X64-NEXT:    kmovd %edi, %k1 # encoding: [0xc5,0xfb,0x92,0xcf]
-; X64-NEXT:    vcvtnebf162iubs %zmm0, %zmm0 {%k1} {z} # encoding: [0x62,0xf5,0x7f,0xc9,0x6b,0xc0]
+; X64-NEXT:    vcvtbf162iubs %zmm0, %zmm0 {%k1} {z} # encoding: [0x62,0xf5,0x7f,0xc9,0x6b,0xc0]
 ; X64-NEXT:    retq # encoding: [0xc3]
 ;
 ; X86-LABEL: test_mm512_maskz_ipcvtnebf16_epu8:
 ; X86:       # %bb.0: # %entry
 ; X86-NEXT:    kmovd {{[0-9]+}}(%esp), %k1 # encoding: [0xc4,0xe1,0xf9,0x90,0x4c,0x24,0x04]
-; X86-NEXT:    vcvtnebf162iubs %zmm0, %zmm0 {%k1} {z} # encoding: [0x62,0xf5,0x7f,0xc9,0x6b,0xc0]
+; X86-NEXT:    vcvtbf162iubs %zmm0, %zmm0 {%k1} {z} # encoding: [0x62,0xf5,0x7f,0xc9,0x6b,0xc0]
 ; X86-NEXT:    retl # encoding: [0xc3]
 entry:
-  %0 = tail call <32 x i16> @llvm.x86.avx10.vcvtnebf162iubs512(<32 x bfloat> %__B)
+  %0 = tail call <32 x i16> @llvm.x86.avx10.vcvtbf162iubs512(<32 x bfloat> %__B)
   %1 = bitcast i32 %__A to <32 x i1>
   %2 = select <32 x i1> %1, <32 x i16> %0, <32 x i16> zeroinitializer
   %3 = bitcast <32 x i16> %2 to <8 x i64>

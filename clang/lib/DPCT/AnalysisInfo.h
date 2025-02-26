@@ -1921,6 +1921,7 @@ public:
   void setIgnoreFlag(bool Flag) { IsIgnored = Flag; }
   bool isIgnore() { return IsIgnored; }
   bool isStatic() { return IsStatic; }
+  bool isInline() { return IsInline; }
   void setName(std::string NewName) { NewConstVarName = NewName; }
   unsigned int getNewConstVarOffset() { return NewConstVarOffset; }
   unsigned int getNewConstVarLength() { return NewConstVarLength; }
@@ -1993,7 +1994,7 @@ private:
   std::string InitList;
   bool IsIgnored = false;
   bool IsStatic = false;
-
+  bool IsInline = false;
   static const std::string ExternVariableName;
 
   // To store the new name for __constant__ variable's name that needs to be

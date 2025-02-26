@@ -1,6 +1,6 @@
 // UNSUPPORTED: system-windows
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-12.6
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v11.0, v11.1, v11.2, v11.3, v12.6
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-12.6, cuda-12.8
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v11.0, v11.1, v11.2, v11.3, v12.6, v12.8
 // RUN: dpct --sycl-named-lambda --format-range=none --usm-level=none -out-root %T/thrust_detail_namespace_drop_12_6 -in-root=%S %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust_detail_namespace_drop_12_6/thrust_detail_namespace_drop_12_6.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust_detail_namespace_drop_12_6/thrust_detail_namespace_drop_12_6.dp.cpp -o %T/thrust_detail_namespace_drop_12_6/thrust_detail_namespace_drop_12_6.dp.o %}
