@@ -263,7 +263,7 @@ void GenCodePinHeaderRule::collectMemberInfo(
                                    CodePinVarInfoType::Base, true, IsBaseMember,
                                    PrintPolicy);
     if (isTypeInAnalysisScope(BaseType.getTypePtrOrNull())) {
-      collectMemberInfo(BaseType, VI, MembersType, true, PrintPolicy);
+      collectInfoForCodePinDumpFunction(BaseType);
     }
   }
 
