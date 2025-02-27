@@ -56,8 +56,7 @@ public:
 
   struct striped_offset {
     template <typename Item> size_t operator()(Item item, size_t i) {
-      size_t offset = i * item.get_local_range(2) * item.get_local_range(1) *
-                          item.get_local_range(0) +
+      size_t offset = i * item.get_group().get_local_linear_range() +
                       item.get_local_linear_id();
       return adjust_by_padding(offset);
     }
@@ -66,8 +65,7 @@ public:
   struct sub_group_striped_offset {
     template <typename Item> size_t operator()(Item item, size_t i) {
       auto sg = item.get_sub_group();
-      size_t wg_size = item.get_local_range(2) * item.get_local_range(1) *
-                       item.get_local_range(0);
+      size_t wg_size = item.get_group().get_local_linear_range();
       size_t sub_group_sliced_items =
           std::min<size_t>(sg.get_local_linear_range(), wg_size);
       size_t offset = (sg.get_group_linear_id() * sub_group_sliced_items *
