@@ -333,7 +333,7 @@ template <class T>
 class data_ser<T*, void> {
 public:
   static size_t dump(json_stringstream &ss, std::ofstream &ofst, T* value,
-                   queue_t queue, bool top_run = true) {
+                   queue_t queue) {
 
     size_t length = 0;
     using PointeeType = std::remove_cv_t<std::remove_pointer_t<T>>;
@@ -361,17 +361,10 @@ public:
 
 
     std::string tag = get_demangle_type_name<PointeeType>(true);
-    // ofst.write(&tag[0], tag.length()+1);
-    std::cout << "tag " << tag << std::endl;
-    std::cout << "ptr SIZE " << ptr_size << std::endl;
-    // ofst.write(reinterpret_cast<char *>(&ptr_size), sizeof(size_t));
-    // ofst.flush();
-    // length += tag.length() + 1 + sizeof(size_t) + sizeof(PointeeType) * size;
 
     if (std::is_arithmetic_v<PointeeType> || is_expand_to_dump<PointeeType>()) {
       for (int i = 0; i < size; ++i) {
-        detail::data_ser<PointeeType>::dump(ss, ofst, *(dump_addr + i), queue,
-                                            false);
+        detail::data_ser<PointeeType>::dump(ss, ofst, *(dump_addr + i), queue);
       }
     } else {
       auto arr = ss.array();
@@ -379,8 +372,7 @@ public:
         auto obj = arr.object();
         std::string key = "Mem" + std::to_string(i);
         obj.key(key);
-        detail::data_ser<PointeeType>::dump(ss, ofst, *(dump_addr + i), queue,
-                                            false);
+        detail::data_ser<PointeeType>::dump(ss, ofst, *(dump_addr + i), queue);
       }
     }
 
@@ -399,7 +391,7 @@ template <class T>
 class data_ser<T, typename std::enable_if<std::is_array<T>::value>::type> {
 public:
   static size_t dump(detail::json_stringstream &ss, std::ofstream &ofst, T value,
-                   queue_t queue, bool top_run = true) {
+                   queue_t queue) {
     size_t length = 0;
     // auto arr = ss.array();
     auto obj = ss.object();
@@ -410,15 +402,12 @@ public:
         if (r > (float)CODEPIN_SAMPLING_PERCENT/(float)100)
           continue;
       }
-      // auto obj = arr.object();
-      
       detail::data_ser<
           std::remove_extent_t<T>>::print_type_name(obj);
-      // obj.key("Data222");
       obj.key("Offset");
       obj.value(static_cast<size_t>(ofst.tellp()));
       detail::data_ser<std::remove_extent_t<T>>::dump(ss, ofst,
-           value[i], queue, true);
+           value[i], queue);
     }
   return length;
   }

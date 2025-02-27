@@ -1,6 +1,8 @@
 // UNSUPPORTED: system-windows
 // RUN: cat %S/cuda.json > %T/cuda.json
 // RUN: cat %S/sycl.json > %T/sycl.json
+// RUN: cat %S/cuda.bin > %T/cuda.bin
+// RUN: cat %S/sycl.bin > %T/sycl.bin
 // RUN: cd %T
 // RUN: codepin-report.py --instrumented-cuda-log cuda.json --instrumented-sycl-log sycl.json || true
 
@@ -39,6 +41,9 @@ int main() {
     std::cout << std::endl;
 
     CUDA_CALL(cudaFree(device_data));
+        //    dpctexp::codepin::gen_prolog_API_CP(
+        // "test_gen.cu:40:5",
+        // &dpct::get_in_order_queue(), "device_data", device_data);
         // dpctexp::codepin::gen_epilog_API_CP(
         // "test_gen.cu:40:5",
         // &dpct::get_in_order_queue(), "device_data", device_data);

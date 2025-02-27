@@ -845,16 +845,10 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
     RS << "template <> class data_ser<" << CodepinTypeName << "> {" << getNL()
        << "public:" << getNL()
        << "  static void dump(dpctexp::codepin::detail::json_stringstream "
-          "&ss, std::ofstream &ofst, "
+          "&ss, dpctexp::codepin::bin_ofstream &ofst, "
        << CodepinTypeName << " &value," << getNL()
-       << "                   dpctexp::codepin::queue_t queue, bool top_call = true) {" << getNL();
+       << "dpctexp::codepin::queue_t queue) {" << getNL();
 
-    RS << "    if (top_call) {" << getNL();
-    RS << "      size_t size = sizeof(" << CodepinTypeName << ");" << getNL();
-    RS << "      ofst.write(get_demangle_type_name<" <<  CodepinTypeName  << ">().c_str(), get_demangle_type_name<" << CodepinTypeName << ">().length() + 1);" << getNL();
-    RS << "      ofst.write(reinterpret_cast<char*>(&size), sizeof(size_t));" << getNL();
-    RS << "    }" << getNL();
-    RS << "    ";
     RS << "    auto obj = ss.object();" << getNL();
     if (int MemberNum = Info.Members.size()) {
       for (int i = 0; i < MemberNum; i++) {
@@ -871,12 +865,8 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
         RS << ">::print_type_name(value" << i << ");" << getNL() << "      obj.key(\"Offset\");" << getNL();
         RS << "      obj.value(static_cast<size_t>(ofst.tellp()));" << getNL();
         RS << "      obj.key(\"Size\");" << getNL();
-        // RS << "      obj.value(sizeof(" << getCodePinPostfixName(Info.Members[i], IsForCUDADebug) << "));" << getNL();  
-        // RS << "      if(std::is_pointer_v<" << getCodePinPostfixName(Info.Members[i], IsForCUDADebug)<< ">) "
-        //    << getNL();
         RS << "      obj.value(get_size_of_type(value." << Info.Members[i].CodePinMemberName <<")); " << getNL();  
-        // RS << "      obj.value(sizeof(" << getCodePinPostfixName(Info.Members[i], IsForCUDADebug) << "));" << getNL();
-        RS << " if(!is_expand_to_dump<std::remove_pointer_t<"
+        RS << " if(is_expand_to_dump<std::remove_pointer_t<"
         << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
         for (auto &D : Info.Members[i].Dims) {
           RS << "[" << std::to_string(D) << "]";
@@ -888,7 +878,7 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
           RS << "[" << std::to_string(D) << "]";
         }
         RS << ">::dump(ss, ofst, value." << Info.Members[i].CodePinMemberName
-           << ", queue, true);" << getNL() << "    }" << getNL();
+           << ", queue);" << getNL() << "    }" << getNL();
       }
     }
     RS << getNL() << "  }" << getNL();
@@ -902,11 +892,11 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
          << "  static void dump(dpctexp::codepin::detail::json_stringstream "
             "&ss, std::ofstream &ofst, "
          << Name << " &value," << getNL()
-         << "                   dpctexp::codepin::queue_t queue, bool top_call = true) {" << getNL();
+         << "                   dpctexp::codepin::queue_t queue) {" << getNL();
       RS << "    " + CodepinTypeName << "& temp = reinterpret_cast<"
          << CodepinTypeName << "&>(value);" << getNL();
       RS << "    dpctexp::codepin::detail::data_ser<" << CodepinTypeName
-         << ">::dump(ss, ofst, temp, queue, top_call);" << getNL() << "  }" << getNL()
+         << ">::dump(ss, ofst, temp, queue);" << getNL() << "  }" << getNL()
          << "  static void print_type_name(json_stringstream::json_obj &obj) {"
          << getNL() << "    obj.key(\"Type\");" << getNL() << "    obj.value(\""
          << Name << "\");" << getNL() << "  }" << getNL() << "};" << getNL()

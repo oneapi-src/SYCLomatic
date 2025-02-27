@@ -1,25 +1,85 @@
 [
-    {
-        "ID": "serial123:epilog:0",
-        "Device Name": "GPU",
-        "Device ID": "0",
-        "Stream Address": "0xe4bb30",
-        "Free Device Memory": "100",
-        "Total Device Memory": "500",
-        "Elapse Time(ms)": "0",
-        "CheckPoint": {
-            "var_5": {
-                "Type": "float",
-                "Data": [
-                    1.0
-                ]
-            },
-            "var_6": {
-                "Type": "float",
-                "Data": [
-                    1.3
-                ]
-            }
-        }
+  {
+    "CodePin Random Seed": "0",
+    "CodePin Sampling Threshold": "20",
+    "CodePin Sampling Percent": "1"
+  },
+  {
+    "ID": "vectorAdd:test.cu:55:5:prolog",
+    "Device Name": "Intel(R) Arc(TM) A770 Graphics",
+    "Device ID": "0",
+    "Stream Address": "0x3aa2c40",
+    "Free Device Memory": "16225243136",
+    "Total Device Memory": "16225243136",
+    "Elapse Time(ms)": "0",
+    "CheckPoint": {
+      "d_A": {
+        "Type": "P1f",
+        "Address": "0xffffc001ffac0000",
+        "Index": "0",
+        "Offset": "0",
+        "Size": "20"
+      },
+      "d_B": {
+        "Type": "P1f",
+        "Address": "0xffffc001ffac0200",
+        "Index": "1",
+        "Offset": "20",
+        "Size": "20"
+      },
+      "d_C": {
+        "Type": "P1f",
+        "Address": "0xffffc001ffac0400",
+        "Index": "2",
+        "Offset": "40",
+        "Size": "20"
+      },
+      "numElements": {
+        "Type": "1i",
+        "Address": "0x7ffffcbfb8c0",
+        "Index": "3",
+        "Offset": "60",
+        "Size": "4"
+      }
     }
+  },
+  {
+    "ID": "vectorAdd:test.cu:55:5:epilog",
+    "Device Name": "Intel(R) Arc(TM) A770 Graphics",
+    "Device ID": "0",
+    "Stream Address": "0x3aa2c40",
+    "Free Device Memory": "16225243136",
+    "Total Device Memory": "16225243136",
+    "Elapse Time(ms)": "0",
+    "CheckPoint": {
+      "d_A": {
+        "Type": "P1f",
+        "Address": "0xffffc001ffac0000",
+        "Index": "0",
+        "Offset": "64",
+        "Size": "20"
+      },
+      "d_B": {
+        "Type": "P1f",
+        "Address": "0xffffc001ffac0200",
+        "Index": "1",
+        "Offset": "84",
+        "Size": "20"
+      },
+      "d_C": {
+        "Type": "P1f",
+        "Address": "0xffffc001ffac0400",
+        "Index": "2",
+        "Offset": "104",
+        "Size": "20"
+      },
+      "numElements": {
+        "Type": "1i",
+        "Address": "0x7ffffcbfb8c0",
+        "Index": "3",
+        "Offset": "124",
+        "Size": "4"
+      }
+    }
+  }
 ]

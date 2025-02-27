@@ -14,39 +14,39 @@
 
 
 //CHECK: namespace dpct {
-//CHECK: namespace experimental {
-//CHECK: namespace codepin {
-//CHECK: namespace detail {
-//CHECK: struct Color_codepin {
-//CHECK: public:
-//CHECK:   int r_codepin;
-//CHECK:   int g_codepin;
-//CHECK:   int b_codepin;
-//CHECK: };
+//CHECK-NEXT: namespace experimental {
+//CHECK-NEXT: namespace codepin {
+//CHECK-NEXT: namespace detail {
+//CHECK-NEXT: struct Color_codepin {
+//CHECK-NEXT: public:
+//CHECK-NEXT:   int r_codepin;
+//CHECK-NEXT:   int g_codepin;
+//CHECK-NEXT:   int b_codepin;
+//CHECK-NEXT: };
 
 //CHECK: template<typename T>
-//CHECK: class Point3D_codepin {
-//CHECK: public:
-//CHECK:   T x_codepin;
-//CHECK:   T y_codepin;
-//CHECK:   T z_codepin;
-//CHECK: };
+//CHECK-NEXT: class Point3D_codepin {
+//CHECK-NEXT: public:
+//CHECK-NEXT:   T x_codepin;
+//CHECK-NEXT:   T y_codepin;
+//CHECK-NEXT:   T z_codepin;
+//CHECK-NEXT: };
 
 //CHECK: struct PointCloud_codepin {
-//CHECK: public:
-//CHECK:   float3 pc_codepin[3];
-//CHECK: };
+//CHECK-NEXT: public:
+//CHECK-NEXT:   float3 pc_codepin[3];
+//CHECK-NEXT: };
 
 //CHECK: class Point3DExt_codepin : public Point3D_codepin<int> {
-//CHECK: public:
-//CHECK:   Color_codepin col_codepin;
-//CHECK: };
+//CHECK-NEXT: public:
+//CHECK-NEXT:   Color_codepin col_codepin;
+//CHECK-NEXT: };
 
 //CHECK: struct Point2D_codepin {
-//CHECK: public:
-//CHECK:   int x_codepin;
-//CHECK:   int y_codepin;
-//CHECK: };
+//CHECK-NEXT: public:
+//CHECK-NEXT:   int x_codepin;
+//CHECK-NEXT:   int y_codepin;
+//CHECK-NEXT: };
 
 //CHECK: template <> class data_ser<Color_codepin> {
 //CHECK: public:
