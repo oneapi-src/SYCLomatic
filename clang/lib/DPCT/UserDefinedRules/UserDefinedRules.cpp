@@ -362,87 +362,110 @@ readYAMLFile(const llvm::StringRef &RuleFilePath) {
   llvm::SmallString<128> DirectoryPath(RuleFilePath);
   llvm::sys::path::remove_filename(DirectoryPath);
 
-  // Split the file content into lines using newline as the delimiter.
+  // Iterate over the input line by line.
+  std::stringstream Output, IncRuleFilePath;
+  size_t Ind = 0;
+  bool IncDirectiveFound = false;
+  bool SkipWhiteSpaces = false;
+  bool IsLineBeginning = true;
+
   llvm::StringRef BuffContent = std::move(*Buffer)->getBuffer();
-  llvm::SmallVector<StringRef, 16> Lines;
-  BuffContent.split(Lines, "\n");
+  while (Ind < BuffContent.size()) {
+    char ch = BuffContent[Ind];
 
-  std::stringstream Output;
-  for (auto Line : Lines) {
-    auto LineStr = Line.str();
+    // Skip return carriage character
+    if (ch == '\r') {
+      Ind++;
+      continue;
+    }
 
-    // Parse each line and find out if it contains
-    // an include directive and a file name
-    std::string IncRuleFilePath = "";
+    // Skip white spaces at the beginning of the line if it contains a directive
+    if (IsLineBeginning) {
+      size_t i = Ind;
+      char c = ch;
 
-    size_t Ind = 0;
-    // skip white spaces
-    for (; Ind < LineStr.length() && isWhitespace(LineStr[Ind]); Ind++)
-      ;
-
-    // check if the line starts with '!'
-    if (LineStr[Ind] == '!') {
-      // check for the include directive
-      if (LineStr.substr(Ind, 8) == "!include") {
-        Ind += 8;
-
-        // skip white spaces
-        for (; Ind < LineStr.length() && isWhitespace(LineStr[Ind]); Ind++)
-          ;
-
-        char ch = LineStr[Ind];
-        // parse the file name with quotes
-        if (ch == '"' || ch == '\'') {
-          Ind++;
-          auto End = LineStr.find(ch, Ind);
-          if (End != std::string::npos) {
-            IncRuleFilePath = LineStr.substr(Ind, End - Ind);
-            Ind = End + 1;
-          } else {
-            // ignore the line with unbalanced quotes
-            continue;
-          }
-        } else {
-          // parse the file name without quotes
-          auto End = LineStr.find_first_of(" \t\n\r\f\v", Ind);
-          if (End != std::string::npos) {
-            IncRuleFilePath = LineStr.substr(Ind, End - Ind);
-            Ind = End;
-          } else {
-            IncRuleFilePath = LineStr.substr(Ind);
-            Ind = LineStr.length();
-          }
+      // lookahead for "!" directive after white spaces
+      for (; i < BuffContent.size(); i++) {
+        c = BuffContent[i];
+        if (!(c == ' ' || c == '\t')) {
+          break;
         }
-      } else {
-        // ignore the line when the directive is not "!include"
+      }
+
+      // Move the Ind to the beginning of directive
+      if (c == '!' && i != Ind) {
+        Ind = i;
+        ch = c;
+      }
+
+      IsLineBeginning = false;
+    }
+
+    // Check if the line starts with a directive
+    if (ch == '!') {
+      // Check if the directive is "!include"
+      if (!IncDirectiveFound && BuffContent.substr(Ind, 8) == "!include") {
+        Ind += 8; // sizeof("include") + 1
+        IncDirectiveFound = true;
+        SkipWhiteSpaces = true;
         continue;
       }
-    } else {
-      Output << LineStr << "\n";
     }
 
-    // parse the included file
-    if (IncRuleFilePath.empty()) {
-      // ignore the line with empty file name
-      continue;
-    } else {
-      // find the absolute path for the included rule file path
-      llvm::SmallString<128> IncRuleFileAbsPath = DirectoryPath;
-      llvm::sys::path::append(IncRuleFileAbsPath, IncRuleFilePath);
+    // Skip white spaces between quotes for !include line
+    if (IncDirectiveFound) {
+      if (ch == '"' || ch == '\'') {
+        Ind++;
+        SkipWhiteSpaces = !SkipWhiteSpaces;
+        continue;
+      }
 
-      // recursively process the included file
-      if (llvm::sys::fs::exists(IncRuleFileAbsPath)) {
-        Output << readYAMLFile(IncRuleFileAbsPath.str())->getBuffer().str()
-               << "\n";
-      } else {
-        Output << readYAMLFile(IncRuleFilePath)->getBuffer().str() << "\n";
+      // Skip white space characters
+      if (SkipWhiteSpaces) {
+        if (ch == ' ' || ch == '\t') {
+          Ind++;
+          continue;
+        }
       }
     }
 
-    if (Ind < LineStr.length()) {
-      // ignore the line with any extra characters after the file name
-      continue;
+    // Process IncRuleFilePath at end of the line
+    if (ch == '\n') {
+      if (IncDirectiveFound) {
+        auto IncRuleFilePathStr = IncRuleFilePath.str();
+
+        if (!IncRuleFilePathStr.empty()) {
+          // Find the absolute path for the included rule file path
+          llvm::SmallString<128> IncRuleFileAbsPath = DirectoryPath;
+          llvm::sys::path::append(IncRuleFileAbsPath, IncRuleFilePathStr);
+
+          // Recursively process the included file
+          if (llvm::sys::fs::exists(IncRuleFileAbsPath)) {
+            Output << readYAMLFile(IncRuleFileAbsPath.str())->getBuffer().str();
+          } else {
+            Output << readYAMLFile(IncRuleFilePathStr)->getBuffer().str();
+          }
+
+          // Clear the contents of include rule file path
+          IncRuleFilePath.str("");
+        }
+      }
+
+      // Reset include directive info for each new line
+      IncDirectiveFound = false;
+      SkipWhiteSpaces = false;
+      IsLineBeginning = true;
     }
+
+    if (IncDirectiveFound) {
+      // Append the character to the include rule file path for !include line
+      IncRuleFilePath << ch;
+    } else {
+      // Append the character to the output buffer
+      Output << ch;
+    }
+
+    Ind++;
   }
 
   return llvm::MemoryBuffer::getMemBufferCopy(Output.str(), RuleFilePath);
