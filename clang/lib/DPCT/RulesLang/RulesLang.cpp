@@ -4367,11 +4367,12 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         StreamName = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
         ReplStr = StreamName + "ext_oneapi_empty()";
       } else {
-        StreamName = getStmtSpelling(StreamArg);
+        ExprAnalysis EA(StreamArg);
+        ReplStr = EA.getReplacedString();
         if (needExtraParensInMemberExpr(StreamArg)) {
-          StreamName = "(" + StreamName + ")";
+          ReplStr = "(" + ReplStr + ")";
         }
-        ReplStr = StreamName + "->" + "ext_oneapi_empty()";
+        ReplStr = ReplStr + "->" + "ext_oneapi_empty()";
       }
       if (IsAssigned) {
         ReplStr = MapNames::getCheckErrorMacroName() + "((" + ReplStr + "))";
@@ -4414,7 +4415,12 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
 
         StmtStr0 = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
       } else {
-        StmtStr0 = getStmtSpelling(CE->getArg(0)) + "->";
+        ExprAnalysis StreamArgEA(StreamArg);
+        StmtStr0 = StreamArgEA.getReplacedString();
+        if (needExtraParensInMemberExpr(StreamArg)) {
+          StmtStr0 = "(" + StmtStr0 + ")";
+        }
+        StmtStr0 += "->";
       }
       ReplStr = StmtStr0 + "ext_oneapi_submit_barrier({" +
                 StmtStr1 + "})";
