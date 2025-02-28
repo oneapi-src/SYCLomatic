@@ -9,6 +9,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 #include <thrust/host_vector.h>
+#include <thrust/scan.h>
 
 template<typename index_t>
 void embedding_dense_backward_cuda_scan() {

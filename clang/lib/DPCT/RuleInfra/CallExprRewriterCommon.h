@@ -736,7 +736,7 @@ makeCastIfNotSameAsGivenExprCreator(
                         std::function<std::string(const CallExpr *)>,
                         std::function<std::string(const CallExpr *)>,
                         std::function<SubExprT(const CallExpr *)>>(
-      GivenTypeName, ReplacementTypeName, Sub);
+      std::move(GivenTypeName), std::move(ReplacementTypeName), std::move(Sub));
 }
 
 inline std::function<CastIfSpecialExpr(const CallExpr *)>
