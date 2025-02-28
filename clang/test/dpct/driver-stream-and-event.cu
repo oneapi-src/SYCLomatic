@@ -136,7 +136,7 @@ void test_stream() {
   // CHECK: std::async([&]() { hStream->wait(); cbptr(hStream, 0, data); });
   cuStreamAddCallback(hStream, cbptr, data, flag);
 
-  // CHECK: std::async([&]() { q_ct1.wait(); cbptr(q_ct1, 0, data); });
+  // CHECK: std::async([&]() { q_ct1.wait(); cbptr(&q_ct1, 0, data); });
   cuStreamAddCallback(0, cbptr, data, flag);
 
   //CHECK: /*

@@ -36,7 +36,7 @@ ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
                        CALL("std::async",
                             LAMBDA(true, false,
                                    MEMBER_CALL(QUEUESTR, false, "wait"),
-                                   CALL(ARG(1), QUEUESTR, ARG("0"), ARG(2))))))))
+                                   CALL(ARG(1), QUEUEPTRSTR, ARG("0"), ARG(2))))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
