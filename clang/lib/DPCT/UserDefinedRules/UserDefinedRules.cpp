@@ -366,20 +366,20 @@ readYAMLFile(const llvm::StringRef &RuleFilePath) {
   std::stringstream Output, IncRuleFilePath;
   const std::string IncDirective = "!include";
 
-  size_t Ind = 0;
+  size_t Idx = 0;
   bool IncDirectiveFound = false;
   bool SkipWhiteSpaces = false;
   bool IsLineBeginning = true;
 
   llvm::StringRef BuffContent = std::move(*Buffer)->getBuffer();
   const auto BuffSize = BuffContent.size();
-  while (Ind < BuffSize) {
-    unsigned char ch = BuffContent[Ind];
+  while (Idx < BuffSize) {
+    unsigned char Ch = BuffContent[Idx];
 
     // Skip white spaces at the beginning of the line if it contains a directive
     if (IsLineBeginning) {
-      auto i = Ind;
-      auto c = ch;
+      auto i = Idx;
+      auto c = Ch;
 
       // lookahead for "!" directive after white spaces
       for (; i < BuffContent.size(); i++) {
@@ -393,33 +393,33 @@ readYAMLFile(const llvm::StringRef &RuleFilePath) {
 
       // Check if the line starts with a directive
       if (c == '!') {
-        // Move Ind to the beginning of directive
-        Ind = i;
+        // Move Idx to the beginning of directive
+        Idx = i;
 
         // Check if the directive is "!include"
-        if (!IncDirectiveFound && Ind + IncDirective.length() <= BuffSize &&
-            BuffContent.substr(Ind, IncDirective.length()) == IncDirective) {
-          // Move Ind to the end of directive
-          Ind += IncDirective.length();
+        if (!IncDirectiveFound && Idx + IncDirective.length() <= BuffSize &&
+            BuffContent.substr(Idx, IncDirective.length()) == IncDirective) {
+          // Move Idx to the end of directive
+          Idx += IncDirective.length();
           IncDirectiveFound = true;
           SkipWhiteSpaces = true;
         }
 
         // Update current character
-        ch = BuffContent[Ind];
+        Ch = BuffContent[Idx];
       }
 
       IsLineBeginning = false;
     }
 
     // Skip return carriage character
-    if (ch == '\r') {
-      Ind++;
+    if (Ch == '\r') {
+      Idx++;
       continue;
     }
 
     // Process IncRuleFilePath at end of the line
-    if (ch == '\n') {
+    if (Ch == '\n') {
       if (IncDirectiveFound) {
         auto IncRuleFilePathStr = IncRuleFilePath.str();
 
@@ -448,27 +448,27 @@ readYAMLFile(const llvm::StringRef &RuleFilePath) {
 
     if (IncDirectiveFound) {
       // Skip adding quotes to the include rule file path
-      if (ch == '"' || ch == '\'') {
-        Ind++;
+      if (Ch == '"' || Ch == '\'') {
+        Idx++;
         // Flip white space skip flag at the boundaries of quotes
         SkipWhiteSpaces = !SkipWhiteSpaces;
         continue;
       }
 
       // Skip white space characters
-      if (SkipWhiteSpaces && std::isspace(ch)) {
-        Ind++;
+      if (SkipWhiteSpaces && std::isspace(Ch)) {
+        Idx++;
         continue;
       }
 
       // Append the character to the include rule file path for !include line
-      IncRuleFilePath << ch;
+      IncRuleFilePath << Ch;
     } else {
       // Append the character to the output buffer
-      Output << ch;
+      Output << Ch;
     }
 
-    Ind++;
+    Idx++;
   }
 
   return llvm::MemoryBuffer::getMemBufferCopy(Output.str(), RuleFilePath);
