@@ -26,6 +26,7 @@ namespace clang {
 namespace dpct {
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
+llvm::DenseSet<llvm::StringRef> ProcessedYamlFiles;
 
 OutputBuilder::~OutputBuilder() {}
 
@@ -348,6 +349,12 @@ MetaRuleObject::PatternRewriter::PatternRewriter(
 // directive with the contents of the referenced file.
 std::unique_ptr<llvm::MemoryBuffer>
 readYAMLFile(const llvm::StringRef &RuleFilePath) {
+  // Check if the rule file has already been processed
+  // to avoid infinite recursion
+  if (!ProcessedYamlFiles.insert(RuleFilePath).second) {
+    return llvm::MemoryBuffer::getMemBufferCopy("");
+  }
+
   // Load the rule file into a MemoryBuffer
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
       llvm::MemoryBuffer::getFile(RuleFilePath);

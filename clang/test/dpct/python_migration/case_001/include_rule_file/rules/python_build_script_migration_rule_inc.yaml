@@ -32,6 +32,9 @@
 # include directive with space in the file name
 !include "b/b 4.yaml"
 
+# include the file that includes another file recusrsively
+!include r/r1.yaml
+
 # include directive with no file name
 !include
 
