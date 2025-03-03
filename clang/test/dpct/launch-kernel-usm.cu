@@ -107,7 +107,7 @@ int main() {
 // CHECK:  }));
   err = cudaLaunchHostFunc(stream, hostCallback, (void*)message);
 
-// CHECK: dpct::host_callback fn = hostCallback;
+// CHECK: dpct::host_func fn = hostCallback;
   cudaHostFn_t fn = hostCallback;
 // CHECK: stream->submit([&](sycl::handler &cgh) {
 // CHECK:   cgh.host_task([=](){

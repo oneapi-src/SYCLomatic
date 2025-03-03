@@ -339,7 +339,7 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_ptr",
                                       HelperFeatureEnum::device_ext)},
       {"cudaHostFn_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "host_callback",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "host_func",
                                       HelperFeatureEnum::device_ext)},
       {"CUstream",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_ptr",
