@@ -327,7 +327,7 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   if (!Tok.getIdentifier() || !Tok.getIdentifier()->isInstruction())
     return AsmStmtError();
 
-  InlineAsmIdentifierInfo *Opcode = Tok.getIdentifier();
+  Opcode = Tok.getIdentifier();
   ConsumeToken();
 
   SmallVector<InstAttr, 4> Attrs;
@@ -736,20 +736,38 @@ InlineAsmExprResult InlineAsmParser::ActOnParenExpr(InlineAsmExpr *SubExpr) {
 InlineAsmExprResult
 InlineAsmParser::ActOnVectorExpr(ArrayRef<InlineAsmExpr *> Vec) {
 
-  // Vector size must be 2, 4, or 8.
+  // Vector size for ldmatrix are 1, 2, 4
+  // size(x) = 2 * sizeof(v).
   InlineAsmVectorType::VecKind Kind;
-  switch (Vec.size()) {
-  case 2:
-    Kind = InlineAsmVectorType::v2;
-    break;
-  case 4:
-    Kind = InlineAsmVectorType::v4;
-    break;
-  case 8:
-    Kind = InlineAsmVectorType::v8;
-    break;
-  default:
-    return AsmExprError();
+  if (Opcode->getTokenID() == asmtok::op_ldmatrix) {
+    switch (Vec.size()) {
+    case 1:
+      Kind = InlineAsmVectorType::x1;
+      break;
+    case 2:
+      Kind = InlineAsmVectorType::x2;
+      break;
+    case 4:
+      Kind = InlineAsmVectorType::x4;
+      break;
+    default:
+      return AsmExprError();
+    }
+  } else {
+    // Vector size must be 2, 4, or 8.
+    switch (Vec.size()) {
+    case 2:
+      Kind = InlineAsmVectorType::v2;
+      break;
+    case 4:
+      Kind = InlineAsmVectorType::v4;
+      break;
+    case 8:
+      Kind = InlineAsmVectorType::v8;
+      break;
+    default:
+      return AsmExprError();
+    }
   }
 
   InlineAsmBuiltinType *ElementType = nullptr;

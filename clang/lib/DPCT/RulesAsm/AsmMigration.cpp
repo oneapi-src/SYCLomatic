@@ -557,12 +557,15 @@ bool SYCLGenBase::emitVectorType(const InlineAsmVectorType *T) {
   OS() << ", ";
   switch (T->getKind()) {
   case InlineAsmVectorType::v2:
+  case InlineAsmVectorType::x1:
     OS() << 2;
     break;
   case InlineAsmVectorType::v4:
+  case InlineAsmVectorType::x2:
     OS() << 4;
     break;
   case InlineAsmVectorType::v8:
+  case InlineAsmVectorType::x4:
     OS() << 8;
     break;
   }
@@ -589,9 +592,9 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVarDecl *D) {
 
 bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
   // Address expression only support ld/st/red & atom instructions.
-  if (!CurrInst ||
-      !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom,
-                    asmtok::op_prefetch, asmtok::op_red, asmtok::op_cp)) {
+  if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom,
+                                 asmtok::op_prefetch, asmtok::op_red,
+                                 asmtok::op_cp, asmtok::op_ldmatrix)) {
     return SYCLGenError();
   }
   std::string Type;
@@ -624,6 +627,8 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     if (CurrInst->is(asmtok::op_prefetch, asmtok::op_red) ||
         CanSuppressCast(Dst->getSymbol()))
       OS() << llvm::formatv("{0}", Reg);
+    else if (CurrInst->is(asmtok::op_ldmatrix))
+      OS() << llvm::formatv("(uintptr_t){0}", Reg);
     else
       OS() << llvm::formatv("(({0} *)(uintptr_t){1})", Type, Reg);
     break;
@@ -1302,6 +1307,46 @@ protected:
 
     OS() << ')';
     endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_ldmatrix(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+    const auto *Src =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getInputOperand(0));
+    if (!Src)
+      return false;
+
+    OS() << MapNames::getDpctNamespace() << "experimental::matrix::ldmatrix(";
+    if (emitStmt(Src)) {
+      return SYCLGenError();
+    }
+    OS() << ", ";
+    const auto *VE = dyn_cast<InlineAsmVectorExpr>(Inst->getOutputOperand());
+    for (unsigned Inst = 0, E = VE->getNumElements(); Inst != E; ++Inst) {
+      if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
+        continue;
+      OS() << "&";
+      if (emitStmt(VE->getElement(Inst)))
+        return SYCLGenError();
+      OS() << ", ";
+    }
+    OS() << DpctGlobalInfo::getItem(GAS);
+    if (Inst->hasAttr(InstAttr::trans))
+      OS() << ", true";
+    OS() << ");";
+    const auto *KernelDecl = getImmediateOuterFuncDecl(GAS);
+    if (KernelDecl) {
+      auto FuncInfo = DeviceFunctionDecl::LinkRedecls(KernelDecl);
+      if (FuncInfo)
+        FuncInfo->addSubGroupSizeRequest(32, GAS->getBeginLoc(),
+                                         DpctGlobalInfo::getSubGroup(GAS));
+    }
+
     return SYCLGenSuccess();
   }
 
@@ -2881,6 +2926,7 @@ protected:
   bool handle_ld(const InlineAsmInstruction *Inst) override {
     if (Inst->getNumInputOperands() != 1)
       return SYCLGenError();
+
     llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
     CurrInst = Inst;
     const auto *Src =

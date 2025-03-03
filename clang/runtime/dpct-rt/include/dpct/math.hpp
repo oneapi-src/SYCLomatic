@@ -9,8 +9,8 @@
 #ifndef __DPCT_MATH_HPP__
 #define __DPCT_MATH_HPP__
 
-#include <limits>
 #include <climits>
+#include <limits>
 #include <sycl/sycl.hpp>
 #include <type_traits>
 
@@ -2055,6 +2055,64 @@ public:
   matrix_accessor x;
   const size_t num_elements;
 };
+
+template <typename T>
+void ldmatrix(uintptr_t addr, T *m, const sycl::nd_item<3> &item_ct1,
+              bool trans = false, unsigned mat = 0) {
+  int lane = item_ct1.get_local_id(2);
+
+  int group = lane / 8;
+  int sub = lane % 8;
+  int src_base = group * 2;
+
+  if (!trans) {
+    // calculate the source lane
+    int src_lane = (sub / 4) ? (src_base + 1) : src_base;
+
+    // Broadcast the address from the source lane
+    auto recv_addr_uintp = dpct::select_from_sub_group(
+        item_ct1.get_sub_group(), addr, mat * 8 + src_lane);
+    auto recv_addr = reinterpret_cast<T *>(recv_addr_uintp);
+
+    // Non-transposed load
+    *m = recv_addr[sub % 4];
+  } else {
+    // calculate the source lane
+    int src_lane = (lane % 4) * 2;
+
+    // Broadcast the address from the source lane:
+    auto recv_addr_uintp_1 = dpct::select_from_sub_group(
+        item_ct1.get_sub_group(), addr, mat * 8 + src_lane);
+    auto recv_addr_uintp_2 = dpct::select_from_sub_group(
+        item_ct1.get_sub_group(), addr, mat * 8 + src_lane + 1);
+    auto recv_addr_1 = reinterpret_cast<sycl::half *>(recv_addr_uintp_1);
+    auto recv_addr_2 = reinterpret_cast<sycl::half *>(recv_addr_uintp_2);
+
+    // Transposed load
+    int index = (lane / 4);
+    sycl::half val0 = recv_addr_1[index];
+    sycl::half val1 = recv_addr_2[index];
+    sycl::half2 val = sycl::half2(val0, val1);
+    *m = *reinterpret_cast<T *>(&val);
+  }
+}
+
+template <typename T>
+void ldmatrix(uintptr_t addr, T *m1, T *m2, const sycl::nd_item<3> &item_ct1,
+              bool trans = false) {
+  ldmatrix(addr, m1, item_ct1, trans, 0);
+  ldmatrix(addr, m2, item_ct1, trans, 1);
+}
+
+template <typename T>
+void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4,
+              const sycl::nd_item<3> &item_ct1, bool trans = false) {
+  ldmatrix(addr, m1, item_ct1, trans, 0);
+  ldmatrix(addr, m2, item_ct1, trans, 1);
+  ldmatrix(addr, m3, item_ct1, trans, 2);
+  ldmatrix(addr, m4, item_ct1, trans, 3);
+}
+
 } // namespace matrix
 } // namespace experimental
 

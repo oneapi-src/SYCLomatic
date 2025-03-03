@@ -247,6 +247,8 @@ class InlineAsmParser {
   };
 
 public:
+  InlineAsmIdentifierInfo *Opcode;
+
   InlineAsmParser(InlineAsmContext &Ctx, SourceMgr &Mgr)
       : Lexer(*Mgr.getMemoryBuffer(Mgr.getMainFileID())), Context(Ctx),
         SrcMgr(Mgr), CurScope(nullptr) {
