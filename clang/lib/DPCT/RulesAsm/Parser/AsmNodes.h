@@ -340,6 +340,8 @@ class InlineAsmInstruction : public InlineAsmStmt {
   /// therest are input operands.
   SmallVector<InlineAsmExpr *, 4> InputOps;
 
+  SmallVector<InlineAsmExpr *, 4> OutputOps;
+
 public:
   InlineAsmInstruction(InlineAsmIdentifierInfo *Op,
                        SmallVector<AsmStateSpace, 4> AsmStateSpaces,

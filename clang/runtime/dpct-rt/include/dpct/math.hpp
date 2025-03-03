@@ -425,7 +425,7 @@ max(T1 a, T2 b) {
   return sycl::fmax(static_cast<common_t>(a), static_cast<common_t>(b));
 }
 
-// pow functions overload.
+// pow functions overstore.
 inline float pow(const float a, const int b) { return sycl::pown(a, b); }
 inline double pow(const double a, const int b) { return sycl::pown(a, b); }
 inline float pow(const float a, const float b) { return sycl::pow(a, b); }
@@ -2216,6 +2216,101 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
   ldmatrix(addr, m3, trans, 2);
   // Load 4th matrix
   ldmatrix(addr, m4, trans, 3);
+}
+
+/// Stores 1 8x8 b16 matrix from local memory to shared memory (32-bits per wi)
+/// Requires the sub-group size of kernel calling this function to be 32
+/// \tparam [in] T The type of matrix elements
+/// \param [in] addr The address of the matrix in shared memory
+/// \param [in] m The local memory containing data of matrix
+/// \param [in] item The sycl::nd_item index space class
+/// \param [in] trans Indicates whether the matrix to be stored transposed
+/// \param [in] mat The matrix index to be stored
+template <typename T, typename ItemT>
+void stmatrix(uintptr_t addr, T m, const ItemT &item, bool trans = false,
+              unsigned mat = 0) {
+  int lane = item.get_sub_group().get_local_linear_id();
+
+  int lane_group8_row = lane / 8;
+  int lane_group8_col = lane % 8;
+
+  if (!trans) {
+    // calculate the source lane
+    int src_lane = 2 * lane_group8_row;
+    if (lane_group8_col >= 4)
+      src_lane += 1;
+
+    // Broadcast the address from the source lane
+    auto recv_addr_uintp = dpct::select_from_sub_group(
+        item.get_sub_group(), addr, mat * 8 + src_lane);
+
+    // Cast the received address from uintptr_t to the type of 'm'
+    auto recv_addr = reinterpret_cast<T *>(recv_addr_uintp);
+
+    // Non-transposed store
+    recv_addr[lane_group8_col % 4] = m;
+  } else {
+    // calculate the source lane
+    int src_lane = (lane % 4) * 2;
+
+    // Broadcast the address from the source lane
+    auto recv_addr_uintp_1 = dpct::select_from_sub_group(
+        item.get_sub_group(), addr, mat * 8 + src_lane);
+    auto recv_addr_uintp_2 = dpct::select_from_sub_group(
+        item.get_sub_group(), addr, mat * 8 + src_lane + 1);
+
+    // Cast the received address from uintptr_t to 'half *'
+    auto recv_addr_1 = reinterpret_cast<sycl::half *>(recv_addr_uintp_1);
+    auto recv_addr_2 = reinterpret_cast<sycl::half *>(recv_addr_uintp_2);
+
+    // Split the 32-bit value of 'm' into two 16-bits
+    sycl::half *val = reinterpret_cast<sycl::half *>(&m);
+
+    // Transposed store
+    int index = lane / 4;
+    recv_addr_1[index] = val[0];
+    recv_addr_2[index] = val[1];
+  }
+}
+
+/// Stores 2 8x8 b16 matrix from local memory to shared memory (32-bits per wi)
+/// Requires the sub-group size of kernel calling this function to be 32
+/// \tparam [in] T The type of matrix elements
+/// \param [in] addr The address of the matrix in shared memory
+/// \param [in] m1 The local memory containing data of 1st matrix
+/// \param [in] m2 The local memory containing data of 2nd matrix
+/// \param [in] item The sycl::nd_item index space class
+/// \param [in] trans Indicates whether the matrix to be stored transposed
+template <typename T, typename ItemT>
+void stmatrix(uintptr_t addr, T m1, T m2, const ItemT &item,
+              bool trans = false) {
+  // Store 1st matrix
+  stmatrix(addr, m1, item, trans, 0);
+  // Store 2nd matrix
+  stmatrix(addr, m2, item, trans, 1);
+}
+
+/// Stores 4 8x8 b16 matrix from local memory to shared memory (32-bits per wi)
+/// Requires the sub-group size of kernel calling this function to be 32
+/// \tparam [in] T The type of matrix elements
+/// \param [in] addr The address of the matrix in shared memory
+/// \param [in] m1 The local memory containing data of 1st matrix
+/// \param [in] m2 The local memory containing data of 2nd matrix
+/// \param [in] m3 The local memory containing data of 3rd matrix
+/// \param [in] m4 The local memory containing data of 4th matrix
+/// \param [in] item The sycl::nd_item index space class
+/// \param [in] trans Indicates whether the matrix to be stored transposed
+template <typename T, typename ItemT>
+void stmatrix(uintptr_t addr, T m1, T m2, T m3, T m4, const ItemT &item,
+              bool trans = false) {
+  // Store 1st matrix
+  stmatrix(addr, m1, item, trans, 0);
+  // Store 2nd matrix
+  stmatrix(addr, m2, item, trans, 1);
+  // Store 3rd matrix
+  stmatrix(addr, m3, item, trans, 2);
+  // Store 4th matrix
+  stmatrix(addr, m4, item, trans, 3);
 }
 
 /// A helper struct that defines the pack type for the input matrix fragments

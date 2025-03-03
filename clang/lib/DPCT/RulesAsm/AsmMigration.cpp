@@ -602,7 +602,8 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
   // Address expression only support ld/st/red & atom instructions.
   if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom,
                                  asmtok::op_prefetch, asmtok::op_red,
-                                 asmtok::op_cp, asmtok::op_ldmatrix)) {
+                                 asmtok::op_cp, asmtok::op_ldmatrix,
+                                 asmtok::op_stmatrix)) {
     return SYCLGenError();
   }
   std::string Type;
@@ -635,7 +636,8 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     if (CurrInst->is(asmtok::op_prefetch, asmtok::op_red) ||
         CanSuppressCast(Dst->getSymbol()))
       OS() << llvm::formatv("{0}", Reg);
-    else if (CurrInst->is(asmtok::op_ldmatrix))
+    else if (CurrInst->is(asmtok::op_ldmatrix) ||
+             CurrInst->is(asmtok::op_stmatrix))
       OS() << llvm::formatv("(uintptr_t){0}", Reg);
     else
       OS() << llvm::formatv("(({0} *)(uintptr_t){1})", Type, Reg);
@@ -1362,6 +1364,66 @@ protected:
       if (emitStmt(VE->getElement(Inst)))
         return SYCLGenError();
     }
+    if (Inst->hasAttr(InstAttr::trans))
+      OS() << ", true";
+    OS() << ");";
+    const auto *KernelDecl = getImmediateOuterFuncDecl(GAS);
+    if (KernelDecl) {
+      auto FuncInfo = DeviceFunctionDecl::LinkRedecls(KernelDecl);
+      if (FuncInfo)
+        FuncInfo->addSubGroupSizeRequest(32, GAS->getBeginLoc(),
+                                         DpctGlobalInfo::getSubGroup(GAS));
+    }
+
+    return SYCLGenSuccess();
+  }
+
+  bool handle_stmatrix(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+
+    if (!Type || Type->getKind() != InlineAsmBuiltinType::b16)
+      return SYCLGenError();
+
+    const InlineAsmVectorExpr *VE;
+    if (VE = dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(0))) {
+      auto numOutputOperands = VE->getNumElements();
+      if (Inst->hasAttr(InstAttr::x1)) {
+        if (numOutputOperands != 1)
+          return SYCLGenError();
+      } else if (Inst->hasAttr(InstAttr::x2)) {
+        if (numOutputOperands != 2)
+          return SYCLGenError();
+      } else if (Inst->hasAttr(InstAttr::x4)) {
+        if (numOutputOperands != 4)
+          return SYCLGenError();
+      }
+    } else {
+      return SYCLGenError();
+    }
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+    const auto *Dst =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getOutputOperand());
+    if (!Dst)
+      return false;
+
+    OS() << MapNames::getDpctNamespace() << "experimental::matrix::stmatrix(";
+    if (emitStmt(Dst)) {
+      return SYCLGenError();
+    }
+    OS() << ", ";
+    for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
+      if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
+        continue;
+      if (emitStmt(VE->getElement(Inst)))
+        return SYCLGenError();
+      OS() << ", ";
+    }
+    OS() << DpctGlobalInfo::getItem(GAS);
     if (Inst->hasAttr(InstAttr::trans))
       OS() << ", true";
     OS() << ");";
