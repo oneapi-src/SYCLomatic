@@ -567,6 +567,7 @@ private:
     void *row_ptr_c1 = nullptr;
     void *col_ind_c1 = nullptr;
     void *val_c1 = nullptr;
+    void *ws = nullptr;
     bool is_empty() { return omatadd_desc.is_empty(); }
     void init(sycl::queue *q_ptr) {
       omatadd_desc.init(q_ptr);
@@ -1539,6 +1540,7 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
       info.omatadd_desc.get_handle(), ws_size);
 
   void *ws = ::dpct::cs::malloc(ws_size, queue);
+  info.ws = ws;
 
   oneapi::mkl::sparse::omatadd_analyze(
       queue, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans,
@@ -1567,7 +1569,6 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
   ::dpct::cs::memcpy(::dpct::cs::get_default_queue(), row_ptr_c + m, &c_nnz_int,
                      sizeof(int))
       .wait();
-  ::dpct::cs::free(ws, queue);
 }
 
 /// Computes a sparse matrix (CSR format)-sparse matrix (CSR format) product:
@@ -1645,10 +1646,11 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
   queue.submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
     cgh.host_task([_p1 = info.row_ptr_c1, _p2 = info.col_ind_c1,
-                   _p3 = info.val_c1, _q = queue] {
+                   _p3 = info.val_c1, _p4 = info.ws, _q = queue] {
       ::dpct::cs::free(_p1, _q);
       ::dpct::cs::free(_p2, _q);
       ::dpct::cs::free(_p3, _q);
+      ::dpct::cs::free(_p4, _q);
     });
   });
   desc->get_csrgemm2_info_map().erase(args);
