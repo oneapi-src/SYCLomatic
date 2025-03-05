@@ -127,7 +127,7 @@ All DPCT options
   --rule-file=<file>                      - Specify the rule file for migration. Also, reference the predefined rules in the "extensions" directory in the root folder of the tool.
   --stop-on-parse-err                     - Stop migration and generation of reports if parsing errors happened. Default: off. 
   --suppress-warnings=<value>             - A comma separated list of migration warnings to suppress. Valid warning IDs range
-                                            from 1000 to 1136. Hyphen separated ranges are also allowed. For example:
+                                            from 1000 to 1137. Hyphen separated ranges are also allowed. For example:
                                             --suppress-warnings=1000-1010,1011.
   --suppress-warnings-all                 - Suppress all migration warnings. Default: off.
   --sycl-file-extension=<value>           - Specify the extension of migrated source file(s).

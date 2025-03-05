@@ -15,7 +15,7 @@
 #define __AVX10_2SATCVTINTRIN_H
 
 #define _mm_ipcvtnebf16_epi8(A)                                                \
-  ((__m128i)__builtin_ia32_vcvtnebf162ibs128((__v8bf)(__m128bh)(A)))
+  ((__m128i)__builtin_ia32_vcvtbf162ibs128((__v8bf)(__m128bh)(A)))
 
 #define _mm_mask_ipcvtnebf16_epi8(W, U, A)                                     \
   ((__m128i)__builtin_ia32_selectw_128(                                        \
@@ -27,7 +27,7 @@
                                        (__v8hi)_mm_setzero_si128()))
 
 #define _mm256_ipcvtnebf16_epi8(A)                                             \
-  ((__m256i)__builtin_ia32_vcvtnebf162ibs256((__v16bf)(__m256bh)(A)))
+  ((__m256i)__builtin_ia32_vcvtbf162ibs256((__v16bf)(__m256bh)(A)))
 
 #define _mm256_mask_ipcvtnebf16_epi8(W, U, A)                                  \
   ((__m256i)__builtin_ia32_selectw_256((__mmask16)(U),                         \
@@ -40,7 +40,7 @@
                                        (__v16hi)_mm256_setzero_si256()))
 
 #define _mm_ipcvtnebf16_epu8(A)                                                \
-  ((__m128i)__builtin_ia32_vcvtnebf162iubs128((__v8bf)(__m128bh)(A)))
+  ((__m128i)__builtin_ia32_vcvtbf162iubs128((__v8bf)(__m128bh)(A)))
 
 #define _mm_mask_ipcvtnebf16_epu8(W, U, A)                                     \
   ((__m128i)__builtin_ia32_selectw_128(                                        \
@@ -52,7 +52,7 @@
                                        (__v8hi)_mm_setzero_si128()))
 
 #define _mm256_ipcvtnebf16_epu8(A)                                             \
-  ((__m256i)__builtin_ia32_vcvtnebf162iubs256((__v16bf)(__m256bh)(A)))
+  ((__m256i)__builtin_ia32_vcvtbf162iubs256((__v16bf)(__m256bh)(A)))
 
 #define _mm256_mask_ipcvtnebf16_epu8(W, U, A)                                  \
   ((__m256i)__builtin_ia32_selectw_256((__mmask16)(U),                         \
