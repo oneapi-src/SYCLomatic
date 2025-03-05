@@ -3574,16 +3574,18 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
     auto StartArgRepl = EAForStartArg.getReplacedString();
     auto EndArgRepl = EAForEndArg.getReplacedString();
 
-    if(isa<CStyleCastExpr>(StartArg) || isa<CXXReinterpretCastExpr>(StartArg))
+    if (isa<CStyleCastExpr>(StartArg) || isa<CXXReinterpretCastExpr>(StartArg))
       StartArgRepl = "(" + StartArgRepl + ")";
 
-    if(isa<CStyleCastExpr>(EndArg) || isa<CXXReinterpretCastExpr>(EndArg))
+    if (isa<CStyleCastExpr>(EndArg) || isa<CXXReinterpretCastExpr>(EndArg))
       EndArgRepl = "(" + EndArgRepl + ")";
 
-    auto StartTimeStr = StartArgRepl + "->get_profiling_info<"
-                            "sycl::info::event_profiling::command_start>()";
-    auto StopTimeStr = EndArgRepl + "->get_profiling_info<"
-                            "sycl::info::event_profiling::command_end>()";
+    auto StartTimeStr = StartArgRepl +
+                        "->get_profiling_info<"
+                        "sycl::info::event_profiling::command_start>()";
+    auto StopTimeStr = EndArgRepl +
+                       "->get_profiling_info<"
+                       "sycl::info::event_profiling::command_end>()";
 
     Repl << Assginee << " = ("
         << StopTimeStr << " - " << StartTimeStr << ") / 1000000.0f";
