@@ -1650,11 +1650,16 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
   info.matrix_handle_d.add_dependency(e);
   info.matrix_handle_c.add_dependency(e);
   info.omatadd_desc.add_dependency(e);
-  // TODO: The current dtor of the handle_manager is host-blocking, it need to
-  // be refined in the future.
+
+  std::vector<sycl::event> events;
+  events.push_back(info.matrix_handle_c1.release());
+  events.push_back(info.matrix_handle_d.release());
+  events.push_back(info.matrix_handle_c.release());
+  events.push_back(info.omatadd_desc.release());
+  events.push_back(e);
   desc->get_csrgemm2_info_map().erase(args);
   queue.submit([&](sycl::handler &cgh) {
-    cgh.depends_on(e);
+    cgh.depends_on(events);
     cgh.host_task([_p1 = info.row_ptr_c1, _p2 = info.col_ind_c1,
                    _p3 = info.val_c1, _p4 = info.ws, _q = queue] {
       ::dpct::cs::free(_p1, _q);

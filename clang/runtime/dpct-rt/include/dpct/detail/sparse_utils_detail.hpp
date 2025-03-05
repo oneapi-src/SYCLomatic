@@ -80,15 +80,9 @@ public:
   handle_manager(const handle_manager &other) = delete;
   handle_manager operator=(handle_manager other) = delete;
   ~handle_manager() {
-    // TODO: The current dtor of the handle_manager is host-blocking, it need to
-    // be refined in the future.
     if (!_q || !_h)
       return;
-    sycl::event e = _rel_func(*_q, _h, _deps);
-    _q->submit([&](sycl::handler &cgh) {
-        cgh.depends_on(e);
-        cgh.host_task([_hh = _h] { delete _hh; });
-      }).wait();
+    release();
     _h = nullptr;
     _q = nullptr;
   }
@@ -96,6 +90,18 @@ public:
     _q = q;
     _h = new handle_t;
     _init_func(*_q, _h);
+  }
+  sycl::event release() {
+    if (!_q || !_h)
+      return sycl::event();
+    sycl::event e = _rel_func(*_q, _h, _deps);
+    sycl::event ret = _q->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(e);
+      cgh.host_task([_hh = _h] { delete _hh; });
+    });
+    _h = nullptr;
+    _q = nullptr;
+    return ret;
   }
   handle_t &get_handle() { return *_h; }
   void add_dependency(sycl::event e) { _deps.push_back(e); }
