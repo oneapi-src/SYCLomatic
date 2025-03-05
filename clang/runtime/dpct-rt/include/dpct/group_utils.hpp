@@ -280,7 +280,7 @@ public:
                     get_sub_group_striped_offset);
   }
 
-  /// Rearrange elements from striped order to blocked order.
+  /// Rearrange elements from sub_group striped order to blocked order.
   ///
   /// Suppose 512 integer data elements partitioned across 128 work-items, where
   /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
