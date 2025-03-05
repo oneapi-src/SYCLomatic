@@ -37,7 +37,7 @@ using namespace clang::dpct;
 namespace {
 
 inline bool SYCLGenError() { return true; }
-inline bool SYCLGenSuccess() { return false; }
+inline bool SYCLGenSuccess() {return false; }
 
 /// This is used to handle all the AST nodes (except specific instructions, Eg.
 /// mov/setp), and generate functionally equivalent SYCL code.
@@ -589,9 +589,11 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVarDecl *D) {
 
 bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
   // Address expression only support ld/st/red & atom instructions.
-  if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom,
-                                 asmtok::op_prefetch, asmtok::op_red))
+  if (!CurrInst ||
+      !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom,
+                    asmtok::op_prefetch, asmtok::op_red, asmtok::op_cp)) {
     return SYCLGenError();
+  }
   std::string Type;
   if (tryEmitType(Type, CurrInst->getType(0)))
     return SYCLGenError();
@@ -618,6 +620,7 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     std::string Reg;
     if (tryEmitStmt(Reg, Dst->getSymbol()))
       return SYCLGenSuccess();
+
     if (CurrInst->is(asmtok::op_prefetch, asmtok::op_red) ||
         CanSuppressCast(Dst->getSymbol()))
       OS() << llvm::formatv("{0}", Reg);
@@ -2769,6 +2772,46 @@ protected:
     endstmt();
     return SYCLGenSuccess();
   }
+
+  bool handle_cp(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+
+    std::string Op[3];
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+
+    auto CommonIfStat = [&](std::string Val) {
+      indent();
+      return "if (" + Op[1] + " > " + Val + ")\n";
+    };
+
+    auto CommonBody = [&](std::string Val) {
+      incIndent();
+      indent();
+      decIndent();
+      return "*(" + Op[2] + " + " + Val + ") = *(" + Op[0] + " + " + Val + ")";
+    };
+
+    OS() << "*(" << Op[2] << ") = *(" << Op[0] << ");\n";
+
+    OS() << CommonIfStat("4");
+    OS() << CommonBody("1") << ";\n";
+
+    OS() << CommonIfStat("8");
+    OS() << CommonBody("2") << ";\n";
+
+    OS() << CommonIfStat("12");
+    OS() << CommonBody("3");
+    endstmt();
+
+    report(Diagnostics::ASYNC_COPY_DEVICE_WARN, true);
+    return SYCLGenSuccess();
+  }
 };
 
 /// Clean the special character in identifier.
@@ -2985,7 +3028,6 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
     Parser.addInlineAsmOperands(GAS->getInputExpr(I),
                                 getReplaceString(GAS->getInputExpr(I)),
                                 GAS->getInputConstraint(I));
-
   do {
     auto Inst = Parser.ParseStatement();
     if (Inst.isInvalid()) {

@@ -15,7 +15,7 @@
 #define __AVX10_2_512MINMAXINTRIN_H
 
 #define _mm512_minmaxne_pbh(A, B, C)                                           \
-  ((__m512bh)__builtin_ia32_vminmaxnepbf16512(                                 \
+  ((__m512bh)__builtin_ia32_vminmaxbf16512(                                 \
       (__v32bf)(__m512bh)(A), (__v32bf)(__m512bh)(A), (int)(C)))
 
 #define _mm512_mask_minmaxne_pbh(W, U, A, B, C)                                \

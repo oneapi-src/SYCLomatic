@@ -1,0 +1,41 @@
+# basic include directive usage
+!include a.yaml
+
+- Rule: rule_import_a
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: import_a
+  In: import a
+  Out: import a_repl
+
+# include directive with relative file path
+!include b/b.yaml
+
+- Rule: rule_import_b
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: import_b
+  In: import b
+  Out: import b_repl
+
+# include directive with double-quote
+!include "b/b1.yaml"
+
+# include directive with single-quote
+!include 'b/b2.yaml'
+
+# include directive with extra spaces at the beginning, middle and end of the line
+    !include     b/b3.yaml    
+
+# include directive with space in the file name
+!include "b/b 4.yaml"
+
+# include the file that includes another file recusrsively
+!include r/r1.yaml
+
+# include directive with no file name
+!include
+
+# include directive with absolute file path (added by include_rule_file.cpp:6)

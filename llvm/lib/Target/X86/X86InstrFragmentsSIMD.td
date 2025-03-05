@@ -907,11 +907,11 @@ def X86vfpround2Rnd : SDNode<"X86ISD::VFPROUND2_RND",
                                            SDTCisSameAs<1, 2>,
                                            SDTCisVT<3, i32>]>>;
 // 3op
-def X86vcvtne2ph2bf8 : SDNode<"X86ISD::VCVTNE2PH2BF8",
+def X86vcvt2ph2bf8 : SDNode<"X86ISD::VCVT2PH2BF8",
                               SDTAVX10CONVERT_I82F16>;
-def X86vcvtne2ph2bf8s : SDNode<"X86ISD::VCVTNE2PH2BF8S",
+def X86vcvt2ph2bf8s : SDNode<"X86ISD::VCVT2PH2BF8S",
                                SDTAVX10CONVERT_I82F16>;
-def X86vcvtne2ph2hf8 : SDNode<"X86ISD::VCVTNE2PH2HF8",
+def X86vcvt2ph2hf8 : SDNode<"X86ISD::VCVT2PH2HF8",
                               SDTAVX10CONVERT_I82F16>;
 def X86vcvt2ph2hf8s : SDNode<"X86ISD::VCVT2PH2HF8S",
                                SDTAVX10CONVERT_I82F16>;
@@ -927,13 +927,13 @@ def X86vcvtbiasph2hf8 : SDNode<"X86ISD::VCVTBIASPH2HF8",
                                SDTAVX10CONVERT_2I8F16>;
 def X86vcvtbiasph2hf8s : SDNode<"X86ISD::VCVTBIASPH2HF8S",
                                 SDTAVX10CONVERT_2I8F16>;
-def X86vcvtneph2bf8 : SDNode<"X86ISD::VCVTNEPH2BF8",
+def X86vcvtph2bf8512 : SDNode<"X86ISD::VCVTPH2BF8512",
                              SDTAVX10CONVERT_I8F16>;
-def X86vcvtneph2bf8s : SDNode<"X86ISD::VCVTNEPH2BF8S",
+def X86vcvtph2bf8512s : SDNode<"X86ISD::VCVTPH2BF8512S",
                               SDTAVX10CONVERT_I8F16>;
-def X86vcvtneph2hf8 : SDNode<"X86ISD::VCVTNEPH2HF8",
+def X86vcvtph2hf8 : SDNode<"X86ISD::VCVTPH2HF8",
                              SDTAVX10CONVERT_I8F16>;
-def X86vcvtneph2hf8s : SDNode<"X86ISD::VCVTNEPH2HF8S",
+def X86vcvtph2hf8s : SDNode<"X86ISD::VCVTPH2HF8S",
                               SDTAVX10CONVERT_I8F16>;
 
 def X86vmcvtbiasph2bf8 : SDNode<"X86ISD::VMCVTBIASPH2BF8",

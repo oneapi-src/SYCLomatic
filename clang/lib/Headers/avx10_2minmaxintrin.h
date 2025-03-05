@@ -15,7 +15,7 @@
 #define __AVX10_2MINMAXINTRIN_H
 
 #define _mm_minmaxne_pbh(A, B, C)                                              \
-  ((__m128bh)__builtin_ia32_vminmaxnepbf16128(                                 \
+  ((__m128bh)__builtin_ia32_vminmaxbf16128(                                 \
       (__m128bh)(__v8bf)(A), (__m128bh)(__v8bf)(B), (int)(C)))
 
 #define _mm_mask_minmaxne_pbh(W, U, A, B, C)                                   \
@@ -33,7 +33,7 @@
       (__v8bf) __builtin_bit_cast(__m128bh, _mm_setzero_ps())))
 
 #define _mm256_minmaxne_pbh(A, B, C)                                           \
-  ((__m256bh)__builtin_ia32_vminmaxnepbf16256(                                 \
+  ((__m256bh)__builtin_ia32_vminmaxbf16256(                                 \
       (__m256bh)(__v16bf)(A), (__m256bh)(__v16bf)(B), (int)(C)))
 
 #define _mm256_mask_minmaxne_pbh(W, U, A, B, C)                                \

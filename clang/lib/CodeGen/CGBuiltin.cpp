@@ -16300,9 +16300,9 @@ Value *CodeGenFunction::EmitX86BuiltinExpr(unsigned BuiltinID,
   case X86::BI__builtin_ia32_sqrtph256:
   case X86::BI__builtin_ia32_sqrtph:
   case X86::BI__builtin_ia32_sqrtph512:
-  case X86::BI__builtin_ia32_vsqrtnepbf16256:
-  case X86::BI__builtin_ia32_vsqrtnepbf16:
-  case X86::BI__builtin_ia32_vsqrtnepbf16512:
+  case X86::BI__builtin_ia32_vsqrtbf16256:
+  case X86::BI__builtin_ia32_vsqrtbf16:
+  case X86::BI__builtin_ia32_vsqrtbf16512:
   case X86::BI__builtin_ia32_sqrtps512:
   case X86::BI__builtin_ia32_sqrtpd512: {
     if (Ops.size() == 2) {
@@ -16540,13 +16540,13 @@ Value *CodeGenFunction::EmitX86BuiltinExpr(unsigned BuiltinID,
     switch (BuiltinID) {
     default: llvm_unreachable("Unsupported intrinsic!");
     case X86::BI__builtin_ia32_vfpclassbf16128_mask:
-      ID = Intrinsic::x86_avx10_fpclass_nepbf16_128;
+      ID = Intrinsic::x86_avx10_fpclass_bf16_128;
       break;
     case X86::BI__builtin_ia32_vfpclassbf16256_mask:
-      ID = Intrinsic::x86_avx10_fpclass_nepbf16_256;
+      ID = Intrinsic::x86_avx10_fpclass_bf16_256;
       break;
     case X86::BI__builtin_ia32_vfpclassbf16512_mask:
-      ID = Intrinsic::x86_avx10_fpclass_nepbf16_512;
+      ID = Intrinsic::x86_avx10_fpclass_bf16_512;
       break;
     case X86::BI__builtin_ia32_fpclassph128_mask:
       ID = Intrinsic::x86_avx512fp16_fpclass_ph_128;

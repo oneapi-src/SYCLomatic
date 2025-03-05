@@ -318,7 +318,7 @@ class InlineAsmInstruction : public InlineAsmStmt {
   /// e.g. asmtok::op_mov, asmtok::op_setp, etc.
   InlineAsmIdentifierInfo *Opcode = nullptr;
 
-  std::optional<AsmStateSpace> StateSpace;
+  SmallVector<AsmStateSpace, 4> StateSpaces;
 
   /// This represents arrtibutes like: comparsion operator, rounding modifiers,
   /// ... e.g. instruction setp.eq.s32 has a comparsion operator 'eq'.
@@ -342,12 +342,14 @@ class InlineAsmInstruction : public InlineAsmStmt {
 
 public:
   InlineAsmInstruction(InlineAsmIdentifierInfo *Op,
-                       std::optional<AsmStateSpace> SS,
+                       SmallVector<AsmStateSpace, 4> AsmStateSpaces,
                        ArrayRef<InstAttr> Attrs,
                        ArrayRef<InlineAsmType *> Types, InlineAsmExpr *Out,
                        InlineAsmExpr *Pred, ArrayRef<InlineAsmExpr *> InOps)
-      : InlineAsmStmt(InstructionClass), Opcode(Op), StateSpace(SS),
-        Types(Types), OutputOp(Out), PredOutputOp(Pred), InputOps(InOps) {
+      : InlineAsmStmt(InstructionClass), Opcode(Op), Types(Types),
+        OutputOp(Out), PredOutputOp(Pred), InputOps(InOps) {
+    StateSpaces.insert(StateSpaces.begin(), AsmStateSpaces.begin(),
+                       AsmStateSpaces.end());
     Attributes.insert(Attrs.begin(), Attrs.end());
   }
 
@@ -390,6 +392,10 @@ public:
     return InstructionClass <= S->getStmtClass();
   }
   AsmStateSpace getStateSpace() const {
+
+    std::optional<AsmStateSpace> StateSpace =
+        StateSpaces.size() > 0 ? StateSpaces[StateSpaces.size() - 1]
+                               : AsmStateSpace::none;
     return StateSpace.value_or(AsmStateSpace::none);
   }
 };
