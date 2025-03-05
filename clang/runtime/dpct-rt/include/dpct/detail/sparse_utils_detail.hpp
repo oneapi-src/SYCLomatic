@@ -80,13 +80,15 @@ public:
   handle_manager(const handle_manager &other) = delete;
   handle_manager operator=(handle_manager other) = delete;
   ~handle_manager() {
+    // TODO: The current dtor of the handle_manager is host-blocking, it need to
+    // be refined in the future.
     if (!_q || !_h)
       return;
     sycl::event e = _rel_func(*_q, _h, _deps);
     _q->submit([&](sycl::handler &cgh) {
-      cgh.depends_on(e);
-      cgh.host_task([_hh = _h] { delete _hh; });
-    });
+        cgh.depends_on(e);
+        cgh.host_task([_hh = _h] { delete _hh; });
+      }).wait();
     _h = nullptr;
     _q = nullptr;
   }

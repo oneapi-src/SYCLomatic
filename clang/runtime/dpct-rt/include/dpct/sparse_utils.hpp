@@ -1541,13 +1541,20 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
 
   void *ws = ::dpct::cs::malloc(ws_size, queue);
   info.ws = ws;
+  auto data_ws = dpct::detail::get_memory<std::uint8_t>(ws);
 
   oneapi::mkl::sparse::omatadd_analyze(
       queue, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans,
       info.matrix_handle_c1.get_handle(), info.matrix_handle_d.get_handle(),
       info.matrix_handle_c.get_handle(),
       oneapi::mkl::sparse::omatadd_alg::default_alg,
-      info.omatadd_desc.get_handle(), ws);
+      info.omatadd_desc.get_handle(),
+#ifdef DPCT_USM_LEVEL_NONE
+      &data_ws
+#else
+      data_ws
+#endif
+  );
 
   std::int64_t c_nnz = 0;
   oneapi::mkl::sparse::omatadd_get_nnz(
@@ -1643,6 +1650,9 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
   info.matrix_handle_d.add_dependency(e);
   info.matrix_handle_c.add_dependency(e);
   info.omatadd_desc.add_dependency(e);
+  // TODO: The current dtor of the handle_manager is host-blocking, it need to
+  // be refined in the future.
+  desc->get_csrgemm2_info_map().erase(args);
   queue.submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
     cgh.host_task([_p1 = info.row_ptr_c1, _p2 = info.col_ind_c1,
@@ -1653,7 +1663,6 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
       ::dpct::cs::free(_p4, _q);
     });
   });
-  desc->get_csrgemm2_info_map().erase(args);
 }
 
 #endif
