@@ -167,7 +167,8 @@ void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                     "normalize", "Sort", "SortDescending", "BlockedToStriped",
                     "StripedToBlocked", "ScatterToBlocked", "ScatterToStriped",
                     "SortBlockedToStriped", "SortDescendingBlockedToStriped",
-                    "Load", "Store", "Offset", "Rotate", "Up", "Down")))))
+                    "Load", "Store", "Offset", "Rotate", "Up", "Down",
+                    "BlockedToWarpStriped", "WarpStripedToBlocked")))))
           .bind("memberCall"),
       this);
 
@@ -253,7 +254,8 @@ void CubMemberCallRule::runRule(
     bool isBlockExchange =
         Name == "BlockedToStriped" || Name == "StripedToBlocked" ||
         Name == "StripedToBlocked" || Name == "ScatterToBlocked" ||
-        Name == "ScatterToStriped";
+        Name == "ScatterToStriped" || Name == "WarpStripedToBlocked" ||
+        Name == "BlockedToWarpStriped";
     bool isBlockShuffle =
         Name == "Offset" || Name == "Rotate" || Name == "Up" || Name == "Down";
     if (isBlockRadixSort || isBlockExchange || isBlockShuffle ||
