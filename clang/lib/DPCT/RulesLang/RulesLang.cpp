@@ -3569,20 +3569,20 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
     const auto *EndArg = TimeElapsedCE->getArg(2)->IgnoreImpCasts();
 
     ExprAnalysis EAForStartArg(StartArg);
-    ExprAnalysis EAForStopArg(EndArg);
+    ExprAnalysis EAForEndArg(EndArg);
 
     auto StartArgRepl = EAForStartArg.getReplacedString();
-    auto StopArgRepl = EAForStopArg.getReplacedString();
+    auto EndArgRepl = EAForEndArg.getReplacedString();
 
     if(isa<CStyleCastExpr>(StartArg) || isa<CXXReinterpretCastExpr>(StartArg))
       StartArgRepl = "(" + StartArgRepl + ")";
 
     if(isa<CStyleCastExpr>(EndArg) || isa<CXXReinterpretCastExpr>(EndArg))
-      StopArgRepl = "(" + StopArgRepl + ")";
+      EndArgRepl = "(" + EndArgRepl + ")";
 
     auto StartTimeStr = StartArgRepl + "->get_profiling_info<"
                             "sycl::info::event_profiling::command_start>()";
-    auto StopTimeStr = StopArgRepl + "->get_profiling_info<"
+    auto StopTimeStr = EndArgRepl + "->get_profiling_info<"
                             "sycl::info::event_profiling::command_end>()";
 
     Repl << Assginee << " = ("
