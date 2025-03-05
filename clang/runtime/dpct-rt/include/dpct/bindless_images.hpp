@@ -949,9 +949,9 @@ dpct_memcpy(sycl::ext::oneapi::experimental::image_mem_handle src,
       sycl::range<3>(w_offset_src / ele_size, h_offset_src, 0);
   const auto dest_offset = sycl::range<3>(0, 0, 0);
   const auto dest_extend = sycl::range<3>(p / ele_size, 0, 0);
-  const auto copy_extend = sycl::range<3>(w / ele_size, h, 0);
+  const auto copy_extend = sycl::range<3>(w / ele_size, h, 1);
   return q.ext_oneapi_copy(src, src_offset, desc_src, dest, dest_offset,
-                           dest_extend, copy_extend);
+                           desc_src, p, copy_extend);
 }
 
 static inline std::vector<sycl::event> dpct_memcpy_to_host(
@@ -969,7 +969,7 @@ static inline std::vector<sycl::event> dpct_memcpy_to_host(
     const auto dest_offset = sycl::range<3>(offset_dest / ele_size, 0, 0);
     const auto dest_extend = sycl::range<3>(0, 0, 0);
     const auto copy_extend =
-        sycl::range<3>((w - w_offset_src) / ele_size, 1, 0);
+        sycl::range<3>((w - w_offset_src) / ele_size, 1, 1);
     event_list.push_back(q.ext_oneapi_copy(src, src_offset, desc_src,
                                            dest_host_ptr, dest_offset,
                                            dest_extend, copy_extend));
@@ -982,7 +982,7 @@ static inline std::vector<sycl::event> dpct_memcpy_to_host(
         sycl::range<3>(w_offset_src / ele_size, h_offset_src, 0);
     const auto dest_offset = sycl::range<3>(offset_dest / ele_size, 0, 0);
     const auto dest_extend = sycl::range<3>(0, 0, 0);
-    const auto copy_extend = sycl::range<3>((s - offset_dest) / ele_size, 1, 0);
+    const auto copy_extend = sycl::range<3>((s - offset_dest) / ele_size, 1, 1);
     event_list.push_back(q.ext_oneapi_copy(src, src_offset, desc_src,
                                            dest_host_ptr, dest_offset,
                                            dest_extend, copy_extend));
@@ -1021,7 +1021,7 @@ dpct_memcpy(const void *src,
   const auto src_extend = sycl::range<3>(p / ele_size, 0, 0);
   const auto dest_offset =
       sycl::range<3>(w_offset_dest / ele_size, h_offset_dest, 0);
-  const auto copy_extend = sycl::range<3>(w / ele_size, h, 0);
+  const auto copy_extend = sycl::range<3>(w / ele_size, h, 1);
   // TODO: Remove const_cast after refining the signature of ext_oneapi_copy.
   return q.ext_oneapi_copy(const_cast<void *>(src), src_offset, src_extend,
                            dest, dest_offset, desc_dest, copy_extend);
@@ -1042,7 +1042,7 @@ static inline std::vector<sycl::event> dpct_memcpy_from_host(
     const auto dest_offset =
         sycl::range<3>(w_offset_dest / ele_size, h_offset_dest, 0);
     const auto copy_extend =
-        sycl::range<3>((w - w_offset_dest) / ele_size, 1, 0);
+        sycl::range<3>((w - w_offset_dest) / ele_size, 1, 1);
     // TODO: Remove const_cast after refining the signature of ext_oneapi_copy.
     event_list.push_back(q.ext_oneapi_copy(
         const_cast<void *>(src_host_ptr), src_offset, src_extend, dest,
@@ -1056,7 +1056,7 @@ static inline std::vector<sycl::event> dpct_memcpy_from_host(
     const auto src_extend = sycl::range<3>(0, 0, 0);
     const auto dest_offset =
         sycl::range<3>(w_offset_dest / ele_size, h_offset_dest, 0);
-    const auto copy_extend = sycl::range<3>((s - offset_src) / ele_size, 1, 0);
+    const auto copy_extend = sycl::range<3>((s - offset_src) / ele_size, 1, 1);
     // TODO: Remove const_cast after refining the signature of ext_oneapi_copy.
     event_list.push_back(q.ext_oneapi_copy(
         const_cast<void *>(src_host_ptr), src_offset, src_extend, dest,
@@ -1101,7 +1101,7 @@ dpct_memcpy(const image_mem_wrapper *src, const sycl::id<3> &src_id,
       sycl::range<3>(dest.get_pitch() / ele_size, dest.get_y(), 1);
   const auto copy_extend = sycl::range<3>(
       copy_x_size_byte != 0 ? copy_x_size_byte / ele_size : size[0], size[1],
-      size[2]);
+      size[2] != 0 ? size[2] : 1);
   return q.ext_oneapi_copy(src->get_handle(), src_offset, src->get_desc(),
                            dest.get_data_ptr(), dest_offset, dest_extend,
                            copy_extend);
@@ -2001,11 +2001,19 @@ static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
                                size_t w_offset_src, size_t h_offset_src,
                                size_t w, size_t h,
                                sycl::queue q = get_default_queue()) {
-  auto temp = (void *)sycl::malloc_device(w * h, q);
-  // TODO: Need change logic when sycl support image_mem to image_mem copy.
-  dpct_memcpy(temp, w, src, w_offset_src, h_offset_src, w, h, q);
-  dpct_memcpy(dest, w_offset_dest, h_offset_dest, temp, w, w, h, q);
-  sycl::free(temp, q);
+  const auto from_ele_size = detail::get_ele_size(src->get_desc());
+  const auto src_offset = sycl::range<3>(
+      w_offset_src != 0 ? w_offset_src / from_ele_size : w_offset_src,
+      h_offset_src, 0);
+  const auto to_ele_size = detail::get_ele_size(dest->get_desc());
+  const auto dest_offset = sycl::range<3>(
+      w_offset_dest != 0 ? w_offset_dest / to_ele_size : w_offset_dest,
+      h_offset_dest, 0);
+  const auto copy_extent = sycl::range<3>(w / from_ele_size, h, 1);
+  q.ext_oneapi_copy(src->get_handle(), src_offset, src->get_desc(),
+                    dest->get_handle(), dest_offset, dest->get_desc(),
+                    copy_extent)
+      .wait();
 }
 
 /// Synchronously copies from image memory to the image memory, The function
@@ -2023,11 +2031,19 @@ static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
                                const image_mem_wrapper *src,
                                size_t w_offset_src, size_t h_offset_src,
                                size_t s, sycl::queue q = get_default_queue()) {
-  auto temp = (void *)sycl::malloc_device(s, q);
-  // TODO: Need change logic when sycl support image_mem to image_mem copy.
-  dpct_memcpy(temp, src, w_offset_src, h_offset_src, s, q);
-  dpct_memcpy(dest, w_offset_dest, h_offset_dest, temp, s, q);
-  sycl::free(temp, q);
+  const auto from_ele_size = detail::get_ele_size(src->get_desc());
+  const auto src_offset = sycl::range<3>(
+      w_offset_src != 0 ? w_offset_src / from_ele_size : w_offset_src,
+      h_offset_src, 0);
+  const auto to_ele_size = detail::get_ele_size(dest->get_desc());
+  const auto dest_offset = sycl::range<3>(
+      w_offset_dest != 0 ? w_offset_dest / to_ele_size : w_offset_dest,
+      h_offset_dest, 0);
+  const auto copy_extent = sycl::range<3>(s / from_ele_size, 1, 1);
+  q.ext_oneapi_copy(src->get_handle(), src_offset, src->get_desc(),
+                    dest->get_handle(), dest_offset, dest->get_desc(),
+                    copy_extent)
+      .wait();
 }
 // A wrapper for sycl fetch_image function for the byte addressing image.
 template <typename DataT, typename HintT = DataT, typename CoordT>
