@@ -592,7 +592,14 @@ public:
     lock.unlock();
     for (const auto &q : current_queues) {
       if (q->is_in_order()) {
+#ifdef __INTEL_LLVM_COMPILER
         last_events.push_back(q->ext_oneapi_get_last_event());
+#else
+        auto last_event = q->ext_oneapi_get_last_event();
+        if (last_event) {
+          last_events.push_back(*last_event);
+        }
+#endif
       }
     }
     // Guard the destruct of current_queues to make sure the ref count is safe.

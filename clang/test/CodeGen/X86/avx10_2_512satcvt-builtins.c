@@ -7,20 +7,20 @@
 
 __m512i test_mm512_ipcvtnebf16_epi8(__m512bh __A) {
   // CHECK-LABEL: @test_mm512_ipcvtnebf16_epi8(
-  // CHECK: @llvm.x86.avx10.vcvtnebf162ibs512
+  // CHECK: @llvm.x86.avx10.vcvtbf162ibs512
   return _mm512_ipcvtnebf16_epi8(__A);
 }
 
 __m512i test_mm512_mask_ipcvtnebf16_epi8(__m512i __S, __mmask32 __A, __m512bh __B) {
   // CHECK-LABEL: @test_mm512_mask_ipcvtnebf16_epi8(
-  // CHECK: @llvm.x86.avx10.vcvtnebf162ibs512
+  // CHECK: @llvm.x86.avx10.vcvtbf162ibs512
   // CHECK: select <32 x i1> %{{.*}}, <32 x i16> %{{.*}}, <32 x i16> %{{.*}}
   return _mm512_mask_ipcvtnebf16_epi8(__S, __A, __B);
 }
 
 __m512i test_mm512_maskz_ipcvtnebf16_epi8(__mmask32 __A, __m512bh __B) {
   // CHECK-LABEL: @test_mm512_maskz_ipcvtnebf16_epi8
-  // CHECK: @llvm.x86.avx10.vcvtnebf162ibs512
+  // CHECK: @llvm.x86.avx10.vcvtbf162ibs512
   // CHECK: zeroinitializer
   // CHECK: select <32 x i1> %{{.*}}, <32 x i16> %{{.*}}, <32 x i16> %{{.*}}
   return _mm512_maskz_ipcvtnebf16_epi8(__A, __B);
@@ -28,20 +28,20 @@ __m512i test_mm512_maskz_ipcvtnebf16_epi8(__mmask32 __A, __m512bh __B) {
 
 __m512i test_mm512_ipcvtnebf16_epu8(__m512bh __A) {
   // CHECK-LABEL: @test_mm512_ipcvtnebf16_epu8(
-  // CHECK: @llvm.x86.avx10.vcvtnebf162iubs512
+  // CHECK: @llvm.x86.avx10.vcvtbf162iubs512
   return _mm512_ipcvtnebf16_epu8(__A);
 }
 
 __m512i test_mm512_mask_ipcvtnebf16_epu8(__m512i __S, __mmask32 __A, __m512bh __B) {
   // CHECK-LABEL: @test_mm512_mask_ipcvtnebf16_epu8(
-  // CHECK: @llvm.x86.avx10.vcvtnebf162iubs512
+  // CHECK: @llvm.x86.avx10.vcvtbf162iubs512
   // CHECK: select <32 x i1> %{{.*}}, <32 x i16> %{{.*}}, <32 x i16> %{{.*}}
   return _mm512_mask_ipcvtnebf16_epu8(__S, __A, __B);
 }
 
 __m512i test_mm512_maskz_ipcvtnebf16_epu8(__mmask32 __A, __m512bh __B) {
   // CHECK-LABEL: @test_mm512_maskz_ipcvtnebf16_epu8
-  // CHECK: @llvm.x86.avx10.vcvtnebf162iubs512
+  // CHECK: @llvm.x86.avx10.vcvtbf162iubs512
   // CHECK: zeroinitializer
   // CHECK: select <32 x i1> %{{.*}}, <32 x i16> %{{.*}}, <32 x i16> %{{.*}}
   return _mm512_maskz_ipcvtnebf16_epu8(__A, __B);

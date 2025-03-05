@@ -27,7 +27,12 @@ int main() {
 
 // CHECK:  s1->submit(
 // CHECK:      [&](sycl::handler &cgh) {
+// CHECK:#ifdef __INTEL_LLVM_COMPILER
 // CHECK:        cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_last_event());
+// CHECK:#else
+// CHECK:        auto e_opt = dpct::get_default_queue().ext_oneapi_get_last_event();
+// CHECK:        if (e_opt) cgh.depends_on(*e_opt);
+// CHECK:#endif
 // CHECK:        cgh.parallel_for(
 // CHECK:          sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK:          [=](sycl::nd_item<3> item_ct1) {

@@ -29,6 +29,10 @@ void foo(){
   CUresult streamStatus = cuStreamQuery(s);
   if (streamStatus == CUDA_SUCCESS);
 
+  unsigned long long stream_addr;
+  // CHECK: ((dpct::queue_ptr)stream_addr)->ext_oneapi_empty();
+  cuStreamQuery((CUstream)stream_addr);
+
   //CHECK: s->wait();
   cuStreamSynchronize(s);
 
@@ -38,6 +42,10 @@ void foo(){
   //CHECK: s->ext_oneapi_submit_barrier({*e});
   cuEventCreate(&e, CU_EVENT_DEFAULT);
   cuStreamWaitEvent(s, e, 0);
+
+  unsigned long long event_addr;
+  // CHECK: ((dpct::queue_ptr)stream_addr)->ext_oneapi_submit_barrier({*(dpct::event_ptr)event_addr});
+  cuStreamWaitEvent((CUstream)stream_addr, (CUevent)event_addr, 0);
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.

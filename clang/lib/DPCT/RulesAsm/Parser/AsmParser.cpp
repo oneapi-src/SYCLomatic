@@ -333,7 +333,7 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   SmallVector<InstAttr, 4> Attrs;
   SmallVector<InlineAsmType *, 4> Types;
   SmallVector<InlineAsmExpr *, 4> Ops;
-  std::optional<AsmStateSpace> StateSpace;
+  SmallVector<AsmStateSpace, 4> StateSpaces;
   while (Tok.startOfDot()) {
     switch (Tok.getIdentifier()->getFlags()) {
     case InlineAsmIdentifierInfo::BuiltinType:
@@ -343,11 +343,7 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
       Attrs.push_back(ConvertToInstAttr(Tok.getKind()));
       break;
     case InlineAsmIdentifierInfo::StateSpace:
-      // Duplicated state space in an single instruction statement.
-      if (StateSpace.has_value())
-        return AsmStmtError();
-      else
-        StateSpace = ConvertToStateSpace(Tok.getKind());
+      StateSpaces.push_back(ConvertToStateSpace(Tok.getKind()));
       break;
     default:
       return AsmStmtError();
@@ -383,7 +379,13 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
     Types.push_back(Context.getBuiltinType(InlineAsmBuiltinType::byte));
   }
 
-  return ::new (Context) InlineAsmInstruction(Opcode, StateSpace, Attrs, Types,
+  if (Opcode->getTokenID() == asmtok::op_cp) {
+    Ops.push_back(Out.get());
+    Out = nullptr;
+    Types.push_back(Context.getBuiltinType(InlineAsmBuiltinType::u32));
+  }
+
+  return ::new (Context) InlineAsmInstruction(Opcode, StateSpaces, Attrs, Types,
                                               Out.get(), Pred.get(), Ops);
 }
 

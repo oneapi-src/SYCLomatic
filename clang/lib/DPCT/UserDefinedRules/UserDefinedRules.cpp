@@ -26,6 +26,7 @@ namespace clang {
 namespace dpct {
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
+llvm::DenseSet<llvm::StringRef> ProcessedYamlFiles;
 
 OutputBuilder::~OutputBuilder() {}
 
@@ -344,17 +345,147 @@ MetaRuleObject::PatternRewriter::PatternRewriter(
   Subrules = S;
 }
 
+// Read a YAML file recursively and substitute any "!include <filename>"
+// directive with the contents of the referenced file.
+std::unique_ptr<llvm::MemoryBuffer>
+readYAMLFile(const llvm::StringRef &RuleFilePath) {
+  // Check if the rule file has already been processed
+  // to avoid infinite recursion
+  if (!ProcessedYamlFiles.insert(RuleFilePath).second) {
+    return llvm::MemoryBuffer::getMemBufferCopy("");
+  }
+
+  // Load the rule file into a MemoryBuffer
+  llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
+      llvm::MemoryBuffer::getFile(RuleFilePath);
+  if (!Buffer) {
+    llvm::errs() << "Error: failed to read " << RuleFilePath << ": "
+                 << Buffer.getError().message() << "\n";
+    clang::dpct::ShowStatus(MigrationErrorInvalidRuleFilePath);
+    dpctExit(MigrationErrorInvalidRuleFilePath);
+  }
+
+  // Get the directory path of the rule file.
+  llvm::SmallString<128> DirectoryPath(RuleFilePath);
+  llvm::sys::path::remove_filename(DirectoryPath);
+
+  // Iterate over the input line by line.
+  std::stringstream Output, IncRuleFilePath;
+  const std::string IncDirective = "!include";
+
+  size_t Idx = 0;
+  bool IncDirectiveFound = false;
+  bool SkipWhiteSpaces = false;
+  bool IsLineBeginning = true;
+
+  llvm::StringRef BuffContent = std::move(*Buffer)->getBuffer();
+  const auto BuffSize = BuffContent.size();
+  while (Idx < BuffSize) {
+    unsigned char Ch = BuffContent[Idx];
+
+    // Skip white spaces at the beginning of the line if it contains a directive
+    if (IsLineBeginning) {
+      auto i = Idx;
+      auto c = Ch;
+
+      // lookahead for "!" directive after white spaces
+      for (; i < BuffContent.size(); i++) {
+        c = BuffContent[i];
+
+        // Stop at new line or first non-white space character
+        if (c == '\n' || !std::isspace(c)) {
+          break;
+        }
+      }
+
+      // Check if the line starts with a directive
+      if (c == '!') {
+        // Move Idx to the beginning of directive
+        Idx = i;
+
+        // Check if the directive is "!include"
+        if (!IncDirectiveFound && Idx + IncDirective.length() <= BuffSize &&
+            BuffContent.substr(Idx, IncDirective.length()) == IncDirective) {
+          // Move Idx to the end of directive
+          Idx += IncDirective.length();
+          IncDirectiveFound = true;
+          SkipWhiteSpaces = true;
+        }
+
+        // Update current character
+        Ch = BuffContent[Idx];
+      }
+
+      IsLineBeginning = false;
+    }
+
+    // Skip return carriage character
+    if (Ch == '\r') {
+      Idx++;
+      continue;
+    }
+
+    // Process IncRuleFilePath at end of the line
+    if (Ch == '\n') {
+      if (IncDirectiveFound) {
+        auto IncRuleFilePathStr = IncRuleFilePath.str();
+
+        if (!IncRuleFilePathStr.empty()) {
+          // Find the absolute path for the included rule file path
+          llvm::SmallString<128> IncRuleFileAbsPath = DirectoryPath;
+          llvm::sys::path::append(IncRuleFileAbsPath, IncRuleFilePathStr);
+
+          // Recursively process the included file
+          if (llvm::sys::fs::exists(IncRuleFileAbsPath)) {
+            Output << readYAMLFile(IncRuleFileAbsPath.str())->getBuffer().str();
+          } else {
+            Output << readYAMLFile(IncRuleFilePathStr)->getBuffer().str();
+          }
+
+          // Clear the contents of include rule file path
+          IncRuleFilePath.str("");
+        }
+      }
+
+      // Reset include directive info for each new line
+      IncDirectiveFound = false;
+      SkipWhiteSpaces = false;
+      IsLineBeginning = true;
+    }
+
+    if (IncDirectiveFound) {
+      // Skip adding quotes to the include rule file path
+      if (Ch == '"' || Ch == '\'') {
+        Idx++;
+        // Flip white space skip flag at the boundaries of quotes
+        SkipWhiteSpaces = !SkipWhiteSpaces;
+        continue;
+      }
+
+      // Skip white space characters
+      if (SkipWhiteSpaces && std::isspace(Ch)) {
+        Idx++;
+        continue;
+      }
+
+      // Append the character to the include rule file path for !include line
+      IncRuleFilePath << Ch;
+    } else {
+      // Append the character to the output buffer
+      Output << Ch;
+    }
+
+    Idx++;
+  }
+
+  return llvm::MemoryBuffer::getMemBufferCopy(Output.str(), RuleFilePath);
+}
+
 void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
     // open the yaml file
     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
-        llvm::MemoryBuffer::getFile(RuleFile.getCanonicalPath());
-    if (!Buffer) {
-      llvm::errs() << "Error: failed to read " << RuleFile << ": "
-                   << Buffer.getError().message() << "\n";
-      clang::dpct::ShowStatus(MigrationErrorInvalidRuleFilePath);
-      dpctExit(MigrationErrorInvalidRuleFilePath);
-    }
+        readYAMLFile(RuleFile.getCanonicalPath());
 
     // load rules
     std::vector<std::shared_ptr<MetaRuleObject>> CurrentRules;

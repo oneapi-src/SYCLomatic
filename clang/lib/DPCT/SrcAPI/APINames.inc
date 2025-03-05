@@ -148,7 +148,7 @@ ENTRY(cudaGridDependencySynchronize, cudaGridDependencySynchronize, false, NO_FL
 ENTRY(cudaLaunchCooperativeKernel, cudaLaunchCooperativeKernel, true, NO_FLAG, P4, "Partial: DPCT1007")
 ENTRY(cudaLaunchCooperativeKernelMultiDevice, cudaLaunchCooperativeKernelMultiDevice, false, NO_FLAG, P4, "comment")
 ENTRY(cudaLaunchDevice, cudaLaunchDevice, false, NO_FLAG, P4, "comment")
-ENTRY(cudaLaunchHostFunc, cudaLaunchHostFunc, false, NO_FLAG, P4, "comment")
+ENTRY(cudaLaunchHostFunc, cudaLaunchHostFunc, true, NO_FLAG, P4, "comment")
 ENTRY(cudaLaunchKernel, cudaLaunchKernel, true, NO_FLAG, P0, "Partial: DPCT1007, success only when directly using of kernel function name")
 ENTRY(cudaLaunchKernelExC, cudaLaunchKernelExC, false, NO_FLAG, P4, "comment")
 ENTRY(cudaSetDoubleForDevice, cudaSetDoubleForDevice, false, NO_FLAG, P0, "comment")
