@@ -1,5 +1,10 @@
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --format-range=none -out-root %T/launch-kernel-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel-usm/launch-kernel-usm.dp.cpp
+
+#include<cuda_runtime.h>
+#include<iostream>
 
 // CHECK: void template_device(T *d, T *s) {
 template<class T>
@@ -20,6 +25,11 @@ __global__ void template_kernel(T *d) {
 __global__ void kernel(int *d, cudaTextureObject_t tex) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
   tex1D(d + gtid, tex, gtid);
+}
+
+void hostCallback(void *userData) {
+  const char *msg = static_cast<const char*>(userData);
+  std::cout << "Host callback executed. Message: " << msg << std::endl;
 }
 
 int main() {
@@ -86,6 +96,24 @@ int main() {
   kernel_array[10] = (void *)&kernel;
   // CHECK: dpct::kernel_launcher::launch(kernel_array[10], dpct::dim3(16), dpct::dim3(16), args, 0, 0);
   cudaLaunchKernel(kernel_array[10], dim3(16), dim3(16), args, 0, 0);
+
+  cudaError_t err;
+  const char *message = "Kernel execution finished.";
+  cudaStream_t stream;
+// CHECK:  err = DPCT_CHECK_ERROR(stream->submit([&](sycl::handler &cgh) {
+// CHECK:    cgh.host_task([=](){
+// CHECK:      hostCallback((void*)message);
+// CHECK:    });
+// CHECK:  }));
+  err = cudaLaunchHostFunc(stream, hostCallback, (void*)message);
+
+// CHECK: dpct::host_func fn = hostCallback;
+  cudaHostFn_t fn = hostCallback;
+// CHECK: stream->submit([&](sycl::handler &cgh) {
+// CHECK:   cgh.host_task([=](){
+// CHECK:     fn((void*)message);
+// CHECK: });
+  cudaLaunchHostFunc(stream, fn, (void*)message);
 
   cudaStreamDestroy(stream);
   cudaDestroyTextureObject(tex);

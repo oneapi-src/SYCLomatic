@@ -6667,8 +6667,19 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
       Printer.line("cgh.depends_on(dpct::get_current_device().get_in_order_"
                    "queues_last_events());");
     } else {
+      Printer.line("#ifdef __INTEL_LLVM_COMPILER");
+      Printer.newLine();
       Printer.line("cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_"
                    "last_event());");
+      Printer.newLine();
+      Printer.line("#else");
+      Printer.newLine();
+      Printer.line("auto e_opt = dpct::get_default_queue().ext_oneapi_get_last_"
+                   "event();");
+      Printer.newLine();
+      Printer.line("if (e_opt) cgh.depends_on(*e_opt);");
+      Printer.newLine();
+      Printer.line("#endif");
     }
     Printer.newLine();
   }
