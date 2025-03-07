@@ -56,7 +56,7 @@ Migration rules are specified in YAML files. A single rule file may contain mult
      - Required. Specifies the priority of the rule: ``Takeover`` > ``Default`` > ``Fallback``.
        When there are rule conflicts, the rule with higher priority will take precedence.
    * - Kind
-     - ``Macro`` | ``API`` | ``Header`` | ``Type`` | ``Class`` | ``Enum`` | ``DisableAPIMigration`` | ``PatternRewriter`` | ``CMakeRule`` | ``PythonRule``
+     - ``Macro`` | ``API`` | ``Header`` | ``Type`` | ``Class`` | ``Enum`` | ``DisableAPIMigration`` | ``PatternRewriter`` | ``CMakeRule`` | ``PythonRule`` | ``HelperFunction`` |
      - Required. Specifies the rule type.
    * - CmakeSyntax
      - String value
@@ -180,6 +180,11 @@ rule types. The behavior of each rule is explained in the corresponding comment:
                                          # is the user-defined name which is defined in "In".
          In: a                           # Match pattern "a" in ${args}
          Out: b                          # Replace the pattern string to "b" in ${args}
+   - Rule: rule_default_queue
+     Kind: HelperFunction
+     Priority: Takeover
+     In: get_in_order_queue              # Replacing the helper function "get_in_order_queue" in the migrated code
+     Out: getUserDefinedQueue()          # with "getUserDefinedQueue()"
    ...                                   # [YAML syntax] End the document
 
 

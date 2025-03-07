@@ -104,8 +104,8 @@ void registerAPIRule(MetaRuleObject &R) {
   auto Factory = createUserDefinedRewriterFactory(R.In, R);
   auto &Entry = (*CallExprRewriterFactoryBase::RewriterMap)[R.In];
   if (!Entry) {
-    Entry = std::make_shared<ConditionalRewriterFactory>(FilterChecker, Factory,
-                                                         Entry);
+    Entry = std::make_shared<ConditionalRewriterFactory>(
+        FilterChecker, Factory, std::make_shared<NullRewriterFactory>());
   } else if (R.RuleAttributes.HasExplicitTemplateArgs) {
     Entry = std::make_shared<ConditionalRewriterFactory>(
         UserDefinedRewriterFactory::hasExplicitTemplateArgs,

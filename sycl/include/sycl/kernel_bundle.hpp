@@ -9,7 +9,6 @@
 #pragma once
 
 #include <sycl/backend_types.hpp>          // for backend, backend_return_t
-#include <sycl/context.hpp>                // for context
 #include <sycl/detail/export.hpp>          // for __SYCL_EXPORT
 #include <sycl/detail/kernel_desc.hpp>     // for get_spec_constant_symboli...
 #include <sycl/detail/owner_less_base.hpp> // for OwnerLessBase
@@ -27,12 +26,15 @@
 #include <sycl/ext/oneapi/properties/property.hpp>       // build_options
 #include <sycl/ext/oneapi/properties/property_value.hpp> // and log
 
-#include <array>       // for array
-#include <cstddef>     // for std::byte
-#include <cstring>     // for size_t, memcpy
-#include <functional>  // for function
-#include <iterator>    // for distance
-#include <memory>      // for shared_ptr, operator==, hash
+#include <array>      // for array
+#include <cstddef>    // for std::byte
+#include <cstring>    // for size_t, memcpy
+#include <functional> // for function
+#include <iterator>   // for distance
+#include <memory>     // for shared_ptr, operator==, hash
+#if __has_include(<span>)
+#include <span>
+#endif
 #include <string>      // for string
 #include <type_traits> // for enable_if_t, remove_refer...
 #include <utility>     // for move
@@ -46,6 +48,7 @@ template <backend Backend> class backend_traits;
 template <backend Backend, bundle_state State>
 auto get_native(const kernel_bundle<State> &Obj)
     -> backend_return_t<Backend, kernel_bundle<State>>;
+class context;
 
 namespace detail {
 class kernel_id_impl;
@@ -123,6 +126,13 @@ protected:
 
   template <class T>
   friend T detail::createSyclObjFromImpl(decltype(T::impl) ImplObj);
+
+  backend ext_oneapi_get_backend_impl() const noexcept;
+
+#if (!defined(_HAS_STD_BYTE) || _HAS_STD_BYTE != 0)
+  std::pair<const std::byte *, const std::byte *>
+  ext_oneapi_get_backend_content_view_impl() const;
+#endif // HAS_STD_BYTE
 };
 } // namespace detail
 
@@ -144,6 +154,30 @@ public:
   bool has_kernel(const kernel_id &KernelID, const device &Dev) const noexcept {
     return device_image_plain::has_kernel(KernelID, Dev);
   }
+
+  backend ext_oneapi_get_backend() const noexcept {
+    return device_image_plain::ext_oneapi_get_backend_impl();
+  }
+
+#if (!defined(_HAS_STD_BYTE) || _HAS_STD_BYTE != 0)
+  template <sycl::bundle_state T = State,
+            typename = std::enable_if_t<T == bundle_state::executable>>
+  std::vector<std::byte> ext_oneapi_get_backend_content() const {
+    const auto view =
+        device_image_plain::ext_oneapi_get_backend_content_view_impl();
+    return std::vector(view.first, view.second);
+  }
+
+#ifdef __cpp_lib_span
+  template <sycl::bundle_state T = State,
+            typename = std::enable_if_t<T == bundle_state::executable>>
+  std::span<const std::byte> ext_oneapi_get_backend_content_view() const {
+    const auto view =
+        device_image_plain::ext_oneapi_get_backend_content_view_impl();
+    return std::span<const std::byte>{view.first, view.second};
+  }
+#endif // __cpp_lib_span
+#endif // _HAS_STD_BYTE
 
 private:
   device_image(detail::DeviceImageImplPtr Impl)
@@ -201,6 +235,11 @@ public:
     return ext_oneapi_get_kernel(detail::string_view{name});
   }
 
+  std::string ext_oneapi_get_raw_kernel_name(const std::string &name) {
+    return std::string{
+        ext_oneapi_get_raw_kernel_name(detail::string_view{name}).c_str()};
+  }
+
 protected:
   // \returns a kernel object which represents the kernel identified by
   // kernel_id passed
@@ -229,6 +268,7 @@ protected:
 private:
   bool ext_oneapi_has_kernel(detail::string_view name);
   kernel ext_oneapi_get_kernel(detail::string_view name);
+  detail::string ext_oneapi_get_raw_kernel_name(detail::string_view name);
 };
 
 } // namespace detail
@@ -447,6 +487,16 @@ public:
             typename = std::enable_if_t<_State == bundle_state::executable>>
   kernel ext_oneapi_get_kernel(const std::string &name) {
     return detail::kernel_bundle_plain::ext_oneapi_get_kernel(name);
+  }
+
+  /////////////////////////
+  // ext_oneapi_get_raw_kernel_name
+  //  kernel_bundle must be created from source, throws if not present
+  /////////////////////////
+  template <bundle_state _State = State,
+            typename = std::enable_if_t<_State == bundle_state::executable>>
+  std::string ext_oneapi_get_raw_kernel_name(const std::string &name) {
+    return detail::kernel_bundle_plain::ext_oneapi_get_raw_kernel_name(name);
   }
 
 private:

@@ -37,7 +37,7 @@ using namespace clang::dpct;
 namespace {
 
 inline bool SYCLGenError() { return true; }
-inline bool SYCLGenSuccess() {return false; }
+inline bool SYCLGenSuccess() { return false; }
 
 /// This is used to handle all the AST nodes (except specific instructions, Eg.
 /// mov/setp), and generate functionally equivalent SYCL code.
@@ -2177,8 +2177,8 @@ protected:
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
     OS() << " = ";
-    OS() << MapNames::getDpctNamespace() << "bfe_safe<" << TypeStr << ">(" << Op[0]
-         << ", " << Op[1] << ", " << Op[2] << ')';
+    OS() << MapNames::getDpctNamespace() << "bfe_safe<" << TypeStr << ">("
+         << Op[0] << ", " << Op[1] << ", " << Op[2] << ')';
     endstmt();
     insertHeader(HeaderType::HT_DPCT_Math);
     return SYCLGenSuccess();
@@ -2380,8 +2380,8 @@ protected:
     if (DpctGlobalInfo::useIntelDeviceMath() && !RD.empty()) {
       insertHeader(HeaderType::HT_SYCL_Math);
       OS() << MapNames::getClNamespace() << "ext::intel::math::"
-           << (T->getKind() == InlineAsmBuiltinType::f32 ? 'f' : 'd')
-           << "rcp_" << RD << '(' << Op[0] << ')';
+           << (T->getKind() == InlineAsmBuiltinType::f32 ? 'f' : 'd') << "rcp_"
+           << RD << '(' << Op[0] << ')';
     } else {
       OS() << "1 / " << Op[0];
     }
@@ -2773,9 +2773,7 @@ protected:
     return SYCLGenSuccess();
   }
 
-  bool handle_cp(const InlineAsmInstruction *Inst) override {
-    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 1)
-      return SYCLGenError();
+  bool HandleCopyOperation(const InlineAsmInstruction *Inst) {
 
     llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
     CurrInst = Inst;
@@ -2809,8 +2807,39 @@ protected:
     OS() << CommonBody("3");
     endstmt();
 
-    report(Diagnostics::ASYNC_COPY_DEVICE_WARN, true);
+    auto OpStr =
+        llvm::Twine(Inst->getOpcodeID()->getName()).concat(".async").str();
+    report(Diagnostics::ASYNC_COPY_DEVICE_WARN, true, OpStr);
     return SYCLGenSuccess();
+  }
+
+  bool HandleCopyWait(const InlineAsmInstruction *Inst) {
+    auto CommonStr = llvm::Twine("")
+                         .concat("\"")
+                         .concat(GAS->getAsmString()->getString())
+                         .concat("\"")
+                         .str();
+
+    report(
+        Diagnostics::FUNC_CALL_REMOVED, true, CommonStr,
+        "current \"cp.async\" is migrated to synchronous copy operation. You "
+        "may need to adjust the code to tune the performance.");
+    return SYCLGenSuccess();
+  }
+
+  bool handle_cp(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() == 3 && Inst->getNumTypes() == 1 &&
+        Inst->hasAttr(InstAttr::async))
+      return HandleCopyOperation(Inst);
+
+    if (Inst->getNumInputOperands() == 1 && Inst->hasAttr(InstAttr::async) &&
+        (Inst->hasAttr(InstAttr::commit_group) ||
+         Inst->hasAttr(InstAttr::wait_group) ||
+         Inst->hasAttr(InstAttr::wait_all))) {
+      return HandleCopyWait(Inst);
+    }
+
+    return SYCLGenError();
   }
 };
 

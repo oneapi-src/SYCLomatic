@@ -3529,3 +3529,13 @@ void foo5() {
   // CHECK: f0 = ceilf(i);
   f0 = ceilf(i);
 }
+
+void foo6(float aa) {
+  // CHECK: sycl::sinpi(aa);
+  ::sinpif(aa);
+}
+
+__global__ void foo7(float aa) {
+  // CHECK: sycl::sinpi(aa);
+  ::sinpif(aa);
+}

@@ -56,9 +56,21 @@ public:
 
   struct striped_offset {
     template <typename Item> size_t operator()(Item item, size_t i) {
-      size_t offset = i * item.get_local_range(2) * item.get_local_range(1) *
-                          item.get_local_range(0) +
+      size_t offset = i * item.get_group().get_local_linear_range() +
                       item.get_local_linear_id();
+      return adjust_by_padding(offset);
+    }
+  };
+
+  struct sub_group_striped_offset {
+    template <typename Item> size_t operator()(Item item, size_t i) {
+      auto sg = item.get_sub_group();
+      size_t wg_size = item.get_group().get_local_linear_range();
+      size_t sub_group_sliced_items =
+          std::min<size_t>(sg.get_local_linear_range(), wg_size);
+      size_t offset = (sg.get_group_linear_id() * sub_group_sliced_items *
+                       ElementsPerWorkItem) +
+                      (i * sub_group_sliced_items) + sg.get_local_linear_id();
       return adjust_by_padding(offset);
     }
   };
@@ -239,6 +251,60 @@ public:
     scatter_offset<const int *> get_scatter_offset(ranks);
     striped_offset get_striped_offset;
     helper_exchange(item, input, input, get_scatter_offset, get_striped_offset);
+  }
+
+  /// Rearrange elements from blocked order to sub_group striped order.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// blocked \p input across the work-group is:
+  ///
+  ///   { [0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// The sub_group striped order output (with sub_group size 2) is:
+  ///
+  ///   { [0, 4, 1, 5], [2, 6, 3, 7], [8, 12, 9, 13], [10, 14, 11, 15], ...
+  ///     , [506, 510, 507, 511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
+  /// \param output The corresponding output data of each work-item.
+  template <typename Item>
+  __dpct_inline__ void
+  blocked_to_sub_group_striped(Item item, T (&input)[ElementsPerWorkItem],
+                               T (&output)[ElementsPerWorkItem]) {
+    blocked_offset get_blocked_offset;
+    sub_group_striped_offset get_sub_group_striped_offset;
+    helper_exchange(item, input, output, get_blocked_offset,
+                    get_sub_group_striped_offset);
+  }
+
+  /// Rearrange elements from sub_group striped order to blocked order.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// sub_group striped \p input across the work-group is:
+  ///
+  ///   { [0, 4, 1, 5], [2, 6, 3, 7], [8, 12, 9, 13], [10, 14, 11, 15], ...
+  ///     , [506, 510, 507, 511] }.
+  ///
+  /// The blocked order output is:
+  ///
+  ///   { [0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
+  /// \param output The corresponding output data of each work-item.
+  template <typename Item>
+  __dpct_inline__ void
+  sub_group_striped_to_blocked(Item item, T (&input)[ElementsPerWorkItem],
+                               T (&output)[ElementsPerWorkItem]) {
+    blocked_offset get_blocked_offset;
+    sub_group_striped_offset get_sub_group_striped_offset;
+    helper_exchange(item, input, output, get_sub_group_striped_offset,
+                    get_blocked_offset);
   }
 
 private:

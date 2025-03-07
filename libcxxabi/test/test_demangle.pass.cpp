@@ -9,7 +9,8 @@
 // This test is too big for most embedded devices.
 // XFAIL: LIBCXX-PICOLIBC-FIXME
 
-// This test exercises support for char array initializer lists added in dd8b266ef.
+// This test exercises support for char array initializer lists added in
+// dd8b266ef.
 // UNSUPPORTED: using-built-library-before-llvm-20
 
 // Android's long double on x86[-64] is (64/128)-bits instead of Linux's usual
@@ -32,9 +33,8 @@
 // Is long double fp128?
 #define LDBL_FP128 (__LDBL_MANT_DIG__ == 113)
 
-// clang-format off
-const char* cases[][2] =
-{
+const char* cases[][2] = {
+    // clang-format off
     {"_Z1A", "A"},
     {"_Z1Av", "A()"},
     {"_Z1A1B1C", "A(B, C)"},
@@ -29834,6 +29834,7 @@ const char* cases[][2] =
     {"_ZN5Casts5auto_IiEEvDTnw_DapicvT__EEE", "void Casts::auto_<int>(decltype(new auto((int)())))"},
     {"_ZN5Casts7scalar_IiEEvDTcmcvT__Ecvi_EE", "void Casts::scalar_<int>(decltype((int)(), (int)()))"},
     {"_ZN5test11aIsEEDTcl3foocvT__EEES1_", "decltype(foo((short)())) test1::a<short>(short)"},
+    {"_ZN5test11bIsEEDTcp3foocvT__EEES1_", "decltype((foo)((short)())) test1::b<short>(short)"},
     {"_ZN5test21aIPFfvEEEvT_DTclfL0p_EE", "void test2::a<float (*)()>(float (*)(), decltype(fp()))"},
     {"_ZN5test21bIPFfvEEEDTclfp_EET_", "decltype(fp()) test2::b<float (*)()>(float (*)())"},
     {"_ZN5test21cIPFfvEEEvT_PFvDTclfL1p_EEE", "void test2::c<float (*)()>(float (*)(), void (*)(decltype(fp())))"},
@@ -30218,16 +30219,45 @@ const char* cases[][2] =
     {"_ZZN3Foo3fooEiENH4Foo24foo2EOKS0_", "Foo::foo(int)::Foo2::foo2(this Foo2 const&&)"},
     {"_ZZNH3Foo3fooES_iENK4Foo24foo2Ev", "Foo::foo(this Foo, int)::Foo2::foo2() const" },
     {"_ZNH3FooclERKS_", "Foo::operator()(this Foo const&)"},
+
+    // fixed-point types as defined in the N1169 draft of ISO/IEC DTR 18037
+    {"_Z1fDAs", "f(short _Accum)"},
+    {"_Z1fDAt", "f(unsigned short _Accum)"},
+    {"_Z1fDAi", "f(_Accum)"},
+    {"_Z1fDAj", "f(unsigned _Accum)"},
+    {"_Z1fDAl", "f(long _Accum)"},
+    {"_Z1fDAm", "f(unsigned long _Accum)"},
+    {"_Z1fDRs", "f(short _Fract)"},
+    {"_Z1fDRt", "f(unsigned short _Fract)"},
+    {"_Z1fDRi", "f(_Fract)"},
+    {"_Z1fDRj", "f(unsigned _Fract)"},
+    {"_Z1fDRl", "f(long _Fract)"},
+    {"_Z1fDRm", "f(unsigned long _Fract)"},
+    {"_Z1fDSDAs", "f(_Sat short _Accum)"},
+    {"_Z1fDSDAt", "f(_Sat unsigned short _Accum)"},
+    {"_Z1fDSDAi", "f(_Sat _Accum)"},
+    {"_Z1fDSDAj", "f(_Sat unsigned _Accum)"},
+    {"_Z1fDSDAl", "f(_Sat long _Accum)"},
+    {"_Z1fDSDAm", "f(_Sat unsigned long _Accum)"},
+    {"_Z1fDSDRs", "f(_Sat short _Fract)"},
+    {"_Z1fDSDRt", "f(_Sat unsigned short _Fract)"},
+    {"_Z1fDSDRi", "f(_Sat _Fract)"},
+    {"_Z1fDSDRj", "f(_Sat unsigned _Fract)"},
+    {"_Z1fDSDRl", "f(_Sat long _Fract)"},
+    {"_Z1fDSDRm", "f(_Sat unsigned long _Fract)"},
+
+    {"_Z11bfloat16addDF16bDF16b", "bfloat16add(std::bfloat16_t, std::bfloat16_t)"},
+    // clang-format on
 };
-// clang-format on
 
 const unsigned N = sizeof(cases) / sizeof(cases[0]);
 
 struct FPLiteralCase {
-  const char* mangled;
+  const char *mangled;
   // There are four possible demanglings of a given float.
   std::string expecting[4];
 } fp_literal_cases[] = {
+    // clang-format off
     {"_ZN5test01gIfEEvRAszplcvT__ELf40a00000E_c",
      {
          "void test0::g<float>(char (&) [sizeof ((float)() + 0x1.4p+2f)])",
@@ -30253,15 +30283,17 @@ struct FPLiteralCase {
 #endif
 #if LDBL_FP128
     // A 32-character FP literal of long double type
-    {"3FooILeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeEE", {"Foo<-0x1.eeeeeeeeeeeeeeeeeeeeeeeeeeeep+12015L>"}},
+    {"3FooILeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeEE",
+     {"Foo<-0x1.eeeeeeeeeeeeeeeeeeeeeeeeeeeep+12015L>"}},
 #endif
+    // clang-format on
 };
 const unsigned NF = sizeof(fp_literal_cases) / sizeof(fp_literal_cases[0]);
-const unsigned NEF = sizeof(fp_literal_cases[0].expecting) / sizeof(fp_literal_cases[0].expecting[0]);
+const unsigned NEF = sizeof(fp_literal_cases[0].expecting) /
+                     sizeof(fp_literal_cases[0].expecting[0]);
 
-
-const char* invalid_cases[] =
-{
+const char *invalid_cases[] = {
+    // clang-format off
     "_ZIPPreEncode",
     "Agentt",
     "NSoERj5E=Y1[uM:ga",
@@ -30272,7 +30304,7 @@ const char* invalid_cases[] =
 #if !LDBL_FP80
     "_ZN5test01hIfEEvRAcvjplstT_Le4001a000000000000000E_c",
 #endif
-	// The following test cases were found by libFuzzer+ASAN
+    // The following test cases were found by libFuzzer+ASAN
     "\x44\x74\x70\x74\x71\x75\x34\x43\x41\x72\x4D\x6E\x65\x34\x9F\xC1\x43\x41\x72\x4D\x6E\x77\x38\x9A\x8E\x44\x6F\x64\x6C\x53\xF9\x5F\x70\x74\x70\x69\x45\x34\xD3\x73\x9E\x2A\x37",
     "\x4D\x41\x72\x63\x4E\x39\x44\x76\x72\x4D\x34\x44\x53\x4B\x6F\x44\x54\x6E\x61\x37\x47\x77\x78\x38\x43\x27\x41\x5F\x73\x70\x69\x45*",
     "\x41\x64\x6E\x32*",
@@ -30318,128 +30350,114 @@ const char* invalid_cases[] =
     "_ZGI3Foo",
     "_ZGIW3Foov",
     "W1x",
+    // clang-format on
 };
 
 const unsigned NI = sizeof(invalid_cases) / sizeof(invalid_cases[0]);
 
-void test()
-{
-    std::size_t len = 0;
-    char* buf = nullptr;
-    bool failed = false;
-    for (unsigned i = 0; i < N; ++i)
-    {
-        int status;
-        char* demang =
-            __cxxabiv1::__cxa_demangle(cases[i][0], buf, &len, &status);
-        if (!demang || std::strcmp(demang, cases[i][1]) != 0)
-        {
-          std::fprintf(stderr, "ERROR demangling %s\n"
-                       "expected: %s\n"
-                       "got: %d,   %s\n",
-                       cases[i][0], cases[i][1], status,
-                       demang ? demang : "(null)");
-          failed = true;
-        }
-        if (demang)
-          buf = demang;
+void test() {
+  std::size_t len = 0;
+  char *buf = nullptr;
+  bool failed = false;
+  for (unsigned i = 0; i < N; ++i) {
+    int status;
+    char *demang = __cxxabiv1::__cxa_demangle(cases[i][0], buf, &len, &status);
+    if (!demang || std::strcmp(demang, cases[i][1]) != 0) {
+      std::fprintf(stderr,
+                   "ERROR demangling %s\n"
+                   "expected: %s\n"
+                   "got: %d,   %s\n",
+                   cases[i][0], cases[i][1], status,
+                   demang ? demang : "(null)");
+      failed = true;
     }
-    free(buf);
-    assert(!failed && "demangle failed");
+    if (demang)
+      buf = demang;
+  }
+  free(buf);
+  assert(!failed && "demangle failed");
 }
 
-void test_invalid_cases()
-{
-    std::size_t len = 0;
-    char* buf = nullptr;
-    bool passed = false;
-    for (unsigned i = 0; i < NI; ++i)
-    {
-        int status;
-        char* demang =
-            __cxxabiv1::__cxa_demangle(invalid_cases[i], buf, &len, &status);
-        if (status != -2)
-        {
-            std::printf("%s should be invalid but is not\n", invalid_cases[i]);
-            std::printf("Got: %d, %s\n", status, demang ? demang : "(null)");
-            passed = true;
-        }
-        if (demang)
-          buf = demang;
+void test_invalid_cases() {
+  std::size_t len = 0;
+  char *buf = nullptr;
+  bool passed = false;
+  for (unsigned i = 0; i < NI; ++i) {
+    int status;
+    char *demang =
+        __cxxabiv1::__cxa_demangle(invalid_cases[i], buf, &len, &status);
+    if (status != -2) {
+      std::printf("%s should be invalid but is not\n", invalid_cases[i]);
+      std::printf("Got: %d, %s\n", status, demang ? demang : "(null)");
+      passed = true;
     }
-    free(buf);
-    assert(!passed && "demangle did not fail");
+    if (demang)
+      buf = demang;
+  }
+  free(buf);
+  assert(!passed && "demangle did not fail");
 }
 
-const char *xfail_cases[] = {
-    // FIXME: Why does clang generate the "cp" expr?
-    "_ZN5test11bIsEEDTcp3foocvT__EEES1_",
+const char *const xfail_cases[] = {
+    // Sentinel value
+    nullptr,
 };
 
-const size_t num_xfails = sizeof(xfail_cases) / sizeof(xfail_cases[0]);
-
-void test_xfail_cases()
-{
-    std::size_t len = 0;
-    char* buf = nullptr;
-    for (std::size_t i = 0; i < num_xfails; ++i)
-    {
-        int status;
-        char* demang = __cxxabiv1::__cxa_demangle(xfail_cases[i], buf, &len, &status);
-        if (status != -2)
-        {
-            std::printf("%s was documented as xfail but passed\n", xfail_cases[i]);
-            std::printf("Got status = %d\n", status);
-            assert(status == -2);
-        }
-        else
-        {
-            buf = demang;
-        }
+void test_xfail_cases() {
+  std::size_t len = 0;
+  char *buf = nullptr;
+  for (const char *c_str : xfail_cases) {
+    if (!c_str)
+      break;
+    int status;
+    char *demang = __cxxabiv1::__cxa_demangle(c_str, buf, &len, &status);
+    if (status != -2) {
+      std::printf("%s was documented as xfail but passed\n", c_str);
+      std::printf("Got status = %d\n", status);
+      assert(status == -2);
+    } else {
+      buf = demang;
     }
-    free(buf);
+  }
+  free(buf);
 }
 
-void testFPLiterals()
-{
-    std::size_t len = 0;
-    char* buf = nullptr;
-    for (unsigned i = 0; i < NF; ++i)
-    {
-        FPLiteralCase *fpCase = fp_literal_cases+i;
-        int status;
-        char* demang = __cxxabiv1::__cxa_demangle(fpCase->mangled, buf, &len, &status);
-        if (demang == 0)
-        {
-            std::printf("%s -> %s\n", fpCase->mangled, fpCase->expecting[0].c_str());
-            std::printf("Got instead: NULL, %d\n", status);
-            assert(false);
-            continue;
-        }
-        std::string *e_beg = fpCase->expecting;
-        std::string *e_end = fpCase->expecting + NEF;
-        if (std::find(e_beg, e_end, demang) == e_end)
-        {
-            std::printf("%s -> %s\n", fpCase->mangled, fpCase->expecting[0].c_str());
-            std::printf("Got instead: %s\n", demang);
-            assert(false);
-            continue;
-        }
-        buf = demang;
+void testFPLiterals() {
+  std::size_t len = 0;
+  char *buf = nullptr;
+  for (unsigned i = 0; i < NF; ++i) {
+    FPLiteralCase *fpCase = fp_literal_cases + i;
+    int status;
+    char *demang =
+        __cxxabiv1::__cxa_demangle(fpCase->mangled, buf, &len, &status);
+    if (demang == 0) {
+      std::printf("%s -> %s\n", fpCase->mangled, fpCase->expecting[0].c_str());
+      std::printf("Got instead: NULL, %d\n", status);
+      assert(false);
+      continue;
     }
-    free(buf);
+    std::string *e_beg = fpCase->expecting;
+    std::string *e_end = fpCase->expecting + NEF;
+    if (std::find(e_beg, e_end, demang) == e_end) {
+      std::printf("%s -> %s\n", fpCase->mangled, fpCase->expecting[0].c_str());
+      std::printf("Got instead: %s\n", demang);
+      assert(false);
+      continue;
+    }
+    buf = demang;
+  }
+  free(buf);
 }
 
-int main(int, char**)
-{
-    std::printf("Testing %d symbols.\n", N);
-    {
-        timer t;
-        test();
-        test_invalid_cases();
-        test_xfail_cases();
-        testFPLiterals();
-    }
+int main(int, char **) {
+  std::printf("Testing %d symbols.\n", N);
+  {
+    timer t;
+    test();
+    test_invalid_cases();
+    test_xfail_cases();
+    testFPLiterals();
+  }
 #if 0
     std::string input;
     while (std::cin)
@@ -30475,5 +30493,5 @@ int main(int, char**)
     }
 #endif
 
-    return 0;
+  return 0;
 }
