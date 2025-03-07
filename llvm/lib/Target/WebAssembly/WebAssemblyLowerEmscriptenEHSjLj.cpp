@@ -318,7 +318,7 @@ class WebAssemblyLowerEmscriptenEHSjLj final : public ModulePass {
   // Map of <function signature string, invoke_ wrappers>
   StringMap<Function *> InvokeWrappers;
   // Set of allowed function names for exception handling
-  std::set<std::string> EHAllowlistSet;
+  std::set<std::string, std::less<>> EHAllowlistSet;
   // Functions that contains calls to setjmp
   SmallPtrSet<Function *, 8> SetjmpUsers;
 
@@ -349,8 +349,8 @@ class WebAssemblyLowerEmscriptenEHSjLj final : public ModulePass {
 
   bool areAllExceptionsAllowed() const { return EHAllowlistSet.empty(); }
   bool supportsException(const Function *F) const {
-    return EnableEmEH && (areAllExceptionsAllowed() ||
-                          EHAllowlistSet.count(std::string(F->getName())));
+    return EnableEmEH &&
+           (areAllExceptionsAllowed() || EHAllowlistSet.count(F->getName()));
   }
   void replaceLongjmpWith(Function *LongjmpF, Function *NewF);
 
@@ -580,7 +580,7 @@ Function *WebAssemblyLowerEmscriptenEHSjLj::getInvokeWrapper(CallBase *CI) {
     return It->second;
 
   // Put the pointer to the callee as first argument
-  ArgTys.push_back(PointerType::getUnqual(CalleeFTy));
+  ArgTys.push_back(PointerType::getUnqual(CI->getContext()));
   // Add argument types
   ArgTys.append(CalleeFTy->param_begin(), CalleeFTy->param_end());
 

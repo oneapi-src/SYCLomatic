@@ -390,6 +390,13 @@ def SDTFmaRound : SDTypeProfile<1, 4, [SDTCisSameAs<0,1>,
                            SDTCisSameAs<1,2>, SDTCisSameAs<1,3>,
                            SDTCisFP<0>, SDTCisVT<4, i32>]>;
 
+def SDTFPToxIntSatOp
+    : SDTypeProfile<1,
+                    1, [SDTCisVec<0>, SDTCisVec<1>, SDTCisInt<0>, SDTCisFP<1>]>;
+
+def X86fp2sisat : SDNode<"X86ISD::FP_TO_SINT_SAT", SDTFPToxIntSatOp>;
+def X86fp2uisat : SDNode<"X86ISD::FP_TO_UINT_SAT", SDTFPToxIntSatOp>;
+
 def X86PAlignr : SDNode<"X86ISD::PALIGNR",
                         SDTypeProfile<1, 3, [SDTCVecEltisVT<0, i8>,
                                              SDTCisSameAs<0,1>,
@@ -927,9 +934,9 @@ def X86vcvtbiasph2hf8 : SDNode<"X86ISD::VCVTBIASPH2HF8",
                                SDTAVX10CONVERT_2I8F16>;
 def X86vcvtbiasph2hf8s : SDNode<"X86ISD::VCVTBIASPH2HF8S",
                                 SDTAVX10CONVERT_2I8F16>;
-def X86vcvtph2bf8512 : SDNode<"X86ISD::VCVTPH2BF8512",
+def X86vcvtph2bf8 : SDNode<"X86ISD::VCVTPH2BF8",
                              SDTAVX10CONVERT_I8F16>;
-def X86vcvtph2bf8512s : SDNode<"X86ISD::VCVTPH2BF8512S",
+def X86vcvtph2bf8s : SDNode<"X86ISD::VCVTPH2BF8S",
                               SDTAVX10CONVERT_I8F16>;
 def X86vcvtph2hf8 : SDNode<"X86ISD::VCVTPH2HF8",
                              SDTAVX10CONVERT_I8F16>;
@@ -944,13 +951,13 @@ def X86vmcvtbiasph2hf8 : SDNode<"X86ISD::VMCVTBIASPH2HF8",
                          SDTAVX10CONVERT_2I8F16_MASK>;
 def X86vmcvtbiasph2hf8s : SDNode<"X86ISD::VMCVTBIASPH2HF8S",
                           SDTAVX10CONVERT_2I8F16_MASK>;
-def X86vmcvtneph2bf8 : SDNode<"X86ISD::VMCVTNEPH2BF8",
+def X86vmcvtph2bf8 : SDNode<"X86ISD::VMCVTPH2BF8",
                        SDTAVX10CONVERT_I8F16_MASK>;
-def X86vmcvtneph2bf8s : SDNode<"X86ISD::VMCVTNEPH2BF8S",
+def X86vmcvtph2bf8s : SDNode<"X86ISD::VMCVTPH2BF8S",
                         SDTAVX10CONVERT_I8F16_MASK>;
-def X86vmcvtneph2hf8 : SDNode<"X86ISD::VMCVTNEPH2HF8",
+def X86vmcvtph2hf8 : SDNode<"X86ISD::VMCVTPH2HF8",
                        SDTAVX10CONVERT_I8F16_MASK>;
-def X86vmcvtneph2hf8s : SDNode<"X86ISD::VMCVTNEPH2HF8S",
+def X86vmcvtph2hf8s : SDNode<"X86ISD::VMCVTPH2HF8S",
                         SDTAVX10CONVERT_I8F16_MASK>;
 
 //===----------------------------------------------------------------------===//
@@ -1450,9 +1457,6 @@ def X86Vpshufbitqmb_su : PatFrag<(ops node:$src1, node:$src2),
   return N->hasOneUse();
 }]>;
 
-// This fragment treats X86cmpm as commutable to help match loads in both
-// operands for PCMPEQ.
-def X86setcc_commute : SDNode<"ISD::SETCC", SDTSetCC, [SDNPCommutative]>;
 def X86pcmpgtm : PatFrag<(ops node:$src1, node:$src2),
                          (setcc node:$src1, node:$src2, SETGT)>;
 

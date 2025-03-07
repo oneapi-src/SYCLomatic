@@ -176,7 +176,7 @@ void foo7() {
 }
 
 template<class T1, class T2>
-void foo8(int a) {
+void foo8(int a1) {
   T1 a;
   T2 b;
 }

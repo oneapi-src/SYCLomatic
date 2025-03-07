@@ -648,6 +648,17 @@ void amdgpu::Linker::ConstructJob(Compilation &C, const JobAction &JA,
         Args.MakeArgString("-plugin-opt=-mattr=" + llvm::join(Features, ",")));
   }
 
+  if (Args.hasArg(options::OPT_stdlib))
+    CmdArgs.append({"-lc", "-lm"});
+  if (Args.hasArg(options::OPT_startfiles)) {
+    std::optional<std::string> IncludePath = getToolChain().getStdlibPath();
+    if (!IncludePath)
+      IncludePath = "/lib";
+    SmallString<128> P(*IncludePath);
+    llvm::sys::path::append(P, "crt1.o");
+    CmdArgs.push_back(Args.MakeArgString(P));
+  }
+
   CmdArgs.push_back("-o");
   CmdArgs.push_back(Output.getFilename());
   C.addCommand(std::make_unique<Command>(
@@ -1045,7 +1056,8 @@ llvm::SmallVector<std::string, 12> ROCMToolChain::getCommonDeviceLibNames(
   bool CorrectSqrt = false;
   if (DeviceOffloadingKind == Action::OFK_SYCL) {
     // When using SYCL, sqrt is only correctly rounded if the flag is specified
-    CorrectSqrt = DriverArgs.hasArg(options::OPT_fsycl_fp32_prec_sqrt);
+    CorrectSqrt = DriverArgs.hasArg(options::OPT_fsycl_fp32_prec_sqrt) ||
+                  DriverArgs.hasArg(options::OPT_foffload_fp32_prec_sqrt);
   } else
     CorrectSqrt = DriverArgs.hasFlag(
         options::OPT_fhip_fp32_correctly_rounded_divide_sqrt,

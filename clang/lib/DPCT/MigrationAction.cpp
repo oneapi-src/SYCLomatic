@@ -183,8 +183,11 @@ std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfoIm
   auto DiagConsumer = new TextDiagnosticPrinter(
       DiagnosticStream, &Invocation->getDiagnosticOpts());
   auto Info = std::make_shared<TranslationUnitInfo>();
+  FileSystemOptions FO;
+  FileManager FileMgr(FO);
   auto Diags = CompilerInstance::createDiagnostics(
-      &Invocation->getDiagnosticOpts(), DiagConsumer,
+      FileMgr.getVirtualFileSystem(), &Invocation->getDiagnosticOpts(),
+      DiagConsumer,
       /*ShouldOwnClient=*/false, &Invocation->getCodeGenOpts());
   DpctGlobalInfo::setColorOption(Invocation->getDiagnosticOpts().ShowColors);
   Info->AST = ASTUnit::create(Invocation, Diags, CaptureDiagsKind::None, false);
