@@ -1,0 +1,27 @@
+.. _DPCT1135:
+
+DPCT1135
+========
+
+Message
+-------
+
+.. _msg-1135-start:
+
+Please check if joint_matrix implementations support the combination of data type and
+matrix shape type in the target hardware.
+
+.. _msg-1135-end:
+
+Detailed Help
+-------------
+
+Please check this `table <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_matrix/sycl_ext_oneapi_matrix.asciidoc#appendix-supported-combinations-and-restrictions-per-hardware>`__
+to see if the implementation supports current use case.
+
+Suggestions to Fix
+------------------
+
+You may need to adjust the matrix-based algorithm by re-tiling the matrix shape
+according to the supported shapes for your hardware available in the above link
+or try to call the BLAS API in the one API Math Library (one math).
