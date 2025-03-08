@@ -47,4 +47,5 @@ Learn how to :ref:`query_map`.
    migration/debug-with-codepin
    migration/API-Mapping-query-guide
    migration/analysis-mode
+   migration/migration-examples
 
