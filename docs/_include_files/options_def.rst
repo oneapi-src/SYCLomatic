@@ -587,7 +587,8 @@ Specify the type of migration report. Values are:
 
 .. _desc-rule-file:
 
-Specify the rule file path that contains rules used for migration.
+Specify the rule file for migration. Also, reference the predefined rules in the
+``extensions``  directory in the root folder of the tool.
 
 .. _end-rule-file:
 
@@ -612,7 +613,7 @@ Stop migration and generation of reports if parsing errors happened. Default: ``
 .. _desc-suppress-warnings:
 
 A comma-separated list of migration warnings to suppress. Valid warning IDs
-range from 1000 to 1132. Hyphen-separated ranges are also allowed. For
+range from 1000 to 1136. Hyphen-separated ranges are also allowed. For
 example: ``-suppress-warnings=1000-1010,1011``.
 
 .. _end-suppress-warnings:
@@ -699,6 +700,14 @@ The values are:
 - ``=non-uniform-groups``: Experimental extension that allows use of non-uniform groups. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_non_uniform_groups.asciidoc>`__.
 - ``=device_global``: Experimental extension that allows device scoped memory allocations into SYCL that can
   be accessed within a kernel using syntax similar to C++ global variables. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_device_global.asciidoc>`__.
+- ``=virtual_mem``: Experimental extension that allows for mapping of an address range
+onto multiple allocations of physical memory.
+- ``=in_order_queue_events``: Experimental extension that allows getting the event from
+the last command submission into the queue and setting an external event as an implicit
+  dependence on the next command submitted to the queue.
+- ``=non-standard-sycl-builtins``: Experimental extension that allows use of non standard
+SYCL builtin functions.
+- ``=prefetch``: Experimental extension that allows use of SYCL prefetch APIs.
 - ``=all``: Enable all experimental extensions listed in this option.
 
 .. _end-use-experimental-features:
@@ -882,6 +891,7 @@ Intercept build tool to generate a compilation database.
 EXPERIMENTAL: Migrate build script(s).
 
 - ``=CMake``: Migrate the CMake file(s).
+- ``=Python``: Migrate the Python build script file(s) of PyTorch based project.
 
 .. _end-migrate-build-script:
 
