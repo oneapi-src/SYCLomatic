@@ -61,7 +61,7 @@ Examples
 DirectX-CUDA Interoperability
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**CUDA**
+CUDA
 
 .. code-block:: none
 
@@ -90,7 +90,7 @@ DirectX-CUDA Interoperability
    // Unregister the CUDA resource
    cudaGraphicsUnregisterResource(cudaResource);
 
-**|tool_name|**
+|tool_name|
 
 .. code-block:: none
 
@@ -124,7 +124,7 @@ DirectX-CUDA Interoperability
 Vulkan-CUDA Interoperability
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**CUDA**
+CUDA
 
 .. code-block:: none
 
@@ -150,7 +150,7 @@ Vulkan-CUDA Interoperability
    // Destroy the CUDA resource
    cudaDestroyExternalMemory(externalMemory);
 
-**|tool_name|**
+|tool_name|
 
 .. code-block:: none
 
