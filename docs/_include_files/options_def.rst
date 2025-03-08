@@ -27,8 +27,6 @@ to be migrated. Default: the value of ``--in-root``.
 
 
 
-
-
 .. _opt-assume-nd-range-dim:
 
 ``--assume-nd-range-dim=<value>``
@@ -677,8 +675,10 @@ By default, experimental features will not be used in migrated code.
 
 The values are:
 
-- ``=bfloat16_math_functions``: Experimental extension that allows use of bfloat16 math functions. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bfloat16_math_functions.asciidoc>`__.
-- ``=bindless_images``: Experimental extension that allows use of bindless images APIs. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc>`__.
+- ``=bfloat16_math_functions``: Experimental extension that allows use of bfloat16 math
+  functions. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bfloat16_math_functions.asciidoc>`__.
+- ``=bindless_images``: Experimental extension that allows use of bindless images APIs.
+  `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc>`__.
 - ``=dpl-experimental-api``: Experimental extension that allows use of experimental
   oneDPL APIs. `See more details <https://github.com/oneapi-src/oneDPL/tree/main/include/oneapi/dpl/pstl/experimental>`__.
 - ``=free-function-queries``: Experimental extension that allows getting
@@ -690,23 +690,28 @@ The values are:
   group work-items. See more details in ``dpct::experimental::logical_group`` in header file ``util.hpp``.
 - ``=masked-sub-group-operation``: Experimental helper function used to execute
   sub-group operation with mask. See more details in ``dpct::experimental::select_from_sub_group``, ``dpct::experimental::shift_sub_group_left``, ``dpct::experimental::shift_sub_group_right`` and ``dpct::experimental::shift_sub_group_right`` in header file ``util.hpp``.
-- ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix``. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_matrix/sycl_ext_oneapi_matrix.asciidoc>`__.
-- ``=nd_range_barrier``: DEPRECATED. Experimental helper function used to help cross-group synchronization during migration. Please use the following option instead: ``--use-experimental-features=root-group``
+- ``=matrix``: Experimental extension that allows use of matrix extension like class
+  ``joint_matrix``. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_matrix/sycl_ext_oneapi_matrix.asciidoc>`__.
+- ``=nd_range_barrier``: DEPRECATED. Experimental helper function used to help cross-group
+  synchronization during migration. Please use the following option instead: ``--use-experimental-features=root-group``
 - ``=root-group``: Experimental extension that allows use of root group class and relative API.
 - ``=graph``: Experimental extension that allows use of SYCL Graph APIs.
-- ``=occupancy-calculation``: Experimental helper function used to calculate occupancy. See more details in ``dpct::experimental::calculate_max_active_wg_per_xecore`` and ``dpct::experimental::calculate_max_potential_wg`` in header file ``util.hpp``.
+- ``=occupancy-calculation``: Experimental helper function used to calculate occupancy. See more
+  details in ``dpct::experimental::calculate_max_active_wg_per_xecore`` and ``dpct::experimental::calculate_max_potential_wg`` in header file ``util.hpp``.
 - ``=user-defined-reductions``: Experimental extension that allows user-defined
   reductions. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_user_defined_reductions.asciidoc>`__.
-- ``=non-uniform-groups``: Experimental extension that allows use of non-uniform groups. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_non_uniform_groups.asciidoc>`__.
-- ``=device_global``: Experimental extension that allows device scoped memory allocations into SYCL that can
+- ``=non-uniform-groups``: Experimental extension that allows use of non-uniform groups.
+  `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_non_uniform_groups.asciidoc>`__.
+- ``=device_global``: Experimental extension that allows device scoped memory allocations into
+  SYCL that can
   be accessed within a kernel using syntax similar to C++ global variables. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_device_global.asciidoc>`__.
 - ``=virtual_mem``: Experimental extension that allows for mapping of an address range
-onto multiple allocations of physical memory.
+  onto multiple allocations of physical memory.
 - ``=in_order_queue_events``: Experimental extension that allows getting the event from
-the last command submission into the queue and setting an external event as an implicit
+  the last command submission into the queue and setting an external event as an implicit
   dependence on the next command submitted to the queue.
 - ``=non-standard-sycl-builtins``: Experimental extension that allows use of non standard
-SYCL builtin functions.
+  SYCL builtin functions.
 - ``=prefetch``: Experimental extension that allows use of SYCL prefetch APIs.
 - ``=all``: Enable all experimental extensions listed in this option.
 
