@@ -24,4 +24,4 @@ Suggestions to Fix
 
 You may need to adjust the matrix-based algorithm by re-tiling the matrix shape
 according to the supported shapes for your hardware available in the above link
-or try to call the BLAS API in the one API Math Library (one math).
+or try to call the BLAS API in the Intel(R) oneAPI Math Kernel Library (oneMKL).
