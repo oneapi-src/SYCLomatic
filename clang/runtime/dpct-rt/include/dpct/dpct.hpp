@@ -6,6 +6,37 @@
 //
 //===----------------------------------------------------------------------===//
 
+// clang-format off
+/*
+There are 3 macros that can be used to control the behavior of the helper
+function files.
++========================+=========================+===========================+
+|                        | Helper function files   | Helper function files     |
+| Macro Name             | Used in dpct migrated   | Used in direct            |
+|                        | code                    | programming               |
++========================+=========================+===========================+
+| DPCT_USM_LEVEL_NONE    | USM by default.         | USM by default.           |
+| (Use USM or SYCL       | Use SYCL Buffer by      | Define it explicitly to   |
+| buffer)                | running dpct with       | use the SYCL buffer.      |
+|                        | "--use-level=none".     |                           |
++------------------------+-------------------------+---------------------------+
+| DPCT_PROFILING_ENABLED | Enabled heuristically   | Disable by default.       |
+| (Enable SYCL queue     | depends on the input    | Define it explicitly to   |
+| profiling)             | code.                   | enable.                   |
+|                        | Enable explicitly by    |                           |
+|                        | running dpct with       |                           |
+|                        | "--enable-profiling".   |                           |
+|                        | Disable by removing the |                           |
+|                        | macro definition        |                           |
+|                        | manually.               |                           |
++------------------------+-------------------------+---------------------------+
+| DPCT_HELPER_VERBOSE    | Disable by default.     | Disable by default.       |
+| (Verbose option)       | Define it explicitly to | Define it explicitly to   |
+|                        | enable.                 | enable.                   |
++========================+=========================+===========================+
+*/
+// clang-format on
+
 #ifndef __DPCT_HPP__
 #define __DPCT_HPP__
 

@@ -70,42 +70,42 @@ __global__ void reduce_xor_sync() {
 int main() {
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     reduce_add_sync(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   reduce_add_sync<<<1, 32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     reduce_min_sync(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   reduce_min_sync<<<1, 32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     reduce_max_sync(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   reduce_max_sync<<<1, 32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     reduce_and_sync(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   reduce_and_sync<<<1, 32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     reduce_or_sync(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   reduce_or_sync<<<1, 32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:     reduce_xor_sync(item_{{[0-9a-z]+}});
   // CHECK-NEXT:   });
   reduce_xor_sync<<<1, 32>>>();

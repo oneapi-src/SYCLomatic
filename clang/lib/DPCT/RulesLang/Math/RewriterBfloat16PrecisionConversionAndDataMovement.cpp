@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriterMath.h"
+#include "CommonMacroDefinition.h"
 
 using namespace clang::dpct;
 
@@ -1002,5 +1003,9 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
                        ARG(0)))),
           UNSUPPORT_FACTORY_ENTRY("__ushort_as_bfloat16",
                                   Diagnostics::API_NOT_MIGRATED,
-                                  ARG("__ushort_as_bfloat16")))};
+                                  ARG("__ushort_as_bfloat16")))
+      // make_bfloat162
+      ENTRY_RENAMED("make_bfloat162", MapNames::getClNamespace() + "marray<" +
+                                          MapNames::getClNamespace() +
+                                          "ext::oneapi::bfloat16, 2>")};
 }

@@ -1,0 +1,43 @@
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
+
+# This file will be installed to folder:
+# {dpct_install_folder}/extensions/python_rules.
+# The rule specified in this file can be imported with commandline option:
+# --rule-file={dpct_install_folder}/extensions/python_rules/python_build_script_migration_rule_pytorch.yaml
+
+!include python_build_script_migration_rule_pytorch_common.yaml
+
+# Extension rules
+- Rule: rule_CUDAExtension
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: CUDAExtension
+  In: CUDAExtension
+  Out: CppExtension
+
+- Rule: rule_include_dirs
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: include_dirs
+  In: CppExtension(${args})
+  Out: CppExtension(${args}, include_dirs=cpp_extension.include_paths('xpu'),)
+
+- Rule: rule_cpp_extension_load_no_extra_cflags
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cpp_extension_load_no_extra_cflags
+  In: torch.utils.cpp_extension.load(${args})
+  Out: torch.utils.cpp_extension.load(${args}, extra_cflags=['-fsycl'])
+
+- Rule: rule_cpp_extension_load_no_extra_ldflags
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cpp_extension_load_no_extra_ldflags
+  In: torch.utils.cpp_extension.load(${args})
+  Out: torch.utils.cpp_extension.load(${args}, extra_ldflags=['-fsycl'])

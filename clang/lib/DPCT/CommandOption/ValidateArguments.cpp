@@ -99,13 +99,17 @@ bool isOutRootEmpty(SmallString<256> &OutRoot) {
 
 // Set OutRoot to the current working directory.
 bool getDefaultOutRoot(clang::tooling::UnifiedPath &DefaultOutRoot,
-                       bool NeedCheckOutRootEmpty) {
+                       bool NeedCheckOutRootEmpty, bool EnableCodePin) {
   SmallString<256> OutRoot;
   if (fs::current_path(OutRoot) != std::error_code()) {
     llvm::errs() << "Could not get current path.\n";
     return false;
   }
-  OutRoot.append("/dpct_output");
+
+  if (EnableCodePin)
+    OutRoot.append("/dpct_output_codepin_sycl");
+  else
+    OutRoot.append("/dpct_output");
   DefaultOutRoot.setPath(OutRoot.str().str());
   if (fs::is_directory(OutRoot) && isOutRootAccess(OutRoot)) {
     if (NeedCheckOutRootEmpty) {

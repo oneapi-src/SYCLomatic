@@ -346,7 +346,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatmulHeuristicResult_t", "CUjit_target",
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
-              "CUstreamCallback"))))))
+              "CUstreamCallback", "cudaHostFn_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -3557,8 +3557,6 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
   if(DpctGlobalInfo::getEnablepProfilingFlag()) {
     // Option '--enable-profiling' is enabled
     auto StmtStrArg0 = getStmtSpelling(TimeElapsedCE->getArg(0));
-    auto StmtStrArg1 = getStmtSpelling(TimeElapsedCE->getArg(1));
-    auto StmtStrArg2 = getStmtSpelling(TimeElapsedCE->getArg(2));
 
     std::ostringstream Repl;
     std::string Assginee = "*(" + StmtStrArg0 + ")";
@@ -3567,10 +3565,27 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
         Assginee = getStmtSpelling(UO->getSubExpr());
     }
 
-    auto StartTimeStr = StmtStrArg1 + "->get_profiling_info<"
-                            "sycl::info::event_profiling::command_start>()";
-    auto StopTimeStr =  StmtStrArg2 + "->get_profiling_info<"
-                            "sycl::info::event_profiling::command_end>()";
+    const auto *StartArg = TimeElapsedCE->getArg(1)->IgnoreImpCasts();
+    const auto *EndArg = TimeElapsedCE->getArg(2)->IgnoreImpCasts();
+
+    ExprAnalysis EAForStartArg(StartArg);
+    ExprAnalysis EAForEndArg(EndArg);
+
+    auto StartArgRepl = EAForStartArg.getReplacedString();
+    auto EndArgRepl = EAForEndArg.getReplacedString();
+
+    if (isa<CStyleCastExpr>(StartArg) || isa<CXXReinterpretCastExpr>(StartArg))
+      StartArgRepl = "(" + StartArgRepl + ")";
+
+    if (isa<CStyleCastExpr>(EndArg) || isa<CXXReinterpretCastExpr>(EndArg))
+      EndArgRepl = "(" + EndArgRepl + ")";
+
+    auto StartTimeStr = StartArgRepl +
+                        "->get_profiling_info<"
+                        "sycl::info::event_profiling::command_start>()";
+    auto StopTimeStr = EndArgRepl +
+                       "->get_profiling_info<"
+                       "sycl::info::event_profiling::command_end>()";
 
     Repl << Assginee << " = ("
         << StopTimeStr << " - " << StartTimeStr << ") / 1000000.0f";
@@ -4178,7 +4193,7 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
         "cudaStreamIsCapturing", "cudaStreamQuery", "cudaStreamWaitEvent",
         "cudaStreamAddCallback", "cuStreamCreate", "cuStreamSynchronize",
         "cuStreamWaitEvent", "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
-        "cuStreamAddCallback", "cuStreamQuery");
+        "cuStreamAddCallback", "cuStreamQuery", "cuStreamGetCtx");
   };
 
   MF.addMatcher(
@@ -4367,11 +4382,12 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         StreamName = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
         ReplStr = StreamName + "ext_oneapi_empty()";
       } else {
-        StreamName = getStmtSpelling(StreamArg);
+        ExprAnalysis EA(StreamArg);
+        ReplStr = EA.getReplacedString();
         if (needExtraParensInMemberExpr(StreamArg)) {
-          StreamName = "(" + StreamName + ")";
+          ReplStr = "(" + ReplStr + ")";
         }
-        ReplStr = StreamName + "->" + "ext_oneapi_empty()";
+        ReplStr = ReplStr + "->" + "ext_oneapi_empty()";
       }
       if (IsAssigned) {
         ReplStr = MapNames::getCheckErrorMacroName() + "((" + ReplStr + "))";
@@ -4414,7 +4430,12 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
 
         StmtStr0 = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
       } else {
-        StmtStr0 = getStmtSpelling(CE->getArg(0)) + "->";
+        ExprAnalysis StreamArgEA(StreamArg);
+        StmtStr0 = StreamArgEA.getReplacedString();
+        if (needExtraParensInMemberExpr(StreamArg)) {
+          StmtStr0 = "(" + StmtStr0 + ")";
+        }
+        StmtStr0 += "->";
       }
       ReplStr = StmtStr0 + "ext_oneapi_submit_barrier({" +
                 StmtStr1 + "})";
@@ -4622,7 +4643,8 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 
   auto launchAPIName = [&]() {
-    return hasAnyName("cudaLaunchKernel", "cudaLaunchCooperativeKernel");
+    return hasAnyName("cudaLaunchKernel", "cudaLaunchCooperativeKernel",
+                      "cudaLaunchHostFunc");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(launchAPIName())), parentStmt()))
@@ -4837,56 +4859,89 @@ void KernelCallRule::runRule(
       LaunchKernelCall = getNodeAsType<CallExpr>(Result, "launchUsed");
       IsAssigned = true;
     }
-    if (!LaunchKernelCall)
+    auto FD = LaunchKernelCall->getDirectCallee();
+    if (!LaunchKernelCall || !FD)
       return;
-    const Expr *CalleeDRE = LaunchKernelCall->getArg(0);
-    bool IsFuncTypeErased = true;
-    auto QT = CalleeDRE->getType();
-
-    if (QT->isPointerType()) {
-      QT = QT->getPointeeType();
-    }
-    if (QT->isFunctionType()) {
-      IsFuncTypeErased = false;
-    }
-
-    if (!getAddressedRef(CalleeDRE)) {
-      if (IsFuncTypeErased) {
-        DpctGlobalInfo::setCVersionCUDALaunchUsed();
+    std::string FuncName = FD->getNameAsString();
+    std::cout << FuncName << std::endl;
+    if (FuncName == "cudaLaunchHostFunc") {
+      if (DpctGlobalInfo::getUsmLevel() != UsmLevel::UL_Restricted) {
+        report(LaunchKernelCall->getBeginLoc(), Diagnostics::API_NOT_MIGRATED,
+               false, "cudaLaunchHostFunc");
+        return;
       }
       std::string ReplStr;
       llvm::raw_string_ostream OS(ReplStr);
+      std::string IndentStr = getIndent(LaunchKernelCall->getBeginLoc(),
+                                        DpctGlobalInfo::getSourceManager())
+                                  .str();
       if (IsAssigned) {
         OS << MapNames::getCheckErrorMacroName() << "(";
       }
-      OS << MapNames::getDpctNamespace() << "kernel_launcher::launch(";
-      size_t ArgsNum = LaunchKernelCall->getNumArgs();
-      for (size_t i = 0; i < ArgsNum; i++) {
-        if (auto Arg = LaunchKernelCall->getArg(i)) {
-          if (i == 0) {
-            if (auto E = getAddressedRef(CalleeDRE, false, nullptr)) {
-              OS << ExprAnalysis::ref(E);
-            } else {
-              OS << ExprAnalysis::ref(Arg);
-            }
-          } else {
-            OS << ", " << ExprAnalysis::ref(Arg);
-          }
-        }
-      }
-      OS << ")";
+      OS << ExprAnalysis::ref(LaunchKernelCall->getArg(0))
+         << "->submit([&](sycl::handler &cgh) {" << getNL() << IndentStr
+         << "  cgh.host_task([=](){" << getNL() << IndentStr << "    "
+         << ExprAnalysis::ref(LaunchKernelCall->getArg(1)) << "("
+         << ExprAnalysis::ref(LaunchKernelCall->getArg(2)) << ");" << getNL()
+         << IndentStr << "  });" << getNL() << IndentStr << "})";
       if (IsAssigned) {
         OS << ")";
       }
-      emplaceTransformation(new ReplaceStmt(LaunchKernelCall, OS.str()));
+      auto Repl = new ReplaceStmt(LaunchKernelCall, OS.str());
+      Repl->setBlockLevelFormatFlag();
+      emplaceTransformation(Repl);
       return;
-    }
+    } else {
+      const Expr *CalleeDRE = LaunchKernelCall->getArg(0);
+      bool IsFuncTypeErased = true;
+      auto QT = CalleeDRE->getType();
 
-    if (!IsAssigned)
-      findAndRemoveTrailingSemicolon(LaunchKernelCall, Result);
-    if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall,
-                                                            IsAssigned)) {
-      emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true, false, ""));
+      if (QT->isPointerType()) {
+        QT = QT->getPointeeType();
+      }
+      if (QT->isFunctionType()) {
+        IsFuncTypeErased = false;
+      }
+
+      if (!getAddressedRef(CalleeDRE)) {
+        if (IsFuncTypeErased) {
+          DpctGlobalInfo::setCVersionCUDALaunchUsed();
+        }
+        std::string ReplStr;
+        llvm::raw_string_ostream OS(ReplStr);
+        if (IsAssigned) {
+          OS << MapNames::getCheckErrorMacroName() << "(";
+        }
+        OS << MapNames::getDpctNamespace() << "kernel_launcher::launch(";
+        size_t ArgsNum = LaunchKernelCall->getNumArgs();
+        for (size_t i = 0; i < ArgsNum; i++) {
+          if (auto Arg = LaunchKernelCall->getArg(i)) {
+            if (i == 0) {
+              if (auto E = getAddressedRef(CalleeDRE, false, nullptr)) {
+                OS << ExprAnalysis::ref(E);
+              } else {
+                OS << ExprAnalysis::ref(Arg);
+              }
+            } else {
+              OS << ", " << ExprAnalysis::ref(Arg);
+            }
+          }
+        }
+        OS << ")";
+        if (IsAssigned) {
+          OS << ")";
+        }
+        emplaceTransformation(new ReplaceStmt(LaunchKernelCall, OS.str()));
+        return;
+      }
+
+      if (!IsAssigned)
+        findAndRemoveTrailingSemicolon(LaunchKernelCall, Result);
+      if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall,
+                                                              IsAssigned)) {
+        emplaceTransformation(
+            new ReplaceStmt(LaunchKernelCall, true, false, ""));
+      }
     }
   }
 }
@@ -7904,7 +7959,6 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
       return;
   }
 
-  recordRecognizedAPI(CE);
   auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
   Namespace = getNameSpace(NSD);
   APIName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
@@ -7914,6 +7968,7 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
     APIName = Namespace + "::" + APIName;
   SrcAPIStaticsMap[getFunctionSignature(CE->getCalleeDecl()->getAsFunction(),
                                         "")]++;
+  recordRecognizedAPI(CE, APIName, MigrationStatistics::IsMigrated(APIName));
 
   if (!MigrationStatistics::IsMigrated(APIName)) {
     const SourceManager &SM = DpctGlobalInfo::getSourceManager();
@@ -7998,12 +8053,13 @@ void RecognizeTypeRule::runRule(
         PointeeTy + " *");
       return;
     }
+    recordRecognizedType(*TL, TypeName, false);
     report(TL->getBeginLoc(), Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
       TypeName);
     return;
   }
   if (const TypeLoc *TL = getNodeAsType<TypeLoc>(Result, "alltypeloc")) {
-    recordRecognizedType(*TL);
+    recordRecognizedType(*TL, "", true);
   }
 }
 
@@ -8055,7 +8111,8 @@ void VirtualMemRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto virtualmemoryAPI = [&]() {
     return hasAnyName("cuMemCreate", "cuMemAddressReserve", "cuMemMap",
                       "cuMemUnmap", "cuMemAddressFree", "cuMemRelease",
-                      "cuMemSetAccess", "cuMemGetAllocationGranularity");
+                      "cuMemSetAccess", "cuMemGetAllocationGranularity",
+                      "cuMemGetAllocationPropertiesFromHandle");
   };
   auto virtualmemoryType = [&]() {
     return hasAnyName("CUmemAllocationProp", "CUmemGenericAllocationHandle",
@@ -8198,10 +8255,11 @@ void DriverModuleAPIRule::runRule(
 void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   auto DriverDeviceAPI = [&]() {
-    return hasAnyName(
-        "cuDeviceGet", "cuDeviceComputeCapability", "cuDriverGetVersion",
-        "cuDeviceGetCount", "cuDeviceGetAttribute", "cuDeviceGetName",
-        "cuDeviceGetUuid", "cuDeviceGetUuid_v2", "cuGetErrorString");
+    return hasAnyName("cuDeviceGet", "cuDeviceComputeCapability",
+                      "cuDriverGetVersion", "cuDeviceGetCount",
+                      "cuDeviceGetAttribute", "cuDeviceGetName",
+                      "cuDeviceGetUuid", "cuDeviceGetUuid_v2",
+                      "cuGetErrorString", "cuGetErrorName");
   };
 
   MF.addMatcher(

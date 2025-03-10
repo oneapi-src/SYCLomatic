@@ -3047,8 +3047,10 @@ MemVarInfo::MemVarInfo(unsigned Offset,
   }
   if (Var->hasInit())
     setInitList(Var->getInit(), Var);
-  if (Var->getStorageClass() == SC_Static || getScope() == Global) {
+  if (Var->getStorageClass() == SC_Static) {
     IsStatic = true;
+  } else if (getScope() == Global) {
+    IsInline = true;
   }
 
   if (auto Func = Var->getParentFunctionOrMethod()) {
@@ -3204,8 +3206,8 @@ std::string MemVarInfo::getInitStmt(StringRef QueueString) {
   return buildString(getConstVarName(), ".init(", QueueString, ");");
 }
 std::string MemVarInfo::getMemoryDecl(const std::string &MemSize) {
-  return buildString(isStatic() ? "static " : "", getMemoryType(), " ",
-                     getConstVarName(),
+  return buildString(isStatic() ? "static " : "", isInline() ? "inline " : "",
+                     getMemoryType(), " ", getConstVarName(),
                      PointerAsArray ? "" : getInitArguments(MemSize), ";");
 }
 std::string MemVarInfo::getMemoryDecl() {
@@ -3812,6 +3814,7 @@ void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
     OS << '(' << LocalSize << ".size() * sizeof("
        << ValueType->getSourceString() << ')' << ')';
     break;
+  case BlockShuffle:
   case BlockRadixSort:
     OS << MapNames::getClNamespace() << "local_accessor<uint8_t, 1> " << Name
        << "_acc(";
@@ -3831,6 +3834,7 @@ ParameterStream &TempStorageVarInfo::getFuncDecl(ParameterStream &PS) {
   case BlockReduce:
     PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> ";
     break;
+  case BlockShuffle:
   case BlockRadixSort:
     PS << "uint8_t *";
     break;
@@ -4423,7 +4427,7 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     } else {
       // if some params have default value, set ExtraArgLoc to the location
       // before the comma
-      if (CE->getNumArgs() > Info->NonDefaultParamNum - 1) {
+      if (CE->getNumArgs() > Info->NonDefaultParamNum - 1 + HasImplicitArg) {
         auto &SM = DpctGlobalInfo::getSourceManager();
         auto CERange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
         auto TempLoc = Lexer::getLocForEndOfToken(
@@ -5773,7 +5777,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
             RequiredSubGroupSize.isEvaluated = false;
             RequiredSubGroupSize.SizeStr = std::get<4>(Element);
             ExecutionConfig.SubGroupSize =
-                " [[intel::reqd_sub_group_size(dpct_placeholder)]]";
+                " [[sycl::reqd_sub_group_size(dpct_placeholder)]]";
             SubGroupSizeWarning =
                 DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
                     Diagnostics::SUBGROUP_SIZE_NOT_EVALUATED,
@@ -5781,7 +5785,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
           } else {
             RequiredSubGroupSize.Size = Size;
             ExecutionConfig.SubGroupSize =
-                " [[intel::reqd_sub_group_size(" + std::to_string(Size) + ")]]";
+                " [[sycl::reqd_sub_group_size(" + std::to_string(Size) + ")]]";
           }
         } else {
           bool isNeedEmitWarning = true;
@@ -6663,8 +6667,19 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
       Printer.line("cgh.depends_on(dpct::get_current_device().get_in_order_"
                    "queues_last_events());");
     } else {
+      Printer.line("#ifdef __INTEL_LLVM_COMPILER");
+      Printer.newLine();
       Printer.line("cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_"
                    "last_event());");
+      Printer.newLine();
+      Printer.line("#else");
+      Printer.newLine();
+      Printer.line("auto e_opt = dpct::get_default_queue().ext_oneapi_get_last_"
+                   "event();");
+      Printer.newLine();
+      Printer.line("if (e_opt) cgh.depends_on(*e_opt);");
+      Printer.newLine();
+      Printer.line("#endif");
     }
     Printer.newLine();
   }

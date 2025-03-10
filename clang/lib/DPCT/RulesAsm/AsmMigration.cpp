@@ -588,10 +588,12 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVarDecl *D) {
 }
 
 bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
-  // Address expression only support ld/st & atom instructions.
-  if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom,
-                                 asmtok::op_prefetch))
+  // Address expression only support ld/st/red & atom instructions.
+  if (!CurrInst ||
+      !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom,
+                    asmtok::op_prefetch, asmtok::op_red, asmtok::op_cp)) {
     return SYCLGenError();
+  }
   std::string Type;
   if (tryEmitType(Type, CurrInst->getType(0)))
     return SYCLGenError();
@@ -607,7 +609,7 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     return false;
   };
 
-  if (CurrInst->is(asmtok::op_st, asmtok::op_ld))
+  if (CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_red))
     OS() << "*";
   switch (Dst->getMemoryOpKind()) {
   case InlineAsmAddressExpr::Imm:
@@ -618,7 +620,9 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     std::string Reg;
     if (tryEmitStmt(Reg, Dst->getSymbol()))
       return SYCLGenSuccess();
-    if (CurrInst->is(asmtok::op_prefetch) || CanSuppressCast(Dst->getSymbol()))
+
+    if (CurrInst->is(asmtok::op_prefetch, asmtok::op_red) ||
+        CanSuppressCast(Dst->getSymbol()))
       OS() << llvm::formatv("{0}", Reg);
     else
       OS() << llvm::formatv("(({0} *)(uintptr_t){1})", Type, Reg);
@@ -2173,8 +2177,8 @@ protected:
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
     OS() << " = ";
-    OS() << MapNames::getDpctNamespace() << "bfe_safe<" << TypeStr << ">(" << Op[0]
-         << ", " << Op[1] << ", " << Op[2] << ')';
+    OS() << MapNames::getDpctNamespace() << "bfe_safe<" << TypeStr << ">("
+         << Op[0] << ", " << Op[1] << ", " << Op[2] << ')';
     endstmt();
     insertHeader(HeaderType::HT_DPCT_Math);
     return SYCLGenSuccess();
@@ -2376,8 +2380,8 @@ protected:
     if (DpctGlobalInfo::useIntelDeviceMath() && !RD.empty()) {
       insertHeader(HeaderType::HT_SYCL_Math);
       OS() << MapNames::getClNamespace() << "ext::intel::math::"
-           << (T->getKind() == InlineAsmBuiltinType::f32 ? 'f' : 'd')
-           << "rcp_" << RD << '(' << Op[0] << ')';
+           << (T->getKind() == InlineAsmBuiltinType::f32 ? 'f' : 'd') << "rcp_"
+           << RD << '(' << Op[0] << ')';
     } else {
       OS() << "1 / " << Op[0];
     }
@@ -2712,6 +2716,131 @@ protected:
     insertHeader(HeaderType::HT_DPCT_Atomic);
     return SYCLGenSuccess();
   }
+
+  bool handle_red(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+
+    const auto *Src = Inst->getInputOperand(0);
+    const auto *Dst =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getOutputOperand());
+    if (!Dst)
+      return false;
+
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    if (!Type ||
+        (Type->getKind() != InlineAsmBuiltinType::s32 &&
+         Type->getKind() != InlineAsmBuiltinType::b32 &&
+         Type->getKind() != InlineAsmBuiltinType::u32 &&
+         Type->getKind() != InlineAsmBuiltinType::f32) ||
+        !Inst->hasAttr(InstAttr::gpu))
+      return SYCLGenError();
+
+    if (emitStmt(Dst))
+      return SYCLGenError();
+
+    std::string a;
+    if (tryEmitStmt(a, Dst))
+      return SYCLGenError();
+    std::string b;
+    if (tryEmitStmt(b, Src))
+      return SYCLGenError();
+
+    OS() << " = ";
+    OS() << MapNames::getClNamespace() + "reduce_over_group(";
+    OS() << DpctGlobalInfo::getItem(GAS) << ".get_group(), " << b << ",";
+
+    if (Inst->hasAttr(InstAttr::add))
+      OS() << MapNames::getClNamespace() + "plus<>()";
+    else if (Inst->hasAttr(InstAttr::op_or))
+      OS() << MapNames::getClNamespace() + "bit_or<>()";
+    else if (Inst->hasAttr(InstAttr::op_xor))
+      OS() << MapNames::getClNamespace() + "bit_xor<>()";
+    else if (Inst->hasAttr(InstAttr::op_and))
+      OS() << MapNames::getClNamespace() + "bit_and<>()";
+    else if (Inst->hasAttr(InstAttr::min))
+      OS() << MapNames::getClNamespace() + "minimum<>()";
+    else if (Inst->hasAttr(InstAttr::max))
+      OS() << MapNames::getClNamespace() + "maximum<>()";
+    else
+      return SYCLGenError();
+
+    OS() << ")";
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool HandleCopyOperation(const InlineAsmInstruction *Inst) {
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+
+    std::string Op[3];
+    for (int i = 0; i < 3; ++i)
+      if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
+        return SYCLGenError();
+
+    auto CommonIfStat = [&](std::string Val) {
+      indent();
+      return "if (" + Op[1] + " > " + Val + ")\n";
+    };
+
+    auto CommonBody = [&](std::string Val) {
+      incIndent();
+      indent();
+      decIndent();
+      return "*(" + Op[2] + " + " + Val + ") = *(" + Op[0] + " + " + Val + ")";
+    };
+
+    OS() << "*(" << Op[2] << ") = *(" << Op[0] << ");\n";
+
+    OS() << CommonIfStat("4");
+    OS() << CommonBody("1") << ";\n";
+
+    OS() << CommonIfStat("8");
+    OS() << CommonBody("2") << ";\n";
+
+    OS() << CommonIfStat("12");
+    OS() << CommonBody("3");
+    endstmt();
+
+    auto OpStr =
+        llvm::Twine(Inst->getOpcodeID()->getName()).concat(".async").str();
+    report(Diagnostics::ASYNC_COPY_DEVICE_WARN, true, OpStr);
+    return SYCLGenSuccess();
+  }
+
+  bool HandleCopyWait(const InlineAsmInstruction *Inst) {
+    auto CommonStr = llvm::Twine("")
+                         .concat("\"")
+                         .concat(GAS->getAsmString()->getString())
+                         .concat("\"")
+                         .str();
+
+    report(
+        Diagnostics::FUNC_CALL_REMOVED, true, CommonStr,
+        "current \"cp.async\" is migrated to synchronous copy operation. You "
+        "may need to adjust the code to tune the performance.");
+    return SYCLGenSuccess();
+  }
+
+  bool handle_cp(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() == 3 && Inst->getNumTypes() == 1 &&
+        Inst->hasAttr(InstAttr::async))
+      return HandleCopyOperation(Inst);
+
+    if (Inst->getNumInputOperands() == 1 && Inst->hasAttr(InstAttr::async) &&
+        (Inst->hasAttr(InstAttr::commit_group) ||
+         Inst->hasAttr(InstAttr::wait_group) ||
+         Inst->hasAttr(InstAttr::wait_all))) {
+      return HandleCopyWait(Inst);
+    }
+
+    return SYCLGenError();
+  }
 };
 
 /// Clean the special character in identifier.
@@ -2928,7 +3057,6 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
     Parser.addInlineAsmOperands(GAS->getInputExpr(I),
                                 getReplaceString(GAS->getInputExpr(I)),
                                 GAS->getInputConstraint(I));
-
   do {
     auto Inst = Parser.ParseStatement();
     if (Inst.isInvalid()) {

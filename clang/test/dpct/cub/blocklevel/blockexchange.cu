@@ -84,6 +84,34 @@ __global__ void ScatterToStripedKernel(int *d_data, int *d_rank) {
   cub::StoreDirectStriped<128>(threadIdx.x, d_data, thread_data);
 }
 
+__global__ void BlockedToWarpStripedKernel(int *d_data) {
+  // CHECK: typedef dpct::group::exchange<int, 4> BlockExchange;
+  // CHECK: int thread_data[4];
+  // CHECK: dpct::group::load_direct_blocked(item_ct1, d_data, thread_data);
+  // CHECK: BlockExchange(temp_storage).blocked_to_sub_group_striped(item_ct1, thread_data, thread_data);
+  // CHECK: dpct::group::store_direct_blocked(item_ct1, d_data, thread_data);
+  typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+  __shared__ typename BlockExchange::TempStorage temp_storage;
+  int thread_data[4];
+  cub::LoadDirectBlocked(threadIdx.x, d_data, thread_data);
+  BlockExchange(temp_storage).BlockedToWarpStriped(thread_data, thread_data);
+  cub::StoreDirectBlocked(threadIdx.x, d_data, thread_data);
+}
+
+__global__ void WarpStripedToBlockedKernel(int *d_data) {
+  // CHECK: typedef dpct::group::exchange<int, 4> BlockExchange;
+  // CHECK: int thread_data[4];
+  // CHECK: dpct::group::load_direct_blocked(item_ct1, d_data, thread_data);
+  // CHECK: BlockExchange(temp_storage).sub_group_striped_to_blocked(item_ct1, thread_data, thread_data);
+  // CHECK: dpct::group::store_direct_blocked(item_ct1, d_data, thread_data);
+  typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+  __shared__ typename BlockExchange::TempStorage temp_storage;
+  int thread_data[4];
+  cub::LoadDirectBlocked(threadIdx.x, d_data, thread_data);
+  BlockExchange(temp_storage).WarpStripedToBlocked(thread_data, thread_data);
+  cub::StoreDirectBlocked(threadIdx.x, d_data, thread_data);
+}
+
 bool test_striped_to_blocked() {
   int *d_data;
   cudaMallocManaged(&d_data, sizeof(int) * 512);
@@ -257,7 +285,96 @@ bool test_scatter_to_striped() {
   return true;
 }
 
+bool test_blocked_to_warp_striped() {
+  int *d_data, expected[512];
+  cudaMallocManaged(&d_data, sizeof(int) * 512);
+  for (int i = 0; i < 512; ++i)
+    d_data[i] = i;
+
+
+  // CHECK:  q_ct1.submit(
+  // CHECK-NEXT:    [&](sycl::handler &cgh) {
+  // CHECK-NEXT:      sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::exchange<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:      cgh.parallel_for(
+  // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)), 
+  // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:          BlockedToWarpStripedKernel(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:        });
+  // CHECK-NEXT:    });
+  BlockedToWarpStripedKernel<<<1, 128>>>(d_data);
+  cudaDeviceSynchronize();
+  size_t warp_id = 0, warp_offset = 0, lane_id = 0;
+  for (int i = 0; i < 128; i++) {
+    warp_id = i / 32;
+    lane_id = i % 32;
+    warp_offset = warp_id * 32 * 4;
+    expected[4 * i + 0] = warp_offset + lane_id + 0 * 32;
+    expected[4 * i + 1] = warp_offset + lane_id + 1 * 32;
+    expected[4 * i + 2] = warp_offset + lane_id + 2 * 32;
+    expected[4 * i + 3] = warp_offset + lane_id + 3 * 32;
+  }
+
+  for (int i = 0; i < 512; ++i) {
+    if (expected[i] != d_data[i]) {
+      std::cout << "test_blocked_to_warp_striped failed\n";
+      std::ostream_iterator<int> Iter(std::cout, ", ");
+      std::copy(d_data, d_data + 512, Iter);
+      std::cout << std::endl;
+      std::copy(expected, expected + 512, Iter);
+      std::cout << std::endl;
+      return false;
+    }
+  }
+  std::cout << "test_blocked_to_warp_striped pass\n";
+  return true;
+}
+
+bool test_warp_striped_to_blocked() {
+  int *d_data, expected[512];
+  cudaMallocManaged(&d_data, sizeof(int) * 512);
+  size_t warp_id = 0, warp_offset = 0, lane_id = 0;
+  for (int i = 0; i < 128; i++) {
+    warp_id = i / 32;
+    lane_id = i % 32;
+    warp_offset = warp_id * 32 * 4;
+    d_data[4 * i + 0] = warp_offset + lane_id + 0 * 32;
+    d_data[4 * i + 1] = warp_offset + lane_id + 1 * 32;
+    d_data[4 * i + 2] = warp_offset + lane_id + 2 * 32;
+    d_data[4 * i + 3] = warp_offset + lane_id + 3 * 32;
+  }
+  // CHECK: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::exchange<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)), 
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:         WarpStripedToBlockedKernel(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  WarpStripedToBlockedKernel<<<1, 128>>>(d_data);
+  cudaDeviceSynchronize();
+
+  for (int i = 0; i < 512; i++) {
+    expected[i] = i;
+  }
+
+  for (int i = 0; i < 512; ++i) {
+    if (expected[i] != d_data[i]) {
+      std::cout << "test_warp_striped_to_blocked failed\n";
+      std::ostream_iterator<int> Iter(std::cout, ", ");
+      std::copy(d_data, d_data + 512, Iter);
+      std::cout << std::endl;
+      return false;
+    }
+  }
+  std::cout << "test_warp_striped_to_blocked pass\n";
+  return true;
+}
+
 int main() {
   return !(test_blocked_to_striped() && test_striped_to_blocked() &&
-           test_scatter_to_blocked() && test_scatter_to_striped());
+           test_scatter_to_blocked() && test_scatter_to_striped() &&
+           test_blocked_to_warp_striped() && test_warp_striped_to_blocked());
 }

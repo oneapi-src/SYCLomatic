@@ -193,6 +193,23 @@ void GraphicsInteropRule::runRule(
       return;
     }
 
+#ifdef __WIN32
+    if (Name == "cudaImportExternalMemory") {
+      if (auto ICE = dyn_cast<ImplicitCastExpr>(CE->getArg(1))) {
+        if (auto UO = dyn_cast<UnaryOperator>(ICE->getSubExpr())) {
+          if (UO->getOpcode() == UO_AddrOf) {
+            if (auto MemHandleDescDRE =
+                    dyn_cast<DeclRefExpr>(UO->getSubExpr())) {
+              report(CE->getBeginLoc(),
+                     Diagnostics::UNSUPPORTED_EXTMEM_WIN_HANDLE, false,
+                     MemHandleDescDRE->getDecl()->getNameAsString());
+            }
+          }
+        }
+      }
+    }
+#endif // __WIN32
+
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();

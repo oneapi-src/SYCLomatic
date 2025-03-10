@@ -1332,7 +1332,7 @@ __reduce_xor_sync,YES,
 __activemask,YES,:ref:`DPCT1086`
 __match_any_sync,YES,
 __match_all_sync,YES,
-cuGetErrorName,NO,
+cuGetErrorName,YES,
 cuGetErrorString,YES,
 cuInit,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuDriverGetVersion,YES,:ref:`DPCT1043`
@@ -1497,7 +1497,7 @@ cuMemCreate,YES,
 cuMemExportToShareableHandle,NO,
 cuMemGetAccess,NO,
 cuMemGetAllocationGranularity,YES,
-cuMemGetAllocationPropertiesFromHandle,NO,
+cuMemGetAllocationPropertiesFromHandle,YES,
 cuMemImportFromShareableHandle,NO,
 cuMemMap,YES,
 cuMemMapArrayAsync,NO,
@@ -1547,7 +1547,7 @@ cuStreamEndCapture,NO,
 cuStreamGetAttribute,NO,
 cuStreamGetCaptureInfo,NO,
 cuStreamGetCaptureInfo_v3,NO,
-cuStreamGetCtx,NO,
+cuStreamGetCtx,YES,
 cuStreamGetCtx_v2,NO,
 cuStreamGetFlags,NO,
 cuStreamGetId,NO,
@@ -1744,13 +1744,13 @@ cuCtxDisablePeerAccess,NO,
 cuCtxEnablePeerAccess,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuDeviceCanAccessPeer,YES,:ref:`DPCT1031`
 cuDeviceGetP2PAttribute,NO,
-cuGraphicsMapResources,NO,
+cuGraphicsMapResources,YES,:ref:`DPCT1119`
 cuGraphicsResourceGetMappedMipmappedArray,NO,
-cuGraphicsResourceGetMappedPointer,NO,
+cuGraphicsResourceGetMappedPointer,YES,:ref:`DPCT1119`
 cuGraphicsResourceSetMapFlags,NO,
 cuGraphicsSubResourceGetMappedArray,NO,
-cuGraphicsUnmapResources,NO,
-cuGraphicsUnregisterResource,NO,
+cuGraphicsUnmapResources,YES,:ref:`DPCT1119`
+cuGraphicsUnregisterResource,YES,:ref:`DPCT1119`
 cuGetProcAddress,NO,
 cuCoredumpGetAttribute,NO,
 cuCoredumpGetAttributeGlobal,NO,

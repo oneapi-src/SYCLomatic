@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the oneapi::mkl::lapack::getrf is different from the cusolverDnSgetrf. You may need to check the migrated code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::getrf(**cusolverH, m, n, A_f_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_f_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the oneapi::mkl::lapack::getrf is different from the cusolverDnSgetrf. You may need to check the migrated code.
     //CHECK-NEXT: */
     //CHECK-NEXT: oneapi::mkl::lapack::getrf(**cusolverH, m, n, A_f_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_f_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnSgetrf(*cusolverH, m, n, &A_f, lda, &workspace_f, &devIpiv, &devInfo);
     cusolverDnSgetrf(*cusolverH, m, n, &A_f, lda, &workspace_f, &devIpiv, &devInfo);
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the oneapi::mkl::lapack::getrf is different from the cusolverDnDgetrf. You may need to check the migrated code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::getrf(**cusolverH, m, n, A_d_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_d_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the oneapi::mkl::lapack::getrf is different from the cusolverDnDgetrf. You may need to check the migrated code.
     //CHECK-NEXT: */
     //CHECK-NEXT: oneapi::mkl::lapack::getrf(**cusolverH, m, n, A_d_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_d_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnDgetrf(*cusolverH, m, n, &A_d, lda, &workspace_d, &devIpiv, &devInfo);
     cusolverDnDgetrf(*cusolverH, m, n, &A_d, lda, &workspace_d, &devIpiv, &devInfo);
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the oneapi::mkl::lapack::getrf is different from the cusolverDnCgetrf. You may need to check the migrated code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::getrf(**cusolverH, m, n, A_c_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_c_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the oneapi::mkl::lapack::getrf is different from the cusolverDnCgetrf. You may need to check the migrated code.
     //CHECK-NEXT: */
     //CHECK-NEXT: oneapi::mkl::lapack::getrf(**cusolverH, m, n, A_c_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_c_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnCgetrf(*cusolverH, m, n, &A_c, lda, &workspace_c, &devIpiv, &devInfo);
     cusolverDnCgetrf(*cusolverH, m, n, &A_c, lda, &workspace_c, &devIpiv, &devInfo);
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the oneapi::mkl::lapack::getrf is different from the cusolverDnZgetrf. You may need to check the migrated code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::getrf(**cusolverH, m, n, A_z_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_z_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of &devIpiv in the oneapi::mkl::lapack::getrf is different from the cusolverDnZgetrf. You may need to check the migrated code.
     //CHECK-NEXT: */
     //CHECK-NEXT: oneapi::mkl::lapack::getrf(**cusolverH, m, n, A_z_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, workspace_z_buf_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnZgetrf(*cusolverH, m, n, &A_z, lda, &workspace_z, &devIpiv, &devInfo);
     cusolverDnZgetrf(*cusolverH, m, n, &A_z, lda, &workspace_z, &devIpiv, &devInfo);
@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<float>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<float, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_f_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_f_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<float>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<float, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_f_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_f_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnSgetrs(*cusolverH, trans, n, nrhs, &A_f, lda, &devIpiv, &B_f, ldb, &devInfo);
     cusolverDnSgetrs(*cusolverH, trans, n, nrhs, &A_f, lda, &devIpiv, &B_f, ldb, &devInfo);
@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<double>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<double, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_d_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_d_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<double>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<double, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_d_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_d_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnDgetrs(*cusolverH, trans, n, nrhs, &A_d, lda, &devIpiv, &B_d, ldb, &devInfo);
     cusolverDnDgetrs(*cusolverH, trans, n, nrhs, &A_d, lda, &devIpiv, &B_d, ldb, &devInfo);
@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<std::complex<float>>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<float>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_c_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_c_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<std::complex<float>>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<float>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_c_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_c_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnCgetrs(*cusolverH, trans, n, nrhs, &A_c, lda, &devIpiv, &B_c, ldb, &devInfo);
     cusolverDnCgetrs(*cusolverH, trans, n, nrhs, &A_c, lda, &devIpiv, &B_c, ldb, &devInfo);
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<std::complex<double>>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<double>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_z_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_z_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -405,7 +405,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<std::complex<double>>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<double>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_z_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_z_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer6.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnZgetrs(*cusolverH, trans, n, nrhs, &A_z, lda, &devIpiv, &B_z, ldb, &devInfo);
     cusolverDnZgetrs(*cusolverH, trans, n, nrhs, &A_z, lda, &devIpiv, &B_z, ldb, &devInfo);
@@ -661,7 +661,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
     //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_f_buf_ct{{[0-9]+}}, Lwork));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer5.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -669,7 +669,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
     //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_f_buf_ct{{[0-9]+}}, Lwork);
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer5.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnSsytrf_bufferSize(*cusolverH, n, &A_f, lda, &Lwork);
     cusolverDnSsytrf_bufferSize(*cusolverH, n, &A_f, lda, &Lwork);
@@ -690,7 +690,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
     //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_d_buf_ct{{[0-9]+}}, Lwork));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer5.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -698,7 +698,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
     //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_d_buf_ct{{[0-9]+}}, Lwork);
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer5.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnDsytrf_bufferSize(*cusolverH, n, &A_d, lda, &Lwork);
     cusolverDnDsytrf_bufferSize(*cusolverH, n, &A_d, lda, &Lwork);
@@ -719,7 +719,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
     //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_c_buf_ct{{[0-9]+}}, Lwork));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer5.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -727,7 +727,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
     //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_c_buf_ct{{[0-9]+}}, Lwork);
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer5.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnCsytrf_bufferSize(*cusolverH, n, &A_c, lda, &Lwork);
     cusolverDnCsytrf_bufferSize(*cusolverH, n, &A_c, lda, &Lwork);
@@ -748,7 +748,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
     //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_z_buf_ct{{[0-9]+}}, Lwork));
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer5.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -756,7 +756,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
     //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_z_buf_ct{{[0-9]+}}, Lwork);
-    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
+    //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_host_access(sycl::write_only)[0] = (int)result_temp_buffer5.get_host_access(sycl::read_only)[0];
     //CHECK-NEXT: }
     status = cusolverDnZsytrf_bufferSize(*cusolverH, n, &A_z, lda, &Lwork);
     cusolverDnZsytrf_bufferSize(*cusolverH, n, &A_z, lda, &Lwork);

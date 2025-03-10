@@ -72,7 +72,7 @@ int main() {
 
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:           sycl::nd_range<1>(sycl::range<1>(2) * sycl::range<1>(128), sycl::range<1>(128)),
-//CHECK-NEXT:           [=](sycl::nd_item<1> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:           [=](sycl::nd_item<1> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:             TemplateKernel1(dev_data, item_ct1);
 //CHECK-NEXT:           });
   TemplateKernel1<<<2, 128>>>(dev_data);

@@ -146,6 +146,8 @@ void collectBuildScripts(const clang::tooling::UnifiedPath &InRoot,
     // Skip output directory if it is in the in-root directory.
     if (isChildOrSamePath(OutRoot, FilePath))
       continue;
+    if (isPatternInPath(FilePath, "_codepin_"))
+      continue;
 
     if (DpctGlobalInfo::migrateCMakeScripts()) {
       // Skip cmake build directory if it is in the in-root directory.

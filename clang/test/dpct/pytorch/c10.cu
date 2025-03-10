@@ -4,7 +4,7 @@
 // RUN: cp -r %S/pytorch_inc %T/pytorch/c10/
 // RUN: cd %T/pytorch/c10
 // RUN: mkdir dpct_out
-// RUN: dpct -out-root dpct_out %T/pytorch/c10/src/c10.cu --extra-arg="-I%T/pytorch/c10/pytorch_inc" --cuda-include-path="%cuda-path/include" --rule-file=%S/../../../tools/dpct/DpctOptRules/pytorch_api.yaml  -- -x cuda --cuda-host-only
+// RUN: dpct -out-root dpct_out %T/pytorch/c10/src/c10.cu --extra-arg="-I%T/pytorch/c10/pytorch_inc" --cuda-include-path="%cuda-path/include" --rule-file=%S/../../../tools/dpct/extensions/pytorch_api_rules/pytorch_api.yaml  -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/pytorch/c10/dpct_out/c10.dp.cpp --match-full-lines %T/pytorch/c10/src/c10.cu
 
 #include <iostream>

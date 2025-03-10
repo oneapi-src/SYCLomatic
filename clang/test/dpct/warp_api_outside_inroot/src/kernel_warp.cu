@@ -35,7 +35,7 @@ void foo() {
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
-  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   //CHECK-NEXT:        kernel(input_acc_ct0.get_raw_pointer(), item_ct1, smem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
@@ -74,7 +74,7 @@ void foo_2(float *ptr) {
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
-  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   //CHECK-NEXT:        compute_mode<8>(ptr_acc_ct0.get_raw_pointer(), item_ct1);
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });

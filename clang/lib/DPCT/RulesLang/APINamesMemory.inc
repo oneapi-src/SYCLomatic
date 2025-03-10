@@ -318,9 +318,18 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
-    CALL_FACTORY_ENTRY("cuMemFree_v2", CALL(MapNames::getClNamespace() + "free", ARG(0), QUEUESTR)),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-        CALL_FACTORY_ENTRY("cuMemFree_v2", CALL(MapNames::getDpctNamespace() + "dpct_free", ARG(0))))))
+    CALL_FACTORY_ENTRY(
+        "cuMemFree_v2",
+        CALL(MapNames::getClNamespace() + "free",
+             CAST_IF_NOT_SAME_AS_GIVEN(
+                 LITERAL("CUdeviceptr"),
+                 LITERAL(MapNames::getDpctNamespace() + "device_ptr"), ARG(0)),
+             QUEUESTR)),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY("cuMemFree_v2",
+                           CALL(MapNames::getDpctNamespace() + "dpct_free",
+                                ARG(0))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -717,7 +726,21 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemCreate",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemCreate"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        ASSIGN_FACTORY_ENTRY(
+            "cuMemGetAllocationPropertiesFromHandle",
+            MEMBER_EXPR(DEREF(0), false, LITERAL("location.id")),
+            CALL(MapNames::getDpctNamespace() + "get_device_id",
+                 MEMBER_CALL(ARG(1), true, "get_device"))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemGetAllocationPropertiesFromHandle",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemGetAllocationPropertiesFromHandle"),
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -734,7 +757,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemAddressReserve",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemAddressReserve"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -750,7 +773,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemAddressFree",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemAddressFree"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -770,7 +793,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemGetAllocationGranularity",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemGetAllocationGranularity"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -780,7 +803,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemRelease",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemRelease"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -795,7 +818,7 @@ CONDITIONAL_FACTORY_ENTRY(
             ARG(2)))),
     UNSUPPORT_FACTORY_ENTRY("cuMemMap", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemMap"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -810,7 +833,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          "get_current_device().get_context()"))))),
     UNSUPPORT_FACTORY_ENTRY("cuMemUnmap", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemUnmap"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExpVirtualMemory,
@@ -828,7 +851,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cuMemSetAccess",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemSetAccess"),
-                            ARG("--use-experimental-features=virtual_memory")))
+                            ARG("--use-experimental-features=virtual_mem")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UsePeerAccess(),

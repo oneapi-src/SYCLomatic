@@ -43,10 +43,9 @@ CONDITIONAL_FACTORY_ENTRY(
             Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("nd_item")),
         CONDITIONAL_FACTORY_ENTRY(
             argHasThreadBlockTileType(0, 32),
-            WARNING_FACTORY_ENTRY(
-                "sync",
-                MEMBER_CALL_FACTORY_ENTRY("sync", SUBGROUP, false, "barrier"),
-                Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("sub_group")),
+            CALL_FACTORY_ENTRY("sync", CALL(MapNames::getClNamespace() +
+                                                "group_barrier",
+                                            SUBGROUP)),
             CONDITIONAL_FACTORY_ENTRY(
                 CheckParamType(
                     0, "const class cooperative_groups::__v1::grid_group &"),
@@ -237,24 +236,18 @@ WARNING_FACTORY_ENTRY(
 // for cuda <= 10.2
 CONDITIONAL_FACTORY_ENTRY(
     baseHasThreadBlockTileType(32),
-    WARNING_FACTORY_ENTRY(
+    CALL_FACTORY_ENTRY(
         "cooperative_groups::__v1::__thread_block_tile_base.sync",
-        MEMBER_CALL_FACTORY_ENTRY(
-            "cooperative_groups::__v1::__thread_block_tile_base.sync", SUBGROUP,
-            false, "barrier"),
-        Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("sub_group")),
+        CALL(MapNames::getClNamespace() + "group_barrier", SUBGROUP)),
     UNSUPPORT_FACTORY_ENTRY(
         "cooperative_groups::__v1::__thread_block_tile_base.sync",
         Diagnostics::API_NOT_MIGRATED, ARG("sync")))
 // for cuda >= 11.0
 CONDITIONAL_FACTORY_ENTRY(
     baseHasThreadBlockTileType(32),
-    WARNING_FACTORY_ENTRY(
-        "cooperative_groups::__v1::thread_block_tile.sync",
-        MEMBER_CALL_FACTORY_ENTRY(
-            "cooperative_groups::__v1::thread_block_tile.sync", SUBGROUP, false,
-            "barrier"),
-        Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("sub_group")),
+    CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.sync",
+                       CALL(MapNames::getClNamespace() + "group_barrier",
+                            SUBGROUP)),
     UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.sync",
                             Diagnostics::API_NOT_MIGRATED, ARG("sync")))
 

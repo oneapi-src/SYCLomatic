@@ -17,6 +17,7 @@ add_clang_subdirectory(clang-offload-deps)
 # SYCLomatic_CUSTOMIZATION end
 add_clang_subdirectory(clang-scan-deps)
 add_clang_subdirectory(clang-offload-extract)
+add_clang_subdirectory(clang-sycl-linker)
 add_clang_subdirectory(clang-installapi)
 if(HAVE_CLANG_REPL_SUPPORT)
   add_clang_subdirectory(clang-repl)

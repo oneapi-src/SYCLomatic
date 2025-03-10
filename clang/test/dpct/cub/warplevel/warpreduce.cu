@@ -155,7 +155,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:         SumKernel(dev_data, item_ct1);
 //CHECK-NEXT:       });
   SumKernel<<<GridSize, BlockSize>>>(dev_data);
@@ -165,7 +165,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:         ReduceKernel(dev_data, item_ct1);
 //CHECK-NEXT:       });
   ReduceKernel<<<GridSize, BlockSize>>>(dev_data);
@@ -175,7 +175,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:         ReduceKernel_Max(dev_data, item_ct1);
 //CHECK-NEXT:       });
   ReduceKernel_Max<<<GridSize, BlockSize>>>(dev_data);
@@ -185,7 +185,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:         ReduceKernel_Min(dev_data, item_ct1);
 //CHECK-NEXT:       });
   ReduceKernel_Min<<<GridSize, BlockSize>>>(dev_data);
@@ -195,7 +195,7 @@ int main() {
   init_data(dev_data, TotalThread);
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:         ReduceKernel2(dev_data, 4, item_ct1);
 //CHECK-NEXT:       });
   ReduceKernel2<<<GridSize, BlockSize>>>(dev_data, 4);
@@ -204,7 +204,7 @@ int main() {
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
   // CHECK-NEXT:         SumKernel2(dev_data, 4, item_ct1);
   // CHECK-NEXT:       });
   SumKernel2<<<GridSize, BlockSize>>>(dev_data, 4);

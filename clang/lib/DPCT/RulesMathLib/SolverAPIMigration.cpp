@@ -333,13 +333,13 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                 "result_temp_buffer" +
                 std::to_string(i) + "(" + MapNames::getClNamespace() +
                 "range<1>(1));" + getNL();
-            SuffixInsertStr = SuffixInsertStr + BufferName + ".get_access<" +
-                              MapNames::getClNamespace() +
-                              "access_mode::write>()[0] = "
+            SuffixInsertStr = SuffixInsertStr + BufferName +
+                              ".get_host_access(" + MapNames::getClNamespace() +
+                              "write_only)[0] = "
                               "(int)result_temp_buffer" +
-                              std::to_string(i) + ".get_access<" +
-                              MapNames::getClNamespace() +
-                              "access_mode::read>()[0];" + getNL() + IndentStr;
+                              std::to_string(i) + ".get_host_access(" +
+                              MapNames::getClNamespace() + "read_only)[0];" +
+                              getNL() + IndentStr;
             BufferName = "result_temp_buffer" + std::to_string(i);
           }
           bool Moved = false;

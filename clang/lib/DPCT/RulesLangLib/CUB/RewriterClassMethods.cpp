@@ -211,6 +211,88 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
                                 "cub::BlockExchange.ScatterToStriped",
                                 MemberExprBase(), false, "scatter_to_striped",
                                 NDITEM, ARG(0), ARG(1)))
+      // cub::BlockExchange.BlockedToWarpStriped
+      SUBGROUPSIZE_FACTORY(
+          UINT_MAX,
+          MapNames::getDpctNamespace() +
+              "exchange.blocked_to_sub_group_striped",
+          HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
+                                MEMBER_CALL_FACTORY_ENTRY(
+                                    "cub::BlockExchange.BlockedToWarpStriped",
+                                    MemberExprBase(), false,
+                                    "blocked_to_sub_group_striped", NDITEM,
+                                    ARG(0), ARG(1))))
+      // cub::BlockExchange.WarpStripedToBlocked
+      SUBGROUPSIZE_FACTORY(
+          UINT_MAX,
+          MapNames::getDpctNamespace() +
+              "exchange.sub_group_striped_to_blocked",
+          HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
+                                MEMBER_CALL_FACTORY_ENTRY(
+                                    "cub::BlockExchange.WarpStripedToBlocked",
+                                    MemberExprBase(), false,
+                                    "sub_group_striped_to_blocked", NDITEM,
+                                    ARG(0), ARG(1))))
+      // cub::BlockShuffle.Offset
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CASE_FACTORY_ENTRY(
+              CASE(CheckArgCount(2, std::equal_to<>(), false),
+                   MEMBER_CALL_FACTORY_ENTRY("cub::BlockShuffle.Offset",
+                                             MemberExprBase(), false, "select",
+                                             NDITEM, ARG(0), ARG(1))),
+              CASE(CheckArgCount(3, std::equal_to<>(), false),
+                   MEMBER_CALL_FACTORY_ENTRY("cub::BlockShuffle.Offset",
+                                             MemberExprBase(), false, "select",
+                                             NDITEM, ARG(0), ARG(1), ARG(2))),
+              OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cub::BlockShuffle.Offset",
+                                                Diagnostics::API_NOT_MIGRATED,
+                                                printCallExprPretty()))))
+      // cub::BlockShuffle.Rotate
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CASE_FACTORY_ENTRY(
+              CASE(CheckArgCount(2, std::equal_to<>(), false),
+                   MEMBER_CALL_FACTORY_ENTRY("cub::BlockShuffle.Rotate",
+                                             MemberExprBase(), false, "select2",
+                                             NDITEM, ARG(0), ARG(1))),
+              CASE(CheckArgCount(3, std::equal_to<>(), false),
+                   MEMBER_CALL_FACTORY_ENTRY("cub::BlockShuffle.Rotate",
+                                             MemberExprBase(), false, "select2",
+                                             NDITEM, ARG(0), ARG(1), ARG(2))),
+              OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cub::BlockShuffle.Rotate",
+                                                Diagnostics::API_NOT_MIGRATED,
+                                                printCallExprPretty()))))
+      // cub::BlockShuffle.Up
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CASE_FACTORY_ENTRY(
+              CASE(CheckArgCount(2),
+                   MEMBER_CALL_FACTORY_ENTRY(
+                       "cub::BlockShuffle.Up", MemberExprBase(), false,
+                       "shuffle_right", NDITEM, ARG(0), ARG(1))),
+              CASE(CheckArgCount(3),
+                   MEMBER_CALL_FACTORY_ENTRY(
+                       "cub::BlockShuffle.Up", MemberExprBase(), false,
+                       "shuffle_right", NDITEM, ARG(0), ARG(1), ARG(2))),
+              OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cub::BlockShuffle.Up",
+                                                Diagnostics::API_NOT_MIGRATED,
+                                                printCallExprPretty()))))
+      // cub::BlockShuffle.Down
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CASE_FACTORY_ENTRY(
+              CASE(CheckArgCount(2),
+                   MEMBER_CALL_FACTORY_ENTRY(
+                       "cub::BlockShuffle.Down", MemberExprBase(), false,
+                       "shuffle_left", NDITEM, ARG(0), ARG(1))),
+              CASE(CheckArgCount(3),
+                   MEMBER_CALL_FACTORY_ENTRY(
+                       "cub::BlockShuffle.Down", MemberExprBase(), false,
+                       "shuffle_left", NDITEM, ARG(0), ARG(1), ARG(2))),
+              OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cub::BlockShuffle.Down",
+                                                Diagnostics::API_NOT_MIGRATED,
+                                                printCallExprPretty()))))
       // cub::BlockLoad.Load
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,

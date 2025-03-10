@@ -22,6 +22,9 @@ def err_drv_unsupported_option_argument : Error<
   "unsupported argument '%1' to option '%0'">;
 def err_drv_unsupported_option_argument_for_target : Error<
   "unsupported argument '%1' to option '%0' for target '%2'">;
+def err_drv_unsupported_opt_removed : Error<
+  "option '%0' is not supported and has been removed from the compiler. Please "
+  "see the compiler documentation for more details">;
 def err_drv_unknown_stdin_type : Error<
   "-E or -x required when input is from standard input">;
 def err_drv_unknown_stdin_type_clang_cl : Error<
@@ -37,8 +40,7 @@ def warn_drv_invalid_arch_name_with_suggestion : Warning<
   "ignoring invalid /arch: argument '%0'; for %select{64|32}1-bit expected one of %2">,
   InGroup<UnusedCommandLineArgument>;
 def warn_drv_avr_mcu_not_specified : Warning<
-  "no target microcontroller specified on command line, cannot "
-  "link standard libraries, please pass -mmcu=<mcu name>">,
+  "no target microcontroller specified, please pass -mmcu=<mcu name>">,
   InGroup<AVRRtlibLinkingQuirks>;
 def warn_drv_avr_libc_not_found: Warning<
   "no avr-libc installation can be found on the system, "
@@ -72,7 +74,7 @@ def warn_drv_fp_accuracy_override : Warning <
   InGroup<FPAccOverride>;
 
 def err_drv_no_rocm_device_lib : Error<
-  "cannot find ROCm device library%select{| for %1|for ABI version %1}0; provide its path via "
+  "cannot find ROCm device library%select{| for %1| for ABI version %1}0; provide its path via "
   "'--rocm-path' or '--rocm-device-lib-path', or pass '-nogpulib' to build "
   "without ROCm device library">;
 def err_drv_no_hip_runtime : Error<
@@ -597,6 +599,10 @@ def err_sls_hardening_arm_not_supported : Error<
 def warn_drv_large_data_threshold_invalid_code_model: Warning<
   "'%0' only applies to medium and large code models">,
   InGroup<UnusedCommandLineArgument>;
+def warn_drv_math_errno_enabled_after_veclib: Warning<
+  "math errno enabled by '%0' after it was implicitly disabled by '%1',"
+  " this may limit the utilization of the vector library">,
+  InGroup<MathErrnoEnabledWithVecLib>;
 
 def note_drv_command_failed_diag_msg : Note<
   "diagnostic msg: %0">;
@@ -645,7 +651,7 @@ def err_test_module_file_extension_format : Error<
   "'blockname:major:minor:hashed:user info'">;
 
 def err_drv_module_output_with_multiple_arch : Error<
-  "option '-fmodule-output' can't be used with multiple arch options">;
+  "option '-fmodule-output' cannot be used with multiple arch options">;
 
 def warn_drv_delayed_template_parsing_after_cxx20 : Warning<
   "-fdelayed-template-parsing is deprecated after C++20">,
@@ -902,6 +908,9 @@ def err_drv_loongarch_invalid_simd_option_combination : Error<
 def err_drv_loongarch_invalid_msimd_EQ : Error<
   "invalid argument '%0' to -msimd=; must be one of: none, lsx, lasx">;
 
+def err_drv_loongarch_unsupported_with_linker_relaxation : Error<
+  "%0 is unsupported with LoongArch linker relaxation (-mrelax)">;
+
 def err_drv_expand_response_file : Error<
   "failed to expand response file: %0">;
 
@@ -928,4 +937,7 @@ def err_drv_triple_version_invalid : Error<
 
 def warn_missing_include_dirs : Warning<
   "no such include directory: '%0'">, InGroup<MissingIncludeDirs>, DefaultIgnore;
+
+def err_drv_malformed_warning_suppression_mapping : Error<
+  "failed to process suppression mapping file '%0': %1">;
 }

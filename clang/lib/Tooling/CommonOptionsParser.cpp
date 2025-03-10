@@ -438,10 +438,6 @@ llvm::Error CommonOptionsParser::init(
     Adjuster = combineAdjusters(
         std::move(Adjuster),
         getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
-    Adjuster = combineAdjusters(
-        std::move(Adjuster),
-        getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
-                                  ArgumentInsertPosition::BEGIN));
   }
 #endif // SYCLomatic_CUSTOMIZATION
   AdjustingCompilations->appendArgumentsAdjuster(Adjuster);

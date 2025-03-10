@@ -171,6 +171,9 @@ int main() {
 
 
   /// calls
+  // CHECK-WINDOWS: /*
+  // CHECK-WINDOWS-NEXT: DPCT1136:{{[0-9]+}}: SYCL Bindless Images extension only supports importing external resource memory using NT handle on Windows. If assert(memHandleDesc.get_win32_handle()) fails, you may need to adjust the code to use (memHandleDesc.get_win32_handle()).
+  // CHECK-WINDOWS-NEXT: */
   // CHECK: dpct::experimental::import_external_memory(&extMem, &memHandleDesc);
   // CHECK-NEXT: mipmap = new dpct::experimental::image_mem_wrapper(extMem, &mipmappedArrDesc);
   // CHECK-NEXT: devPtr = sycl::ext::oneapi::experimental::map_external_linear_memory(extMem, (&bufferDesc)->get_res_size(), (&bufferDesc)->get_mem_offset(), q_ct1);

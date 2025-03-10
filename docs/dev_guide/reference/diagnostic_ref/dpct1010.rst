@@ -8,22 +8,22 @@ Message
 
 .. _msg-1010-start:
 
-SYCL uses exceptions to report errors and does not use the error codes. The call
-was replaced with 0. You need to rewrite this code.
+SYCL uses exceptions to report errors and does not
+use the error codes. The <function name> function
+call was replaced with 0. You need to rewrite this
+code.
 
 .. _msg-1010-end:
 
 Detailed Help
 -------------
 
-SYCL\* uses exceptions to report errors and does not use error codes. The original
-code tries to get an error code, while SYCL does not require such functionality.
-The call was replaced with 0.
+SYCL\* does not support launching kernel in device
+code. The user needs to merge the parent kernel and
+child kernel together.
 
 Suggestions to Fix
 ------------------
-
-You may need to rewrite this code.
 
 For example, this original CUDA\* code:
 
@@ -51,21 +51,23 @@ results in the following migrated SYCL code:
    }
 
    void foo() {
-     dpct::get_default_queue().parallel_for(
+     dpct::get_in_order_queue().parallel_for(
          sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
          [=](sycl::nd_item<3> item_ct1) {
            kernel();
          });
      dpct::get_current_device().queues_wait_and_throw();
      /*
-     DPCT1010:0: SYCL uses exceptions to report errors and does not use the error
-     codes. The call was replaced with 0. You need to rewrite this code.
+     DPCT1010:0: SYCL uses exceptions to report
+     errors and does not use the error
+     codes. The cudaGetLastError function call was
+     replaced with 0. You need to rewrite this code.
      */
-     int err = 0;
+     dpct::err0 err = 0;
      printf("%d\n", err);
    }
 
-which is rewritten to:
+which needs to be rewritten to:
 
 .. code-block:: cpp
    :linenos:
@@ -76,7 +78,7 @@ which is rewritten to:
 
    void foo() {
      try {
-       dpct::get_default_queue().parallel_for(
+       dpct::get_in_order_queue().parallel_for(
            sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
            [=](sycl::nd_item<3> item_ct1) {
              kernel();
@@ -86,3 +88,4 @@ which is rewritten to:
        std::cerr << e.what() << std::endl;
      }
    }
+

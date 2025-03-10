@@ -1,4 +1,4 @@
-// RUN: dpct --rule-file=%S/../../tools/dpct/DpctOptRules/intel_specific_math.yaml --format-range=none -out-root %T/math_specific_UDR_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --rule-file=%S/../../tools/dpct/extensions/opt_rules/intel_specific_math.yaml --format-range=none -out-root %T/math_specific_UDR_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math_specific_UDR_test/math_specific_UDR_test.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/math_specific_UDR_test/math_specific_UDR_test.dp.cpp -o %T/math_specific_UDR_test/math_specific_UDR_test.dp.o %}
 

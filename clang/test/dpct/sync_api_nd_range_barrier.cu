@@ -143,18 +143,12 @@ __device__ void foo1(cg::thread_block &tb,
 // CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
 // CHECK-NEXT: */
 // CHECK-NEXT: item_ct1.barrier();
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::sub_group::barrier() with sycl::sub_group::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-// CHECK-NEXT: */
-// CHECK-NEXT: item_ct1.get_sub_group().barrier();
+// CHECK-NEXT: sycl::group_barrier(item_ct1.get_sub_group());
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
 // CHECK-NEXT: */
 // CHECK-NEXT: item_ct1.barrier();
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::sub_group::barrier() with sycl::sub_group::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-// CHECK-NEXT: */
-// CHECK-NEXT: item_ct1.get_sub_group().barrier();
+// CHECK-NEXT: sycl::group_barrier(item_ct1.get_sub_group());
   tb.sync();
   tbt32.sync();
   cg::sync(tb);
@@ -200,7 +194,7 @@ __global__ void foo_tile32() {
 int foo3() {
 //CHECK: dpct::get_in_order_queue().parallel_for(
 //CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:     foo2(item_ct1);
 //CHECK-NEXT:   });
   foo2<<<1,1>>>();

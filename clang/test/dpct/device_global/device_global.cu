@@ -30,7 +30,7 @@ struct B{
 // CHECK: static sycl::ext::oneapi::experimental::device_global<float> var_d{1.f};
 // CHECK: static sycl::ext::oneapi::experimental::device_global<A> var_e;
 // CHECK: static sycl::ext::oneapi::experimental::device_global<B> var_f;
-// CHECK: static dpct::global_memory<int, 0> var_g;
+// CHECK: inline dpct::global_memory<int, 0> var_g;
 __device__ int var_a;
 __device__ int var_b = 0;
 __constant__ float var_c = 2.f;

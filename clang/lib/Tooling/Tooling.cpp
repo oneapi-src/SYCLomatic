@@ -584,8 +584,8 @@ bool ToolInvocation::run() {
   TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), DiagOpts);
   IntrusiveRefCntPtr<DiagnosticsEngine> Diagnostics =
       CompilerInstance::createDiagnostics(
-          &*DiagOpts, DiagConsumer ? DiagConsumer : &DiagnosticPrinter, false);
-
+          Files->getVirtualFileSystem(), &*DiagOpts,
+          DiagConsumer ? DiagConsumer : &DiagnosticPrinter, false);
   // Although `Diagnostics` are used only for command-line parsing, the custom
   // `DiagConsumer` might expect a `SourceManager` to be present.
   SourceManager SrcMgr(*Diagnostics, *Files);
@@ -654,7 +654,8 @@ bool FrontendActionFactory::runInvocation(
   std::unique_ptr<FrontendAction> ScopedToolAction(create());
 
   // Create the compiler's actual diagnostics engine.
-  Compiler.createDiagnostics(DiagConsumer, /*ShouldOwnClient=*/false);
+  Compiler.createDiagnostics(Files->getVirtualFileSystem(), DiagConsumer,
+                             /*ShouldOwnClient=*/false);
   if (!Compiler.hasDiagnostics())
     return false;
 
@@ -720,7 +721,7 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
 // if return value is -1, means current input file \p File is not processed,
 // if return value < -1, report return value to upper caller,
 // other values are ignored.
-int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
+int ClangTool::processFiles(llvm::StringRef File, bool &ProcessingFailed,
                      bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
     //clear error# counter
     CurFileParseErrCnt=0;
@@ -900,10 +901,6 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster(CUDAVerMinor.c_str(),
-                                      ArgumentInsertPosition::BEGIN));
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
                                       ArgumentInsertPosition::BEGIN));
         CudaArgsAdjuster =
             combineAdjusters(std::move(CudaArgsAdjuster),
@@ -1160,7 +1157,8 @@ public:
                      DiagnosticConsumer *DiagConsumer) override {
     std::unique_ptr<ASTUnit> AST = ASTUnit::LoadFromCompilerInvocation(
         Invocation, std::move(PCHContainerOps),
-        CompilerInstance::createDiagnostics(&Invocation->getDiagnosticOpts(),
+        CompilerInstance::createDiagnostics(Files->getVirtualFileSystem(),
+                                            &Invocation->getDiagnosticOpts(),
                                             DiagConsumer,
                                             /*ShouldOwnClient=*/false),
         Files);
@@ -1197,11 +1195,12 @@ std::unique_ptr<ASTUnit> buildASTFromCodeWithArgs(
     StringRef Code, const std::vector<std::string> &Args, StringRef FileName,
     StringRef ToolName, std::shared_ptr<PCHContainerOperations> PCHContainerOps,
     ArgumentsAdjuster Adjuster, const FileContentMappings &VirtualMappedFiles,
-    DiagnosticConsumer *DiagConsumer) {
+    DiagnosticConsumer *DiagConsumer,
+    IntrusiveRefCntPtr<llvm::vfs::FileSystem> BaseFS) {
   std::vector<std::unique_ptr<ASTUnit>> ASTs;
   ASTBuilderAction Action(ASTs);
   llvm::IntrusiveRefCntPtr<llvm::vfs::OverlayFileSystem> OverlayFileSystem(
-      new llvm::vfs::OverlayFileSystem(llvm::vfs::getRealFileSystem()));
+      new llvm::vfs::OverlayFileSystem(std::move(BaseFS)));
   llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(
       new llvm::vfs::InMemoryFileSystem);
   OverlayFileSystem->pushOverlay(InMemoryFileSystem);

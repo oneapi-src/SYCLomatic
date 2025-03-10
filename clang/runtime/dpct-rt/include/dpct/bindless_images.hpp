@@ -1082,13 +1082,9 @@ import_external_memory(sycl::ext::oneapi::experimental::external_mem *extMem,
             memHandleDesc->get_res_size()},
         get_default_queue());
   } else if (memHandleDesc->get_win32_obj_name()) {
-    *extMem = sycl::ext::oneapi::experimental::import_external_memory(
-        sycl::ext::oneapi::experimental::external_mem_descriptor<
-            sycl::ext::oneapi::experimental::resource_win32_name>{
-            {memHandleDesc->get_win32_obj_name()},
-            memHandleDesc->get_handle_type(),
-            memHandleDesc->get_res_size()},
-        get_default_queue());
+    throw std::runtime_error("Importing external resource using Windows NT name"
+                             " type is not supported. Only NT handle type is"
+                             " supported");
   }
 #else
   if (memHandleDesc->get_fd_handle() != -1) {

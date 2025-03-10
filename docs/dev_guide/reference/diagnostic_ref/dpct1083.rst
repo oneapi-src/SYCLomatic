@@ -8,9 +8,13 @@ Message
 
 .. _msg-1083-start:
 
-The size of *<placeholder>* in the migrated code may be different
+The size of local memory in the migrated code may be different
 from the original code. Check that the allocated memory size in the migrated code
 is correct.
+
+Or
+
+The size of <type name> in the migrated code may be different from the original code. You may need to adjust the code.
 
 .. _msg-1083-end:
 
@@ -18,12 +22,10 @@ Detailed Help
 -------------
 
 Some types have a different size in the migrated code than in the original code,
-for example ``sycl::float3`` compared to ``float3``. Check if the allocated size
-of memory is correct in the migrated code.
+for example ``sycl::float3`` compared to ``float3``. Check if the memory size is correct in the migrated code.
 
-In the example below, ``3*sizeof(float)`` is used to represent the size of
-``float3`` in the original code. In the migrated code the size of ``sycl::float3``
-is different, so the allocated size needs adjustment.
+Suggestions to Fix
+------------------
 
 For example, this original CUDA\* code:
 
@@ -38,6 +40,13 @@ For example, this original CUDA\* code:
      void foo() {
        size_t shared_size = 3 * sizeof(float);
        kernel<<<1, 1, shared_size>>>();
+     }
+
+     void bar(char *data_handle, int width, int height) {
+       std::vector<uchar3> data;
+       data.assign(reinterpret_cast<uchar3 *>(data_handle),
+                  reinterpret_cast<uchar3 *>(data_handle) + width * height);
+       ...
      }
 
 results in the following migrated SYCL\* code:
@@ -64,12 +73,23 @@ results in the following migrated SYCL\* code:
          cgh.parallel_for(
              sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
              [=](sycl::nd_item<3> item_ct1) {
-               kernel(dpct_local_acc_ct1.get_pointer());
+               kernel(dpct_local_acc_ct1.get__multi_ptr<sycl::access::decorated::no>()
+                          .get());
              });
        });
      }
 
-which is manually adjusted to:
+     void bar(char *data_handle, int width, int height) {
+       std::vector<sycl::uchar3> data;
+       /*
+       DPCT1083:1: The size of uchar3 in the migrated code may be different from the original code. You may need to adjust the code.
+       */
+       data.assign (reinterpret_cast<sycl::uchar3 *>(data_handle),
+                    reinterpret_cast<sycl::uchar3 *>(data_handle) + width * height);
+       ...
+     }
+
+which needs to be rewritten to:
 
 .. code-block:: cpp
    :linenos:
@@ -88,13 +108,18 @@ which is manually adjusted to:
          cgh.parallel_for(
              sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
              [=](sycl::nd_item<3> item_ct1) {
-               kernel(dpct_local_acc_ct1.get_pointer());
+               kernel(dpct_local_acc_ct1.get_multi_ptr<sycl::access::decorated::no>()
+                   .get());
              });
        });
      }
-     
-Suggestions to Fix
-------------------
 
-Check the allocated size of memory and replace it with the correct size if
-necessary.
+     void bar(char *data_handle, int width, int height) {
+       std::vector<sycl::uchar3> data;
+       for (int Index = 0; Index < width * height; Index++) {
+         data.emplace_back(data_handle[Index * 3], data_handle[Index * 3 = 1],
+                           data_handle[Index * 3+2]);
+       }
+       ...
+     }
+

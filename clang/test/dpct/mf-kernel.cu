@@ -2,7 +2,7 @@
 #include "mf-kernel.cuh"
 // RUN: echo pass
 
-// CHECK: static dpct::global_memory<volatile int, 0> g_mutex(0);
+// CHECK: inline dpct::global_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex=0;
 // CHECK: SYCL_EXTERNAL void Reset_kernel_parameters(volatile int &g_mutex)
 __global__ void Reset_kernel_parameters(void)
@@ -36,17 +36,17 @@ __device__ void device_fp() {
 }
 __global__ void test_fp() { device_fp(); }
 
-// CHECK: static dpct::constant_memory<float, 0> A1_ct;
-// CHECK-NEXT: static dpct::constant_memory<float, 0> A2;
+// CHECK: inline dpct::constant_memory<float, 0> A1_ct;
+// CHECK-NEXT: inline dpct::constant_memory<float, 0> A2;
 __constant__ float A1, A2;
 
-// CHECK: static dpct::constant_memory<float, 0> A4_ct;
-// CHECK-NEXT: static dpct::constant_memory<float, 0> A5_ct;
+// CHECK: inline dpct::constant_memory<float, 0> A4_ct;
+// CHECK-NEXT: inline dpct::constant_memory<float, 0> A5_ct;
 __constant__ float A4, A5;
 
-// CHECK: static dpct::constant_memory<float, 1> A_ct(sycl::range<1>(3 * 3), {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
+// CHECK: inline dpct::constant_memory<float, 1> A_ct(sycl::range<1>(3 * 3), {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
 // CHECK-NEXT:                                0.1250f, 0.0625f, 0.125f,  0.0625f});
-// CHECK-NEXT: static dpct::constant_memory<float, 0> A3;
+// CHECK-NEXT: inline dpct::constant_memory<float, 0> A3;
 __constant__ float A[3 * 3] = {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
                                0.1250f, 0.0625f, 0.125f,  0.0625f}, A3;
 
