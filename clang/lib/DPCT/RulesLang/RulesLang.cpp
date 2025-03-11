@@ -4863,7 +4863,6 @@ void KernelCallRule::runRule(
     if (!LaunchKernelCall || !FD)
       return;
     std::string FuncName = FD->getNameAsString();
-    std::cout << FuncName << std::endl;
     if (FuncName == "cudaLaunchHostFunc") {
       if (DpctGlobalInfo::getUsmLevel() != UsmLevel::UL_Restricted) {
         report(LaunchKernelCall->getBeginLoc(), Diagnostics::API_NOT_MIGRATED,
