@@ -760,6 +760,13 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("TypeDefDecl"),
       this);
 
+  MF.addMatcher(
+      typeAliasDecl(
+          hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(hasAnyName(
+              "WarpScan", "WarpReduce", "BlockScan", "BlockReduce")))))))
+          .bind("UsingDecl"),
+      this);
+
   auto isTempStorage = hasDeclaration(namedDecl(hasAnyName("TempStorage")));
   MF.addMatcher(declStmt(has(varDecl(anyOf(
                              hasType(hasCanonicalType(qualType(isTempStorage))),
@@ -919,7 +926,7 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
     }
   }
 }
-void CubRule::processCubTypeDef(const TypedefDecl *TD) {
+void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
   auto CanonicalType = TD->getUnderlyingType().getCanonicalType();
   std::string CanonicalTypeStr = CanonicalType.getAsString();
   if (isTypeInAnalysisScope(CanonicalType.getTypePtr()))
@@ -944,20 +951,9 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   // Currently, typedef decl can be deleted in following cases
   for (auto &Element : TypeLocMatchResult) {
     if (auto TL = Element.getNodeAs<TypeLoc>("typeLoc")) {
-      // 1. Used in TempStorage variable declaration
-      if (auto AncestorVD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
-        auto VarType = AncestorVD->getType().getCanonicalType();
-        std::string VarTypeStr =
-            AncestorVD->getType().getCanonicalType().getAsString();
-        if (isTypeInAnalysisScope(VarType.getTypePtr()) ||
-            !(VarTypeStr.find("TempStorage") != std::string::npos &&
-              VarTypeStr.find("struct cub::") == 0)) {
-          DeleteFlag = false;
-          break;
-        }
-      } // 2. Used in temporary class constructor
-      else if (auto AncestorMTE =
-                   DpctGlobalInfo::findAncestor<MaterializeTemporaryExpr>(TL)) {
+      // 1. Used in temporary class constructor
+      if (auto AncestorMTE =
+              DpctGlobalInfo::findAncestor<MaterializeTemporaryExpr>(TL)) {
         auto MC = DpctGlobalInfo::findAncestor<CXXMemberCallExpr>(AncestorMTE);
         if (MC) {
           auto ObjType = MC->getObjectType().getCanonicalType();
@@ -968,12 +964,27 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
                 ObjTypeStr.find("class cub::BlockScan") == 0 ||
                 ObjTypeStr.find("class cub::BlockReduce") == 0)) {
             DeleteFlag = false;
+            std::cout << "2" << std::endl;
             break;
           }
         }
-      } // 3. Used in self typedef decl
+      } // 2. Used in TempStorage variable declaration
+      else if (auto AncestorVD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
+        auto VarType = AncestorVD->getType().getCanonicalType();
+        std::string VarTypeStr =
+            AncestorVD->getType().getCanonicalType().getAsString();
+        std::cout << VarTypeStr << std::endl;
+        if (isTypeInAnalysisScope(VarType.getTypePtr()) ||
+            !(VarTypeStr.find("TempStorage") != std::string::npos &&
+              VarTypeStr.find("struct cub::") == 0)) {
+          DeleteFlag = false;
+          std::cout << "1" << std::endl;
+          break;
+        }
+      }
+      // 3. Used in self typedef decl
       else if (auto AncestorTD =
-                   DpctGlobalInfo::findAncestor<TypedefDecl>(TL)) {
+                   DpctGlobalInfo::findAncestor<TypedefNameDecl>(TL)) {
         if (AncestorTD != TD) {
           DeleteFlag = false;
           break;
@@ -1686,7 +1697,11 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processCubFuncCall(CE, true);
   } else if (const TypedefDecl *TD =
                  getNodeAsType<TypedefDecl>(Result, "TypeDefDecl")) {
-    processCubTypeDef(TD);
+    processCubTypeDefOrUsing(TD);
+  } else if (const TypeAliasDecl *TAD =
+                 getNodeAsType<TypeAliasDecl>(Result, "UsingDecl")) {
+    // std::cout << "found" << std::endl;
+    processCubTypeDefOrUsing(TAD);
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
     processTypeLoc(TL);
   } else if (auto *UDD = getNodeAsType<UsingDirectiveDecl>(
