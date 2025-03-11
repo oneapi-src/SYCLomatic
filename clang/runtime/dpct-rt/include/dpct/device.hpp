@@ -83,7 +83,12 @@ typedef sycl::event *event_ptr;
 
 typedef sycl::queue *queue_ptr;
 
-typedef char *device_ptr;
+#if defined(_WIN64) || defined(__LP64__)
+typedef unsigned long long device_ptr;
+#else
+typedef unsigned int device;
+#endif
+
 
 using queue_callback = std::function<void (queue_ptr, int, void*)>;
 
