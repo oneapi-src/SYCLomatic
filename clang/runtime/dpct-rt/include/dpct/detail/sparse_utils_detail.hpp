@@ -83,8 +83,6 @@ public:
     if (!_q || !_h)
       return;
     release();
-    _h = nullptr;
-    _q = nullptr;
   }
   void init(sycl::queue *q) {
     _q = q;
