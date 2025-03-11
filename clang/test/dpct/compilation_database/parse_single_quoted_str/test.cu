@@ -7,6 +7,13 @@
 // RUN: %if build_lit %{icpx -DNAMD="\"3.0b3\"" -c -fsycl %T/out/test.dp.cpp -o %T/out/test.dp.o %}
 // RUN: FileCheck %S/test_isolate.cu --match-full-lines --input-file %T/out/test_isolate.dp.cpp
 
+// RUN: rm -rf out
+// RUN: cat %S/build.log > %T/build.log
+// RUN: not dpct -intercept-build --parse-build-log build.log
+// RUN: dpct --format-range=none -in-root=./  -out-root=%T/out -p ./ --cuda-include-path="%cuda-path/include"
+// RUN: FileCheck %s --match-full-lines --input-file %T/out/test.dp.cpp
+
+
 // CHECK:  #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <iostream>
