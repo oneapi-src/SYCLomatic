@@ -1,0 +1,24 @@
+.. _DPCT1136:
+
+DPCT1136
+========
+
+Message
+-------
+
+.. _msg-1136-start:
+
+SYCL\* Bindless Images extension only supports importing external resource memory using NT handle on Windows.
+If ``assert(memHandleDesc.get_win32_handle())`` fails, you may need to adjust the code to use ``(memHandleDesc.get_win32_handle())``.
+
+.. _msg-1136-end:
+
+Detailed Help
+-------------
+
+Importing external memory using Windows NT name type is not yet supported by SYCL Bindless Images extension. Only Windows NT handle type is supported.
+
+Suggestions to Fix
+------------------
+
+You may need to adjust the original code to get Windows NT handle for the external resource memory instead of Windows NT name and use that in the memory descriptor to import external memory.

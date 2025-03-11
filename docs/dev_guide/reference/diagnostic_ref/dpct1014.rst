@@ -8,22 +8,27 @@ Message
 
 .. _msg-1014-start:
 
-The flag and priority options are not supported for SYCL queues. The output
+The flag and priority options are not supported
+for SYCL queues. The output
 parameter(s) are set to 0.
+
+Or
+
+The <CUDA event property name> is not supported
+for SYCL event. The output parameter(s) is set to
+0.
 
 .. _msg-1014-end:
 
 Detailed Help
 -------------
 
-The flag and priority options are not supported in the SYCL\* queue. You may need
+The flag, priority options, or CUDA event property
+is not supported in the SYCL* queue. You may need
 to rewrite the generated code.
-
 
 Suggestions to Fix
 ------------------
-
-Review the logic and adjust it.
 
 For example, this original CUDA\* code:
 
@@ -35,13 +40,19 @@ For example, this original CUDA\* code:
      cudaStreamGetFlags(old_stream, &flag);
      cudaStreamCreateWithFlags(new_stream, flag);
    }
+   unsigned bar(bool f) {
+     unsigned flags = CU_EVENT_DISABLE_TIMING;
+     if (f)
+       flags |= CU_EVENT_BLOCKING_SYNC;
+     return flags;
+   }
 
 results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
 
-   void foo(sycl::queue *old_stream, sycl::queue **new_stream) {
+   void foo(dpct::queue_ptr old_stream, dpct::queue_ptr *new_stream) {
      unsigned int flag;
      /*
      DPCT1014:0: The flag and priority options are not supported for SYCL queues.
@@ -53,13 +64,32 @@ results in the following migrated SYCL code:
      */
      *(new_stream) = dpct::get_current_device().create_queue();
    }
+   unsigned bar(bool f) {
+     /*
+     DPCT1014:2: The CU_EVENT_DISABLE_TIMING is
+     not supported for SYCL event. The
+     output parameter(s) is set to 0.
+     */
+     unsigned flags = 0;
+     if (f)
+       /*
+       DPCT1014:3: The CU_EVENT_BLOCKING_SYNC is
+       not supported for SYCL event. The
+       output parameter(s) is set to 0.
+       */
+       flags |= 0;
+   } return flags;
 
-which is rewritten to:
+which needs to be rewritten to:
 
 .. code-block:: cpp
    :linenos:
 
-   void foo(sycl::queue *old_stream, sycl::queue **new_stream) {
+   void foo(dpct::queue_ptr old_stream, dpct::queue_ptr *new_stream) {
      *(new_stream) = dpct::get_current_device().create_queue();
+   }
+
+   unsigned bar(bool f){
+     return 0;
    }
 

@@ -3557,8 +3557,6 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
   if(DpctGlobalInfo::getEnablepProfilingFlag()) {
     // Option '--enable-profiling' is enabled
     auto StmtStrArg0 = getStmtSpelling(TimeElapsedCE->getArg(0));
-    auto StmtStrArg1 = getStmtSpelling(TimeElapsedCE->getArg(1));
-    auto StmtStrArg2 = getStmtSpelling(TimeElapsedCE->getArg(2));
 
     std::ostringstream Repl;
     std::string Assginee = "*(" + StmtStrArg0 + ")";
@@ -3567,10 +3565,27 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
         Assginee = getStmtSpelling(UO->getSubExpr());
     }
 
-    auto StartTimeStr = StmtStrArg1 + "->get_profiling_info<"
-                            "sycl::info::event_profiling::command_start>()";
-    auto StopTimeStr =  StmtStrArg2 + "->get_profiling_info<"
-                            "sycl::info::event_profiling::command_end>()";
+    const auto *StartArg = TimeElapsedCE->getArg(1)->IgnoreImpCasts();
+    const auto *EndArg = TimeElapsedCE->getArg(2)->IgnoreImpCasts();
+
+    ExprAnalysis EAForStartArg(StartArg);
+    ExprAnalysis EAForEndArg(EndArg);
+
+    auto StartArgRepl = EAForStartArg.getReplacedString();
+    auto EndArgRepl = EAForEndArg.getReplacedString();
+
+    if (isa<CStyleCastExpr>(StartArg) || isa<CXXReinterpretCastExpr>(StartArg))
+      StartArgRepl = "(" + StartArgRepl + ")";
+
+    if (isa<CStyleCastExpr>(EndArg) || isa<CXXReinterpretCastExpr>(EndArg))
+      EndArgRepl = "(" + EndArgRepl + ")";
+
+    auto StartTimeStr = StartArgRepl +
+                        "->get_profiling_info<"
+                        "sycl::info::event_profiling::command_start>()";
+    auto StopTimeStr = EndArgRepl +
+                       "->get_profiling_info<"
+                       "sycl::info::event_profiling::command_end>()";
 
     Repl << Assginee << " = ("
         << StopTimeStr << " - " << StartTimeStr << ") / 1000000.0f";
