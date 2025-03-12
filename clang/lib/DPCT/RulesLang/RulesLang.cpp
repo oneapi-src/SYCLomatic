@@ -7318,7 +7318,7 @@ TypeMmberRule::findTokenEndBeforeColonColon(SourceLocation TokStart,
 
   bool FoundColonColon = false;
   // Find coloncolon
-  while (TokPtr && (TokPtr - 1)) {
+  while (TokPtr) {
     if (*TokPtr == ':' && *(TokPtr - 1) == ':') {
       TokPtr = TokPtr - 2;
       FoundColonColon = true;
