@@ -68,8 +68,6 @@ DerefExpr::DerefExpr(const Expr *E, const CallExpr *C) {
   // If E is UnaryOperator or CXXOperatorCallExpr D.E will has value
   this->E = getDereferencedExpr(E);
   if (this->E) {
-    this->E = this->E->IgnoreParens();
-    this->AddrOfRemoved = true;
     if (C) {
       // Check the addrof symbol (&) is in the parent range since only it
       // will be merged with the deref symbol (*)
@@ -77,14 +75,17 @@ DerefExpr::DerefExpr(const Expr *E, const CallExpr *C) {
         auto Range = getDefinitionRange(C->getBeginLoc(), C->getEndLoc());
         if (!isInRange(Range.getBegin(), Range.getEnd(),
                        SM.getSpellingLoc(E->getBeginLoc()))) {
-          this->AddrOfRemoved = false;
+          this->E = E;
+          this->NeedParens = true;
+          return;
         }
       }
     }
-  }
-
-  if (!(this->E))
+    this->E = this->E->IgnoreParens();
+    this->AddrOfRemoved = true;
+  } else {
     this->E = E;
+  }
 
   this->NeedParens = needExtraParens(E);
   if (const auto UO = dyn_cast_or_null<UnaryOperator>(E->IgnoreImpCasts())) {
