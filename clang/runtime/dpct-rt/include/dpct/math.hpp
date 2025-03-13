@@ -2056,60 +2056,99 @@ public:
   const size_t num_elements;
 };
 
+/// Loads 1 8x8 b16 matrix from shared memory to local memory (32-bits per wi)
+/// Requires the sub-group size of kernel calling this function to be 32
+/// \tparam [in] T The type of result variable
+/// \param [in] addr The address of the matrix in shared memory
+/// \param [in] m The local memory to store the matrix
+/// \param [in] item_ct1 The sycl::nd_item object
+/// \param [in] trans Indicates whether the matrix to be loaded transposed
+/// \param [in] mat The matrix index to be loaded
 template <typename T>
 void ldmatrix(uintptr_t addr, T *m, const sycl::nd_item<3> &item_ct1,
               bool trans = false, unsigned mat = 0) {
-  int lane = item_ct1.get_local_id(2);
+  int lane = item_ct1.get_local_id(2) % 32;
 
-  int group = lane / 8;
-  int sub = lane % 8;
-  int src_base = group * 2;
+  int lane_group8_row = lane / 8;
+  int lane_group8_col = lane % 8;
 
   if (!trans) {
     // calculate the source lane
-    int src_lane = (sub / 4) ? (src_base + 1) : src_base;
+    int src_lane = 2 * lane_group8_row;
+    if (lane_group8_col >= 4)
+      src_lane += 1;
 
     // Broadcast the address from the source lane
     auto recv_addr_uintp = dpct::select_from_sub_group(
         item_ct1.get_sub_group(), addr, mat * 8 + src_lane);
+
+    // Cast the received address from uintptr_t to the type of 'm'
     auto recv_addr = reinterpret_cast<T *>(recv_addr_uintp);
 
     // Non-transposed load
-    *m = recv_addr[sub % 4];
+    *m = recv_addr[lane_group8_col % 4];
   } else {
     // calculate the source lane
     int src_lane = (lane % 4) * 2;
 
-    // Broadcast the address from the source lane:
+    // Broadcast the address from the source lane
     auto recv_addr_uintp_1 = dpct::select_from_sub_group(
         item_ct1.get_sub_group(), addr, mat * 8 + src_lane);
     auto recv_addr_uintp_2 = dpct::select_from_sub_group(
         item_ct1.get_sub_group(), addr, mat * 8 + src_lane + 1);
+
+    // Cast the received address from uintptr_t to 'half *'
     auto recv_addr_1 = reinterpret_cast<sycl::half *>(recv_addr_uintp_1);
     auto recv_addr_2 = reinterpret_cast<sycl::half *>(recv_addr_uintp_2);
 
     // Transposed load
-    int index = (lane / 4);
+    int index = lane / 4;
     sycl::half val0 = recv_addr_1[index];
     sycl::half val1 = recv_addr_2[index];
+
+    // Combine the two 16-bits into one 32-bit value
     sycl::half2 val = sycl::half2(val0, val1);
     *m = *reinterpret_cast<T *>(&val);
   }
 }
 
+/// Loads 2 8x8 b16 matrix from shared memory to local memory (32-bits per wi)
+/// Requires the sub-group size of kernel calling this function to be 32
+/// \tparam [in] T The type of result variable
+/// \param [in] addr The address of the matrix in shared memory
+/// \param [in] m1 The local memory to store data of 1st matrix
+/// \param [in] m2 The local memory to store data of 2nd matrix
+/// \param [in] item_ct1 The sycl::nd_item object
+/// \param [in] trans Indicates whether the matrix to be loaded transposed
 template <typename T>
 void ldmatrix(uintptr_t addr, T *m1, T *m2, const sycl::nd_item<3> &item_ct1,
               bool trans = false) {
+  // Load 1st matrix
   ldmatrix(addr, m1, item_ct1, trans, 0);
+  // Load 2nd matrix
   ldmatrix(addr, m2, item_ct1, trans, 1);
 }
 
+/// Loads 4 8x8 b16 matrix from shared memory to local memory (32-bits per wi)
+/// Requires the sub-group size of kernel calling this function to be 32
+/// \tparam [in] T The type of result variable
+/// \param [in] addr The address of the matrix in shared memory
+/// \param [in] m1 The local memory to store data of 1st matrix
+/// \param [in] m2 The local memory to store data of 2nd matrix
+/// \param [in] m3 The local memory to store data of 3rd matrix
+/// \param [in] m4 The local memory to store data of 4th matrix
+/// \param [in] item_ct1 The sycl::nd_item object
+/// \param [in] trans Indicates whether the matrix to be loaded transposed
 template <typename T>
 void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4,
               const sycl::nd_item<3> &item_ct1, bool trans = false) {
+  // Load 1st matrix
   ldmatrix(addr, m1, item_ct1, trans, 0);
+  // Load 2nd matrix
   ldmatrix(addr, m2, item_ct1, trans, 1);
+  // Load 3rd matrix
   ldmatrix(addr, m3, item_ct1, trans, 2);
+  // Load 4th matrix
   ldmatrix(addr, m4, item_ct1, trans, 3);
 }
 
