@@ -115,7 +115,7 @@ RewriterMap dpct::createHalfArithmeticFunctionsRewriterMap() {
                       CALL_FACTORY_ENTRY("__hfma",
                                          CALL(MapNames::getClNamespace() +
                                                   "ext::intel::math::hfma",
-                                              ARG(0), ARG(1)))),
+                                              ARG(0), ARG(1), ARG(2)))),
                   EMPTY_FACTORY_ENTRY("__hfma"),
                   CALL_FACTORY_ENTRY(
                       "__hfma",
