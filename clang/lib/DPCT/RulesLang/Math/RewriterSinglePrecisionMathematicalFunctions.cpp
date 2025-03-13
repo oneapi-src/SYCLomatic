@@ -295,6 +295,21 @@ RewriterMap dpct::createSinglePrecisionMathematicalFunctionsRewriterMap() {
                   "sinpif",
                   CALL(MapNames::getClNamespace() + "sinpi",
                        CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))))
+      // tanhf
+      MATH_API_REWRITERS_V2(
+          "tanhf",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::host_normal,
+              CALL_FACTORY_ENTRY(
+                  "tanhf",
+                  CALL(MapNames::getClNamespace() + "tanh",
+                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::device_normal,
+              CALL_FACTORY_ENTRY(
+                  "tanhf",
+                  CALL(MapNames::getClNamespace() + "tanh",
+                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))))
       // y0f
       MATH_API_REWRITER_DEVICE(
           "y0f",
