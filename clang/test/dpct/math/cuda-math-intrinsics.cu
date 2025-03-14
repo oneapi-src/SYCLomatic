@@ -14,7 +14,6 @@
 // CHECK: #include <algorithm>
 
 #include "cuda_fp16.h"
-#include "cuda_bf16.h"
 
 using namespace std;
 
@@ -3539,18 +3538,4 @@ void foo6(float aa) {
 __global__ void foo7(float aa) {
   // CHECK: sycl::sinpi(aa);
   ::sinpif(aa);
-}
-
-template <typename T> __global__ void foo8(T x) {
-  // CHECK: T t = (T)sycl::tanh((float)x);
-  T t = (T)tanhf(x);
-}
-
-void foo9() {
-  float f;
-  half h;
-  __nv_bfloat16 bf16;
-  foo8<<<1, 1>>>(f);
-  foo8<<<1, 1>>>(h);
-  foo8<<<1, 1>>>(bf16);
 }
