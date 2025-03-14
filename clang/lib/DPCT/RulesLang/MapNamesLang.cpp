@@ -71,8 +71,6 @@ void MapNamesLang::setExplicitNamespaceMap(
 // Supported vector types
 const MapNamesLang::SetTy MapNamesLang::SupportedVectorTypes{
     SUPPORTEDVECTORTYPENAMES};
-const MapNamesLang::SetTy MapNamesLang::VectorTypes2MArray{
-    VECTORTYPE2MARRAYNAMES};
 
 const std::map<std::string, int> MapNamesLang::VectorTypeMigratedTypeSizeMap{
     {"char1", 1},       {"char2", 2},       {"char3", 4},

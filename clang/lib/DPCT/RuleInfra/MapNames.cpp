@@ -741,12 +741,12 @@ void MapNames::setExplicitNamespaceMap(
       {"__nv_bfloat16", std::make_shared<TypeNameRule>(
                             getClNamespace() + "ext::oneapi::bfloat16")},
       {"__nv_bfloat162", std::make_shared<TypeNameRule>(
-                             getClNamespace() + "marray<" + getClNamespace() +
+                             getClNamespace() + "vec<" + getClNamespace() +
                              "ext::oneapi::bfloat16, 2>")},
       {"nv_bfloat16", std::make_shared<TypeNameRule>(getClNamespace() +
                                                      "ext::oneapi::bfloat16")},
       {"nv_bfloat162", std::make_shared<TypeNameRule>(
-                           getClNamespace() + "marray<" + getClNamespace() +
+                           getClNamespace() + "vec<" + getClNamespace() +
                            "ext::oneapi::bfloat16, 2>")},
       {"libraryPropertyType_t",
        std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +

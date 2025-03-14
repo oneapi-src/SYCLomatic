@@ -531,7 +531,7 @@
 // H2RCP-NEXT:   h2rcp(b /*__nv_bfloat162*/);
 // H2RCP-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
 // H2RCP-NEXT:   sycl::ext::intel::math::inv(h);
-// H2RCP-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::half_precision::recip(float(b[0])), sycl::half_precision::recip(float(b[1])));
+// H2RCP-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::half_precision::recip(float(b.x())), sycl::half_precision::recip(float(b.y())));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2rint | FileCheck %s -check-prefix=H2RINT
 // H2RINT: CUDA API:
