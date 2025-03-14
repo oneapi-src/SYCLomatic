@@ -24,7 +24,6 @@
 #include "clang/Basic/LangOptions.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Driver/Options.h"
-#include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 #include <cstdarg>
 
