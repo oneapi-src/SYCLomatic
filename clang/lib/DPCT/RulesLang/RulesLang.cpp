@@ -1218,12 +1218,12 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                                   "longlong1", "ulonglong1", "double1", "__half_raw")))
                     .bind("inherit"),
                 this);
-  // Matcher for __half_raw implicitly convert to half.
+  // Matcher for __half_raw/__half2_raw implicitly convert to half/half2.
   MF.addMatcher(
       declRefExpr(allOf(unless(hasParent(memberExpr())),
                         unless(hasParent(unaryOperator(hasOperatorName("&")))),
-                        to(varDecl(hasType(qualType(hasDeclaration(
-                                       namedDecl(hasAnyName("__half_raw"))))))),
+                        to(varDecl(hasType(qualType(hasDeclaration(namedDecl(
+                            hasAnyName("__half_raw", "__half2_raw"))))))),
                         hasParent(implicitCastExpr())))
           .bind("halfRawExpr"),
       this);
@@ -1405,18 +1405,22 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
         UETT, Diagnostics::SIZEOF_WARNING, true, argTypeName,
         "Check that the allocated memory size in the migrated code is correct");
   }
-  // Runrule for __half_raw implicitly convert to half.
+  // Run rule for __half_raw/__half2_raw implicitly convert to half/half2.
   if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "halfRawExpr")) {
     if (const auto *RT =
             DRE->getType().getCanonicalType()->getAs<RecordType>()) {
       if (isUserDefinedDecl(RT->getDecl()))
         return;
     }
+
+    std::string CastingType = MapNames::getClNamespace() + "half";
+    if (DRE->getType().getCanonicalType().getAsString() == "__half2_raw") {
+      CastingType = MapNames::getClNamespace() + "half2";
+    }
     ExprAnalysis EA;
     std::string Replacement;
     llvm::raw_string_ostream OS(Replacement);
-    OS << MapNames::getClNamespace() + "bit_cast<" +
-              MapNames::getClNamespace() + "half>(";
+    OS << MapNames::getClNamespace() << "bit_cast<" << CastingType << ">(";
     EA.analyze(DRE);
     OS << EA.getReplacedString();
     OS << ")";
