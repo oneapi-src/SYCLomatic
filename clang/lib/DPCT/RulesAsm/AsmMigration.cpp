@@ -556,16 +556,18 @@ bool SYCLGenBase::emitVectorType(const InlineAsmVectorType *T) {
     return SYCLGenError();
   OS() << ", ";
   switch (T->getKind()) {
-  case InlineAsmVectorType::v2:
   case InlineAsmVectorType::x1:
+    OS() << 1;
+    break;
+  case InlineAsmVectorType::v2:
+  case InlineAsmVectorType::x2:
     OS() << 2;
     break;
   case InlineAsmVectorType::v4:
-  case InlineAsmVectorType::x2:
+  case InlineAsmVectorType::x4:
     OS() << 4;
     break;
   case InlineAsmVectorType::v8:
-  case InlineAsmVectorType::x4:
     OS() << 8;
     break;
   }
@@ -1326,14 +1328,18 @@ protected:
       return SYCLGenError();
     }
     OS() << ", ";
-    const auto *VE = dyn_cast<InlineAsmVectorExpr>(Inst->getOutputOperand());
-    for (unsigned Inst = 0, E = VE->getNumElements(); Inst != E; ++Inst) {
-      if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
-        continue;
-      OS() << "&";
-      if (emitStmt(VE->getElement(Inst)))
-        return SYCLGenError();
-      OS() << ", ";
+    if (const auto *VE =
+            dyn_cast<InlineAsmVectorExpr>(Inst->getOutputOperand())) {
+      for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
+        if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
+          continue;
+        OS() << "&";
+        if (emitStmt(VE->getElement(Inst)))
+          return SYCLGenError();
+        OS() << ", ";
+      }
+    } else {
+      return SYCLGenError();
     }
     OS() << DpctGlobalInfo::getItem(GAS);
     if (Inst->hasAttr(InstAttr::trans))
