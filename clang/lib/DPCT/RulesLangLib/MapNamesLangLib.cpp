@@ -29,8 +29,14 @@ void MapNamesLangLib::setExplicitNamespaceMap(
   CUBEnumsMap = {
     {"BLOCK_STORE_DIRECT", MapNames::getDpctNamespace() + "group::group_store_algorithm::blocked"},
     {"BLOCK_STORE_STRIPED", MapNames::getDpctNamespace() + "group::group_store_algorithm::striped"},
+    {"BLOCK_STORE_VECTORIZE", MapNames::getDpctNamespace() + "group::group_store_algorithm::blocked"},
+    {"BLOCK_STORE_TRANSPOSE", MapNames::getDpctNamespace() + "group::group_store_algorithm::transpose"},
+    {"BLOCK_STORE_WARP_TRANSPOSE", MapNames::getDpctNamespace() + "group::group_store_algorithm::sub_group_transpose"},
     {"BLOCK_LOAD_DIRECT", MapNames::getDpctNamespace() + "group::group_load_algorithm::blocked"},
-    {"BLOCK_LOAD_STRIPED", MapNames::getDpctNamespace() + "group::group_load_algorithm::striped"}
+    {"BLOCK_LOAD_STRIPED", MapNames::getDpctNamespace() + "group::group_load_algorithm::striped"},
+    {"BLOCK_LOAD_VECTORIZE", MapNames::getDpctNamespace() + "group::group_load_algorithm::blocked"},
+    {"BLOCK_LOAD_TRANSPOSE", MapNames::getDpctNamespace() + "group::group_load_algorithm::transpose"},
+    {"BLOCK_LOAD_WARP_TRANSPOSE", MapNames::getDpctNamespace() + "group::group_load_algorithm::sub_group_transpose"},
   };
   // clang-format on
 

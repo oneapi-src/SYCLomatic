@@ -222,6 +222,9 @@ RegistryMaps::RegistryMaps() {
   REGISTER_MATCHER(decompositionDecl);
   REGISTER_MATCHER(declCountIs);
   REGISTER_MATCHER(declRefExpr);
+  REGISTER_MATCHER(dependentNameType);
+  REGISTER_MATCHER(dependentScopeDeclRefExpr);
+  REGISTER_MATCHER(dependentTemplateSpecializationType);
   REGISTER_MATCHER(declStmt);
   REGISTER_MATCHER(declaratorDecl);
   REGISTER_MATCHER(decltypeType);
@@ -246,6 +249,7 @@ RegistryMaps::RegistryMaps() {
   REGISTER_MATCHER(equalsBoundNode);
   REGISTER_MATCHER(equalsIntegralValue);
   REGISTER_MATCHER(explicitCastExpr);
+  REGISTER_MATCHER(exportDecl);
   REGISTER_MATCHER(expr);
   REGISTER_MATCHER(exprWithCleanups);
   REGISTER_MATCHER(fieldDecl);
@@ -313,6 +317,7 @@ RegistryMaps::RegistryMaps() {
   REGISTER_MATCHER(hasDeducedType);
   REGISTER_MATCHER(hasDefaultArgument);
   REGISTER_MATCHER(hasDefinition);
+  REGISTER_MATCHER(hasDependentName);
   REGISTER_MATCHER(hasDescendant);
   REGISTER_MATCHER(hasDestinationType);
   REGISTER_MATCHER(hasDirectBase);

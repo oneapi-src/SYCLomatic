@@ -493,15 +493,21 @@ int eaccess(const char *pathname, int mode) {
     return 0;
   }
 
+  int nvcc_available = 0;
+  char *value = getenv("INTERCEPT_COMPILE_PATH");
+  if (value) {
+    nvcc_available = 1;
+  }
+
   int len = strlen(pathname);
-  if (len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
+  if (!nvcc_available && len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
       pathname[1] == 'v' && pathname[0] == 'n') {
     // To handle case like "nvcc foo.cu ..."
     return 0;
   }
-  if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
-      pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
-      pathname[len - 5] == '/') {
+  if (!nvcc_available && len > 4 && pathname[len - 1] == 'c' &&
+      pathname[len - 2] == 'c' && pathname[len - 3] == 'v' &&
+      pathname[len - 4] == 'n' && pathname[len - 5] == '/') {
     // To handle case like "/path/to/nvcc foo.cu ..."
     return 0;
   }

@@ -6,7 +6,6 @@
 
 // clang-format off
 #include <cstdint>
-#include <cstdint>
 #include <cuda_runtime.h>
 
 // CHECK: inline void cp_async4(void *smem_ptr, const void *glob_ptr) {
@@ -65,6 +64,36 @@ __device__ inline void cp_async4_pred(void *smem_ptr, const void *glob_ptr,
                "   @p cp.async.cg.shared.global [%1], [%2], %3;\n"
                "}\n" ::"r"((int)pred),
                "r"(smem), "l"(glob_ptr), "n"(BYTES));
+}
+
+// CHECK:inline void cp_async_commit_group() {
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to "cp.async.commit_group;" was removed because current "cp.async" is migrated to synchronous copy operation. You may need to adjust the code to tune the performance.
+// CHECK-NEXT:  */
+// CHECK-EMPTY:
+// CHECK-NEXT:}
+__device__ inline void cp_async_commit_group() {
+asm volatile("cp.async.commit_group;" ::);
+}
+
+// CHECK:inline void cp_async_wait_group() {
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to "cp.async.wait_group 0;" was removed because current "cp.async" is migrated to synchronous copy operation. You may need to adjust the code to tune the performance.
+// CHECK-NEXT:  */
+// CHECK-EMPTY:
+// CHECK-NEXT:}
+__device__ inline void cp_async_wait_group() {
+asm volatile("cp.async.wait_group 0;");
+}
+
+// CHECK:inline void cp_async_wait_all() {
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to "cp.async.wait_all;" was removed because current "cp.async" is migrated to synchronous copy operation. You may need to adjust the code to tune the performance.
+// CHECK-NEXT:  */
+// CHECK-EMPTY:
+// CHECK-NEXT:}
+__device__ inline void cp_async_wait_all() {
+asm volatile("cp.async.wait_all;");
 }
 
 // clang-format on

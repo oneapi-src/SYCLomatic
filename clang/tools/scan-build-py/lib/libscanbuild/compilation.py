@@ -581,6 +581,10 @@ def parse_args(args, directory='.'):
             arg = arg.replace('"', '')
             flags.append(arg)
             pass
+        # Remove ' for case option like: '-DNAMD="message"' from build log file.
+        elif re.match(r'\'-D', arg):
+            new_arg = arg.strip('\'')
+            flags.append(new_arg)
         # and consider everything else as compile option.
         else:
            flags.append(arg)

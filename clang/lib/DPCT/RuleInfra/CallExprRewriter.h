@@ -800,6 +800,8 @@ class DerefExpr {
 
 public:
   DerefExpr(const Expr *E, const CallExpr *C = nullptr);
+  DerefExpr(std::pair<const CallExpr *, const Expr *> P)
+      : DerefExpr(P.second, P.first) {}
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
     print(Stream);

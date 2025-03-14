@@ -1520,4 +1520,13 @@ extern EXPLICIT_DECL(half);
 #undef FROMDEV3
 #undef FROMDEV2
 
+// CHECK: #define VLLM_LDG(arg) *(arg)
+// CHECK-NEXT: void foo46(const float *__restrict__ input) {
+// CHECK-NEXT:   const float x = VLLM_LDG(&input[13]);
+// CHECK-NEXT: }
+#define VLLM_LDG(arg) __ldg(arg)
+__global__ void foo46(const float *__restrict__ input) {
+  const float x = VLLM_LDG(&input[13]);
+}
+
 #endif

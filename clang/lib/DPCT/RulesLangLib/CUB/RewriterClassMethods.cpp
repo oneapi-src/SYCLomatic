@@ -211,6 +211,28 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
                                 "cub::BlockExchange.ScatterToStriped",
                                 MemberExprBase(), false, "scatter_to_striped",
                                 NDITEM, ARG(0), ARG(1)))
+      // cub::BlockExchange.BlockedToWarpStriped
+      SUBGROUPSIZE_FACTORY(
+          UINT_MAX,
+          MapNames::getDpctNamespace() +
+              "exchange.blocked_to_sub_group_striped",
+          HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
+                                MEMBER_CALL_FACTORY_ENTRY(
+                                    "cub::BlockExchange.BlockedToWarpStriped",
+                                    MemberExprBase(), false,
+                                    "blocked_to_sub_group_striped", NDITEM,
+                                    ARG(0), ARG(1))))
+      // cub::BlockExchange.WarpStripedToBlocked
+      SUBGROUPSIZE_FACTORY(
+          UINT_MAX,
+          MapNames::getDpctNamespace() +
+              "exchange.sub_group_striped_to_blocked",
+          HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
+                                MEMBER_CALL_FACTORY_ENTRY(
+                                    "cub::BlockExchange.WarpStripedToBlocked",
+                                    MemberExprBase(), false,
+                                    "sub_group_striped_to_blocked", NDITEM,
+                                    ARG(0), ARG(1))))
       // cub::BlockShuffle.Offset
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
@@ -275,14 +297,18 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
           CASE_FACTORY_ENTRY(
-              CASE(makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
+              CASE(CheckArgCount(2),
                    MEMBER_CALL_FACTORY_ENTRY("cub::BlockLoad.Load",
                                              MemberExprBase(), false, "load",
                                              NDITEM, ARG(0), ARG(1))),
-              CASE(makeCheckAnd(CheckArgCount(3), CheckCUBEnumTemplateArg(3)),
+              CASE(CheckArgCount(3),
                    MEMBER_CALL_FACTORY_ENTRY("cub::BlockLoad.Load",
                                              MemberExprBase(), false, "load",
                                              NDITEM, ARG(0), ARG(1), ARG(2))),
+              CASE(CheckArgCount(4),
+                   MEMBER_CALL_FACTORY_ENTRY(
+                       "cub::BlockLoad.Load", MemberExprBase(), false, "load",
+                       NDITEM, ARG(0), ARG(1), ARG(2), ARG(3))),
               OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cub::BlockLoad.Load",
                                                 Diagnostics::API_NOT_MIGRATED,
                                                 printCallExprPretty()))))
@@ -290,11 +316,11 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
           CASE_FACTORY_ENTRY(
-              CASE(makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
+              CASE(CheckArgCount(2),
                    MEMBER_CALL_FACTORY_ENTRY("cub::BlockStore.Store",
                                              MemberExprBase(), false, "store",
                                              NDITEM, ARG(0), ARG(1))),
-              CASE(makeCheckAnd(CheckArgCount(3), CheckCUBEnumTemplateArg(3)),
+              CASE(CheckArgCount(3),
                    MEMBER_CALL_FACTORY_ENTRY("cub::BlockStore.Store",
                                              MemberExprBase(), false, "store",
                                              NDITEM, ARG(0), ARG(1), ARG(2))),

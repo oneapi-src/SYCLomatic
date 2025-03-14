@@ -63,10 +63,24 @@ AddrOfExpr::AddrOfExpr(const Expr *E, const CallExpr *C) {
 }
 
 DerefExpr::DerefExpr(const Expr *E, const CallExpr *C) {
+  const auto &SM = DpctGlobalInfo::getSourceManager();
   this->C = C;
   // If E is UnaryOperator or CXXOperatorCallExpr D.E will has value
   this->E = getDereferencedExpr(E);
   if (this->E) {
+    if (C) {
+      // Check the addrof symbol (&) is in the parent range since only it
+      // will be merged with the deref symbol (*)
+      if (E->getBeginLoc().isMacroID()) {
+        auto Range = getDefinitionRange(C->getBeginLoc(), C->getEndLoc());
+        if (!isInRange(Range.getBegin(), Range.getEnd(),
+                       SM.getSpellingLoc(E->getBeginLoc()))) {
+          this->E = E;
+          this->NeedParens = true;
+          return;
+        }
+      }
+    }
     this->E = this->E->IgnoreParens();
     this->AddrOfRemoved = true;
   } else {
