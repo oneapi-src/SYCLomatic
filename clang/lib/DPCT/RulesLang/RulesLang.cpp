@@ -346,7 +346,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatmulHeuristicResult_t", "CUjit_target",
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
-              "CUstreamCallback"))))))
+              "CUstreamCallback", "cudaIpcMemHandle_t", "cudaIpcEventHandle_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -2607,7 +2607,10 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaIpcGetMemHandle" ||
              FuncName == "cudaIpcOpenMemHandle" ||
              FuncName == "cudaIpcCloseMemHandle") {
-    report(CE->getBeginLoc(), Diagnostics::IPC_NOT_SUPPORTED, false);
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
   } else if (FuncName == "__trap") {
     if (DpctGlobalInfo::useAssert()) {
       emplaceTransformation(new ReplaceStmt(CE, "assert(0)"));

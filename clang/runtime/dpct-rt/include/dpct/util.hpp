@@ -14,7 +14,10 @@
 #include <type_traits>
 #include <cassert>
 #include <cstdint>
-
+#ifdef DPCT_EXT_LEVEL_ZERO
+#include "level_zero/ze_api.h"
+#include "sycl/ext/oneapi/backend/level_zero.hpp"
+#endif
 // TODO: Remove these function definitions once they exist in the DPC++ compiler
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 template <typename T>
@@ -1304,7 +1307,80 @@ inline uint32_t ternary_logic_op(uint32_t a, uint32_t b, uint32_t c,
 
   return result;
 }
+namespace experimental {
+ze_context_handle_t get_ze_context(sycl::context context) {
+  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(context);
+}
 
+ze_device_handle_t get_ze_device(sycl::device device) {
+  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(device);
+}
+ze_event_handle_t  get_ze_event(sycl::event event) {
+  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(event);
+}
+
+#if DPCT_EXT_LEVEL_ZERO
+  using ipc_mem_handle_t = ze_ipc_mem_handle_t;
+  using ipc_event_pool_handle_t = ze_ipc_event_pool_handle_t;
+  using result_t = ze_result_t;
+#else
+  using ipc_mem_handle_t = unsigned int;
+  using ipc_event_pool_handle_t = unsigned int;
+  using result_t = void;
+#endif
+
+
+result_t get_mem_ipc_handle(const void *ptr, ipc_mem_handle_t *phipc) {
+#ifdef  DPCT_EXT_LEVEL_ZERO
+    return zeMemGetIpcHandle(get_ze_context(dpct::get_current_device().get_context()), ptr, phipc);
+#endif
+}
+
+result_t close_mem_ipc_handle(const void *ptr) {
+#ifdef  DPCT_EXT_LEVEL_ZERO
+    return zeMemCloseIpcHandle(get_ze_context(dpct::get_current_device().get_context()), ptr);
+#endif
+}
+
+result_t open_mem_ipc_handle(void **ptr, ipc_mem_handle_t hipc) {
+#ifdef  DPCT_EXT_LEVEL_ZERO
+    return zeMemOpenIpcHandle(get_ze_context(dpct::get_current_device().get_context()), get_ze_device(dpct::get_current_device()), hipc, 0u, ptr);
+#endif
+}
+
+result_t get_event_pool_ipc_handle(sycl::event *event, ipc_event_pool_handle_t  *phipc) {
+#ifdef  DPCT_EXT_LEVEL_ZERO
+    ze_event_pool_handle_t event_pool = {};
+    ze_event_pool_desc_t event_pool_desc = {ZE_STRUCTURE_TYPE_EVENT_POOL_DESC};
+    event_pool_desc.count = 1;
+    event_pool_desc.flags =  {ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE};
+    ze_context_handle_t context = get_ze_context(dpct::get_current_device().get_context());
+    ze_device_handle_t device = get_ze_device(dpct::get_current_device());
+    ze_event_handle_t ze_event = get_ze_event(*event);
+    zeEventPoolCreate(context, &event_pool_desc, 1, &device, &event_pool);
+    ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
+    event_desc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
+    event_desc.wait = ZE_EVENT_SCOPE_FLAG_HOST;
+    zeEventCreate(event_pool, &event_desc, &ze_event);
+    return zeEventPoolGetIpcHandle(event_pool, phipc);
+#endif
+}
+
+result_t open_event_pool_ipc_handle(sycl::event *event, ipc_event_pool_handle_t phipc) {
+#ifdef  DPCT_EXT_LEVEL_ZERO
+  ze_context_handle_t ze_context = get_ze_context(dpct::get_current_device().get_context());
+  ze_event_handle_t ze_event ={};
+  ze_event_pool_handle_t event_pool = {};
+  ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
+  event_desc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
+  event_desc.wait = ZE_EVENT_SCOPE_FLAG_HOST;
+  auto ret = zeEventPoolOpenIpcHandle(ze_context, phipc, &event_pool);
+  zeEventCreate(event_pool, &event_desc, &ze_event);
+  *event = make_event<sycl::backend::ext_oneapi_level_zero>({ze_event, sycl::ext::oneapi::level_zero::ownership::keep}, dpct::get_current_device().get_context());
+  return ret;
+#endif
+}
+} // namespace experimental
 #ifdef _WIN32
 #define DPCT_EXPORT __declspec(dllexport)
 #else
