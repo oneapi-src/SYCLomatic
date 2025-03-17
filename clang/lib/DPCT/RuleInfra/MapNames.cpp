@@ -327,6 +327,8 @@ void MapNames::setExplicitNamespaceMap(
       {"__half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
       {"half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
+      {"__nv_half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
+      {"__nv_half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"cudaEvent_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "event_ptr",
                                       HelperFeatureEnum::device_ext)},

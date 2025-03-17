@@ -182,6 +182,12 @@ int main(int argc, char **argv) {
   a = sizeof(h);
   a = sizeof h;
 
+  __nv_half nv_h;
+  a = sizeof(__nv_half);
+  a = sizeof(nv_h);
+  a = sizeof nv_h;
+
+
   //CHECK:sycl::half2 h2;
   //CHECK-NEXT:a = sizeof(sycl::half2);
   //CHECK-NEXT:a = sizeof(h2);
@@ -190,6 +196,15 @@ int main(int argc, char **argv) {
   a = sizeof(half2);
   a = sizeof(h2);
   a = sizeof h2;
+
+  //CHECK:sycl::half2 nv_h2;
+  //CHECK-NEXT:a = sizeof(sycl::half2);
+  //CHECK-NEXT:a = sizeof(nv_h2);
+  //CHECK-NEXT:a = sizeof nv_h2;
+  __nv_half2 nv_h2;
+  a = sizeof(__nv_half2);
+  a = sizeof(nv_h2);
+  a = sizeof nv_h2;
 
   //CHECK:int blasStatus;
   //CHECK-NEXT:a = sizeof(int);
