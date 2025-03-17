@@ -1412,19 +1412,19 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       if (isUserDefinedDecl(RT->getDecl()))
         return;
     }
-
-    std::string CastingType = MapNames::getClNamespace() + "half";
-    if (DRE->getType().getCanonicalType().getAsString() == "__half2_raw") {
-      CastingType = MapNames::getClNamespace() + "half2";
-    }
     ExprAnalysis EA;
     std::string Replacement;
-    llvm::raw_string_ostream OS(Replacement);
-    OS << MapNames::getClNamespace() << "bit_cast<" << CastingType << ">(";
     EA.analyze(DRE);
-    OS << EA.getReplacedString();
-    OS << ")";
-    OS.flush();
+    if (DRE->getType().getCanonicalType().getAsString() == "__half2_raw") {
+      llvm::raw_string_ostream OS(Replacement);
+      OS << EA.getReplacedString() << ".as<" << MapNames::getClNamespace()
+         << "half2>()";
+    } else {
+      llvm::raw_string_ostream OS(Replacement);
+      OS << MapNames::getClNamespace() << "bit_cast<"
+         << MapNames::getClNamespace() << "half>(" << EA.getReplacedString()
+         << ")";
+    }
     emplaceTransformation(new ReplaceStmt(DRE, Replacement));
     return;
   }

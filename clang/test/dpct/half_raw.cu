@@ -83,9 +83,9 @@ void foo2() {
   // CHECK: zero_h . y() = 0x3C00;
   zero_h . y = 0x3C00;
   // clang-format on
-  // CHECK: sycl::half2 alpha = sycl::bit_cast<sycl::half2>(one_h);
+  // CHECK: sycl::half2 alpha = one_h.as<sycl::half2>();
   half2 alpha = one_h;
-  // CHECK: alpha = sycl::bit_cast<sycl::half2>(one_h);
+  // CHECK: alpha = one_h.as<sycl::half2>();
   alpha = one_h;
   // CHECK: uint16_t as = zero_h.x();
   uint16_t as = zero_h.x;
