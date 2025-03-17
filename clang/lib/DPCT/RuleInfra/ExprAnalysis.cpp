@@ -792,8 +792,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
     } else {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
-      if (MapNames::replaceName(MapNamesLang::MemberNamesMap,
-                                       MemberName)) {
+      if (MapNames::replaceName(MapNamesLang::MemberNamesMap, MemberName)) {
         std::string RepStr = "";
         const auto *MD = DpctGlobalInfo::findAncestor<CXXMethodDecl>(ME);
         if (MD && MD->isVolatile()) {

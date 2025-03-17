@@ -8,7 +8,6 @@
 
 #include "CallExprRewriterMath.h"
 #include "CommonMacroDefinition.h"
-#include "RuleInfra/CallExprRewriterCommon.h"
 
 using namespace clang::dpct;
 
