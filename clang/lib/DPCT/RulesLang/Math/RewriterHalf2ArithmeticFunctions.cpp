@@ -13,19 +13,31 @@ using namespace clang::dpct;
 RewriterMap dpct::createHalf2ArithmeticFunctionsRewriterMap() {
   return RewriterMap{
       // __h2div
-      MATH_API_REWRITER_DEVICE(
-          "__h2div",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__h2div"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half2"),
-                  HEADER_INSERT_FACTORY(
-                      HeaderType::HT_SYCL_Math,
-                      CALL_FACTORY_ENTRY("__h2div",
-                                         CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::h2div",
-                                              ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__h2div"),
+      MATH_API_REWRITER_DEVICE_OVERLOAD(
+          CheckArgType(0, "__half2"),
+          MATH_API_REWRITERS_V2(
+              "__h2div",
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::math_libdevice,
+                  MATH_API_SPECIFIC_ELSE_EMU(
+                      CheckArgType(0, "__half2"),
+                      HEADER_INSERT_FACTORY(
+                          HeaderType::HT_SYCL_Math,
+                          CALL_FACTORY_ENTRY("__h2div",
+                                             CALL(MapNames::getClNamespace() +
+                                                      "ext::intel::math::h2div",
+                                                  ARG(0), ARG(1)))))),
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::emulation,
+                  BINARY_OP_FACTORY_ENTRY("__h2div", BinaryOperatorKind::BO_Div,
+                                          makeCallArgCreatorWithCall(0),
+                                          makeCallArgCreatorWithCall(1)))),
+          MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
+              "__h2div",
+              CALL_FACTORY_ENTRY("__h2div",
+                                 CALL(MapNames::getClNamespace(false, true) +
+                                          "ext::oneapi::experimental::h2div",
+                                      ARG(0))),
               BINARY_OP_FACTORY_ENTRY("__h2div", BinaryOperatorKind::BO_Div,
                                       makeCallArgCreatorWithCall(0),
                                       makeCallArgCreatorWithCall(1))))
