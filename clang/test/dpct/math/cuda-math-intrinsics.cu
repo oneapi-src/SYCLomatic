@@ -3539,3 +3539,14 @@ __global__ void foo7(float aa) {
   // CHECK: sycl::sinpi(aa);
   ::sinpif(aa);
 }
+
+void foo8(float aa) {
+  // CHECK: sycl::cospi(aa);
+  ::cospif(aa);
+}
+
+__global__ void foo9(float aa) {
+  // CHECK: sycl::cospi(aa);
+  ::cospif(aa);
+}
+
