@@ -502,10 +502,11 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
                                ARG(0)))))),
           MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
               "__hisnan2",
-              CALL_FACTORY_ENTRY("__hisnan2",
-                                 CALL(MapNames::getClNamespace(false, true) +
-                                          "ext::oneapi::experimental::isnan",
-                                      ARG(0))),
+              UNARY_OP_FACTORY_ENTRY(
+                  "__hisnan2", UnaryOperatorKind::UO_Minus,
+                  CALL(MapNames::getClNamespace(false, true) +
+                           "ext::oneapi::experimental::isnan",
+                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "__hisnan2",
                   CALL(MapNames::getClNamespace() + "vec<" +

@@ -160,7 +160,7 @@ __global__ void kernelFuncBfloat162Comparison() {
   bf162 = __hgt2(bf162_1, bf162_2);
   // CHECK: bf162 = dpct::unordered_compare(bf162_1, bf162_2, std::greater<>());
   bf162 = __hgtu2(bf162_1, bf162_2);
-  // CHECK: bf162 = sycl::ext::oneapi::experimental::isnan(bf162_1);
+  // CHECK: bf162 = -sycl::ext::oneapi::experimental::isnan(bf162_1);
   bf162 = __hisnan2(bf162_1);
   // CHECK: bf162 = dpct::compare(bf162_1, bf162_2, std::less_equal<>());
   bf162 = __hle2(bf162_1, bf162_2);
