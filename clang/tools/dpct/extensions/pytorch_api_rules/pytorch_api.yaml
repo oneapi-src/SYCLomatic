@@ -184,13 +184,6 @@
 - Rule: rule_at_cuda_CUDAGuard
   Kind: Type
   Priority: Takeover
-  In: at::cuda::CUDAGuard
-  Out: at::DeviceGuard
-  Includes: [<c10/core/DeviceGuard.h>]
-
-- Rule: rule_at_cuda_CUDAGuard
-  Kind: Type
-  Priority: Takeover
   In: c10::cuda::CUDAGuard
   Out: c10::DeviceGuard
   Includes: [<c10/core/DeviceGuard.h>]
