@@ -286,15 +286,10 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__heq2_mask"),
               EMPTY_FACTORY_ENTRY("__heq2_mask"),
               EMPTY_FACTORY_ENTRY("__heq2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__heq2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__heq2_mask")),
                   CALL_FACTORY_ENTRY(
                       "__heq2_mask",
                       CALL(MapNames::getDpctNamespace() + "compare_mask",
-                           ARG(0), ARG(1), LITERAL("std::equal_to<>()"))))))
+                           ARG(0), ARG(1), LITERAL("std::equal_to<>()")))))
       // __hequ2
       MATH_API_REWRITER_DEVICE(
           "__hequ2",
@@ -322,16 +317,11 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hequ2_mask"),
               EMPTY_FACTORY_ENTRY("__hequ2_mask"),
               EMPTY_FACTORY_ENTRY("__hequ2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hequ2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hequ2_mask")),
                   CALL_FACTORY_ENTRY("__hequ2_mask",
                                      CALL(MapNames::getDpctNamespace() +
                                               "unordered_compare_mask",
                                           ARG(0), ARG(1),
-                                          LITERAL("std::equal_to<>()"))))))
+                                          LITERAL("std::equal_to<>()")))))
       // __hge2
       MATH_API_REWRITER_DEVICE(
           "__hge2",
@@ -359,16 +349,11 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hge2_mask"),
               EMPTY_FACTORY_ENTRY("__hge2_mask"),
               EMPTY_FACTORY_ENTRY("__hge2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hge2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hge2_mask")),
                   CALL_FACTORY_ENTRY(
                       "__hge2_mask",
                       CALL(MapNames::getDpctNamespace() + "compare_mask",
                            ARG(0), ARG(1),
-                           LITERAL("std::greater_equal<>()"))))))
+                           LITERAL("std::greater_equal<>()")))))
       // __hgeu2
       MATH_API_REWRITER_DEVICE(
           "__hgeu2",
@@ -397,16 +382,11 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hgeu2_mask"),
               EMPTY_FACTORY_ENTRY("__hgeu2_mask"),
               EMPTY_FACTORY_ENTRY("__hgeu2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hgeu2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hgeu2_mask")),
                   CALL_FACTORY_ENTRY("__hgeu2_mask",
                                      CALL(MapNames::getDpctNamespace() +
                                               "unordered_compare_mask",
                                           ARG(0), ARG(1),
-                                          LITERAL("std::greater_equal<>()"))))))
+                                          LITERAL("std::greater_equal<>()")))))
       // __hgt2
       MATH_API_REWRITER_DEVICE(
           "__hgt2",
@@ -434,15 +414,10 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hgt2_mask"),
               EMPTY_FACTORY_ENTRY("__hgt2_mask"),
               EMPTY_FACTORY_ENTRY("__hgt2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hgt2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hgt2_mask")),
                   CALL_FACTORY_ENTRY(
                       "__hgt2_mask",
                       CALL(MapNames::getDpctNamespace() + "compare_mask",
-                           ARG(0), ARG(1), LITERAL("std::greater<>()"))))))
+                           ARG(0), ARG(1), LITERAL("std::greater<>()")))))
       // __hgtu2
       MATH_API_REWRITER_DEVICE(
           "__hgtu2",
@@ -470,16 +445,11 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hgtu2_mask"),
               EMPTY_FACTORY_ENTRY("__hgtu2_mask"),
               EMPTY_FACTORY_ENTRY("__hgtu2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hgtu2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hgtu2_mask")),
                   CALL_FACTORY_ENTRY("__hgtu2_mask",
                                      CALL(MapNames::getDpctNamespace() +
                                               "unordered_compare_mask",
                                           ARG(0), ARG(1),
-                                          LITERAL("std::greater<>()"))))))
+                                          LITERAL("std::greater<>()")))))
       // __hisnan2
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -544,15 +514,10 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hle2_mask"),
               EMPTY_FACTORY_ENTRY("__hle2_mask"),
               EMPTY_FACTORY_ENTRY("__hle2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hle2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hle2_mask")),
                   CALL_FACTORY_ENTRY(
                       "__hle2_mask",
                       CALL(MapNames::getDpctNamespace() + "compare_mask",
-                           ARG(0), ARG(1), LITERAL("std::less_equal<>()"))))))
+                           ARG(0), ARG(1), LITERAL("std::less_equal<>()")))))
       // __hleu2
       MATH_API_REWRITER_DEVICE(
           "__hleu2",
@@ -580,16 +545,11 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hleu2_mask"),
               EMPTY_FACTORY_ENTRY("__hleu2_mask"),
               EMPTY_FACTORY_ENTRY("__hleu2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hleu2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hleu2_mask")),
                   CALL_FACTORY_ENTRY("__hleu2_mask",
                                      CALL(MapNames::getDpctNamespace() +
                                               "unordered_compare_mask",
                                           ARG(0), ARG(1),
-                                          LITERAL("std::less_equal<>()"))))))
+                                          LITERAL("std::less_equal<>()")))))
       // __hlt2
       MATH_API_REWRITER_DEVICE(
           "__hlt2",
@@ -617,15 +577,10 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hlt2_mask"),
               EMPTY_FACTORY_ENTRY("__hlt2_mask"),
               EMPTY_FACTORY_ENTRY("__hlt2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hlt2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hlt2_mask")),
                   CALL_FACTORY_ENTRY(
                       "__hlt2_mask",
                       CALL(MapNames::getDpctNamespace() + "compare_mask",
-                           ARG(0), ARG(1), LITERAL("std::less<>()"))))))
+                           ARG(0), ARG(1), LITERAL("std::less<>()")))))
       // __hltu2
       MATH_API_REWRITER_DEVICE(
           "__hltu2",
@@ -653,16 +608,11 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hltu2_mask"),
               EMPTY_FACTORY_ENTRY("__hltu2_mask"),
               EMPTY_FACTORY_ENTRY("__hltu2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hltu2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hltu2_mask")),
                   CALL_FACTORY_ENTRY("__hltu2_mask",
                                      CALL(MapNames::getDpctNamespace() +
                                               "unordered_compare_mask",
                                           ARG(0), ARG(1),
-                                          LITERAL("std::less<>()"))))))
+                                          LITERAL("std::less<>()")))))
       // __hmax2
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -720,15 +670,10 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
                                                   "ext::intel::math::hmax2_nan",
                                               ARG(0), ARG(1))))),
               EMPTY_FACTORY_ENTRY("__hmax2_nan"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hmax2_nan",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hmax2_nan")),
                   CALL_FACTORY_ENTRY(
                       "__hmax2_nan",
                       CALL(MapNames::getDpctNamespace() + "fmax_nan", ARG(0),
-                           ARG(1))))))
+                           ARG(1)))))
       // __hmin2
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -786,15 +731,10 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
                                                   "ext::intel::math::hmin2_nan",
                                               ARG(0), ARG(1))))),
               EMPTY_FACTORY_ENTRY("__hmin2_nan"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hmin2_nan",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hmin2_nan")),
                   CALL_FACTORY_ENTRY(
                       "__hmin2_nan",
                       CALL(MapNames::getDpctNamespace() + "fmin_nan", ARG(0),
-                           ARG(1))))))
+                           ARG(1)))))
       // __hne2
       MATH_API_REWRITER_DEVICE(
           "__hne2",
@@ -822,15 +762,10 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hne2_mask"),
               EMPTY_FACTORY_ENTRY("__hne2_mask"),
               EMPTY_FACTORY_ENTRY("__hne2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hne2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hne2_mask")),
                   CALL_FACTORY_ENTRY(
                       "__hne2_mask",
                       CALL(MapNames::getDpctNamespace() + "compare_mask",
-                           ARG(0), ARG(1), LITERAL("std::not_equal_to<>()"))))))
+                           ARG(0), ARG(1), LITERAL("std::not_equal_to<>()")))))
       // __hneu2
       MATH_API_REWRITER_DEVICE(
           "__hneu2",
@@ -858,15 +793,10 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__hneu2_mask"),
               EMPTY_FACTORY_ENTRY("__hneu2_mask"),
               EMPTY_FACTORY_ENTRY("__hneu2_mask"),
-              CONDITIONAL_FACTORY_ENTRY(
-                  UseSYCLCompat,
-                  UNSUPPORT_FACTORY_ENTRY("__hneu2_mask",
-                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                          LITERAL("__hneu2_mask")),
                   CALL_FACTORY_ENTRY(
                       "__hneu2_mask",
                       CALL(MapNames::getDpctNamespace() +
                                "unordered_compare_mask",
                            ARG(0), ARG(1),
-                           LITERAL("std::not_equal_to<>()"))))))};
+                           LITERAL("std::not_equal_to<>()")))))};
 }
