@@ -12,6 +12,55 @@ using namespace clang::dpct;
 
 RewriterMap dpct::createDoublePrecisionMathematicalFunctionsRewriterMap() {
   return RewriterMap{
+      // fabs
+      MATH_API_REWRITERS_V2(
+          "fabs",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::device_normal,
+              CALL_FACTORY_ENTRY(
+                  "fabs",
+                  CALL(MapNames::getClNamespace() + "fabs",
+                       CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::host_normal,
+              CALL_FACTORY_ENTRY(
+                  "fabs",
+                  CALL(MapNames::getClNamespace() + "fabs",
+                       CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))))
+      // fmax
+      MATH_API_REWRITERS_V2(
+          "fmax",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::device_normal,
+              CALL_FACTORY_ENTRY(
+                  "fmax",
+                  CALL(MapNames::getClNamespace() + "fmax",
+                       CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
+                       CAST_IF_NOT_SAME(makeLiteral("double"), ARG(1))))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::host_normal,
+              CALL_FACTORY_ENTRY(
+                  "fmax",
+                  CALL(MapNames::getClNamespace() + "fmax",
+                       CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
+                       CAST_IF_NOT_SAME(makeLiteral("double"), ARG(1))))))
+      // fmin
+      MATH_API_REWRITERS_V2(
+          "fmin",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::device_normal,
+              CALL_FACTORY_ENTRY(
+                  "fmin",
+                  CALL(MapNames::getClNamespace() + "fmin",
+                       CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
+                       CAST_IF_NOT_SAME(makeLiteral("double"), ARG(1))))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::host_normal,
+              CALL_FACTORY_ENTRY(
+                  "fmin",
+                  CALL(MapNames::getClNamespace() + "fmin",
+                       CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
+                       CAST_IF_NOT_SAME(makeLiteral("double"), ARG(1))))))
       // cospi
       CALL_FACTORY_ENTRY(
           "cospi",

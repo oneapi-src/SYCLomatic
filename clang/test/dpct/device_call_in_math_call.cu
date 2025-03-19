@@ -8,6 +8,6 @@ __device__ float g(int width = 32)
   return 1.0;
 }
 __global__ void f() {
-  // CHECK: sycl::fmax((float)(1.0), g(item_ct1, 16));
+  // CHECK: sycl::fmax((float)1.0, g(item_ct1, 16));
   fmaxf(1.0, g(16));
 }

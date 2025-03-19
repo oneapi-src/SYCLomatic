@@ -17,6 +17,9 @@
 // CHECK-NEXT: #define COMPLEX_D_DIV(a, b) dpct::cdiv<double>(a, b)
 // CHECK-NEXT: #define COMPLEX_D_FMA(a, b, c) dpct::cmul<double>(a, b) + c
 // CHECK-NEXT: #define COMPLEX_D_ABS(a) dpct::cabs<double>(a)
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated fabs call is used in a macro/template definition and may not be valid for all macro/template uses. Adjust the code.
+// CHECK-NEXT: */
 // CHECK-NEXT: #define COMPLEX_D_ABS1(a) (sycl::fabs((a).x()) + sycl::fabs((a).y()))
 // CHECK-NEXT: #define COMPLEX_D_CONJ(a) dpct::conj<double>(a)
 #define COMPLEX_D_MAKE(r,i) make_cuDoubleComplex(r, i)
@@ -44,6 +47,9 @@
 // CHECK-NEXT: #define COMPLEX_F_DIV(a, b) dpct::cdiv<float>(a, b)
 // CHECK-NEXT: #define COMPLEX_F_FMA(a, b, c) dpct::cmul<float>(a, b) + c
 // CHECK-NEXT: #define COMPLEX_F_ABS(a) dpct::cabs<float>(a)
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated fabsf call is used in a macro/template definition and may not be valid for all macro/template uses. Adjust the code.
+// CHECK-NEXT: */
 // CHECK-NEXT: #define COMPLEX_F_ABS1(a) (sycl::fabs((a).x()) + sycl::fabs((a).y()))
 // CHECK-NEXT: #define COMPLEX_F_CONJ(a) dpct::conj<float>(a)
 #define COMPLEX_F_MAKE(r,i) make_cuFloatComplex(r, i)

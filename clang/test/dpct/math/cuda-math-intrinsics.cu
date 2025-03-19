@@ -2703,7 +2703,7 @@ __device__ void do_migration5() {
 
   //CHECK: std::max(i, i);
   //CHECK-NEXT: std::min(i, i);
-  //CHECK-NEXT: sycl::fabs(f);
+  //CHECK-NEXT: std::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2759,7 +2759,7 @@ __global__ void do_migration6() {
 
   //CHECK: std::max(i, i);
   //CHECK-NEXT: std::min(i, i);
-  //CHECK-NEXT: sycl::fabs(f);
+  //CHECK-NEXT: std::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2815,7 +2815,7 @@ __device__ __host__ void do_migration7() {
 
   //CHECK: std::max(i, i);
   //CHECK-NEXT: std::min(i, i);
-  //CHECK-NEXT: sycl::fabs(f);
+  //CHECK-NEXT: std::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
