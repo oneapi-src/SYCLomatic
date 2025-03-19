@@ -295,7 +295,6 @@ RewriterMap dpct::createSinglePrecisionMathematicalFunctionsRewriterMap() {
                   "sinpif",
                   CALL(MapNames::getClNamespace() + "sinpi",
                        CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))))
-<<<<<<< HEAD
         // cospif
         MATH_API_REWRITERS_V2(
               "cospif",
@@ -311,7 +310,6 @@ RewriterMap dpct::createSinglePrecisionMathematicalFunctionsRewriterMap() {
                       "cospif",
                       CALL(MapNames::getClNamespace() + "cospi",
                            CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))))
-=======
       // tanhf
       MATH_API_REWRITERS_V2(
           "tanhf",
@@ -327,7 +325,6 @@ RewriterMap dpct::createSinglePrecisionMathematicalFunctionsRewriterMap() {
                   "tanhf",
                   CALL(MapNames::getClNamespace() + "tanh",
                        CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))))
->>>>>>> origin/SYCLomatic
       // y0f
       MATH_API_REWRITER_DEVICE(
           "y0f",
