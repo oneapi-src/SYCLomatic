@@ -91,7 +91,8 @@ const std::map<std::string, int> MapNamesLang::VectorTypeMigratedTypeSizeMap{
     {"ulonglong4", 32}, {"float1", 4},      {"float2", 8},
     {"float3", 16},     {"float4", 16},     {"double1", 8},
     {"double2", 16},    {"double3", 32},    {"double4", 32},
-    {"__half", 2},      {"__half2", 4},     {"__half_raw", 2}};
+    {"__half", 2},      {"__half2", 4},     {"__half_raw", 2},
+    {"__half2_raw", 4}};
 
 const std::map<clang::dpct::KernelArgType, int>
     MapNamesLang::KernelArgTypeSizeMap{
