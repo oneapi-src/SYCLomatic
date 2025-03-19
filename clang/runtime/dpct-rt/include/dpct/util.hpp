@@ -30,6 +30,18 @@ __SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __attribute__((noduplicat
 T __spirv_GroupNonUniformShuffleUp(__spv::Scope::Flag, T, unsigned) noexcept;
 #endif
 
+template <typename T> struct is_scoped_enum {
+  static constexpr bool value =
+      std::is_enum_v<T> && !std::is_convertible_v<T, std::underlying_type_t<T>>;
+};
+template <typename T>
+inline constexpr bool is_scoped_enum_v = is_scoped_enum<T>::value;
+template <class T>
+std::enable_if_t<is_scoped_enum_v<T>, bool> operator==(const T &type,
+                                                       int value) {
+  using underlying_t = std::underlying_type_t<T>;
+  return static_cast<underlying_t>(type) == value;
+}
 namespace dpct {
 /// dim3 is used to store 3 component dimensions.
 class dim3 {

@@ -45,6 +45,8 @@ int main() {
 
   // CHECK: sycl::usm::alloc memType;
   CUmemorytype memType;
+
+  if (memType == 0) memType = CU_MEMORYTYPE_HOST;
   void* hostPtr;
   unsigned int isManaged;
   int deviceID;
