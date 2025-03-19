@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 #include "UserDefinedRules/UserDefinedRules.h"
 #include "ASTTraversal.h"
+#include "AnalysisInfo.h"
 #include "ErrorHandle/Error.h"
 #include "MigrateScript/MigrateCmakeScript.h"
 #include "MigrateScript/MigratePythonBuildScript.h"
@@ -68,9 +69,17 @@ void registerMacroRule(MetaRuleObject &R) {
   }
 }
 
+static std::map<std::string, OutputBuilder> APIRulesMap;
+
 void registerAPIRule(MetaRuleObject &R) {
   using namespace clang::dpct;
-  // register rule
+  // register all rules for CXXConstructExpr
+  OutputBuilder OB;
+  OB.Kind = OutputBuilder::Kind::Top;
+  APIRulesMap[R.In] = OB;
+  APIRulesMap[R.In].parse(R.Out);
+
+  // register all rules for CallExpr
   registerMigrationRule(
       R.RuleId, [In = R.In, HET = R.RuleAttributes.HasExplicitTemplateArgs] {
         return std::make_unique<clang::dpct::UserDefinedAPIRule>(In, HET);
@@ -673,7 +682,7 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx,
   }
   Idx = i;
 
-  if (Idx >= OutStr.size()) {
+  if (Idx > OutStr.size()) {
     llvm::errs() << RuleFile << ":Error: in rule " << RuleName
                  << ", a positive integer is expected after " << Keyword
                  << "\n";
@@ -827,6 +836,39 @@ void clang::dpct::UserDefinedAPIRule::registerMatcher(
                                      APIName, HasExplicitTemplateArgs)))))))
                     .bind("call"),
                 this);
+  MF.addMatcher(
+      cxxConstructExpr(hasType(namedDecl(hasAnyName(APIName)))).bind("ctor"),
+      this);
+}
+
+static void buildRewriterStrForCtor(const CXXConstructExpr *Ctor,
+                                    llvm::raw_string_ostream &OS,
+                                    const OutputBuilder &OB) {
+  switch (OB.Kind) {
+  case (OutputBuilder::Kind::Top):
+    for (auto &ob : OB.SubBuilders) {
+      buildRewriterStrForCtor(Ctor, OS, *ob);
+    }
+    return;
+  case (OutputBuilder::Kind::String):
+    OS << OB.Str;
+    return;
+  case (OutputBuilder::Kind::Arg): {
+    if (OB.ArgIndex >= Ctor->getNumArgs()) {
+      OS << "";
+      return;
+    }
+    ArgumentAnalysis AA;
+    AA.setCallSpelling(Ctor);
+    AA.analyze(Ctor->getArg(OB.ArgIndex));
+    OS << AA.getRewriteString();
+    return;
+  }
+  default:
+    DpctDebugs() << "[OutputBuilder::Kind] Unexpected value: " << OB.Kind
+                 << "\n";
+    assert(0);
+  }
 }
 
 void clang::dpct::UserDefinedAPIRule::runRule(
@@ -836,6 +878,32 @@ void clang::dpct::UserDefinedAPIRule::runRule(
     EA.analyze(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
+  } else if (const CXXConstructExpr *CCE =
+                 getAssistNodeAsType<CXXConstructExpr>(Result, "ctor")) {
+    if (CCE->getNumArgs()) {
+      PrintingPolicy PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+      PP.SuppressTagKeyword = true;
+      auto Iter =
+          APIRulesMap.find(CCE->getType().getCanonicalType().getAsString(PP));
+      if (Iter == APIRulesMap.end())
+        return;
+      std::string Repl;
+      {
+        llvm::raw_string_ostream OS(Repl);
+        buildRewriterStrForCtor(CCE, OS, Iter->second);
+      }
+      auto Range =
+          getDefinitionRange(CCE->getArg(0)->getBeginLoc(),
+                             CCE->getArg(CCE->getNumArgs() - 1)->getEndLoc());
+      auto BeginLoc = Range.getBegin();
+      auto EndLoc = Range.getEnd();
+      const auto &SM = DpctGlobalInfo::getContext().getSourceManager();
+      auto Len = Lexer::MeasureTokenLength(
+          EndLoc, SM, DpctGlobalInfo::getContext().getLangOpts());
+      Len += SM.getDecomposedLoc(EndLoc).second -
+             SM.getDecomposedLoc(BeginLoc).second;
+      emplaceTransformation(new ReplaceText(BeginLoc, Len, std::move(Repl)));
+    }
   }
 }
 
