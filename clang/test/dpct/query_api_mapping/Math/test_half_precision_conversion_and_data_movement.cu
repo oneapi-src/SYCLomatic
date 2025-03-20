@@ -4,7 +4,7 @@
 // __FLOAT22HALF2_RN: CUDA API:
 // __FLOAT22HALF2_RN-NEXT:   __float22half2_rn(f /*float2*/);
 // __FLOAT22HALF2_RN-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
-// __FLOAT22HALF2_RN-NEXT:   sycl::half2(sycl::ext::intel::math::float2half_rn(f[0]), sycl::ext::intel::math::float2half_rn(f[1]));
+// __FLOAT22HALF2_RN-NEXT:   sycl::half2(sycl::ext::intel::math::float2half_rn(f.x()), sycl::ext::intel::math::float2half_rn(f.y()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__float2half | FileCheck %s -check-prefix=__FLOAT2HALF
 // __FLOAT2HALF: CUDA API:
@@ -52,7 +52,7 @@
 // __HALF22FLOAT2: CUDA API:
 // __HALF22FLOAT2-NEXT:   __half22float2(h /*__half2*/);
 // __HALF22FLOAT2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
-// __HALF22FLOAT2-NEXT:   sycl::float2(sycl::ext::intel::math::half2float(h[0]), sycl::ext::intel::math::half2float(h[1]));
+// __HALF22FLOAT2-NEXT:   sycl::float2(sycl::ext::intel::math::half2float(h.x()), sycl::ext::intel::math::half2float(h.y()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__half2float | FileCheck %s -check-prefix=__HALF2FLOAT
 // __HALF2FLOAT: CUDA API:
@@ -244,13 +244,13 @@
 // __HIGH2HALF2: CUDA API:
 // __HIGH2HALF2-NEXT:   __high2half2(h /*__half2*/);
 // __HIGH2HALF2-NEXT: Is migrated to:
-// __HIGH2HALF2-NEXT:   sycl::half2(h[1]);
+// __HIGH2HALF2-NEXT:   sycl::half2(h.y());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__highs2half2 | FileCheck %s -check-prefix=__HIGHS2HALF2
 // __HIGHS2HALF2: CUDA API:
 // __HIGHS2HALF2-NEXT:   __highs2half2(h1 /*__half2*/, h2 /*__half2*/);
 // __HIGHS2HALF2-NEXT: Is migrated to:
-// __HIGHS2HALF2-NEXT:   sycl::half2(h1[1], h2[1]);
+// __HIGHS2HALF2-NEXT:   sycl::half2(h1.y(), h2.y());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__int2half_rd | FileCheck %s -check-prefix=__INT2HALF_RD
 // __INT2HALF_RD: CUDA API:
@@ -316,19 +316,19 @@
 // __LOW2HALF2: CUDA API:
 // __LOW2HALF2-NEXT:   __low2half2(h /*__half2*/);
 // __LOW2HALF2-NEXT: Is migrated to:
-// __LOW2HALF2-NEXT:   sycl::half2(h[0]);
+// __LOW2HALF2-NEXT:   sycl::half2(h.x());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__lowhigh2highlow | FileCheck %s -check-prefix=__LOWHIGH2HIGHLOW
 // __LOWHIGH2HIGHLOW: CUDA API:
 // __LOWHIGH2HIGHLOW-NEXT:   __lowhigh2highlow(h /*__half2*/);
 // __LOWHIGH2HIGHLOW-NEXT: Is migrated to:
-// __LOWHIGH2HIGHLOW-NEXT:   sycl::half2(h[1], h[0]);
+// __LOWHIGH2HIGHLOW-NEXT:   sycl::half2(h.y(), h.x());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__lows2half2 | FileCheck %s -check-prefix=__LOWS2HALF2
 // __LOWS2HALF2: CUDA API:
 // __LOWS2HALF2-NEXT:   __lows2half2(h1 /*__half2*/, h2 /*__half2*/);
 // __LOWS2HALF2-NEXT: Is migrated to:
-// __LOWS2HALF2-NEXT:   sycl::half2(h1[0], h2[0]);
+// __LOWS2HALF2-NEXT:   sycl::half2(h1.x(), h2.x());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__short2half_rd | FileCheck %s -check-prefix=__SHORT2HALF_RD
 // __SHORT2HALF_RD: CUDA API:
