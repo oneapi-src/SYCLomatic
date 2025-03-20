@@ -6,7 +6,8 @@
 
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
-int main() {
+
+void foo1() {
   // CHECK: uint16_t one_h{0x3C00};
   __half_raw one_h{0x3C00};
   // CHECK: uint16_t zero_h{0};
@@ -39,4 +40,55 @@ int main() {
   uint16_t as = zero_h.x;
   // CHECK: uint16_t *ptr1 = &one_h;
   __half_raw *ptr1 = &one_h;
+}
+
+void foo2() {
+  // CHECK: sycl::ushort2 one_h{0x3C00};
+  __half2_raw one_h{0x3C00};
+  // CHECK: sycl::ushort2 zero_h{0};
+  __half2_raw zero_h{0};
+  // CHECK: sycl::ushort2 *ptr = new sycl::ushort2{0};
+  __half2_raw *ptr = new __half2_raw{0};
+  // clang-format off
+  // CHECK: ptr->x() = 0x3C00;
+  ptr->x = 0x3C00;
+  // CHECK: ptr ->x() = 0x3C00;
+  ptr ->x = 0x3C00;
+  // CHECK: ptr-> x() = 0x3C00;
+  ptr-> x = 0x3C00;
+  // CHECK: ptr -> x() = 0x3C00;
+  ptr -> x = 0x3C00;
+  // CHECK: zero_h.x() = 0x3C00;
+  zero_h.x = 0x3C00;
+  // CHECK: zero_h .x() = 0x3C00;
+  zero_h .x = 0x3C00;
+  // CHECK: zero_h. x() = 0x3C00;
+  zero_h. x = 0x3C00;
+  // CHECK: zero_h . x() = 0x3C00;
+  zero_h . x = 0x3C00;
+  // CHECK: ptr->y() = 0x3C00;
+  ptr->y = 0x3C00;
+  // CHECK: ptr ->y() = 0x3C00;
+  ptr ->y = 0x3C00;
+  // CHECK: ptr-> y() = 0x3C00;
+  ptr-> y = 0x3C00;
+  // CHECK: ptr -> y() = 0x3C00;
+  ptr -> y = 0x3C00;
+  // CHECK: zero_h.y() = 0x3C00;
+  zero_h.y = 0x3C00;
+  // CHECK: zero_h .y() = 0x3C00;
+  zero_h .y = 0x3C00;
+  // CHECK: zero_h. y() = 0x3C00;
+  zero_h. y = 0x3C00;
+  // CHECK: zero_h . y() = 0x3C00;
+  zero_h . y = 0x3C00;
+  // clang-format on
+  // CHECK: sycl::half2 alpha = one_h.as<sycl::half2>();
+  half2 alpha = one_h;
+  // CHECK: alpha = one_h.as<sycl::half2>();
+  alpha = one_h;
+  // CHECK: uint16_t as = zero_h.x();
+  uint16_t as = zero_h.x;
+  // CHECK: sycl::ushort2 *ptr1 = &one_h;
+  __half2_raw *ptr1 = &one_h;
 }

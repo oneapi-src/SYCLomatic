@@ -42,7 +42,7 @@ __global__ void kernelFuncBfloat16Arithmetic() {
 }
 
 __global__ void kernelFuncBfloat162Arithmetic() {
-  // CHECK: sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2, bf162_3;
+  // CHECK: sycl::vec<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2, bf162_3;
   __nv_bfloat162 bf162, bf162_1, bf162_2, bf162_3;
   // CHECK: bf162 = bf162_1 / bf162_2;
   bf162 = __h2div(bf162_1, bf162_2);
@@ -121,7 +121,7 @@ __global__ void kernelFuncBfloat16Comparison() {
 }
 
 __global__ void kernelFuncBfloat162Comparison() {
-  // CHECK: sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
+  // CHECK: sycl::vec<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
   __nv_bfloat162 bf162, bf162_1, bf162_2;
   bool b;
   // CHECK: b = dpct::compare_both(bf162_1, bf162_2, std::equal_to<>());
@@ -160,7 +160,7 @@ __global__ void kernelFuncBfloat162Comparison() {
   bf162 = __hgt2(bf162_1, bf162_2);
   // CHECK: bf162 = dpct::unordered_compare(bf162_1, bf162_2, std::greater<>());
   bf162 = __hgtu2(bf162_1, bf162_2);
-  // CHECK: bf162 = sycl::ext::oneapi::experimental::isnan(bf162_1);
+  // CHECK: bf162 = -sycl::ext::oneapi::experimental::isnan(bf162_1);
   bf162 = __hisnan2(bf162_1);
   // CHECK: bf162 = dpct::compare(bf162_1, bf162_2, std::less_equal<>());
   bf162 = __hle2(bf162_1, bf162_2);
@@ -220,7 +220,7 @@ __global__ void kernelFuncBfloat16Math() {
 }
 
 __global__ void kernelFuncBfloat162Math() {
-  // CHECK: sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1;
+  // CHECK: sycl::vec<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1;
   __nv_bfloat162 bf162, bf162_1;
   // CHECK: bf162_1 = sycl::ext::oneapi::experimental::ceil(bf162);
   bf162_1 = h2ceil(bf162);
@@ -240,7 +240,7 @@ __global__ void kernelFuncBfloat162Math() {
   bf162_1 = h2log10(bf162);
   // CHECK: bf162_1 = sycl::ext::oneapi::experimental::log2(bf162);
   bf162_1 = h2log2(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::half_precision::recip(float(bf162[0])), sycl::half_precision::recip(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::half_precision::recip(float(bf162.x())), sycl::half_precision::recip(float(bf162.y())));
   bf162_1 = h2rcp(bf162);
   // CHECK: bf162_1 = sycl::ext::oneapi::experimental::rint(bf162);
   bf162_1 = h2rint(bf162);

@@ -26,10 +26,10 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                   CALL(MapNames::getClNamespace() + "half2",
                        CALL(MapNames::getClNamespace() +
                                 "ext::intel::math::float2half_rn",
-                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("0"))),
+                            MEMBER_CALL(ARG(0), false, "x")),
                        CALL(MapNames::getClNamespace() +
                                 "ext::intel::math::float2half_rn",
-                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))))),
+                            MEMBER_CALL(ARG(0), false, "y"))))),
           MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG_FACTORY_ENTRY(
               "__float22half2_rn", ARG(0), false,
               "convert<" + MapNames::getClNamespace() + "half, " +
@@ -160,15 +160,14 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
           math::UseIntelDeviceMath,
           HEADER_INSERT_FACTORY(
               HeaderType::HT_SYCL_Math,
-              CALL_FACTORY_ENTRY(
-                  "__half22float2",
-                  CALL(MapNames::getClNamespace() + "float2",
-                       CALL(MapNames::getClNamespace() +
-                                "ext::intel::math::half2float",
-                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("0"))),
-                       CALL(MapNames::getClNamespace() +
-                                "ext::intel::math::half2float",
-                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))))),
+              CALL_FACTORY_ENTRY("__half22float2",
+                                 CALL(MapNames::getClNamespace() + "float2",
+                                      CALL(MapNames::getClNamespace() +
+                                               "ext::intel::math::half2float",
+                                           MEMBER_CALL(ARG(0), false, "x")),
+                                      CALL(MapNames::getClNamespace() +
+                                               "ext::intel::math::half2float",
+                                           MEMBER_CALL(ARG(0), false, "y"))))),
           MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG_FACTORY_ENTRY(
               "__half22float2", ARG(0), false,
               "convert<float, " + MapNames::getClNamespace() +
@@ -656,12 +655,12 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
       // __high2half2
       CALL_FACTORY_ENTRY("__high2half2",
                          CALL(MapNames::getClNamespace() + "half2",
-                              ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))
+                              MEMBER_CALL(ARG(0), false, "y")))
       // __highs2half2
       CALL_FACTORY_ENTRY("__highs2half2",
                          CALL(MapNames::getClNamespace() + "half2",
-                              ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
-                              ARRAY_SUBSCRIPT(ARG(1), LITERAL("1"))))
+                              MEMBER_CALL(ARG(0), false, "y"),
+                              MEMBER_CALL(ARG(1), false, "y")))
       // __int2half_rd
       CONDITIONAL_FACTORY_ENTRY(
           math::UseIntelDeviceMath,
@@ -929,17 +928,17 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
       // __low2half2
       CALL_FACTORY_ENTRY("__low2half2",
                          CALL(MapNames::getClNamespace() + "half2",
-                              ARRAY_SUBSCRIPT(ARG(0), LITERAL("0"))))
+                              MEMBER_CALL(ARG(0), false, "x")))
       // __lowhigh2highlow
       CALL_FACTORY_ENTRY("__lowhigh2highlow",
                          CALL(MapNames::getClNamespace() + "half2",
-                              ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
-                              ARRAY_SUBSCRIPT(ARG(0), LITERAL("0"))))
+                              MEMBER_CALL(ARG(0), false, "y"),
+                              MEMBER_CALL(ARG(0), false, "x")))
       // __lows2half2
       CALL_FACTORY_ENTRY("__lows2half2",
                          CALL(MapNames::getClNamespace() + "half2",
-                              ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
-                              ARRAY_SUBSCRIPT(ARG(1), LITERAL("0"))))
+                              MEMBER_CALL(ARG(0), false, "x"),
+                              MEMBER_CALL(ARG(1), false, "x")))
       // __short2half_rd
       CONDITIONAL_FACTORY_ENTRY(
           math::UseIntelDeviceMath,
