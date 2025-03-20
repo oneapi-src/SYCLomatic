@@ -792,20 +792,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
     } else {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
-      const auto &MArrayIdx =
-          MapNamesLang::MArrayMemberNamesMap.find(MemberName);
-      if (MapNamesLang::VectorTypes2MArray.count(BaseType) &&
-          MArrayIdx != MapNamesLang::MArrayMemberNamesMap.end()) {
-        std::string RepStr = "";
-        if (isImplicit) {
-          RepStr = "(*this)";
-        } else if (isPtr) {
-          addReplacement(ME->getBeginLoc(), 0, "(*");
-          RepStr = ")";
-        }
-        addReplacement(Begin, ME->getEndLoc(), RepStr + MArrayIdx->second);
-      } else if (MapNames::replaceName(MapNamesLang::MemberNamesMap,
-                                       MemberName)) {
+      if (MapNames::replaceName(MapNamesLang::MemberNamesMap, MemberName)) {
         std::string RepStr = "";
         const auto *MD = DpctGlobalInfo::findAncestor<CXXMethodDecl>(ME);
         if (MD && MD->isVolatile()) {

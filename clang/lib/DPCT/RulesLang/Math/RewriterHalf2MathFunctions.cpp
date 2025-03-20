@@ -38,15 +38,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2ceil",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "ceil",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "ceil",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2cos
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -73,15 +71,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2cos",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "cos",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "cos",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2exp
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -108,15 +104,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2exp",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "exp",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "exp",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2exp10
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -143,15 +137,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2exp10",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "exp10",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "exp10",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2exp2
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -178,15 +170,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2exp2",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "exp2",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "exp2",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2floor
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -213,15 +203,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2floor",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "floor",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "floor",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2log
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -248,15 +236,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2log",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "log",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "log",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2log10
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -283,15 +269,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2log10",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "log10",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "log10",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2log2
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -318,15 +302,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2log2",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "log2",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "log2",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2rcp
       MATH_API_REWRITER_DEVICE(
           "h2rcp",
@@ -348,27 +330,26 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                       CALL(MapNames::getClNamespace() + "half2",
                            CALL(MapNames::getClNamespace(false, true) +
                                     "half_precision::recip",
-                                CALL("float",
-                                     ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                                CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                            CALL(MapNames::getClNamespace(false, true) +
                                     "half_precision::recip",
                                 CALL("float",
-                                     ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))))),
+                                     MEMBER_CALL(ARG(0), false, "y"))))),
                   CONDITIONAL_FACTORY_ENTRY(
                       math::UseBFloat16,
                       CALL_FACTORY_ENTRY(
                           "h2rcp",
-                          CALL(MapNames::getClNamespace() + "marray<" +
+                          CALL(MapNames::getClNamespace() + "vec<" +
                                    MapNames::getClNamespace() +
                                    "ext::oneapi::bfloat16, 2>",
                                CALL(MapNames::getClNamespace(false, true) +
                                         "half_precision::recip",
-                                    CALL("float", ARRAY_SUBSCRIPT(
-                                                      ARG(0), LITERAL("0")))),
+                                    CALL("float",
+                                         MEMBER_CALL(ARG(0), false, "x"))),
                                CALL(MapNames::getClNamespace(false, true) +
                                         "half_precision::recip",
-                                    CALL("float", ARRAY_SUBSCRIPT(
-                                                      ARG(0), LITERAL("1")))))),
+                                    CALL("float",
+                                         MEMBER_CALL(ARG(0), false, "y"))))),
                       UNSUPPORT_FACTORY_ENTRY("h2rcp",
                                               Diagnostics::API_NOT_MIGRATED,
                                               ARG("h2rcp"))))))
@@ -398,15 +379,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2rint",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "rint",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "rint",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2rsqrt
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -433,15 +412,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2rsqrt",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "rsqrt",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "rsqrt",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2sin
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -468,15 +445,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2sin",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "sin",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "sin",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2sqrt
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -503,15 +478,13 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2sqrt",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "sqrt",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "sqrt",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // h2trunc
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
@@ -538,13 +511,12 @@ RewriterMap dpct::createHalf2MathFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "h2trunc",
-                  CALL(MapNames::getClNamespace() + "marray<" +
-                           MapNames::getClNamespace() +
-                           "ext::oneapi::bfloat16, 2>",
-                       CALL(MapNames::getClNamespace(false, true) + "trunc",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
-                       CALL(MapNames::getClNamespace(false, true) + "trunc",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))};
+                  CALL(
+                      MapNames::getClNamespace() + "vec<" +
+                          MapNames::getClNamespace() +
+                          "ext::oneapi::bfloat16, 2>",
+                      CALL(MapNames::getClNamespace(false, true) + "trunc",
+                           CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
+                      CALL(MapNames::getClNamespace(false, true) + "trunc",
+                           CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))};
 }

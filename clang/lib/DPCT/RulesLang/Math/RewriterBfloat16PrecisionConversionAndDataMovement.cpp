@@ -23,19 +23,19 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
                   CALL(MapNames::getClNamespace() + "float2",
                        CALL(MapNames::getClNamespace() +
                                 "ext::intel::math::bfloat162float",
-                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("0"))),
+                            MEMBER_CALL(ARG(0), false, "x")),
                        CALL(MapNames::getClNamespace() +
                                 "ext::intel::math::bfloat162float",
-                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))))),
+                            MEMBER_CALL(ARG(0), false, "y"))))),
           CALL_FACTORY_ENTRY("__bfloat1622float2",
                              CALL(MapNames::getClNamespace() + "float2",
-                                  ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
-                                  ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))))
+                                  MEMBER_CALL(ARG(0), false, "x"),
+                                  MEMBER_CALL(ARG(0), false, "y"))))
       // __bfloat162bfloat162
       CONDITIONAL_FACTORY_ENTRY(
           math::UseBFloat16,
           CALL_FACTORY_ENTRY("__bfloat162bfloat162",
-                             CALL(MapNames::getClNamespace() + "marray<" +
+                             CALL(MapNames::getClNamespace() + "vec<" +
                                       MapNames::getClNamespace() +
                                       "ext::oneapi::bfloat16, 2>",
                                   ARG(0), ARG(0))),
@@ -512,11 +512,11 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
       CONDITIONAL_FACTORY_ENTRY(
           math::UseBFloat16,
           CALL_FACTORY_ENTRY("__float22bfloat162_rn",
-                             CALL(MapNames::getClNamespace() + "marray<" +
+                             CALL(MapNames::getClNamespace() + "vec<" +
                                       MapNames::getClNamespace() +
                                       "ext::oneapi::bfloat16, 2>",
-                                  ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
-                                  ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))),
+                                  MEMBER_CALL(ARG(0), false, "x"),
+                                  MEMBER_CALL(ARG(0), false, "y"))),
           UNSUPPORT_FACTORY_ENTRY("__float22bfloat162_rn",
                                   Diagnostics::API_NOT_MIGRATED,
                                   ARG("__float22bfloat162_rn")))
@@ -542,7 +542,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
       CONDITIONAL_FACTORY_ENTRY(
           math::UseBFloat16,
           CALL_FACTORY_ENTRY("__float2bfloat162_rn",
-                             CALL(MapNames::getClNamespace() + "marray<" +
+                             CALL(MapNames::getClNamespace() + "vec<" +
                                       MapNames::getClNamespace() +
                                       "ext::oneapi::bfloat16, 2>",
                                   ARG(0), ARG(0))),
@@ -601,7 +601,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
       CONDITIONAL_FACTORY_ENTRY(
           math::UseBFloat16,
           CALL_FACTORY_ENTRY("__floats2bfloat162_rn",
-                             CALL(MapNames::getClNamespace() + "marray<" +
+                             CALL(MapNames::getClNamespace() + "vec<" +
                                       MapNames::getClNamespace() +
                                       "ext::oneapi::bfloat16, 2>",
                                   ARG(0), ARG(1))),
@@ -612,7 +612,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
       CONDITIONAL_FACTORY_ENTRY(
           math::UseBFloat16,
           CALL_FACTORY_ENTRY("__halves2bfloat162",
-                             CALL(MapNames::getClNamespace() + "marray<" +
+                             CALL(MapNames::getClNamespace() + "vec<" +
                                       MapNames::getClNamespace() +
                                       "ext::oneapi::bfloat16, 2>",
                                   ARG(0), ARG(1))),
@@ -625,7 +625,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
           CALL_FACTORY_ENTRY(
               "__high2bfloat16",
               CALL(MapNames::getClNamespace() + "ext::oneapi::bfloat16",
-                   ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))),
+                   MEMBER_CALL(ARG(0), false, "y"))),
           UNSUPPORT_FACTORY_ENTRY("__high2bfloat16",
                                   Diagnostics::API_NOT_MIGRATED,
                                   ARG("__high2bfloat16")))
@@ -633,11 +633,11 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
       CONDITIONAL_FACTORY_ENTRY(
           math::UseBFloat16,
           CALL_FACTORY_ENTRY("__high2bfloat162",
-                             CALL(MapNames::getClNamespace() + "marray<" +
+                             CALL(MapNames::getClNamespace() + "vec<" +
                                       MapNames::getClNamespace() +
                                       "ext::oneapi::bfloat16, 2>",
-                                  ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
-                                  ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))),
+                                  MEMBER_CALL(ARG(0), false, "y"),
+                                  MEMBER_CALL(ARG(0), false, "y"))),
           UNSUPPORT_FACTORY_ENTRY("__high2bfloat162",
                                   Diagnostics::API_NOT_MIGRATED,
                                   ARG("__high2bfloat162")))
@@ -645,11 +645,11 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
       CONDITIONAL_FACTORY_ENTRY(
           math::UseBFloat16,
           CALL_FACTORY_ENTRY("__highs2bfloat162",
-                             CALL(MapNames::getClNamespace() + "marray<" +
+                             CALL(MapNames::getClNamespace() + "vec<" +
                                       MapNames::getClNamespace() +
                                       "ext::oneapi::bfloat16, 2>",
-                                  ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
-                                  ARRAY_SUBSCRIPT(ARG(1), LITERAL("1")))),
+                                  MEMBER_CALL(ARG(0), false, "y"),
+                                  MEMBER_CALL(ARG(1), false, "y"))),
           UNSUPPORT_FACTORY_ENTRY("__highs2bfloat162",
                                   Diagnostics::API_NOT_MIGRATED,
                                   ARG("__highs2bfloat162")))
@@ -755,7 +755,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
           CALL_FACTORY_ENTRY(
               "__low2bfloat16",
               CALL(MapNames::getClNamespace() + "ext::oneapi::bfloat16",
-                   ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                   MEMBER_CALL(ARG(0), false, "x"))),
           UNSUPPORT_FACTORY_ENTRY("__low2bfloat16",
                                   Diagnostics::API_NOT_MIGRATED,
                                   ARG("__low2bfloat16")))
@@ -763,11 +763,11 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
       CONDITIONAL_FACTORY_ENTRY(
           math::UseBFloat16,
           CALL_FACTORY_ENTRY("__low2bfloat162",
-                             CALL(MapNames::getClNamespace() + "marray<" +
+                             CALL(MapNames::getClNamespace() + "vec<" +
                                       MapNames::getClNamespace() +
                                       "ext::oneapi::bfloat16, 2>",
-                                  ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
-                                  ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                                  MEMBER_CALL(ARG(0), false, "x"),
+                                  MEMBER_CALL(ARG(0), false, "x"))),
           UNSUPPORT_FACTORY_ENTRY("__low2bfloat162",
                                   Diagnostics::API_NOT_MIGRATED,
                                   ARG("__low2bfloat162")))
@@ -775,11 +775,11 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
       CONDITIONAL_FACTORY_ENTRY(
           math::UseBFloat16,
           CALL_FACTORY_ENTRY("__lows2bfloat162",
-                             CALL(MapNames::getClNamespace() + "marray<" +
+                             CALL(MapNames::getClNamespace() + "vec<" +
                                       MapNames::getClNamespace() +
                                       "ext::oneapi::bfloat16, 2>",
-                                  ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
-                                  ARRAY_SUBSCRIPT(ARG(1), LITERAL("0")))),
+                                  MEMBER_CALL(ARG(0), false, "x"),
+                                  MEMBER_CALL(ARG(1), false, "x"))),
           UNSUPPORT_FACTORY_ENTRY("__lows2bfloat162",
                                   Diagnostics::API_NOT_MIGRATED,
                                   ARG("__lows2bfloat162")))
@@ -1005,7 +1005,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
                                   Diagnostics::API_NOT_MIGRATED,
                                   ARG("__ushort_as_bfloat16")))
       // make_bfloat162
-      ENTRY_RENAMED("make_bfloat162", MapNames::getClNamespace() + "marray<" +
+      ENTRY_RENAMED("make_bfloat162", MapNames::getClNamespace() + "vec<" +
                                           MapNames::getClNamespace() +
                                           "ext::oneapi::bfloat16, 2>")};
 }

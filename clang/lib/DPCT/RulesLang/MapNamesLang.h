@@ -31,7 +31,6 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
       "__half", "__half2", "half", "half2", "__nv_bfloat16", "nv_bfloat16",    \
       "__nv_bfloat162", "nv_bfloat162", "__half_raw", "__half2_raw",           \
       "__nv_half2", "__nv_half"
-#define VECTORTYPE2MARRAYNAMES "__nv_bfloat162", "nv_bfloat162"
 
 /// Record mapping between names
 class MapNamesLang {
@@ -44,7 +43,6 @@ public:
   using SetTy = std::set<std::string>;
 
   static const SetTy SupportedVectorTypes;
-  static const SetTy VectorTypes2MArray;
   static const std::map<std::string, int> VectorTypeMigratedTypeSizeMap;
   static const std::map<clang::dpct::KernelArgType, int> KernelArgTypeSizeMap;
   static int getArrayTypeSize(const int Dim);

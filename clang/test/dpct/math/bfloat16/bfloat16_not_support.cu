@@ -32,7 +32,7 @@ __global__ void f() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __habs2 is not supported.
   // CHECK-NEXT: */
   bf162 = __habs2(bf162);
-  // CHECK: f2 = sycl::float2(bf162[0], bf162[1]);
+  // CHECK: f2 = sycl::float2(bf162.x(), bf162.y());
   f2 = __bfloat1622float2(bf162);
   // CHECK: f = static_cast<float>(bf16);
   f = __bfloat162float(bf16);

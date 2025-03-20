@@ -438,7 +438,7 @@ define <8 x bfloat> @test_int_x86_avx10_maskz_div_bf16_128(<8 x bfloat> %src, <8
 define i16 @test_int_x86_avx10_vcmpbf16256(<16 x bfloat> %x1, <16 x bfloat> %x2) {
 ; CHECK-LABEL: test_int_x86_avx10_vcmpbf16256:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    vcmpunordpbf16 %ymm1, %ymm0, %k0 # encoding: [0x62,0xf3,0x7f,0x28,0xc2,0xc1,0x03]
+; CHECK-NEXT:    vcmpunordbf16 %ymm1, %ymm0, %k0 # encoding: [0x62,0xf3,0x7f,0x28,0xc2,0xc1,0x03]
 ; CHECK-NEXT:    kmovd %k0, %eax # encoding: [0xc5,0xfb,0x93,0xc0]
 ; CHECK-NEXT:    # kill: def $ax killed $ax killed $eax
 ; CHECK-NEXT:    vzeroupper # encoding: [0xc5,0xf8,0x77]
@@ -451,7 +451,7 @@ define i16 @test_int_x86_avx10_vcmpbf16256(<16 x bfloat> %x1, <16 x bfloat> %x2)
 define i16 @test_int_x86_avx10_vcmpbf16256_mask2(<16 x bfloat> %x1, <16 x bfloat> %x2) {
 ; CHECK-LABEL: test_int_x86_avx10_vcmpbf16256_mask2:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    vcmpeqpbf16 %ymm1, %ymm0, %k0 # encoding: [0x62,0xf3,0x7f,0x28,0xc2,0xc1,0x00]
+; CHECK-NEXT:    vcmpeqbf16 %ymm1, %ymm0, %k0 # encoding: [0x62,0xf3,0x7f,0x28,0xc2,0xc1,0x00]
 ; CHECK-NEXT:    kmovd %k0, %eax # encoding: [0xc5,0xfb,0x93,0xc0]
 ; CHECK-NEXT:    andl $3, %eax # encoding: [0x83,0xe0,0x03]
 ; CHECK-NEXT:    # kill: def $ax killed $ax killed $eax
@@ -466,7 +466,7 @@ define i16 @test_int_x86_avx10_vcmpbf16256_mask2(<16 x bfloat> %x1, <16 x bfloat
 define i8 @test_int_x86_avx10_vcmpbf16128(<8 x bfloat> %x1, <8 x bfloat> %x2) {
 ; CHECK-LABEL: test_int_x86_avx10_vcmpbf16128:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    vcmpunordpbf16 %xmm1, %xmm0, %k0 # encoding: [0x62,0xf3,0x7f,0x08,0xc2,0xc1,0x03]
+; CHECK-NEXT:    vcmpunordbf16 %xmm1, %xmm0, %k0 # encoding: [0x62,0xf3,0x7f,0x08,0xc2,0xc1,0x03]
 ; CHECK-NEXT:    kmovd %k0, %eax # encoding: [0xc5,0xfb,0x93,0xc0]
 ; CHECK-NEXT:    # kill: def $al killed $al killed $eax
 ; CHECK-NEXT:    ret{{[l|q]}} # encoding: [0xc3]
@@ -478,7 +478,7 @@ define i8 @test_int_x86_avx10_vcmpbf16128(<8 x bfloat> %x1, <8 x bfloat> %x2) {
 define i8 @test_int_x86_avx10_vcmpbf16128_mask2(<8 x bfloat> %x1, <8 x bfloat> %x2) {
 ; CHECK-LABEL: test_int_x86_avx10_vcmpbf16128_mask2:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    vcmpeqpbf16 %xmm1, %xmm0, %k0 # encoding: [0x62,0xf3,0x7f,0x08,0xc2,0xc1,0x00]
+; CHECK-NEXT:    vcmpeqbf16 %xmm1, %xmm0, %k0 # encoding: [0x62,0xf3,0x7f,0x08,0xc2,0xc1,0x00]
 ; CHECK-NEXT:    kmovd %k0, %eax # encoding: [0xc5,0xfb,0x93,0xc0]
 ; CHECK-NEXT:    andb $3, %al # encoding: [0x24,0x03]
 ; CHECK-NEXT:    # kill: def $al killed $al killed $eax
@@ -1170,8 +1170,8 @@ entry:
 define <32 x bfloat> @addv(<32 x bfloat> %a, <32 x bfloat> %b) nounwind {
 ; X64-LABEL: addv:
 ; X64:       # %bb.0:
-; X64-NEXT:    vaddnepbf16 %ymm2, %ymm0, %ymm0 # encoding: [0x62,0xf5,0x7d,0x28,0x58,0xc2]
-; X64-NEXT:    vaddnepbf16 %ymm3, %ymm1, %ymm1 # encoding: [0x62,0xf5,0x75,0x28,0x58,0xcb]
+; X64-NEXT:    vaddbf16 %ymm2, %ymm0, %ymm0 # encoding: [0x62,0xf5,0x7d,0x28,0x58,0xc2]
+; X64-NEXT:    vaddbf16 %ymm3, %ymm1, %ymm1 # encoding: [0x62,0xf5,0x75,0x28,0x58,0xcb]
 ; X64-NEXT:    retq # encoding: [0xc3]
 ;
 ; X86-LABEL: addv:
@@ -1180,8 +1180,8 @@ define <32 x bfloat> @addv(<32 x bfloat> %a, <32 x bfloat> %b) nounwind {
 ; X86-NEXT:    movl %esp, %ebp # encoding: [0x89,0xe5]
 ; X86-NEXT:    andl $-32, %esp # encoding: [0x83,0xe4,0xe0]
 ; X86-NEXT:    subl $32, %esp # encoding: [0x83,0xec,0x20]
-; X86-NEXT:    vaddnepbf16 %ymm2, %ymm0, %ymm0 # encoding: [0x62,0xf5,0x7d,0x28,0x58,0xc2]
-; X86-NEXT:    vaddnepbf16 8(%ebp), %ymm1, %ymm1 # encoding: [0x62,0xf5,0x75,0x28,0x58,0x8d,0x08,0x00,0x00,0x00]
+; X86-NEXT:    vaddbf16 %ymm2, %ymm0, %ymm0 # encoding: [0x62,0xf5,0x7d,0x28,0x58,0xc2]
+; X86-NEXT:    vaddbf16 8(%ebp), %ymm1, %ymm1 # encoding: [0x62,0xf5,0x75,0x28,0x58,0x8d,0x08,0x00,0x00,0x00]
 ; X86-NEXT:    movl %ebp, %esp # encoding: [0x89,0xec]
 ; X86-NEXT:    popl %ebp # encoding: [0x5d]
 ; X86-NEXT:    retl # encoding: [0xc3]
