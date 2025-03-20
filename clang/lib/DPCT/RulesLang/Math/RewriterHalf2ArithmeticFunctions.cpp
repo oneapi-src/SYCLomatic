@@ -32,15 +32,19 @@ RewriterMap dpct::createHalf2ArithmeticFunctionsRewriterMap() {
                   BINARY_OP_FACTORY_ENTRY("__h2div", BinaryOperatorKind::BO_Div,
                                           makeCallArgCreatorWithCall(0),
                                           makeCallArgCreatorWithCall(1)))),
-          MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
+          MATH_API_REWRITERS_V2(
               "__h2div",
-              CALL_FACTORY_ENTRY("__h2div",
-                                 CALL(MapNames::getClNamespace(false, true) +
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::ext_experimental,
+                  CALL_FACTORY_ENTRY(
+                      "__h2div", CALL(MapNames::getClNamespace(false, true) +
                                           "ext::oneapi::experimental::h2div",
-                                      ARG(0))),
-              BINARY_OP_FACTORY_ENTRY("__h2div", BinaryOperatorKind::BO_Div,
-                                      makeCallArgCreatorWithCall(0),
-                                      makeCallArgCreatorWithCall(1))))
+                                      ARG(0), ARG(1)))),
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::emulation,
+                  BINARY_OP_FACTORY_ENTRY("__h2div", BinaryOperatorKind::BO_Div,
+                                          makeCallArgCreatorWithCall(0),
+                                          makeCallArgCreatorWithCall(1)))))
       // __habs2
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
