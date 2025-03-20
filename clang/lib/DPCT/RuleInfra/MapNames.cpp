@@ -290,6 +290,11 @@ void MapNames::setExplicitNamespaceMap(
       {"CubDebugExit",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "CubDebugExit", MapNames::getCheckErrorMacroName())},
+      {"cudaCpuDeviceId",
+       MacroMigrationRule("cudaCpuDeviceId", RulePriority::Fallback,
+                          "cudaCpuDeviceId",
+                          getDpctNamespace() + "get_device_id(" +
+                              getDpctNamespace() + "cpu_device())")},
       //...
   };
   // Type names mapping.
