@@ -2858,6 +2858,45 @@ protected:
            "rewrite the code.");
     return SYCLGenSuccess();
   }
+
+  bool handle_prmt(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = " << MapNames::getDpctNamespace()
+         << "byte_level_permute_custom(";
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Save(CurrInst);
+    CurrInst = Inst;
+    std::string Op[3];
+    if (tryEmitAllInputOperands(Op, Inst))
+      return SYCLGenError();
+
+    OS() << Op[0] << ", ";
+    OS() << Op[1] << ", ";
+    OS() << Op[2] << ", ";
+    if (Inst->hasAttr(InstAttr::f4e)) {
+      OS() << "1";
+    } else if (Inst->hasAttr(InstAttr::b4e)) {
+      OS() << "2";
+    } else if (Inst->hasAttr(InstAttr::rc8)) {
+      OS() << "3";
+    } else if (Inst->hasAttr(InstAttr::ecl)) {
+      OS() << "4";
+    } else if (Inst->hasAttr(InstAttr::ecr)) {
+      OS() << "5";
+    } else if (Inst->hasAttr(InstAttr::rc16)) {
+      OS() << "6";
+    } else {
+      OS() << "0";
+    }
+    OS() << ")";
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
 };
 
 /// Clean the special character in identifier.
