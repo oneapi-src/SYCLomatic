@@ -28,8 +28,8 @@
 
 #include "image.hpp"
 #include <fstream>
-#include <random>
 #include <mutex>
+#include <random>
 
 namespace dpct {
 
