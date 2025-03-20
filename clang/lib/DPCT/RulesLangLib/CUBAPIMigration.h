@@ -110,7 +110,7 @@ private:
   static int PlaceholderIndex;
   std::string getOpRepl(const Expr *Operator);
   void processCubDeclStmt(const DeclStmt *DS);
-  void processCubTypeDef(const TypedefDecl *TD);
+  void processCubTypeDefOrUsing(const TypedefNameDecl *TD);
   void processCubFuncCall(const CallExpr *CE, bool FuncCallUsed = false);
   void processCubMemberCall(const CXXMemberCallExpr *MC);
   void processTypeLoc(const TypeLoc *TL);

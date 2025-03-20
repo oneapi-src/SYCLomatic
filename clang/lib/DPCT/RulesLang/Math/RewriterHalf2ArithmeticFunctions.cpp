@@ -55,15 +55,13 @@ RewriterMap dpct::createHalf2ArithmeticFunctionsRewriterMap() {
                                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "__habs2",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace(false, true) + "fabs",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace(false, true) + "fabs",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // __hadd2
       MATH_API_REWRITER_DEVICE(
           "__hadd2",

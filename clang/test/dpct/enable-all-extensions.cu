@@ -87,7 +87,7 @@ __global__ void kernelFuncHalfConversion() {
   unsigned u;
   unsigned long long ull;
   unsigned short us;
-  // CHECK: h2 = sycl::half2(sycl::ext::intel::math::float2half_rn(f2[0]), sycl::ext::intel::math::float2half_rn(f2[1]));
+  // CHECK: h2 = sycl::half2(sycl::ext::intel::math::float2half_rn(f2.x()), sycl::ext::intel::math::float2half_rn(f2.y()));
   h2 = __float22half2_rn(f2);
   // CHECK: h = sycl::ext::intel::math::float2half_rn(f);
   h = __float2half(f);
@@ -103,7 +103,7 @@ __global__ void kernelFuncHalfConversion() {
   h = __float2half_rz(f);
   // CHECK: h2 = sycl::half2(sycl::ext::intel::math::float2half_rn(f), sycl::ext::intel::math::float2half_rn(f));
   h2 = __floats2half2_rn(f, f);
-  // CHECK: f2 = sycl::float2(sycl::ext::intel::math::half2float(h2[0]), sycl::ext::intel::math::half2float(h2[1]));
+  // CHECK: f2 = sycl::float2(sycl::ext::intel::math::half2float(h2.x()), sycl::ext::intel::math::half2float(h2.y()));
   f2 = __half22float2(h2);
   // CHECK: f = sycl::ext::intel::math::half2float(h);
   f = __half2float(h);
@@ -167,9 +167,9 @@ __global__ void kernelFuncHalfConversion() {
   f = __high2float(h2);
   // CHECK: h = h2[1];
   h = __high2half(h2);
-  // CHECK: h2 = sycl::half2(h2[1]);
+  // CHECK: h2 = sycl::half2(h2.y());
   h2 = __high2half2(h2);
-  // CHECK: h2 = sycl::half2(h2[1], h2[1]);
+  // CHECK: h2 = sycl::half2(h2.y(), h2.y());
   h2 = __highs2half2(h2, h2);
   // CHECK: h = sycl::ext::intel::math::int2half_rd(i);
   h = __int2half_rd(i);
@@ -193,11 +193,11 @@ __global__ void kernelFuncHalfConversion() {
   f = __low2float(*(&h2));
   // CHECK: h = h2[0];
   h = __low2half(h2);
-  // CHECK: h2 = sycl::half2(h2[0]);
+  // CHECK: h2 = sycl::half2(h2.x());
   h2 = __low2half2(h2);
-  // CHECK: h2 = sycl::half2(h2[1], h2[0]);
+  // CHECK: h2 = sycl::half2(h2.y(), h2.x());
   h2 = __lowhigh2highlow(h2);
-  // CHECK: h2 = sycl::half2(h2[0], h2[0]);
+  // CHECK: h2 = sycl::half2(h2.x(), h2.x());
   h2 = __lows2half2(h2, h2);
   // CHECK: h = sycl::ext::intel::math::short2half_rd(s);
   h = __short2half_rd(s);
