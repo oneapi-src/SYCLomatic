@@ -18,6 +18,16 @@
 // CHECK-NEXT: #include <c10/util/Half.h>
 #include <ATen/cuda/CUDATensorMethods.cuh>
 
+// CHECK: // BEGIN_1
+// CHECK-EMPTY:
+// CHECK-EMPTY:
+// CHECK-NEXT: // END_1
+// BEGIN_1
+#include <ATen/cuda/Exceptions.h>
+#include <THC/THCAtomics.cuh>
+// END_1
+
+// CHECK: #include <c10/xpu/XPUMacros.h>
 #include <c10/cuda/CUDAMacros.h>
 
 #define AT_CUDA_CHECK(stmt)  (stmt)

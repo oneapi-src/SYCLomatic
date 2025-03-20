@@ -8,6 +8,7 @@
 
 #include "InclusionHeaders.h"
 #include "PreProcessor.h"
+#include <optional>
 
 namespace clang {
 namespace dpct {
@@ -33,7 +34,7 @@ private:
   bool UpdateNeeded;
 };
 
-std::string applyUserDefinedHeader(const std::string &FileName) {
+std::optional<std::string> applyUserDefinedHeader(const std::string &FileName) {
   // Apply user-defined rule if needed
   auto It = MapNames::HeaderRuleMap.find(FileName);
   if (It != MapNames::HeaderRuleMap.end() &&
@@ -54,11 +55,12 @@ std::string applyUserDefinedHeader(const std::string &FileName) {
     for (auto &Header : Rule.Includes) {
       PrintHeader(Header);
     }
-    PrintHeader(Rule.Out);
+    if (!Rule.Out.empty())
+      PrintHeader(Rule.Out);
     OS << Rule.Postfix;
     return ReplHeaderStr;
   }
-  return "";
+  return std::nullopt;
 }
 
 void insertHeaders(std::shared_ptr<DpctFileInfo> File,
@@ -150,6 +152,12 @@ void IncludesCallbacks::InclusionDirective(
     Updater.give_up();
   };
 
+  // Apply user-defined rule if needed
+  if (auto ReplacedStr = applyUserDefinedHeader(FileName.str()); ReplacedStr) {
+    EmplaceReplacement(std::move(ReplacedStr.value()));
+    return;
+  }
+
   if (Global.isInAnalysisScope(IncludedFile)) {
     IncludeFileMap[IncludedFile] = false;
     Global.getIncludingFileSet().insert(IncludedFile);
@@ -207,14 +215,6 @@ void IncludesCallbacks::InclusionDirective(
   if (!Global.isInAnalysisScope(LocInfo.first) &&
       !Global.getSourceManager().isWrittenInMainFile(HashLoc))
     return;
-
-
-  // Apply user-defined rule if needed
-  if (auto ReplacedStr = applyUserDefinedHeader(FileName.str());
-      !ReplacedStr.empty()) {
-    EmplaceReplacement(std::move(ReplacedStr));
-    return;
-  }
 
   do {
     auto InfoPtr = DpctInclusionHeadersMap::findHeaderInfo(FileName);
