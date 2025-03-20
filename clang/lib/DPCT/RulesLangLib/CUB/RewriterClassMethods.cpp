@@ -297,14 +297,18 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
           CASE_FACTORY_ENTRY(
-              CASE(makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
+              CASE(CheckArgCount(2),
                    MEMBER_CALL_FACTORY_ENTRY("cub::BlockLoad.Load",
                                              MemberExprBase(), false, "load",
                                              NDITEM, ARG(0), ARG(1))),
-              CASE(makeCheckAnd(CheckArgCount(3), CheckCUBEnumTemplateArg(3)),
+              CASE(CheckArgCount(3),
                    MEMBER_CALL_FACTORY_ENTRY("cub::BlockLoad.Load",
                                              MemberExprBase(), false, "load",
                                              NDITEM, ARG(0), ARG(1), ARG(2))),
+              CASE(CheckArgCount(4),
+                   MEMBER_CALL_FACTORY_ENTRY(
+                       "cub::BlockLoad.Load", MemberExprBase(), false, "load",
+                       NDITEM, ARG(0), ARG(1), ARG(2), ARG(3))),
               OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cub::BlockLoad.Load",
                                                 Diagnostics::API_NOT_MIGRATED,
                                                 printCallExprPretty()))))
@@ -312,11 +316,11 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
           CASE_FACTORY_ENTRY(
-              CASE(makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
+              CASE(CheckArgCount(2),
                    MEMBER_CALL_FACTORY_ENTRY("cub::BlockStore.Store",
                                              MemberExprBase(), false, "store",
                                              NDITEM, ARG(0), ARG(1))),
-              CASE(makeCheckAnd(CheckArgCount(3), CheckCUBEnumTemplateArg(3)),
+              CASE(CheckArgCount(3),
                    MEMBER_CALL_FACTORY_ENTRY("cub::BlockStore.Store",
                                              MemberExprBase(), false, "store",
                                              NDITEM, ARG(0), ARG(1), ARG(2))),

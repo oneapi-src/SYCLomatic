@@ -4616,7 +4616,7 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
           !DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) ||
           DRE->getQualifier() || CallDecl->isOverloadedOperator())
         return;
-      for (unsigned i = 0; i < NumArgs; i++) {
+      for (unsigned i = 0; i < CallDecl->getNumParams(); i++) {
         auto Type = CallDecl->getParamDecl(i)
                         ->getOriginalType()
                         .getCanonicalType()

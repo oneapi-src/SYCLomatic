@@ -42,7 +42,7 @@
 // HFMA-NEXT:   __hfma(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
 // HFMA-NEXT:   __hfma(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
 // HFMA-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
-// HFMA-NEXT:   sycl::ext::intel::math::hfma(h1, h2);
+// HFMA-NEXT:   sycl::ext::intel::math::hfma(h1, h2, h3);
 // HFMA-NEXT:   sycl::ext::oneapi::experimental::fma(b1, b2, b3);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__hfma_relu | FileCheck %s -check-prefix=HFMA_RELU
@@ -531,7 +531,7 @@
 // H2RCP-NEXT:   h2rcp(b /*__nv_bfloat162*/);
 // H2RCP-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
 // H2RCP-NEXT:   sycl::ext::intel::math::inv(h);
-// H2RCP-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::half_precision::recip(float(b[0])), sycl::half_precision::recip(float(b[1])));
+// H2RCP-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::half_precision::recip(float(b.x())), sycl::half_precision::recip(float(b.y())));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2rint | FileCheck %s -check-prefix=H2RINT
 // H2RINT: CUDA API:
