@@ -412,7 +412,12 @@ MODIFIER(sc, ".sc")
 MODIFIER(gl, ".gl")
 MODIFIER(L1, ".L1")
 MODIFIER(L2, ".L2")
-
+MODIFIER(f4e, ".f4e")
+MODIFIER(b4e, ".b4e")
+MODIFIER(rc8, ".rc8")
+MODIFIER(ecl, ".ecl")
+MODIFIER(ecr, ".ecr")
+MODIFIER(rc16, ".rc16")
 
 #undef LINKAGE
 #undef TARGET

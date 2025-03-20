@@ -67,7 +67,7 @@ or,YES,
 pmevent,NO,
 popc,YES,
 prefetch,YES, Partial
-prmt,NO,
+prmt,YES,
 rcp,YES,
 red,NO,
 redux,NO,

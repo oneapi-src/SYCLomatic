@@ -104,7 +104,7 @@ ENTRY_RENAMED_SINGLE("sinhf", MapNames::getClNamespace(false, true) + "sinh")
 ENTRY_REWRITE("sinpif")
 ENTRY_RENAMED_SINGLE("sqrtf", MapNames::getClNamespace(false, true) + "sqrt")
 ENTRY_RENAMED_SINGLE("tanf", MapNames::getClNamespace(false, true) + "tan")
-ENTRY_RENAMED_SINGLE("tanhf", MapNames::getClNamespace(false, true) + "tanh")
+ENTRY_REWRITE("tanhf")
 ENTRY_RENAMED_SINGLE("tgammaf", MapNames::getClNamespace(false, true) + "tgamma")
 ENTRY_RENAMED_SINGLE("truncf", MapNames::getClNamespace(false, true) + "trunc")
 

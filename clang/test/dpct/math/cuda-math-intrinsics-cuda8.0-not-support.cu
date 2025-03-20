@@ -26,4 +26,16 @@ __global__ void kernelFuncHalf2() {
   h2_2 = __h2div(h2, h2_1);
 }
 
+template <typename T> __global__ void foo1(T x) {
+  // CHECK: T t = (T)sycl::tanh((float)x);
+  T t = (T)tanhf(x);
+}
+
+void foo2() {
+  float f;
+  half h;
+  foo1<<<1, 1>>>(f);
+  foo1<<<1, 1>>>(h);
+}
+
 int main() { return 0; }

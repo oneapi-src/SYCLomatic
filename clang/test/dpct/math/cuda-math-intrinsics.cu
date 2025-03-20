@@ -241,7 +241,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   h2_2 = h2log10(h2);
   // CHECK: h2_2 = sycl::log2(h2);
   h2_2 = h2log2(h2);
-  // CHECK: h2_2 = sycl::half2(sycl::half_precision::recip(float(h2[0])), sycl::half_precision::recip(float(h2[1])));
+  // CHECK: h2_2 = sycl::half2(sycl::half_precision::recip(float(h2.x())), sycl::half_precision::recip(float(h2.y())));
   h2_2 = h2rcp(h2);
   // CHECK: h2_2 = sycl::rint(h2);
   h2_2 = h2rint(h2);

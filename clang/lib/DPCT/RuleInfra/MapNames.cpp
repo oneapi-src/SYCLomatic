@@ -741,12 +741,12 @@ void MapNames::setExplicitNamespaceMap(
       {"__nv_bfloat16", std::make_shared<TypeNameRule>(
                             getClNamespace() + "ext::oneapi::bfloat16")},
       {"__nv_bfloat162", std::make_shared<TypeNameRule>(
-                             getClNamespace() + "marray<" + getClNamespace() +
+                             getClNamespace() + "vec<" + getClNamespace() +
                              "ext::oneapi::bfloat16, 2>")},
       {"nv_bfloat16", std::make_shared<TypeNameRule>(getClNamespace() +
                                                      "ext::oneapi::bfloat16")},
       {"nv_bfloat162", std::make_shared<TypeNameRule>(
-                           getClNamespace() + "marray<" + getClNamespace() +
+                           getClNamespace() + "vec<" + getClNamespace() +
                            "ext::oneapi::bfloat16, 2>")},
       {"libraryPropertyType_t",
        std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
@@ -813,6 +813,8 @@ void MapNames::setExplicitNamespaceMap(
       {"cusparseSpGEMMAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseSpSVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"__half_raw", std::make_shared<TypeNameRule>("uint16_t")},
+      {"__half2_raw",
+       std::make_shared<TypeNameRule>(MapNames::getClNamespace() + "ushort2")},
       {"cudaFuncAttributes",
        std::make_shared<TypeNameRule>(MapNames::getDpctNamespace() +
                                       "kernel_function_info")},

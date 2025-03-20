@@ -27,4 +27,5 @@ jobs:
         fetch-depth: ${{ env.PR_FETCH_DEPTH }}
     - name: Run clang-format
       uses: ./devops/actions/clang-format-SYCLomatic
-
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}

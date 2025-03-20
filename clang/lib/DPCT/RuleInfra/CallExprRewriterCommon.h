@@ -145,7 +145,7 @@ public:
       : TypeInfo(std::forward<std::string>(T)),
         SubExpr(std::forward<SubExprT>(S)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    const Expr *InputArg = SubExpr->IgnoreImpCasts();
+    const Expr *InputArg = SubExpr->IgnoreUnlessSpelledInSource();
     clang::QualType ArgType = InputArg->getType().getCanonicalType();
     ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
     if (ArgType.getAsString() != TypeInfo) {
