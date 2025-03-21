@@ -925,9 +925,6 @@ static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }
 
-static inline unsigned int get_cpu_device_id() {
-  return get_device_id(cpu_device());
-}
 static inline unsigned int select_device(unsigned int id) {
   dev_mgr::instance().select_device(id);
   return id;
@@ -953,6 +950,10 @@ static inline void list_devices() { dev_mgr::instance().list_devices(); }
 
 static inline unsigned int get_device_id(const sycl::device &dev){
   return dev_mgr::instance().get_device_id(dev);
+}
+
+static inline unsigned int get_cpu_device_id() {
+  return get_device_id(cpu_device());
 }
 
 /// Util function to do implicit sync among queues of the same device then
