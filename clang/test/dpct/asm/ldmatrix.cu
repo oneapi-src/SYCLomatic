@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -out-root %T/ldmatrix %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/ldmatrix/ldmatrix.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/ldmatrix/ldmatrix.dp.cpp -o %T/ldmatrix/ldmatrix.dp.o %}
+// RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/ldmatrix/ldmatrix.dp.cpp -o %T/ldmatrix/ldmatrix.dp.o %}
 
 // clang-format off
 #include <cuda_runtime.h>
@@ -96,5 +96,24 @@ int main () {
 
   return 0;
 }
+
+#ifndef NO_BUILD_TEST
+__device__ void test_xn(uint32_t addr, int *r) {
+  // CHECK: DPCT1053:{{.*}}: Migration of device assembly code is not supported.
+  asm volatile("ldmatrix.sync.aligned.m8n8.x1.shared.b16 {%0, %1}, [%2];\n"
+                : "=r"(r[0]), "=r"(r[1])
+                : "r"(addr));
+
+  // CHECK: DPCT1053:{{.*}}: Migration of device assembly code is not supported.
+  asm volatile("ldmatrix.sync.aligned.m8n8.x2.shared.b16 {%0}, [%0];\n"
+                :
+                : "r"(addr));
+
+  // CHECK: DPCT1053:{{.*}}: Migration of device assembly code is not supported.
+  asm volatile("ldmatrix.sync.aligned.m8n8.x4.shared.b16 {%0, %1, %2}, [%3];\n"
+                : "=r"(r[0]), "=r"(r[1]), "=r"(r[2])
+                : "r"(addr));
+}
+#endif // NO_BUILD_TEST
 
 // clang-format on

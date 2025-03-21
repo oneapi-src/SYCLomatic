@@ -1316,6 +1316,23 @@ protected:
     if (Inst->getNumInputOperands() != 1)
       return SYCLGenError();
 
+    const InlineAsmVectorExpr *VE;
+    if (VE = dyn_cast<InlineAsmVectorExpr>(Inst->getOutputOperand())) {
+      auto numOutputOperands = VE->getNumElements();
+      if (Inst->hasAttr(InstAttr::x1)) {
+        if (numOutputOperands != 1)
+          return SYCLGenError();
+      } else if (Inst->hasAttr(InstAttr::x2)) {
+        if (numOutputOperands != 2)
+          return SYCLGenError();
+      } else if (Inst->hasAttr(InstAttr::x4)) {
+        if (numOutputOperands != 4)
+          return SYCLGenError();
+      }
+    } else {
+      return SYCLGenError();
+    }
+
     llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
     CurrInst = Inst;
     const auto *Src =
@@ -1328,18 +1345,13 @@ protected:
       return SYCLGenError();
     }
     OS() << ", ";
-    if (const auto *VE =
-            dyn_cast<InlineAsmVectorExpr>(Inst->getOutputOperand())) {
-      for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
-        if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
-          continue;
-        OS() << "&";
-        if (emitStmt(VE->getElement(Inst)))
-          return SYCLGenError();
-        OS() << ", ";
-      }
-    } else {
-      return SYCLGenError();
+    for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
+      if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
+        continue;
+      OS() << "&";
+      if (emitStmt(VE->getElement(Inst)))
+        return SYCLGenError();
+      OS() << ", ";
     }
     OS() << DpctGlobalInfo::getItem(GAS);
     if (Inst->hasAttr(InstAttr::trans))
