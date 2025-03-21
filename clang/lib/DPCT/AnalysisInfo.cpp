@@ -6667,9 +6667,24 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
       Printer.line("cgh.depends_on(dpct::get_current_device().get_in_order_"
                    "queues_last_events());");
     } else {
-      Printer.line("auto e_opt = "
+      Printer.line("auto last_event = "
                    "dpct::get_default_queue().ext_oneapi_get_last_event();");
-      Printer.line("if (e_opt) cgh.depends_on(*e_opt);");
+      Printer.line("[&](auto &&_e) {");
+      {
+        Printer.indent();
+        Printer.line(
+            "if constexpr (std::is_same_v<decltype(last_event), sycl::event>)");
+        {
+          Printer.indent();
+          Printer.line("cgh.depends_on(_e)");
+        }
+        Printer.line("else if (_e.has_value())");
+        {
+          Printer.indent();
+          Printer.line("cgh.depends_on(_e.value());");
+        }
+      }
+      Printer.line("}(last_event);");
     }
     Printer.newLine();
   }

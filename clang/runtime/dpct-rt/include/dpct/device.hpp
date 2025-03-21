@@ -22,6 +22,7 @@
 #include <stack>
 #include <sycl/sycl.hpp>
 #include <thread>
+#include <type_traits>
 #include <vector>
 #if defined(__linux__)
 #include <unistd.h>
@@ -593,9 +594,12 @@ public:
     for (const auto &q : current_queues) {
       if (q->is_in_order()) {
         auto last_event = q->ext_oneapi_get_last_event();
-        if (last_event) {
-          last_events.push_back(*last_event);
-        }
+        [&](auto &&_e) {
+          if constexpr (std::is_same_v<decltype(last_event), sycl::event>)
+            last_events.push_back(_e);
+          else if (_e.has_value())
+            last_events.push_back(_e.value());
+        }(last_event);
       }
     }
     // Guard the destruct of current_queues to make sure the ref count is safe.
