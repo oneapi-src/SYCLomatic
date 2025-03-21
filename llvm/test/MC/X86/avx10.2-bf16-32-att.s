@@ -2688,113 +2688,113 @@
 // CHECK: encoding: [0x62,0xf6,0x7c,0xdf,0x4e,0x52,0x80]
           vrsqrtbf16  -256(%edx){1to32}, %zmm2 {%k7} {z}
 
-// CHECK: vscalefpbf16 %ymm4, %ymm3, %ymm2
+// CHECK: vscalefbf16 %ymm4, %ymm3, %ymm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x28,0x2c,0xd4]
-          vscalefpbf16 %ymm4, %ymm3, %ymm2
+          vscalefbf16 %ymm4, %ymm3, %ymm2
 
-// CHECK: vscalefpbf16 %ymm4, %ymm3, %ymm2 {%k7}
+// CHECK: vscalefbf16 %ymm4, %ymm3, %ymm2 {%k7}
 // CHECK: encoding: [0x62,0xf6,0x64,0x2f,0x2c,0xd4]
-          vscalefpbf16 %ymm4, %ymm3, %ymm2 {%k7}
+          vscalefbf16 %ymm4, %ymm3, %ymm2 {%k7}
 
-// CHECK: vscalefpbf16 %ymm4, %ymm3, %ymm2 {%k7} {z}
+// CHECK: vscalefbf16 %ymm4, %ymm3, %ymm2 {%k7} {z}
 // CHECK: encoding: [0x62,0xf6,0x64,0xaf,0x2c,0xd4]
-          vscalefpbf16 %ymm4, %ymm3, %ymm2 {%k7} {z}
+          vscalefbf16 %ymm4, %ymm3, %ymm2 {%k7} {z}
 
-// CHECK: vscalefpbf16 %zmm4, %zmm3, %zmm2
+// CHECK: vscalefbf16 %zmm4, %zmm3, %zmm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x48,0x2c,0xd4]
-          vscalefpbf16 %zmm4, %zmm3, %zmm2
+          vscalefbf16 %zmm4, %zmm3, %zmm2
 
-// CHECK: vscalefpbf16 %zmm4, %zmm3, %zmm2 {%k7}
+// CHECK: vscalefbf16 %zmm4, %zmm3, %zmm2 {%k7}
 // CHECK: encoding: [0x62,0xf6,0x64,0x4f,0x2c,0xd4]
-          vscalefpbf16 %zmm4, %zmm3, %zmm2 {%k7}
+          vscalefbf16 %zmm4, %zmm3, %zmm2 {%k7}
 
-// CHECK: vscalefpbf16 %zmm4, %zmm3, %zmm2 {%k7} {z}
+// CHECK: vscalefbf16 %zmm4, %zmm3, %zmm2 {%k7} {z}
 // CHECK: encoding: [0x62,0xf6,0x64,0xcf,0x2c,0xd4]
-          vscalefpbf16 %zmm4, %zmm3, %zmm2 {%k7} {z}
+          vscalefbf16 %zmm4, %zmm3, %zmm2 {%k7} {z}
 
-// CHECK: vscalefpbf16 %xmm4, %xmm3, %xmm2
+// CHECK: vscalefbf16 %xmm4, %xmm3, %xmm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x08,0x2c,0xd4]
-          vscalefpbf16 %xmm4, %xmm3, %xmm2
+          vscalefbf16 %xmm4, %xmm3, %xmm2
 
-// CHECK: vscalefpbf16 %xmm4, %xmm3, %xmm2 {%k7}
+// CHECK: vscalefbf16 %xmm4, %xmm3, %xmm2 {%k7}
 // CHECK: encoding: [0x62,0xf6,0x64,0x0f,0x2c,0xd4]
-          vscalefpbf16 %xmm4, %xmm3, %xmm2 {%k7}
+          vscalefbf16 %xmm4, %xmm3, %xmm2 {%k7}
 
-// CHECK: vscalefpbf16 %xmm4, %xmm3, %xmm2 {%k7} {z}
+// CHECK: vscalefbf16 %xmm4, %xmm3, %xmm2 {%k7} {z}
 // CHECK: encoding: [0x62,0xf6,0x64,0x8f,0x2c,0xd4]
-          vscalefpbf16 %xmm4, %xmm3, %xmm2 {%k7} {z}
+          vscalefbf16 %xmm4, %xmm3, %xmm2 {%k7} {z}
 
-// CHECK: vscalefpbf16  268435456(%esp,%esi,8), %zmm3, %zmm2
+// CHECK: vscalefbf16  268435456(%esp,%esi,8), %zmm3, %zmm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x48,0x2c,0x94,0xf4,0x00,0x00,0x00,0x10]
-          vscalefpbf16  268435456(%esp,%esi,8), %zmm3, %zmm2
+          vscalefbf16  268435456(%esp,%esi,8), %zmm3, %zmm2
 
-// CHECK: vscalefpbf16  291(%edi,%eax,4), %zmm3, %zmm2 {%k7}
+// CHECK: vscalefbf16  291(%edi,%eax,4), %zmm3, %zmm2 {%k7}
 // CHECK: encoding: [0x62,0xf6,0x64,0x4f,0x2c,0x94,0x87,0x23,0x01,0x00,0x00]
-          vscalefpbf16  291(%edi,%eax,4), %zmm3, %zmm2 {%k7}
+          vscalefbf16  291(%edi,%eax,4), %zmm3, %zmm2 {%k7}
 
-// CHECK: vscalefpbf16  (%eax){1to32}, %zmm3, %zmm2
+// CHECK: vscalefbf16  (%eax){1to32}, %zmm3, %zmm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x58,0x2c,0x10]
-          vscalefpbf16  (%eax){1to32}, %zmm3, %zmm2
+          vscalefbf16  (%eax){1to32}, %zmm3, %zmm2
 
-// CHECK: vscalefpbf16  -2048(,%ebp,2), %zmm3, %zmm2
+// CHECK: vscalefbf16  -2048(,%ebp,2), %zmm3, %zmm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x48,0x2c,0x14,0x6d,0x00,0xf8,0xff,0xff]
-          vscalefpbf16  -2048(,%ebp,2), %zmm3, %zmm2
+          vscalefbf16  -2048(,%ebp,2), %zmm3, %zmm2
 
-// CHECK: vscalefpbf16  8128(%ecx), %zmm3, %zmm2 {%k7} {z}
+// CHECK: vscalefbf16  8128(%ecx), %zmm3, %zmm2 {%k7} {z}
 // CHECK: encoding: [0x62,0xf6,0x64,0xcf,0x2c,0x51,0x7f]
-          vscalefpbf16  8128(%ecx), %zmm3, %zmm2 {%k7} {z}
+          vscalefbf16  8128(%ecx), %zmm3, %zmm2 {%k7} {z}
 
-// CHECK: vscalefpbf16  -256(%edx){1to32}, %zmm3, %zmm2 {%k7} {z}
+// CHECK: vscalefbf16  -256(%edx){1to32}, %zmm3, %zmm2 {%k7} {z}
 // CHECK: encoding: [0x62,0xf6,0x64,0xdf,0x2c,0x52,0x80]
-          vscalefpbf16  -256(%edx){1to32}, %zmm3, %zmm2 {%k7} {z}
+          vscalefbf16  -256(%edx){1to32}, %zmm3, %zmm2 {%k7} {z}
 
-// CHECK: vscalefpbf16  268435456(%esp,%esi,8), %ymm3, %ymm2
+// CHECK: vscalefbf16  268435456(%esp,%esi,8), %ymm3, %ymm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x28,0x2c,0x94,0xf4,0x00,0x00,0x00,0x10]
-          vscalefpbf16  268435456(%esp,%esi,8), %ymm3, %ymm2
+          vscalefbf16  268435456(%esp,%esi,8), %ymm3, %ymm2
 
-// CHECK: vscalefpbf16  291(%edi,%eax,4), %ymm3, %ymm2 {%k7}
+// CHECK: vscalefbf16  291(%edi,%eax,4), %ymm3, %ymm2 {%k7}
 // CHECK: encoding: [0x62,0xf6,0x64,0x2f,0x2c,0x94,0x87,0x23,0x01,0x00,0x00]
-          vscalefpbf16  291(%edi,%eax,4), %ymm3, %ymm2 {%k7}
+          vscalefbf16  291(%edi,%eax,4), %ymm3, %ymm2 {%k7}
 
-// CHECK: vscalefpbf16  (%eax){1to16}, %ymm3, %ymm2
+// CHECK: vscalefbf16  (%eax){1to16}, %ymm3, %ymm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x38,0x2c,0x10]
-          vscalefpbf16  (%eax){1to16}, %ymm3, %ymm2
+          vscalefbf16  (%eax){1to16}, %ymm3, %ymm2
 
-// CHECK: vscalefpbf16  -1024(,%ebp,2), %ymm3, %ymm2
+// CHECK: vscalefbf16  -1024(,%ebp,2), %ymm3, %ymm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x28,0x2c,0x14,0x6d,0x00,0xfc,0xff,0xff]
-          vscalefpbf16  -1024(,%ebp,2), %ymm3, %ymm2
+          vscalefbf16  -1024(,%ebp,2), %ymm3, %ymm2
 
-// CHECK: vscalefpbf16  4064(%ecx), %ymm3, %ymm2 {%k7} {z}
+// CHECK: vscalefbf16  4064(%ecx), %ymm3, %ymm2 {%k7} {z}
 // CHECK: encoding: [0x62,0xf6,0x64,0xaf,0x2c,0x51,0x7f]
-          vscalefpbf16  4064(%ecx), %ymm3, %ymm2 {%k7} {z}
+          vscalefbf16  4064(%ecx), %ymm3, %ymm2 {%k7} {z}
 
-// CHECK: vscalefpbf16  -256(%edx){1to16}, %ymm3, %ymm2 {%k7} {z}
+// CHECK: vscalefbf16  -256(%edx){1to16}, %ymm3, %ymm2 {%k7} {z}
 // CHECK: encoding: [0x62,0xf6,0x64,0xbf,0x2c,0x52,0x80]
-          vscalefpbf16  -256(%edx){1to16}, %ymm3, %ymm2 {%k7} {z}
+          vscalefbf16  -256(%edx){1to16}, %ymm3, %ymm2 {%k7} {z}
 
-// CHECK: vscalefpbf16  268435456(%esp,%esi,8), %xmm3, %xmm2
+// CHECK: vscalefbf16  268435456(%esp,%esi,8), %xmm3, %xmm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x08,0x2c,0x94,0xf4,0x00,0x00,0x00,0x10]
-          vscalefpbf16  268435456(%esp,%esi,8), %xmm3, %xmm2
+          vscalefbf16  268435456(%esp,%esi,8), %xmm3, %xmm2
 
-// CHECK: vscalefpbf16  291(%edi,%eax,4), %xmm3, %xmm2 {%k7}
+// CHECK: vscalefbf16  291(%edi,%eax,4), %xmm3, %xmm2 {%k7}
 // CHECK: encoding: [0x62,0xf6,0x64,0x0f,0x2c,0x94,0x87,0x23,0x01,0x00,0x00]
-          vscalefpbf16  291(%edi,%eax,4), %xmm3, %xmm2 {%k7}
+          vscalefbf16  291(%edi,%eax,4), %xmm3, %xmm2 {%k7}
 
-// CHECK: vscalefpbf16  (%eax){1to8}, %xmm3, %xmm2
+// CHECK: vscalefbf16  (%eax){1to8}, %xmm3, %xmm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x18,0x2c,0x10]
-          vscalefpbf16  (%eax){1to8}, %xmm3, %xmm2
+          vscalefbf16  (%eax){1to8}, %xmm3, %xmm2
 
-// CHECK: vscalefpbf16  -512(,%ebp,2), %xmm3, %xmm2
+// CHECK: vscalefbf16  -512(,%ebp,2), %xmm3, %xmm2
 // CHECK: encoding: [0x62,0xf6,0x64,0x08,0x2c,0x14,0x6d,0x00,0xfe,0xff,0xff]
-          vscalefpbf16  -512(,%ebp,2), %xmm3, %xmm2
+          vscalefbf16  -512(,%ebp,2), %xmm3, %xmm2
 
-// CHECK: vscalefpbf16  2032(%ecx), %xmm3, %xmm2 {%k7} {z}
+// CHECK: vscalefbf16  2032(%ecx), %xmm3, %xmm2 {%k7} {z}
 // CHECK: encoding: [0x62,0xf6,0x64,0x8f,0x2c,0x51,0x7f]
-          vscalefpbf16  2032(%ecx), %xmm3, %xmm2 {%k7} {z}
+          vscalefbf16  2032(%ecx), %xmm3, %xmm2 {%k7} {z}
 
-// CHECK: vscalefpbf16  -256(%edx){1to8}, %xmm3, %xmm2 {%k7} {z}
+// CHECK: vscalefbf16  -256(%edx){1to8}, %xmm3, %xmm2 {%k7} {z}
 // CHECK: encoding: [0x62,0xf6,0x64,0x9f,0x2c,0x52,0x80]
-          vscalefpbf16  -256(%edx){1to8}, %xmm3, %xmm2 {%k7} {z}
+          vscalefbf16  -256(%edx){1to8}, %xmm3, %xmm2 {%k7} {z}
 
 // CHECK: vsqrtbf16 %xmm3, %xmm2
 // CHECK: encoding: [0x62,0xf5,0x7d,0x08,0x51,0xd3]

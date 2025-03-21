@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 #include <cuda_runtime.h>
 
 // CHECK: SYCL_EXTERNAL void Reset_kernel_parameters(volatile int &g_mutex);

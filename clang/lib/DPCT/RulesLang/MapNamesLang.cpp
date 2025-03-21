@@ -183,6 +183,7 @@ const MapNamesLang::MapTy DeviceInfoVarRule::PropNamesMap{
     {"maxTexture2D", "image2d_max"},
     {"maxTexture3D", "image3d_max"},
     {"regsPerBlock", "max_register_size_per_work_group"},
+    {"unifiedAddressing", "host_unified_memory"},
     // ...
 };
 
