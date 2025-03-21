@@ -35,7 +35,8 @@ int main(int argc, char **argv) {
 
   // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
-
+  // CHECK: deviceProp.get_host_unified_memory();
+  deviceProp.unifiedAddressing;
   // CHECK: std::array<unsigned char, 16> uuid = deviceProp.get_uuid();
   cudaUUID_t uuid = deviceProp.uuid;
   // CHECK: deviceProp.set_uuid(uuid);

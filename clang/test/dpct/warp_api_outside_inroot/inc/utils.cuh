@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 #pragma once
 
 #define C10_WARP_SIZE 32

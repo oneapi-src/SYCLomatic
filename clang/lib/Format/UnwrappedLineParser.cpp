@@ -4195,7 +4195,8 @@ void UnwrappedLineParser::parseRecord(bool ParseAsExpr) {
       break;
     default:
       if (!JSPastExtendsOrImplements && !ClassName &&
-          Previous->is(tok::identifier) && Previous->isNot(TT_AttributeMacro)) {
+          Previous->is(tok::identifier) && Previous->isNot(TT_AttributeMacro) &&
+          Previous->TokenText != Previous->TokenText.upper()) {
         ClassName = Previous;
       }
     }
