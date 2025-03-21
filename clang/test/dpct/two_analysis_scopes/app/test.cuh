@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 // CHECK: #include <dep.h>
 // CHECK-NEXT: #include <dpct/blas_utils.hpp>
 #include <dep.h>

@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 #include "multi-files-kernel.cuh"
 
 // CHECK: int global_id(const sycl::nd_item<3> &item_ct1) {
