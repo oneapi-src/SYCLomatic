@@ -297,19 +297,12 @@ RewriterMap dpct::createSinglePrecisionMathematicalFunctionsRewriterMap() {
                        CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))))
       // cospif
       MATH_API_REWRITERS_V2(
-          "cospif",
-          MATH_API_REWRITER_PAIR(
-              math::Tag::host_normal,
-              CALL_FACTORY_ENTRY(
-                  "cospif",
-                  CALL(MapNames::getClNamespace() + "cospi",
-                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
-          MATH_API_REWRITER_PAIR(
-              math::Tag::device_normal,
-              CALL_FACTORY_ENTRY(
-                  "cospif",
-                  CALL(MapNames::getClNamespace() + "cospi",
-                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))))
+          "cospif", MATH_API_REWRITER_PAIR(
+                        math::Tag::host_device,
+                        CALL_FACTORY_ENTRY(
+                            "cospif", CALL(MapNames::getClNamespace() + "cospi",
+                                           CAST_IF_NOT_SAME(
+                                               makeLiteral("float"), ARG(0))))))
       // tanhf
       MATH_API_REWRITERS_V2(
           "tanhf",
