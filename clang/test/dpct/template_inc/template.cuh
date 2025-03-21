@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 template <typename T>
 __global__ void foo(T t){
     int a = blockIdx.x;
