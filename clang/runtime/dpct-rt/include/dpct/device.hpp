@@ -22,7 +22,6 @@
 #include <stack>
 #include <sycl/sycl.hpp>
 #include <thread>
-#include <type_traits>
 #include <vector>
 #if defined(__linux__)
 #include <unistd.h>
