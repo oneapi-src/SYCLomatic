@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 // CHECK:#include <sycl/sycl.hpp>
 // CHECK-NEXT:#include <dpct/dpct.hpp>
 #include <stdio.h>

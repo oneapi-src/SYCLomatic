@@ -2688,113 +2688,113 @@
 // CHECK: encoding: [0x62,0xf6,0x7c,0xdf,0x4e,0x52,0x80]
           vrsqrtbf16 zmm2 {k7} {z}, word ptr [edx - 256]{1to32}
 
-// CHECK: vscalefpbf16 ymm2, ymm3, ymm4
+// CHECK: vscalefbf16 ymm2, ymm3, ymm4
 // CHECK: encoding: [0x62,0xf6,0x64,0x28,0x2c,0xd4]
-          vscalefpbf16 ymm2, ymm3, ymm4
+          vscalefbf16 ymm2, ymm3, ymm4
 
-// CHECK: vscalefpbf16 ymm2 {k7}, ymm3, ymm4
+// CHECK: vscalefbf16 ymm2 {k7}, ymm3, ymm4
 // CHECK: encoding: [0x62,0xf6,0x64,0x2f,0x2c,0xd4]
-          vscalefpbf16 ymm2 {k7}, ymm3, ymm4
+          vscalefbf16 ymm2 {k7}, ymm3, ymm4
 
-// CHECK: vscalefpbf16 ymm2 {k7} {z}, ymm3, ymm4
+// CHECK: vscalefbf16 ymm2 {k7} {z}, ymm3, ymm4
 // CHECK: encoding: [0x62,0xf6,0x64,0xaf,0x2c,0xd4]
-          vscalefpbf16 ymm2 {k7} {z}, ymm3, ymm4
+          vscalefbf16 ymm2 {k7} {z}, ymm3, ymm4
 
-// CHECK: vscalefpbf16 zmm2, zmm3, zmm4
+// CHECK: vscalefbf16 zmm2, zmm3, zmm4
 // CHECK: encoding: [0x62,0xf6,0x64,0x48,0x2c,0xd4]
-          vscalefpbf16 zmm2, zmm3, zmm4
+          vscalefbf16 zmm2, zmm3, zmm4
 
-// CHECK: vscalefpbf16 zmm2 {k7}, zmm3, zmm4
+// CHECK: vscalefbf16 zmm2 {k7}, zmm3, zmm4
 // CHECK: encoding: [0x62,0xf6,0x64,0x4f,0x2c,0xd4]
-          vscalefpbf16 zmm2 {k7}, zmm3, zmm4
+          vscalefbf16 zmm2 {k7}, zmm3, zmm4
 
-// CHECK: vscalefpbf16 zmm2 {k7} {z}, zmm3, zmm4
+// CHECK: vscalefbf16 zmm2 {k7} {z}, zmm3, zmm4
 // CHECK: encoding: [0x62,0xf6,0x64,0xcf,0x2c,0xd4]
-          vscalefpbf16 zmm2 {k7} {z}, zmm3, zmm4
+          vscalefbf16 zmm2 {k7} {z}, zmm3, zmm4
 
-// CHECK: vscalefpbf16 xmm2, xmm3, xmm4
+// CHECK: vscalefbf16 xmm2, xmm3, xmm4
 // CHECK: encoding: [0x62,0xf6,0x64,0x08,0x2c,0xd4]
-          vscalefpbf16 xmm2, xmm3, xmm4
+          vscalefbf16 xmm2, xmm3, xmm4
 
-// CHECK: vscalefpbf16 xmm2 {k7}, xmm3, xmm4
+// CHECK: vscalefbf16 xmm2 {k7}, xmm3, xmm4
 // CHECK: encoding: [0x62,0xf6,0x64,0x0f,0x2c,0xd4]
-          vscalefpbf16 xmm2 {k7}, xmm3, xmm4
+          vscalefbf16 xmm2 {k7}, xmm3, xmm4
 
-// CHECK: vscalefpbf16 xmm2 {k7} {z}, xmm3, xmm4
+// CHECK: vscalefbf16 xmm2 {k7} {z}, xmm3, xmm4
 // CHECK: encoding: [0x62,0xf6,0x64,0x8f,0x2c,0xd4]
-          vscalefpbf16 xmm2 {k7} {z}, xmm3, xmm4
+          vscalefbf16 xmm2 {k7} {z}, xmm3, xmm4
 
-// CHECK: vscalefpbf16 zmm2, zmm3, zmmword ptr [esp + 8*esi + 268435456]
+// CHECK: vscalefbf16 zmm2, zmm3, zmmword ptr [esp + 8*esi + 268435456]
 // CHECK: encoding: [0x62,0xf6,0x64,0x48,0x2c,0x94,0xf4,0x00,0x00,0x00,0x10]
-          vscalefpbf16 zmm2, zmm3, zmmword ptr [esp + 8*esi + 268435456]
+          vscalefbf16 zmm2, zmm3, zmmword ptr [esp + 8*esi + 268435456]
 
-// CHECK: vscalefpbf16 zmm2 {k7}, zmm3, zmmword ptr [edi + 4*eax + 291]
+// CHECK: vscalefbf16 zmm2 {k7}, zmm3, zmmword ptr [edi + 4*eax + 291]
 // CHECK: encoding: [0x62,0xf6,0x64,0x4f,0x2c,0x94,0x87,0x23,0x01,0x00,0x00]
-          vscalefpbf16 zmm2 {k7}, zmm3, zmmword ptr [edi + 4*eax + 291]
+          vscalefbf16 zmm2 {k7}, zmm3, zmmword ptr [edi + 4*eax + 291]
 
-// CHECK: vscalefpbf16 zmm2, zmm3, word ptr [eax]{1to32}
+// CHECK: vscalefbf16 zmm2, zmm3, word ptr [eax]{1to32}
 // CHECK: encoding: [0x62,0xf6,0x64,0x58,0x2c,0x10]
-          vscalefpbf16 zmm2, zmm3, word ptr [eax]{1to32}
+          vscalefbf16 zmm2, zmm3, word ptr [eax]{1to32}
 
-// CHECK: vscalefpbf16 zmm2, zmm3, zmmword ptr [2*ebp - 2048]
+// CHECK: vscalefbf16 zmm2, zmm3, zmmword ptr [2*ebp - 2048]
 // CHECK: encoding: [0x62,0xf6,0x64,0x48,0x2c,0x14,0x6d,0x00,0xf8,0xff,0xff]
-          vscalefpbf16 zmm2, zmm3, zmmword ptr [2*ebp - 2048]
+          vscalefbf16 zmm2, zmm3, zmmword ptr [2*ebp - 2048]
 
-// CHECK: vscalefpbf16 zmm2 {k7} {z}, zmm3, zmmword ptr [ecx + 8128]
+// CHECK: vscalefbf16 zmm2 {k7} {z}, zmm3, zmmword ptr [ecx + 8128]
 // CHECK: encoding: [0x62,0xf6,0x64,0xcf,0x2c,0x51,0x7f]
-          vscalefpbf16 zmm2 {k7} {z}, zmm3, zmmword ptr [ecx + 8128]
+          vscalefbf16 zmm2 {k7} {z}, zmm3, zmmword ptr [ecx + 8128]
 
-// CHECK: vscalefpbf16 zmm2 {k7} {z}, zmm3, word ptr [edx - 256]{1to32}
+// CHECK: vscalefbf16 zmm2 {k7} {z}, zmm3, word ptr [edx - 256]{1to32}
 // CHECK: encoding: [0x62,0xf6,0x64,0xdf,0x2c,0x52,0x80]
-          vscalefpbf16 zmm2 {k7} {z}, zmm3, word ptr [edx - 256]{1to32}
+          vscalefbf16 zmm2 {k7} {z}, zmm3, word ptr [edx - 256]{1to32}
 
-// CHECK: vscalefpbf16 ymm2, ymm3, ymmword ptr [esp + 8*esi + 268435456]
+// CHECK: vscalefbf16 ymm2, ymm3, ymmword ptr [esp + 8*esi + 268435456]
 // CHECK: encoding: [0x62,0xf6,0x64,0x28,0x2c,0x94,0xf4,0x00,0x00,0x00,0x10]
-          vscalefpbf16 ymm2, ymm3, ymmword ptr [esp + 8*esi + 268435456]
+          vscalefbf16 ymm2, ymm3, ymmword ptr [esp + 8*esi + 268435456]
 
-// CHECK: vscalefpbf16 ymm2 {k7}, ymm3, ymmword ptr [edi + 4*eax + 291]
+// CHECK: vscalefbf16 ymm2 {k7}, ymm3, ymmword ptr [edi + 4*eax + 291]
 // CHECK: encoding: [0x62,0xf6,0x64,0x2f,0x2c,0x94,0x87,0x23,0x01,0x00,0x00]
-          vscalefpbf16 ymm2 {k7}, ymm3, ymmword ptr [edi + 4*eax + 291]
+          vscalefbf16 ymm2 {k7}, ymm3, ymmword ptr [edi + 4*eax + 291]
 
-// CHECK: vscalefpbf16 ymm2, ymm3, word ptr [eax]{1to16}
+// CHECK: vscalefbf16 ymm2, ymm3, word ptr [eax]{1to16}
 // CHECK: encoding: [0x62,0xf6,0x64,0x38,0x2c,0x10]
-          vscalefpbf16 ymm2, ymm3, word ptr [eax]{1to16}
+          vscalefbf16 ymm2, ymm3, word ptr [eax]{1to16}
 
-// CHECK: vscalefpbf16 ymm2, ymm3, ymmword ptr [2*ebp - 1024]
+// CHECK: vscalefbf16 ymm2, ymm3, ymmword ptr [2*ebp - 1024]
 // CHECK: encoding: [0x62,0xf6,0x64,0x28,0x2c,0x14,0x6d,0x00,0xfc,0xff,0xff]
-          vscalefpbf16 ymm2, ymm3, ymmword ptr [2*ebp - 1024]
+          vscalefbf16 ymm2, ymm3, ymmword ptr [2*ebp - 1024]
 
-// CHECK: vscalefpbf16 ymm2 {k7} {z}, ymm3, ymmword ptr [ecx + 4064]
+// CHECK: vscalefbf16 ymm2 {k7} {z}, ymm3, ymmword ptr [ecx + 4064]
 // CHECK: encoding: [0x62,0xf6,0x64,0xaf,0x2c,0x51,0x7f]
-          vscalefpbf16 ymm2 {k7} {z}, ymm3, ymmword ptr [ecx + 4064]
+          vscalefbf16 ymm2 {k7} {z}, ymm3, ymmword ptr [ecx + 4064]
 
-// CHECK: vscalefpbf16 ymm2 {k7} {z}, ymm3, word ptr [edx - 256]{1to16}
+// CHECK: vscalefbf16 ymm2 {k7} {z}, ymm3, word ptr [edx - 256]{1to16}
 // CHECK: encoding: [0x62,0xf6,0x64,0xbf,0x2c,0x52,0x80]
-          vscalefpbf16 ymm2 {k7} {z}, ymm3, word ptr [edx - 256]{1to16}
+          vscalefbf16 ymm2 {k7} {z}, ymm3, word ptr [edx - 256]{1to16}
 
-// CHECK: vscalefpbf16 xmm2, xmm3, xmmword ptr [esp + 8*esi + 268435456]
+// CHECK: vscalefbf16 xmm2, xmm3, xmmword ptr [esp + 8*esi + 268435456]
 // CHECK: encoding: [0x62,0xf6,0x64,0x08,0x2c,0x94,0xf4,0x00,0x00,0x00,0x10]
-          vscalefpbf16 xmm2, xmm3, xmmword ptr [esp + 8*esi + 268435456]
+          vscalefbf16 xmm2, xmm3, xmmword ptr [esp + 8*esi + 268435456]
 
-// CHECK: vscalefpbf16 xmm2 {k7}, xmm3, xmmword ptr [edi + 4*eax + 291]
+// CHECK: vscalefbf16 xmm2 {k7}, xmm3, xmmword ptr [edi + 4*eax + 291]
 // CHECK: encoding: [0x62,0xf6,0x64,0x0f,0x2c,0x94,0x87,0x23,0x01,0x00,0x00]
-          vscalefpbf16 xmm2 {k7}, xmm3, xmmword ptr [edi + 4*eax + 291]
+          vscalefbf16 xmm2 {k7}, xmm3, xmmword ptr [edi + 4*eax + 291]
 
-// CHECK: vscalefpbf16 xmm2, xmm3, word ptr [eax]{1to8}
+// CHECK: vscalefbf16 xmm2, xmm3, word ptr [eax]{1to8}
 // CHECK: encoding: [0x62,0xf6,0x64,0x18,0x2c,0x10]
-          vscalefpbf16 xmm2, xmm3, word ptr [eax]{1to8}
+          vscalefbf16 xmm2, xmm3, word ptr [eax]{1to8}
 
-// CHECK: vscalefpbf16 xmm2, xmm3, xmmword ptr [2*ebp - 512]
+// CHECK: vscalefbf16 xmm2, xmm3, xmmword ptr [2*ebp - 512]
 // CHECK: encoding: [0x62,0xf6,0x64,0x08,0x2c,0x14,0x6d,0x00,0xfe,0xff,0xff]
-          vscalefpbf16 xmm2, xmm3, xmmword ptr [2*ebp - 512]
+          vscalefbf16 xmm2, xmm3, xmmword ptr [2*ebp - 512]
 
-// CHECK: vscalefpbf16 xmm2 {k7} {z}, xmm3, xmmword ptr [ecx + 2032]
+// CHECK: vscalefbf16 xmm2 {k7} {z}, xmm3, xmmword ptr [ecx + 2032]
 // CHECK: encoding: [0x62,0xf6,0x64,0x8f,0x2c,0x51,0x7f]
-          vscalefpbf16 xmm2 {k7} {z}, xmm3, xmmword ptr [ecx + 2032]
+          vscalefbf16 xmm2 {k7} {z}, xmm3, xmmword ptr [ecx + 2032]
 
-// CHECK: vscalefpbf16 xmm2 {k7} {z}, xmm3, word ptr [edx - 256]{1to8}
+// CHECK: vscalefbf16 xmm2 {k7} {z}, xmm3, word ptr [edx - 256]{1to8}
 // CHECK: encoding: [0x62,0xf6,0x64,0x9f,0x2c,0x52,0x80]
-          vscalefpbf16 xmm2 {k7} {z}, xmm3, word ptr [edx - 256]{1to8}
+          vscalefbf16 xmm2 {k7} {z}, xmm3, word ptr [edx - 256]{1to8}
 
 // CHECK: vsqrtbf16 xmm2, xmm3
 // CHECK: encoding: [0x62,0xf5,0x7d,0x08,0x51,0xd3]
