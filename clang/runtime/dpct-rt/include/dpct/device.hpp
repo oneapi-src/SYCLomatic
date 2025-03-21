@@ -925,6 +925,9 @@ static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }
 
+static inline unsigned int get_cpu_device_id() {
+  return get_device_id(cpu_device());
+}
 static inline unsigned int select_device(unsigned int id) {
   dev_mgr::instance().select_device(id);
   return id;

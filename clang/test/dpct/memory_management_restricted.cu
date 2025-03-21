@@ -92,7 +92,7 @@ int main(){
     // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::cpu_device().in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, cudaCpuDeviceId, nullptr));
 
-    // CHECK: int dev_id = dpct::get_device_id(dpct::cpu_device());
+    // CHECK: int dev_id = dpct::get_cpu_device_id();
     int dev_id = cudaCpuDeviceId;
 
     //CHECK: stream_array[0]->memcpy(h_A, d_A, size2);

@@ -293,8 +293,7 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaCpuDeviceId",
        MacroMigrationRule("cudaCpuDeviceId", RulePriority::Fallback,
                           "cudaCpuDeviceId",
-                          getDpctNamespace() + "get_device_id(" +
-                              getDpctNamespace() + "cpu_device())")},
+                          getDpctNamespace() + "get_cpu_device_id()")},
       //...
   };
   // Type names mapping.
