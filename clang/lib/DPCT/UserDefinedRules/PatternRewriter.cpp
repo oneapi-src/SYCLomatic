@@ -256,7 +256,7 @@ findMatch(const MatchPattern &Pattern, const std::string &Input,
 
 static int parseCodeElement(const MatchPattern &Suffix,
                             const std::string &Input, const int Start,
-                            RuleMatchMode Mode);
+                            RuleMatchMode Mode, bool IsInsideBlock = false);
 
 static int parseBlock(char LeftDelimiter, char RightDelimiter,
                       const std::string &Input, const int Start,
@@ -269,12 +269,7 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
   }
   Index++;
 
-  auto Next = parseCodeElement(Suffix, Input, Index, Mode);
-  if (Next == -1) {
-    Index = parseCodeElement({}, Input, Index, Mode);
-  } else {
-    Index = Next;
-  }
+  Index = parseCodeElement(Suffix, Input, Index, Mode, true);
 
   if (Index == -1 || Index >= Size) {
     return -1;
@@ -285,9 +280,7 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
 
 static int parseCodeElement(const MatchPattern &Suffix,
                             const std::string &Input, const int Start,
-                            RuleMatchMode Mode) {
-  bool IsPythonScript = (SrcFileType == SourceFileType::SFT_PySetupScript);
-
+                            RuleMatchMode Mode, bool IsInsideBlock) {
   int Index = Start;
   const int Size = Input.size();
   while (Index >= 0 && Index < Size) {
@@ -301,10 +294,8 @@ static int parseCodeElement(const MatchPattern &Suffix,
     }
 
     const auto Character = Input[Index];
-    if (!IsPythonScript) {
-      if (Suffix.size() == 0 && Character == '"') {
-        return Index;
-      }
+    if (Suffix.size() == 0 && Character == '"') {
+      return Index;
     }
 
     if (Suffix.size() > 0) {
@@ -316,15 +307,19 @@ static int parseCodeElement(const MatchPattern &Suffix,
         return Index;
       }
 
-      if (isRightDelimiter(Character) || Index == Size - 1) {
+      if (Index == Size - 1) {
         return -1;
+      }
+
+      if (isRightDelimiter(Character)) {
+        return IsInsideBlock ? Index : -1;
       }
     }
 
     if (isLeftDelimiter(Character)) {
       char RightDelimiter = getRightDelimiter(Character);
 
-      if (IsPythonScript) {
+      if (SrcFileType == SourceFileType::SFT_PySetupScript) {
         Index =
             parseBlock(Character, RightDelimiter, Input, Index, Mode, Suffix);
       } else {
@@ -459,9 +454,9 @@ static void applyExtenstionNameChange(
   // Find the starting position of the file name
   for (; Pos > 0 && isValidFilePrefix(Input[Pos]); Pos--) {
   }
-  Pos = Pos == 0 ? 0 : Pos + 1;
-  if (Input[Pos] == '"' || Input[Pos] == '\'')
-    Pos += 1;
+  if (!isValidFilePrefix(Input[Pos]))
+    Pos++;
+
   std::string SrcFile = Input.substr(Pos, Next + ExtensionType.length() +
                                               1 /*strlen of "."*/ - Pos);
   bool HasCudaSyntax = false;
@@ -523,7 +518,10 @@ static void applyExtenstionNameChange(
         break;
       }
     } else if (llvm::sys::path::filename(FileName).ends_with(".py")) {
-      if (llvm::StringRef(File).ends_with(SrcFile)) {
+      llvm::SmallString<512> _SrcFile(SrcFile);
+      llvm::sys::path::native(_SrcFile);
+
+      if (llvm::StringRef(File).ends_with(_SrcFile)) {
         HasCudaSyntax = true;
         break;
       }
