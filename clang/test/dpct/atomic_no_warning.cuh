@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 // CHECK: #ifndef __ATOMIC_NO_WARNING_H__
 // CHECK-NEXT: #define __ATOMIC_NO_WARNING_H__
 // CHECK-NEXT: #define ATOMIC_ADD( x, v )  dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&x, v);
