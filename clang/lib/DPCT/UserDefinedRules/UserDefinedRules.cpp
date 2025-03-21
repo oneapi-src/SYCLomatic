@@ -75,6 +75,8 @@ void registerAPIRule(MetaRuleObject &R) {
   // register all rules for CXXConstructExpr
   OutputBuilder OB;
   OB.Kind = OutputBuilder::Kind::Top;
+  OB.RuleName = R.RuleId;
+  OB.RuleFile = R.RuleFile;
   APIRulesMap[R.In] = OB;
   APIRulesMap[R.In].parse(R.Out);
 
