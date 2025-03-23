@@ -28,9 +28,9 @@ int main() {
 // CHECK:  s1->submit(
 // CHECK:      [&](sycl::handler &cgh) {
 // CHECK:        auto last_event = dpct::get_default_queue().ext_oneapi_get_last_event();
-// CHECK:        [&](auto &&_e) {
+// CHECK:        [=](auto &&_e) {
 // CHECK:          if constexpr (std::is_same_v<decltype(last_event), sycl::event>)
-// CHECK:            cgh.depends_on(_e)
+// CHECK:            cgh.depends_on(_e);
 // CHECK:          else if (_e.has_value())
 // CHECK:            cgh.depends_on(_e.value());
 // CHECK:        }(last_event);

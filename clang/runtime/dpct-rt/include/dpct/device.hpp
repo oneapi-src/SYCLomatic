@@ -593,7 +593,7 @@ public:
     for (const auto &q : current_queues) {
       if (q->is_in_order()) {
         auto last_event = q->ext_oneapi_get_last_event();
-        [&](auto &&_e) {
+        [=](auto &&_e) {
           if constexpr (std::is_same_v<decltype(last_event), sycl::event>)
             last_events.push_back(_e);
           else if (_e.has_value())
