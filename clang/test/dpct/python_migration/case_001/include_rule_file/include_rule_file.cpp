@@ -9,5 +9,6 @@
 // RUN: echo "begin" > %T/diff.txt
 // RUN: diff --strip-trailing-cr %S/expected.py %T/dpct_output/input.py >> %T/diff.txt
 // RUN: echo "end" >> %T/diff.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/diff.txt
 // CHECK: begin
 // CHECK-NEXT: end

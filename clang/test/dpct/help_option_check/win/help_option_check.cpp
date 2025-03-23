@@ -11,7 +11,7 @@
 // RUN: dpct --help=advanced > output.txt
 // RUN: diff --strip-trailing-cr %S/help_advanced.txt %T/help_option_check/output.txt >> %T/diff.txt
 // RUN: echo "end" >> %T/diff.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/diff.txt
 
-// RUN: cat %T/diff.txt | FileCheck %s
 // CHECK: begin
 // CHECK-NEXT: end

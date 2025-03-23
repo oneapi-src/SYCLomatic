@@ -6,6 +6,7 @@
 // RUN: echo "begin" > %T/diff.txt
 // RUN: diff --strip-trailing-cr %S/expected.txt %T/out/input.cmake >> %T/diff.txt
 // RUN: echo "end" >> %T/diff.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/diff.txt
 
 // CHECK: begin
 // CHECK-NEXT: end
