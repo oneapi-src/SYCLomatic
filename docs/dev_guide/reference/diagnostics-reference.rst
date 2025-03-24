@@ -591,4 +591,3 @@ messages, detailed help, and suggestion to fix your errors.
      - .. include:: diagnostic_ref/dpct3002.rst
           :start-after: msg-3002-start:
           :end-before: msg-3002-end:
-          
