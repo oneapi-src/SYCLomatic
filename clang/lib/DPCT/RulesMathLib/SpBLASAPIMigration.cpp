@@ -151,20 +151,12 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     EA.applyAllSubExprRepl();
     return;
   }
-  if (FuncName == "cusparseXcsrgemmNnz" || FuncName == "cusparseXcsrgemm2Nnz") {
-    auto consumerFuncNames = [&]() {
-      if (FuncName == "cusparseXcsrgemmNnz")
-        return hasAnyName("cusparseScsrgemm", "cusparseDcsrgemm",
-                          "cusparseCcsrgemm", "cusparseZcsrgemm");
-      return hasAnyName("cusparseScsrgemm2", "cusparseDcsrgemm2",
-                        "cusparseCcsrgemm2", "cusparseZcsrgemm2");
-    };
-
+  if (FuncName == "cusparseXcsrgemmNnz") {
     std::vector<std::string> MigratedArgs;
     for (const auto &Arg : CE->arguments()) {
       MigratedArgs.push_back(ExprAnalysis::ref(Arg));
     }
-    // We need find the next cusparse<T>csrgemm(2) API call which is using the
+    // We need find the next cusparse<T>csrgemm API call which is using the
     // result of this API call, otherwise a warning will be emitted.
     auto findOuterCS = [](const Stmt *Input) {
       const CompoundStmt *CS = nullptr;
@@ -181,13 +173,16 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       return CS;
     };
     const CompoundStmt *CS1 = findOuterCS(CE);
-    // Find all the cusparse<T>csrgemm(2) calls in this range.
+    // Find all the cusparse<T>csrgemm calls in this range.
     using namespace clang::ast_matchers;
-    auto Matcher = findAll(
-        callExpr(callee(functionDecl(consumerFuncNames()))).bind("CallExpr"));
+    auto Matcher =
+        findAll(callExpr(callee(functionDecl(hasAnyName(
+                             "cusparseScsrgemm", "cusparseDcsrgemm",
+                             "cusparseCcsrgemm", "cusparseZcsrgemm"))))
+                    .bind("CallExpr"));
     auto CEResults = match(Matcher, *CS1, DpctGlobalInfo::getContext());
     // Find the correct call
-    const CallExpr* CorrectCall = nullptr;
+    const CallExpr *CorrectCall = nullptr;
     for (auto &Result : CEResults) {
       const CallExpr *MatchedCE = Result.getNodeAs<CallExpr>("CallExpr");
       if (MatchedCE) {
@@ -202,21 +197,12 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         }
         if ([&]() -> bool {
               const static std::map<unsigned /*CE*/, unsigned /*MatchedCE*/>
-                  IdxMapCsrgemm = {
+                  IdxMap = {
                       {0, 0},   {1, 1},   {2, 2},   {3, 3},
                       {4, 4},   {5, 5},   {6, 6},   {7, 7},
                       {8, 9},   {9, 10},  {10, 11}, {11, 12},
                       {12, 14}, {13, 15}, {14, 16}, {15, 18},
                   };
-              const static std::map<unsigned /*CE*/, unsigned /*MatchedCE*/>
-                  IdxMapCsrgemm2 = {
-                      {0, 0},   {1, 1},   {2, 2},   {3, 3},   {4, 5},
-                      {5, 6},   {6, 8},   {7, 9},   {8, 10},  {9, 11},
-                      {10, 13}, {11, 14}, {12, 16}, {13, 17}, {14, 19},
-                      {15, 20}, {16, 21}, {17, 23}, {19, 25}, {20, 26},
-                  };
-              auto IdxMap = FuncName == "cusparseXcsrgemmNnz" ? IdxMapCsrgemm
-                                                              : IdxMapCsrgemm2;
               for (const auto &P : IdxMap) {
                 if (MigratedArgs[P.first] != MatchedCEMigratedArgs[P.second]) {
                   return false;
@@ -232,39 +218,22 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     const constexpr int Placeholder = -1;
     std::map<int /*CE*/, int /*MatchedCE*/> InsertBeforeIdxMap;
     if (CorrectCall) {
-      InsertBeforeIdxMap = FuncName == "cusparseXcsrgemmNnz" ?
-        std::map<int, int>{
+      InsertBeforeIdxMap = {
           {8, 8},
           {12, 13},
-        } : std::map<int, int>{
-          {6, 7},
-          {10, 12},
-          {14, 18},
-        };
+      };
     } else {
       report(
           DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
           Diagnostics::SPARSE_NNZ, true);
-      InsertBeforeIdxMap = FuncName == "cusparseXcsrgemmNnz" ?
-        std::map<int, int>{
+      InsertBeforeIdxMap = {
           {8, Placeholder},
           {12, Placeholder},
-        } :
-        std::map<int, int>{
-          {6, Placeholder},
-          {10, Placeholder},
-          {14, Placeholder},
-        };
+      };
     }
     std::string MigratedCall;
     MigratedCall =
         MapNames::getLibraryHelperNamespace() + "sparse::csrgemm_nnz(";
-    if (FuncName == "cusparseXcsrgemm2Nnz") {
-      MigratedCall =
-          MapNames::getLibraryHelperNamespace() + "sparse::csrgemm2_nnz(";
-      MigratedArgs.pop_back();
-      MigratedArgs.pop_back();
-    }
     for (unsigned i = 0; i < MigratedArgs.size(); i++) {
       if (auto Iter = InsertBeforeIdxMap.find(i);
           Iter != InsertBeforeIdxMap.end()) {
@@ -292,7 +261,6 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   }
 }
-
 
 // Rule for spBLAS enums.
 // Migrate spBLAS status values to corresponding int values

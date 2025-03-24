@@ -253,7 +253,7 @@ ENTRY(cusparseScsrgemm2_bufferSizeExt, cusparseScsrgemm2_bufferSizeExt, true, NO
 ENTRY(cusparseDcsrgemm2_bufferSizeExt, cusparseDcsrgemm2_bufferSizeExt, true, NO_FLAG, P4, "comment")
 ENTRY(cusparseCcsrgemm2_bufferSizeExt, cusparseCcsrgemm2_bufferSizeExt, true, NO_FLAG, P4, "comment")
 ENTRY(cusparseZcsrgemm2_bufferSizeExt, cusparseZcsrgemm2_bufferSizeExt, true, NO_FLAG, P4, "comment")
-ENTRY(cusparseXcsrgemm2Nnz, cusparseXcsrgemm2Nnz, true, NO_FLAG, P4, "DPCT1130")
+ENTRY(cusparseXcsrgemm2Nnz, cusparseXcsrgemm2Nnz, true, NO_FLAG, P4, "comment")
 ENTRY(cusparseScsrgemm2, cusparseScsrgemm2, true, NO_FLAG, P4, "comment")
 ENTRY(cusparseDcsrgemm2, cusparseDcsrgemm2, true, NO_FLAG, P4, "comment")
 ENTRY(cusparseCcsrgemm2, cusparseCcsrgemm2, true, NO_FLAG, P4, "comment")

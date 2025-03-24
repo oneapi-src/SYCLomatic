@@ -39,40 +39,6 @@ struct csrgemm_args_info_hash {
   }
 };
 
-using csrgemm2_args_info =
-    std::tuple<int, int, int,
-               const std::shared_ptr<matrix_info>, const void *, const int *,
-               const int *,
-               const std::shared_ptr<matrix_info>, const void *, const int *,
-               const int *,
-               const std::shared_ptr<matrix_info>, const void *, const int *,
-               const int *,
-               const std::shared_ptr<matrix_info>,
-               const int *>;
-struct csrgemm2_args_info_hash {
-  size_t operator()(const csrgemm2_args_info &args) const {
-    std::stringstream ss;
-    ss << std::get<0>(args) << ":";
-    ss << std::get<1>(args) << ":";
-    ss << std::get<2>(args) << ":";
-    ss << std::get<3>(args).get() << ":";
-    ss << std::get<4>(args) << ":";
-    ss << std::get<5>(args) << ":";
-    ss << std::get<6>(args) << ":";
-    ss << std::get<7>(args).get() << ":";
-    ss << std::get<8>(args) << ":";
-    ss << std::get<9>(args) << ":";
-    ss << std::get<10>(args) << ":";
-    ss << std::get<11>(args).get() << ":";
-    ss << std::get<12>(args) << ":";
-    ss << std::get<12>(args) << ":";
-    ss << std::get<14>(args) << ":";
-    ss << std::get<15>(args).get() << ":";
-    ss << std::get<16>(args) << ":";
-    return std::hash<std::string>{}(ss.str());
-  }
-};
-
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 template <typename handle_t> class handle_manager {
 public:
