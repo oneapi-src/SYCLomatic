@@ -550,7 +550,7 @@ public:
     auto Iter = kernel_function_ptr_map.find(func);
     if (Iter == kernel_function_ptr_map.end()) {
       throw std::runtime_error(
-          "dpct::launch() : no registered kernel function wrapper found."););
+          "dpct::launch() : no registered kernel function wrapper found.");
     }
     (Iter->second)(group_range, local_range, args, local_mem_size, que);
   }
