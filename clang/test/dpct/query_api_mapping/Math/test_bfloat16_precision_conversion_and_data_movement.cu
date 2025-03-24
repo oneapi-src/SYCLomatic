@@ -7,13 +7,13 @@
 // __BFLOAT1622FLOAT2: CUDA API:
 // __BFLOAT1622FLOAT2-NEXT:   __bfloat1622float2(b /*__nv_bfloat162*/);
 // __BFLOAT1622FLOAT2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
-// __BFLOAT1622FLOAT2-NEXT:   sycl::float2(sycl::ext::intel::math::bfloat162float(b[0]), sycl::ext::intel::math::bfloat162float(b[1]));
+// __BFLOAT1622FLOAT2-NEXT:   sycl::float2(sycl::ext::intel::math::bfloat162float(b.x()), sycl::ext::intel::math::bfloat162float(b.y()));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__bfloat162bfloat162 | FileCheck %s -check-prefix=__BFLOAT162BFLOAT162
 // __BFLOAT162BFLOAT162: CUDA API:
 // __BFLOAT162BFLOAT162-NEXT:   __bfloat162bfloat162(b /*__nv_bfloat16*/);
 // __BFLOAT162BFLOAT162-NEXT: Is migrated to:
-// __BFLOAT162BFLOAT162-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(b, b);
+// __BFLOAT162BFLOAT162-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(b, b);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__bfloat162float | FileCheck %s -check-prefix=__BFLOAT162FLOAT
 // __BFLOAT162FLOAT: CUDA API:
@@ -187,7 +187,7 @@
 // __FLOAT22BFLOAT162_RN: CUDA API:
 // __FLOAT22BFLOAT162_RN-NEXT:   __float22bfloat162_rn(f /*float2*/);
 // __FLOAT22BFLOAT162_RN-NEXT: Is migrated to:
-// __FLOAT22BFLOAT162_RN-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f[0], f[1]);
+// __FLOAT22BFLOAT162_RN-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(f.x(), f.y());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__float2bfloat16 | FileCheck %s -check-prefix=__FLOAT2BFLOAT16
 // __FLOAT2BFLOAT16: CUDA API:
@@ -199,7 +199,7 @@
 // __FLOAT2BFLOAT162_RN: CUDA API:
 // __FLOAT2BFLOAT162_RN-NEXT:   __float2bfloat162_rn(f /*float*/);
 // __FLOAT2BFLOAT162_RN-NEXT: Is migrated to:
-// __FLOAT2BFLOAT162_RN-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f, f);
+// __FLOAT2BFLOAT162_RN-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(f, f);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__float2bfloat16_rd | FileCheck %s -check-prefix=__FLOAT2BFLOAT16_RD
 // __FLOAT2BFLOAT16_RD: CUDA API:
@@ -229,31 +229,31 @@
 // __FLOATS2BFLOAT162_RN: CUDA API:
 // __FLOATS2BFLOAT162_RN-NEXT:   __floats2bfloat162_rn(f1 /*float*/, f2 /*float*/);
 // __FLOATS2BFLOAT162_RN-NEXT: Is migrated to:
-// __FLOATS2BFLOAT162_RN-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f1, f2);
+// __FLOATS2BFLOAT162_RN-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(f1, f2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__halves2bfloat162 | FileCheck %s -check-prefix=__HALVES2BFLOAT162
 // __HALVES2BFLOAT162: CUDA API:
 // __HALVES2BFLOAT162-NEXT:   __halves2bfloat162(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/);
 // __HALVES2BFLOAT162-NEXT: Is migrated to:
-// __HALVES2BFLOAT162-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(b1, b2);
+// __HALVES2BFLOAT162-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(b1, b2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__high2bfloat16 | FileCheck %s -check-prefix=__HIGH2BFLOAT16
 // __HIGH2BFLOAT16: CUDA API:
 // __HIGH2BFLOAT16-NEXT:   __high2bfloat16(b /*__nv_bfloat162*/);
 // __HIGH2BFLOAT16-NEXT: Is migrated to:
-// __HIGH2BFLOAT16-NEXT:   sycl::ext::oneapi::bfloat16(b[1]);
+// __HIGH2BFLOAT16-NEXT:   sycl::ext::oneapi::bfloat16(b.y());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__high2bfloat162 | FileCheck %s -check-prefix=__HIGH2BFLOAT162
 // __HIGH2BFLOAT162: CUDA API:
 // __HIGH2BFLOAT162-NEXT:   __high2bfloat162(b /*__nv_bfloat162*/);
 // __HIGH2BFLOAT162-NEXT: Is migrated to:
-// __HIGH2BFLOAT162-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(b[1], b[1]);
+// __HIGH2BFLOAT162-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(b.y(), b.y());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__highs2bfloat162 | FileCheck %s -check-prefix=__HIGHS2BFLOAT162
 // __HIGHS2BFLOAT162: CUDA API:
 // __HIGHS2BFLOAT162-NEXT:   __highs2bfloat162(b1 /*__nv_bfloat162*/, b2 /*__nv_bfloat162*/);
 // __HIGHS2BFLOAT162-NEXT: Is migrated to:
-// __HIGHS2BFLOAT162-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(b1[1], b2[1]);
+// __HIGHS2BFLOAT162-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(b1.y(), b2.y());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__int2bfloat16_rd | FileCheck %s -check-prefix=__INT2BFLOAT16_RD
 // __INT2BFLOAT16_RD: CUDA API:
@@ -307,19 +307,19 @@
 // __LOW2BFLOAT16: CUDA API:
 // __LOW2BFLOAT16-NEXT:   __low2bfloat16(b /*__nv_bfloat162*/);
 // __LOW2BFLOAT16-NEXT: Is migrated to:
-// __LOW2BFLOAT16-NEXT:   sycl::ext::oneapi::bfloat16(b[0]);
+// __LOW2BFLOAT16-NEXT:   sycl::ext::oneapi::bfloat16(b.x());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__low2bfloat162 | FileCheck %s -check-prefix=__LOW2BFLOAT162
 // __LOW2BFLOAT162: CUDA API:
 // __LOW2BFLOAT162-NEXT:   __low2bfloat162(b /*__nv_bfloat162*/);
 // __LOW2BFLOAT162-NEXT: Is migrated to:
-// __LOW2BFLOAT162-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(b[0], b[0]);
+// __LOW2BFLOAT162-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(b.x(), b.x());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__lows2bfloat162 | FileCheck %s -check-prefix=__LOWS2BFLOAT162
 // __LOWS2BFLOAT162: CUDA API:
 // __LOWS2BFLOAT162-NEXT:   __lows2bfloat162(b1 /*__nv_bfloat162*/, b2 /*__nv_bfloat162*/);
 // __LOWS2BFLOAT162-NEXT: Is migrated to:
-// __LOWS2BFLOAT162-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(b1[0], b2[0]);
+// __LOWS2BFLOAT162-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2>(b1.x(), b2.x());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__short2bfloat16_rd | FileCheck %s -check-prefix=__SHORT2BFLOAT16_RD
 // __SHORT2BFLOAT16_RD: CUDA API:

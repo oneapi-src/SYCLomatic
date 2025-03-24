@@ -251,6 +251,7 @@ enum class Tag : size_t {
   ext_experimental, // device API using experimental feature
   host_perf,        // host API for performance
   host_normal,      // host API
+  host_device,      // host deivce API
   unsupported_warning,
   no_rewrite,
   tag_size
@@ -280,6 +281,8 @@ private:
       MathAPIRewriters[static_cast<size_t>(math::Tag::math_libdevice)];
   element_t &DeviceStdRewriter =
       MathAPIRewriters[static_cast<size_t>(math::Tag::device_std)];
+  element_t &HostDeviceRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::host_device)];
   element_t &EmulationRewriter =
       MathAPIRewriters[static_cast<size_t>(math::Tag::emulation)];
   element_t &ExtExperimentalRewriter =
@@ -377,6 +380,9 @@ public:
     // Host and device
     if (EmulationRewriter && EmulationRewriter.value().first(C))
       return EmulationRewriter.value().second.second->create(C);
+
+    if (HostDeviceRewriter && HostDeviceRewriter.value().first(C))
+      return HostDeviceRewriter.value().second.second->create(C);
 
     if (UnsupportedWarningRewriter &&
         UnsupportedWarningRewriter.value().first(C))
