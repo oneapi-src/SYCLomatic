@@ -10,50 +10,20 @@ External Memory Interoperability
 Vulkan Interoperability with CUDA using option
 ``--use-experimental-features=bindless_images``.
 
-Supported Types
-***************
-
-.. list-table::
-   :widths: 50 50
-   :header-rows: 1
-
-   * - CUDA
-     - |tool_name|
-   * - ``cudaGraphicsResource_t``
-     - ``sycl::ext::oneapi::experimental::external_mem``
-   * - ``cudaGraphicsRegisterFlags``
-     - ``int``
-   * - ``cudaGraphicsMapFlags``
-     - ``int``
-   * - ``cudaExternalMemoryHandleType``
-     - ``sycl::ext::oneapi::experimental::external_mem_handle_type``
-   * - ``cudaExternalMemory_t``
-     - ``sycl::ext::oneapi::experimental::external_mem``
-   * - ``cudaExternalMemoryHandleDesc``
-     - ``dpct::experimental::external_mem_handle_desc``
-   * - ``cudaExternalMemoryMipmappedArrayDesc``
-     - ``dpct::experimental::external_mem_img_desc``
-   * - ``cudaExternalMemoryBufferDesc``
-     - ``dpct::experimental::external_mem_buf_desc``
-
-Supported Formats
-*****************
-
-DirectX (11/12)
-~~~~~~~~~~~~~~~
-
-* **DXGI_FORMAT_R16G16_FLOAT**
-* **DXGI_FORMAT_R32_FLOAT**
-* **DXGI_FORMAT_R16G16B16A16_FLOAT**
-* **DXGI_FORMAT_R8G8B8A8_UNORM**
-
-Vulkan
-~~~~~~
-
-* **VK_FORMAT_R16G16_SFLOAT**
-* **VK_FORMAT_R32_SFLOAT**
-* **VK_FORMAT_R16G16B16A16_SFLOAT**
-* **VK_FORMAT_R8G8B8A8_UNORM**
+Supported CUDA APIs
+*******************
+* **cudaGraphicsMapResources**
+* **cudaGraphicsResourceGetMappedPointer**
+* **cudaGraphicsSubResourceGetMappedArray**
+* **cudaGraphicsResourceGetMappedMipmappedArray**
+* **cudaGraphicsUnmapResources**
+* **cudaGraphicsUnregisterResource**
+* **cudaGraphicsResourceSetMapFlags**
+* **cudaGraphicsD3D11RegisterResource**
+* **cudaDestroyExternalMemory**
+* **CudaExternalMemoryGetMappedBuffer**
+* **cudaExternalMemoryGetMappedMipmappedArray**
+* **cudaImportExternalMemory**
 
 Examples
 ********
@@ -90,7 +60,7 @@ CUDA
    // Unregister the CUDA resource
    cudaGraphicsUnregisterResource(cudaResource);
 
-|tool_name|
+Migrated Code
 
 .. code-block:: none
 
@@ -150,7 +120,7 @@ CUDA
    // Destroy the CUDA resource
    cudaDestroyExternalMemory(externalMemory);
 
-|tool_name|
+Migrated Code
 
 .. code-block:: none
 
