@@ -346,7 +346,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatmulHeuristicResult_t", "CUjit_target",
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
-              "CUstreamCallback", "cudaHostFn_t"))))))
+              "CUstreamCallback", "cudaHostFn_t", "__nv_half2",
+              "__nv_half"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -1189,10 +1190,6 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                     .bind("vectorTypeTL"),
                 this);
 
-  MF.addMatcher(
-      cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(SUPPORTEDVECTORTYPENAMES)))
-          .bind("inheritanceType"),
-      this);
 
   auto Vec3Types = [&]() {
     return hasAnyName("char3", "uchar3", "short3", "ushort3", "int3", "uint3",
@@ -1218,12 +1215,12 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                                   "longlong1", "ulonglong1", "double1", "__half_raw")))
                     .bind("inherit"),
                 this);
-  // Matcher for __half_raw implicitly convert to half.
+  // Matcher for __half_raw/__half2_raw implicitly convert to half/half2.
   MF.addMatcher(
       declRefExpr(allOf(unless(hasParent(memberExpr())),
                         unless(hasParent(unaryOperator(hasOperatorName("&")))),
-                        to(varDecl(hasType(qualType(hasDeclaration(
-                                       namedDecl(hasAnyName("__half_raw"))))))),
+                        to(varDecl(hasType(qualType(hasDeclaration(namedDecl(
+                            hasAnyName("__half_raw", "__half2_raw"))))))),
                         hasParent(implicitCastExpr())))
           .bind("halfRawExpr"),
       this);
@@ -1405,7 +1402,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
         UETT, Diagnostics::SIZEOF_WARNING, true, argTypeName,
         "Check that the allocated memory size in the migrated code is correct");
   }
-  // Runrule for __half_raw implicitly convert to half.
+  // Run rule for __half_raw/__half2_raw implicitly convert to half/half2.
   if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "halfRawExpr")) {
     if (const auto *RT =
             DRE->getType().getCanonicalType()->getAs<RecordType>()) {
@@ -1414,13 +1411,17 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     ExprAnalysis EA;
     std::string Replacement;
-    llvm::raw_string_ostream OS(Replacement);
-    OS << MapNames::getClNamespace() + "bit_cast<" +
-              MapNames::getClNamespace() + "half>(";
     EA.analyze(DRE);
-    OS << EA.getReplacedString();
-    OS << ")";
-    OS.flush();
+    if (DRE->getType().getCanonicalType().getAsString() == "__half2_raw") {
+      llvm::raw_string_ostream OS(Replacement);
+      OS << EA.getReplacedString() << ".as<" << MapNames::getClNamespace()
+         << "half2>()";
+    } else {
+      llvm::raw_string_ostream OS(Replacement);
+      OS << MapNames::getClNamespace() << "bit_cast<"
+         << MapNames::getClNamespace() << "half>(" << EA.getReplacedString()
+         << ")";
+    }
     emplaceTransformation(new ReplaceStmt(DRE, Replacement));
     return;
   }
@@ -4863,7 +4864,6 @@ void KernelCallRule::runRule(
     if (!LaunchKernelCall || !FD)
       return;
     std::string FuncName = FD->getNameAsString();
-    std::cout << FuncName << std::endl;
     if (FuncName == "cudaLaunchHostFunc") {
       if (DpctGlobalInfo::getUsmLevel() != UsmLevel::UL_Restricted) {
         report(LaunchKernelCall->getBeginLoc(), Diagnostics::API_NOT_MIGRATED,
@@ -5031,8 +5031,9 @@ void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                 this);
 
   MF.addMatcher(typeLoc(hasAncestor(DeviceFunctionMatcher),
-                        loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-                            "__half", "half", "__half2", "half2"))))))
+                        loc(qualType(hasDeclaration(namedDecl(
+                            hasAnyName("__half", "half", "__half2", "half2",
+                                       "__nv_half2", "__nv_half"))))))
                     .bind("fp16"),
                 this);
 
@@ -7318,7 +7319,7 @@ TypeMmberRule::findTokenEndBeforeColonColon(SourceLocation TokStart,
 
   bool FoundColonColon = false;
   // Find coloncolon
-  while (TokPtr && (TokPtr - 1)) {
+  while (TokPtr) {
     if (*TokPtr == ':' && *(TokPtr - 1) == ':') {
       TokPtr = TokPtr - 2;
       FoundColonColon = true;

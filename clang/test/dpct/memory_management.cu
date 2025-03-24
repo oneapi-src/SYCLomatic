@@ -198,7 +198,7 @@ void checkError(cudaError_t err) {
 
 void cuCheckError(CUresult err) {
 }
-// CHECK: #define PITCH(a, b, c, d) a = (float *)dpct::dpct_malloc(b, c, d);
+// CHECK: #define PITCH(a, b, c, d) *(a) = (float *)dpct::dpct_malloc(*(b), c, d);
 #define PITCH(a, b, c, d) cudaMallocPitch(a, b, c, d);
 
 void testCommas() {

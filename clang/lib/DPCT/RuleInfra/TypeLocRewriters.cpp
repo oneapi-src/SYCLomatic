@@ -114,7 +114,7 @@ public:
         return Num == Count;
       }
       size_t NoneDefaultNum = 0;
-      for (int i = 0; i < Num; i++) {
+      for (size_t i = 0; i < Num; i++) {
         if (!TSTL.getArgLoc(i).getArgument().getIsDefaulted()) {
           NoneDefaultNum++;
         }

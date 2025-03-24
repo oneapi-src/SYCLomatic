@@ -234,8 +234,8 @@ ENTRY(cub::StoreDirectBlocked, cub::StoreDirectBlocked, true, NO_FLAG, P4, "Succ
 ENTRY(cub::StoreDirectBlockedVectorized, cub::StoreDirectBlockedVectorized, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::LoadDirectStriped, cub::LoadDirectStriped, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::StoreDirectStriped, cub::StoreDirectStriped, true, NO_FLAG, P4, "Successful")
-ENTRY(cub::LoadDirectWarpStriped, cub::LoadDirectWarpStriped, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::StoreDirectWarpStriped, cub::StoreDirectWarpStriped, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::LoadDirectWarpStriped, cub::LoadDirectWarpStriped, true, NO_FLAG, P4, "Comment")
+ENTRY(cub::StoreDirectWarpStriped, cub::StoreDirectWarpStriped, true, NO_FLAG, P4, "Comment")
 
 // PTX intrinsics
 ENTRY(cub::SHR_ADD, cub::SHR_ADD, true, NO_FLAG, P4, "Successful")

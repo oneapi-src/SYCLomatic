@@ -20,7 +20,6 @@
 #include "clang/AST/Type.h"
 #include "clang/AST/TypeLoc.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
-#include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/Cuda.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/DPCT/DpctOptions.h"
@@ -137,6 +136,13 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok,
                                        0, SM, LangOptions())),
                                SM, LangOptions())
                                .str());
+    } else if (MacroName == "__CUDACC_VER_MAJOR__" ||
+               MacroName == "__CUDACC_VER_MINOR__") {
+      if (MacroNameTok.getIdentifierInfo()->hasMacroDefinition()) {
+        Repl->setSYCLHeaderNeeded(false);
+      } else {
+        return false;
+      }
     }
     if (DpctGlobalInfo::getContext().getLangOpts().CUDA) {
       // These two macros are defined by CUDA compiler
@@ -758,6 +764,10 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
       } else if ((MacroName != "__CUDACC__" ||
                   DpctGlobalInfo::getMacroDefines().count(MacroName)) &&
                  MacroName != "__CUDA_ARCH__") {
+        if (MacroName == "__CUDACC_VER_MAJOR__" ||
+            MacroName == "__CUDACC_VER_MINOR__") {
+          Repl->setSYCLHeaderNeeded(false);
+        }
         TransformSet.emplace_back(Repl);
       }
       // check next
