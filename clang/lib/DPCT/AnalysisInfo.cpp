@@ -6669,11 +6669,12 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
     } else {
       Printer.line("auto last_event = "
                    "dpct::get_default_queue().ext_oneapi_get_last_event();");
-      Printer.line("[=](auto &&_e) {");
+      Printer.line("[&](auto &&_e) {");
       {
         Printer.indent();
-        Printer.line(
-            "if constexpr (std::is_same_v<decltype(last_event), sycl::event>)");
+        Printer.line("if constexpr "
+                     "(std::is_same_v<std::remove_reference_t<decltype(last_"
+                     "event)>, sycl::event>)");
         {
           Printer.indent();
           Printer.line("cgh.depends_on(_e);");
