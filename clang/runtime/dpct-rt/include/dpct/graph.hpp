@@ -10,6 +10,7 @@
 
 #include <sycl/ext/oneapi/experimental/graph.hpp>
 #include <sycl/sycl.hpp>
+#include <unordered_map>
 
 namespace dpct {
 namespace experimental {
@@ -65,8 +66,38 @@ public:
     (*graph)->end_recording();
   }
 
+  void get_nodes(dpct::experimental::command_graph_ptr graph,
+                 dpct::experimental::node_ptr *nodesArray,
+                 std::size_t *numberOfNodes) {
+    auto nodes = graph->get_nodes();
+    nodes_map[graph] = nodes;
+    *numberOfNodes = nodes.size();
+    if (!nodesArray) {
+      return;
+    }
+    for (std::size_t i = 0; i < *numberOfNodes; i++) {
+      nodesArray[i] = &nodes_map[graph][i];
+    }
+  }
+
+  void get_root_nodes(dpct::experimental::command_graph_ptr graph,
+                      dpct::experimental::node_ptr *nodesArray,
+                      std::size_t *numberOfNodes) {
+    auto nodes = graph->get_root_nodes();
+    nodes_map[graph] = nodes;
+    *numberOfNodes = nodes.size();
+    if (!nodesArray) {
+      return;
+    }
+    for (std::size_t i = 0; i < *numberOfNodes; i++) {
+      nodesArray[i] = &nodes_map[graph][i];
+    }
+  }
+
 private:
   std::unordered_map<sycl::queue *, command_graph_ptr> queue_graph_map;
+  std::unordered_map<dpct::experimental::command_graph_ptr, std::vector<sycl::ext::oneapi::experimental::node>> nodes_map;
+  
 };
 } // namespace detail
 
@@ -141,15 +172,7 @@ static void add_dependencies(dpct::experimental::command_graph_ptr graph,
 static void get_nodes(dpct::experimental::command_graph_ptr graph,
                       dpct::experimental::node_ptr *nodesArray,
                       std::size_t *numberOfNodes) {
-  auto nodes = graph->get_nodes();
-  *numberOfNodes = nodes.size();
-  nodesArray = new dpct::experimental::node_ptr[nodes.size()];
-  if (!nodesArray) {
-    return;
-  }
-  for (std::size_t i = 0; i < *numberOfNodes; i++) {
-    *nodesArray[i] = nodes[i];
-  }
+  detail::graph_mgr::instance().get_nodes(graph, nodesArray, numberOfNodes);
 }
 
 /// Gets the root nodes in the command graph.
@@ -160,14 +183,7 @@ static void get_nodes(dpct::experimental::command_graph_ptr graph,
 static void get_root_nodes(dpct::experimental::command_graph_ptr graph,
                            dpct::experimental::node_ptr *nodesArray,
                            std::size_t *numberOfNodes) {
-  auto nodes = graph->get_root_nodes();
-  *numberOfNodes = nodes.size();
-  if (!nodesArray) {
-    return;
-  }
-  for (std::size_t i = 0; i < *numberOfNodes; i++) {
-    nodesArray[i] = &nodes[i];
-  }
+  detail::graph_mgr::instance().get_root_nodes(graph, nodesArray, numberOfNodes);
 }
 
 } // namespace experimental
