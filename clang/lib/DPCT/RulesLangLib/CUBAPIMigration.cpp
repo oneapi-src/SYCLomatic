@@ -1081,17 +1081,16 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
     if (!TA)
       return;
     WarpSize = TA->get(0).getAsIntegral().getExtValue();
-    std::string ValueType =
-        TA->get(1).getAsType().getUnqualifiedType().getAsString();
     const auto *MemberMask = CE->getArg(2);
-    const auto *Mask = dyn_cast<IntegerLiteral>(MemberMask);
     const Expr *Value = CE->getArg(0);
     const Expr *Lane = CE->getArg(1);
     const auto *DeviceFuncDecl = getImmediateOuterFuncDecl(CE);
     ExprAnalysis ValueEA(Value);
     ExprAnalysis LaneEA(Lane);
     llvm::raw_string_ostream OS(Repl);
-    if (Mask) {
+
+    if (const auto *Mask =
+            dyn_cast<IntegerLiteral>(MemberMask->IgnoreImplicitAsWritten())) {
       if (Mask->getValue().getZExtValue() == 0xffffffff) {
         OS << MapNames::getDpctNamespace() << "select_from_sub_group("
            << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
@@ -1099,20 +1098,26 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
         if (WarpSize != 32)
           OS << ", " << WarpSize;
         OS << ')';
-      } else {
-        OS << MapNames::getDpctNamespace() << "experimental::"
-           << "select_from_sub_group(" << getStmtSpelling(Mask) << ", "
-           << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
-           << ValueEA.getReplacedString() << ", " << LaneEA.getReplacedString();
-        if (WarpSize != 32)
-          OS << ", " << WarpSize;
-        OS << ')';
+        emplaceTransformation(new ReplaceStmt(CE, Repl));
+        return;
       }
+    }
+    if (DpctGlobalInfo::useExpNonUniformGroups()) {
+      ExprAnalysis MaskEA(MemberMask);
+      OS << MapNames::getDpctNamespace() << "experimental::"
+         << "select_from_sub_group(" << MaskEA.getReplacedString() << ", "
+         << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
+         << ValueEA.getReplacedString() << ", " << LaneEA.getReplacedString();
+      if (WarpSize != 32)
+        OS << ", " << WarpSize;
+      OS << ')';
       emplaceTransformation(new ReplaceStmt(CE, Repl));
     } else {
-      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             GetFunctionName(CE));
+      report(CE->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+             "cub::ShuffleIndex",
+             "--use-experimental-features=non-uniform-groups");
     }
+    return;
   }
 }
 
