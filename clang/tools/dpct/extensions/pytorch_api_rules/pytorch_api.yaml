@@ -193,9 +193,3 @@
   In: c10::cuda::CUDAGuard
   Out: c10::DeviceGuard
   Includes: [<c10/core/DeviceGuard.h>]
-
-- Rule: rule_at_cuda_CUDAGuard_ctor
-  Kind: API
-  Priority: Takeover
-  In: c10::cuda::CUDAGuard
-  Out: torch::kXPU, $1

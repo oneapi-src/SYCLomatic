@@ -76,10 +76,8 @@ int main() {
   return 0;
 }
 
-void foo2(const at::Tensor &x) {
-  float *f;
-  // CHECK: (DPCT_CHECK_ERROR(f = (float *)sycl::malloc_device(4, static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()))));
-  // CHECK-NEXT: c10::DeviceGuard device_guard{torch::kXPU, (char)x.get_device()};
+// CHECK: void foo2(c10::DeviceGuard device_guard, float *f)  try {
+// CHECK-NEXT: (DPCT_CHECK_ERROR(f = (float *)sycl::malloc_device(4, static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()))));
+void foo2(at::cuda::CUDAGuard device_guard, float *f) {
   C10_CUDA_CHECK(cudaMalloc(&f, 4));
-  at::cuda::CUDAGuard device_guard{(char)x.get_device()};
 }
