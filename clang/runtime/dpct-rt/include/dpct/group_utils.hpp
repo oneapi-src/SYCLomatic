@@ -800,18 +800,18 @@ load_direct_blocked(const ItemT &item, InputIteratorT input_iter,
 /// work-group, guarded by range.
 ///
 /// \tparam T The data type to load.
+/// \tparam DefaultT The type of default value to assign out-of-bound items.
 /// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
 /// onto each work-item.
 /// \tparam InputIteratorT  The random-access iterator type for input \iterator.
-/// \tparam DefaultT The type of default value to assign out-of-bound items.
 /// \tparam ItemT The sycl::nd_item index space class.
 /// \param item The calling work-item.
 /// \param input_iter The work-group's base input iterator for loading from.
 /// \param data Data to load.
 /// \param valid_items Number of valid items to load
 /// \param default_value Default value to assign out-of-bound items.
-template <typename T, int ElementsPerWorkItem, typename InputIteratorT,
-          typename DefaultT, typename ItemT>
+template <typename T, typename DefaultT, int ElementsPerWorkItem,
+          typename InputIteratorT, typename ItemT>
 __dpct_inline__ void
 load_direct_striped(const ItemT &item, InputIteratorT input_iter,
                     T (&data)[ElementsPerWorkItem], int valid_items,
@@ -1241,23 +1241,24 @@ public:
                             T (&data)[ElementsPerWorkItem], int valid_items,
                             DefaultT default_value) {
     if constexpr (LoadAlgorithm == group_load_algorithm::blocked) {
-      load_direct_blocked<T, ElementsPerWorkItem, InputIteratorT, DefaultT,
+      load_direct_blocked<T, DefaultT, ElementsPerWorkItem, InputIteratorT,
                           ItemT>(item, input_iter, data, valid_items,
                                  default_value);
     } else if constexpr (LoadAlgorithm == group_load_algorithm::striped) {
-      load_direct_striped<T, ElementsPerWorkItem, InputIteratorT, DefaultT,
+      load_direct_striped<T, DefaultT, ElementsPerWorkItem, InputIteratorT,
                           ItemT>(item, input_iter, data, valid_items,
                                  default_value);
     } else if constexpr (LoadAlgorithm == group_load_algorithm::transpose) {
-      load_direct_striped<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
-          item, input_iter, data, valid_items, default_value);
+      load_direct_striped<T, DefaultT, ElementsPerWorkItem, InputIteratorT,
+                          ItemT>(item, input_iter, data, valid_items,
+                                 default_value);
       dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
           .striped_to_blocked(item, data, data);
     } else if constexpr (LoadAlgorithm ==
                          group_load_algorithm::sub_group_transpose) {
-      load_direct_sub_group_striped<T, ElementsPerWorkItem, InputIteratorT,
-                                    ItemT>(item, input_iter, data, valid_items,
-                                           default_value);
+      load_direct_sub_group_striped<T, DefaultT, ElementsPerWorkItem,
+                                    InputIteratorT, ItemT>(
+          item, input_iter, data, valid_items, default_value);
       dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
           .sub_group_striped_to_blocked(item, data, data);
     }

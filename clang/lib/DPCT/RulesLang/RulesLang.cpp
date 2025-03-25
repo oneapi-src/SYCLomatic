@@ -346,7 +346,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatmulHeuristicResult_t", "CUjit_target",
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
-              "CUstreamCallback", "cudaHostFn_t"))))))
+              "CUstreamCallback", "cudaHostFn_t", "__nv_half2",
+              "__nv_half"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -1189,10 +1190,6 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                     .bind("vectorTypeTL"),
                 this);
 
-  MF.addMatcher(
-      cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(SUPPORTEDVECTORTYPENAMES)))
-          .bind("inheritanceType"),
-      this);
 
   auto Vec3Types = [&]() {
     return hasAnyName("char3", "uchar3", "short3", "ushort3", "int3", "uint3",
@@ -5034,8 +5031,9 @@ void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                 this);
 
   MF.addMatcher(typeLoc(hasAncestor(DeviceFunctionMatcher),
-                        loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-                            "__half", "half", "__half2", "half2"))))))
+                        loc(qualType(hasDeclaration(namedDecl(
+                            hasAnyName("__half", "half", "__half2", "half2",
+                                       "__nv_half2", "__nv_half"))))))
                     .bind("fp16"),
                 this);
 

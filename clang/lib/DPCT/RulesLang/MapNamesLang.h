@@ -29,7 +29,8 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
       "ulonglong1", "longlong2", "ulonglong2", "longlong3", "ulonglong3",      \
       "longlong4", "ulonglong4", "double1", "double2", "double3", "double4",   \
       "__half", "__half2", "half", "half2", "__nv_bfloat16", "nv_bfloat16",    \
-      "__nv_bfloat162", "nv_bfloat162", "__half_raw", "__half2_raw"
+      "__nv_bfloat162", "nv_bfloat162", "__half_raw", "__half2_raw",           \
+      "__nv_half2", "__nv_half"
 
 /// Record mapping between names
 class MapNamesLang {
