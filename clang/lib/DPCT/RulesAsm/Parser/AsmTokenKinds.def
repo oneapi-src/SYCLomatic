@@ -274,6 +274,13 @@ MODIFIER(v2, ".v2")
 MODIFIER(v4, ".v4")
 MODIFIER(v8, ".v8")
 
+// Matrix modifiers
+MODIFIER(row, ".row")
+MODIFIER(col, ".col")
+
+// Matrix shape
+MODIFIER(m16n8k16, ".m16n8k16")
+
 STATE_SPACE(reg,    ".reg")
 STATE_SPACE(sreg,   ".sreg")
 STATE_SPACE(const,  ".const")
@@ -420,6 +427,7 @@ MODIFIER(ecr, ".ecr")
 MODIFIER(rc16, ".rc16")
 MODIFIER(cs, ".cs")
 MODIFIER(to, ".to")
+MODIFIER(aligned, ".aligned")
 
 #undef LINKAGE
 #undef TARGET

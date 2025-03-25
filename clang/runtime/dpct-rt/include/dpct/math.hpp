@@ -2055,6 +2055,79 @@ public:
   matrix_accessor x;
   const size_t num_elements;
 };
+
+/// Multiplies 2 16x16 & 16x8 matrices and accumulates the result to a 16x8 b32
+/// matrix
+/// \tparam [in] MulType The type of the multiplication result
+/// \tparam [in] ABType The type of the input matrices
+/// \tparam [in] CDType The type of the output matrix
+/// \tparam [in] ItemT The type of the sycl::nd_item index space class
+/// \param [in] d0 The 1st element to be written to the output D matrix
+/// \param [in] d1 The 2nd element to be written to the output D matrix
+/// \param [in] d2 The 3rd element to be written to the output D matrix
+/// \param [in] d3 The 4th element to be written to the output D matrix
+/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
+/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
+/// \param [in] a2 The 3rd element from A matrix to be multiplied with B matrix
+/// \param [in] a3 The 4th element from A matrix to be multiplied with B matrix
+/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
+/// \param [in] b1 The 2nd element from B matrix to be multiplied with A matrix
+/// \param [in] c0 The 1st element from C matrix to be added with d0
+/// \param [in] c1 The 2nd element from C matrix to be added with d1
+/// \param [in] c2 The 3rd element from C matrix to be added with d2
+/// \param [in] c3 The 4th element from C matrix to be added with d3
+/// \param [in] item The sycl::nd_item index space class
+template <typename MulType, typename ABType, typename CDType, typename ItemT>
+__attribute__((optnone)) void
+mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
+    ABType a2, ABType a3, ABType b0, ABType b1, CDType c0, CDType c1, CDType c2,
+    CDType c3, const ItemT &item) {
+  int lane = item.get_sub_group().get_local_linear_id();
+
+  short ROW_LOAD_OFFSET = 4 * (lane / 4);
+  short COL_LOAD_OFFSET = 8 * (lane % 4);
+
+  ABType recv_a[4 * 4], recv_b[4 * 4];
+  for (int i = 0; i < 4; i++) {
+    recv_a[0 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), a0,
+                                                    ROW_LOAD_OFFSET + i);
+    recv_a[1 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), a2,
+                                                    ROW_LOAD_OFFSET + i);
+    recv_a[2 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), a1,
+                                                    ROW_LOAD_OFFSET + i);
+    recv_a[3 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), a3,
+                                                    ROW_LOAD_OFFSET + i);
+
+    recv_b[0 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                                    COL_LOAD_OFFSET + i);
+    recv_b[1 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), b1,
+                                                    COL_LOAD_OFFSET + i);
+    recv_b[2 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                                    COL_LOAD_OFFSET + 4 + i);
+    recv_b[3 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), b1,
+                                                    COL_LOAD_OFFSET + 4 + i);
+  }
+
+  auto *a = reinterpret_cast<MulType *>(recv_a);
+  auto *b = reinterpret_cast<MulType *>(recv_b);
+  for (int i = 0; i < 16; i++) {
+    auto a0 = static_cast<CDType>(a[i]);
+    auto a1 = static_cast<CDType>(a[i + 16]);
+    auto b0 = static_cast<CDType>(b[i]);
+    auto b1 = static_cast<CDType>(b[i + 16]);
+
+    c0 += a0 * b0;
+    c1 += a0 * b1;
+    c2 += a1 * b0;
+    c3 += a1 * b1;
+  }
+
+  *d0 = c0;
+  *d1 = c1;
+  *d2 = c2;
+  *d3 = c3;
+}
+
 } // namespace matrix
 } // namespace experimental
 

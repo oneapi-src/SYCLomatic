@@ -1305,6 +1305,83 @@ protected:
     return SYCLGenSuccess();
   }
 
+  bool handle_mma(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3)
+      return SYCLGenError();
+
+    if (!Inst->hasAttr(InstAttr::m16n8k16))
+      return SYCLGenError();
+
+    // Only row Layout is supported for of A matrix and
+    // only col Layout is supported for of B matrix
+    if (Inst->getAttr(3) != InstAttr::row ||
+        Inst->getAttr(4) != InstAttr::col) {
+      return SYCLGenError();
+    }
+
+    // Only f16 type is supported for A and B matrix data
+    const auto *AType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(1));
+    const auto *BType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(2));
+
+    std::string TypeStr;
+    if (!AType || !BType ||
+        (AType->getKind() != InlineAsmBuiltinType::f16 ||
+         BType->getKind() != InlineAsmBuiltinType::f16)) {
+      return SYCLGenError();
+    } else {
+      if (tryEmitType(TypeStr, AType))
+        return SYCLGenError();
+    }
+
+    const InlineAsmVectorExpr *VE =
+        dyn_cast<InlineAsmVectorExpr>(Inst->getOutputOperand());
+    if (VE && VE->getNumElements() != 4) {
+      return SYCLGenError();
+    }
+
+    OS() << MapNames::getDpctNamespace() << "experimental::matrix::mma";
+    OS() << "<" << TypeStr << ">(";
+
+    // Add D matrix address values to store the MAD result
+    for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
+      if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
+        continue;
+      OS() << "&";
+      if (emitStmt(VE->getElement(Inst)))
+        return SYCLGenError();
+      OS() << ", ";
+    }
+
+    // Add A, B & C matrix values to compute MAD
+    for (unsigned InputOp = 0; InputOp < Inst->getNumInputOperands();
+         InputOp++) {
+      if (VE = dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(InputOp))) {
+        for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
+          if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
+            continue;
+          if (emitStmt(VE->getElement(Inst)))
+            return SYCLGenError();
+          OS() << ", ";
+        }
+      } else {
+        return SYCLGenError();
+      }
+    }
+
+    OS() << DpctGlobalInfo::getItem(GAS);
+    OS() << ");";
+
+    const auto *KernelDecl = getImmediateOuterFuncDecl(GAS);
+    if (KernelDecl) {
+      auto FuncInfo = DeviceFunctionDecl::LinkRedecls(KernelDecl);
+      if (FuncInfo)
+        FuncInfo->addSubGroupSizeRequest(32, GAS->getBeginLoc(),
+                                         DpctGlobalInfo::getSubGroup(GAS));
+    }
+
+    return SYCLGenSuccess();
+  }
+
   bool handle_prefetch(const InlineAsmInstruction *Inst) override {
     if (!DpctGlobalInfo::useExtPrefetch() || Inst->getNumInputOperands() != 1)
       return SYCLGenError();
