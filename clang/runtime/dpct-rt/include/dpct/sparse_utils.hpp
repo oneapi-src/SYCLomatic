@@ -1364,6 +1364,17 @@ class csrgemm2_info {
   void *row_ptr_c1 = nullptr;
   void *col_ind_c1 = nullptr;
   void *val_c1 = nullptr;
+#ifdef DPCT_USM_LEVEL_NONE
+  sycl::buffer<std::int64_t, 1> *temp_buffer_1_size;
+  sycl::buffer<std::int64_t, 1> *temp_buffer_2_size;
+  sycl::buffer<std::uint8_t, 1> *temp_buffer_1;
+  sycl::buffer<std::uint8_t, 1> *temp_buffer_2;
+#else
+  std::int64_t *temp_buffer_1_size;
+  std::int64_t *temp_buffer_2_size;
+  std::uint8_t *temp_buffer_1;
+  std::uint8_t *temp_buffer_2;
+#endif
   enum matrix_c_datatype_t {
     mcd_float,
     mcd_double,
@@ -1418,7 +1429,7 @@ class csrgemm2_info {
       const int *row_ptr_b, const int *col_ind_b, const T *beta,
       const std::shared_ptr<matrix_info> info_d, int nnz_d,
       const int *row_ptr_d, const int *col_ind_d,
-      std::shared_ptr<csrgemm2_info> info, size_t *pBufferSizeInBytes);
+      std::shared_ptr<csrgemm2_info> info, size_t *buffer_size_in_bytes);
   friend void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
                            const std::shared_ptr<matrix_info> info_a, int nnz_a,
                            const int *row_ptr_a, const int *col_ind_a,
@@ -1443,6 +1454,32 @@ class csrgemm2_info {
            std::shared_ptr<csrgemm2_info> info, void *buffer);
 };
 
+/// Calculate the workspace size of a sparse matrix (CSR format)-sparse matrix
+/// (CSR format) product:
+/// C = alpha * A * B + beta * D
+/// \param [in] desc The descriptor of this calculation.
+/// \param [in] m The rows number of A, D and C.
+/// \param [in] n The columns number of B, D and C.
+/// \param [in] k The columns number of A and rows number of B.
+/// \param [in] alpha Scaling factor.
+/// \param [in] info_a Matrix info of the matrix A.
+/// \param [in] nnz_a Non-zero elements number of matrix A.
+/// \param [in] row_ptr_a An array of length row number + 1.
+/// \param [in] col_ind_a An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_b Matrix info of the matrix B.
+/// \param [in] nnz_b Non-zero elements number of matrix B.
+/// \param [in] row_ptr_b An array of length row number + 1.
+/// \param [in] col_ind_b An array containing the column indices in index-based
+/// numbering.
+/// \param [in] beta Scaling factor.
+/// \param [in] info_d Matrix info of the matrix D.
+/// \param [in] nnz_d Non-zero elements number of matrix D.
+/// \param [in] row_ptr_d An array of length row number + 1.
+/// \param [in] col_ind_d An array containing the column indices in index-based
+/// numbering.
+/// \param [in, out] info The information of csrgemm2 operation.
+/// \param [out] buffer_size_in_bytes Workspace memory size in bytes.
 template <typename T>
 void csrgemm2_get_buffer_size(
     descriptor_ptr desc, int m, int n, int k, const T *alpha,
@@ -1451,7 +1488,7 @@ void csrgemm2_get_buffer_size(
     const int *row_ptr_b, const int *col_ind_b, const T *beta,
     const std::shared_ptr<matrix_info> info_d, int nnz_d, const int *row_ptr_d,
     const int *col_ind_d, std::shared_ptr<csrgemm2_info> info,
-    size_t *pBufferSizeInBytes) {
+    size_t *buffer_size_in_bytes) {
   using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   sycl::queue &queue = desc->get_queue();
   info->set_matrix_c_datatype<Ty>();
@@ -1479,30 +1516,51 @@ void csrgemm2_get_buffer_size(
       oneapi::mkl::sparse::matrix_view_descr::general);
 
 #ifdef DPCT_USM_LEVEL_NONE
-#define __MATMAT(STEP, NNZ_C1)                                                 \
+#define __MATMAT(STEP, PTR1, PTR2)                                             \
   oneapi::mkl::sparse::matmat(queue, info->matrix_handle_a.get_handle(),       \
                               info->matrix_handle_b.get_handle(),              \
-                              info->matrix_handle_c1.get_handle(), STEP,       \
-                              info->matmat_desc.get_handle(), NNZ_C1, nullptr)
+                              info->matrix_handle_c1.get_handle(),             \
+                              oneapi::mkl::sparse::matmat_request::STEP,       \
+                              info->matmat_desc.get_handle(), PTR1, PTR2)
 #else
-#define __MATMAT(STEP, NNZ_C1)                                                 \
-  oneapi::mkl::sparse::matmat(                                                 \
-      queue, info->matrix_handle_a.get_handle(),                               \
-      info->matrix_handle_b.get_handle(), info->matrix_handle_c1.get_handle(), \
-      STEP, info->matmat_desc.get_handle(), NNZ_C1, nullptr, {})
+#define __MATMAT(STEP, PTR1, PTR2)                                             \
+  oneapi::mkl::sparse::matmat(queue, info->matrix_handle_a.get_handle(),       \
+                              info->matrix_handle_b.get_handle(),              \
+                              info->matrix_handle_c1.get_handle(),             \
+                              oneapi::mkl::sparse::matmat_request::STEP,       \
+                              info->matmat_desc.get_handle(), PTR1, PTR2, {})
 #endif
-
-  __MATMAT(oneapi::mkl::sparse::matmat_request::work_estimation, nullptr);
-  __MATMAT(oneapi::mkl::sparse::matmat_request::compute_structure, nullptr);
 
   std::int64_t nnz_c1 = 0;
 #ifdef DPCT_USM_LEVEL_NONE
+  info->temp_buffer_1_size = new sycl::buffer<std::int64_t, 1>(1);
+  __MATMAT(get_work_estimation_buf_size, info->temp_buffer_1_size, nullptr);
+  info->temp_buffer_1 = new sycl::buffer<std::uint8_t, 1>(
+      info->temp_buffer_1_size->get_host_access(sycl::read_only)[0]);
+  __MATMAT(work_estimation, info->temp_buffer_1_size, info->temp_buffer_1);
+  info->temp_buffer_2_size = new sycl::buffer<std::int64_t, 1>(1);
+  __MATMAT(get_compute_structure_buf_size, info->temp_buffer_2_size, nullptr);
+  info->temp_buffer_2 = new sycl::buffer<std::uint8_t, 1>(
+      info->temp_buffer_2_size->get_host_access(sycl::read_only)[0]);
+  __MATMAT(compute_structure, info->temp_buffer_2_size, info->temp_buffer_2);
   sycl::buffer<std::int64_t, 1> nnz_c1_buf(1);
-  __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, &nnz_c1_buf);
+  __MATMAT(get_nnz, &nnz_c1_buf, nullptr);
   nnz_c1 = nnz_c1_buf.get_host_access(sycl::read_only)[0];
 #else
+  info->temp_buffer_1_size = sycl::malloc_host<std::int64_t>(1, queue);
+  __MATMAT(get_work_estimation_buf_size, info->temp_buffer_1_size, nullptr);
+  queue.wait();
+  info->temp_buffer_1 =
+      sycl::malloc_device<std::uint8_t>(info->temp_buffer_1_size[0], queue);
+  __MATMAT(work_estimation, info->temp_buffer_1_size, info->temp_buffer_1);
+  info->temp_buffer_2_size = sycl::malloc_host<std::int64_t>(1, queue);
+  __MATMAT(get_compute_structure_buf_size, info->temp_buffer_2_size, nullptr);
+  queue.wait();
+  info->temp_buffer_2 =
+      sycl::malloc_device<std::uint8_t>(info->temp_buffer_2_size[0], queue);
+  __MATMAT(compute_structure, info->temp_buffer_2_size, info->temp_buffer_2);
   std::int64_t *nnz_c1_ptr = sycl::malloc_host<std::int64_t>(1, queue);
-  __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, nnz_c1_ptr);
+  __MATMAT(get_nnz, nnz_c1_ptr, nullptr);
   queue.wait();
   nnz_c1 = *nnz_c1_ptr;
   sycl::free(nnz_c1_ptr, queue);
@@ -1514,7 +1572,7 @@ void csrgemm2_get_buffer_size(
       m, n, oneapi::mkl::index_base::zero, info->row_ptr_c1, info->col_ind_c1,
       info->val_c1);
 
-  __MATMAT(oneapi::mkl::sparse::matmat_request::finalize_structure, nullptr);
+  __MATMAT(finalize_structure, nullptr, nullptr);
 
   std::int64_t ws_size = 0;
   oneapi::mkl::sparse::omatadd_buffer_size(
@@ -1523,7 +1581,7 @@ void csrgemm2_get_buffer_size(
       info->matrix_handle_c.get_handle(),
       oneapi::mkl::sparse::omatadd_alg::default_alg,
       info->omatadd_desc.get_handle(), ws_size);
-  *pBufferSizeInBytes = ws_size;
+  *buffer_size_in_bytes = ws_size;
 }
 
 /// Calculate the non-zero elements number of the result of a
@@ -1535,25 +1593,24 @@ void csrgemm2_get_buffer_size(
 /// \param [in] k The columns number of A and rows number of B.
 /// \param [in] info_a Matrix info of the matrix A.
 /// \param [in] nnz_a Non-zero elements number of matrix A.
-/// \param [in] val_a An array containing the non-zero elements of the matrix A.
 /// \param [in] row_ptr_a An array of length row number + 1.
 /// \param [in] col_ind_a An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_b Matrix info of the matrix B.
 /// \param [in] nnz_b Non-zero elements number of matrix B.
-/// \param [in] val_b An array containing the non-zero elements of the matrix B.
 /// \param [in] row_ptr_b An array of length row number + 1.
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_d Matrix info of the matrix D.
 /// \param [in] nnz_d Non-zero elements number of matrix D.
-/// \param [in] val_d An array containing the non-zero elements of the matrix D.
 /// \param [in] row_ptr_d An array of length row number + 1.
 /// \param [in] col_ind_d An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_c Matrix info of the matrix C.
 /// \param [in] row_ptr_c An array of length row number + 1.
 /// \param [out] nnz_ptr Non-zero elements number of matrix C.
+/// \param [in] info The information of csrgemm2 operation.
+/// \param [in] buffer Workspace memory.
 void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
                   const std::shared_ptr<matrix_info> info_a, int nnz_a,
                   const int *row_ptr_a, const int *col_ind_a,
@@ -1619,17 +1676,20 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
 /// \param [in] k The columns number of A and rows number of B.
 /// \param [in] alpha Scaling factor.
 /// \param [in] info_a Matrix info of the matrix A.
+/// \param [in] nnz_a Non-zero elements number of matrix A.
 /// \param [in] val_a An array containing the non-zero elements of the matrix A.
 /// \param [in] row_ptr_a An array of length row number + 1.
 /// \param [in] col_ind_a An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_b Matrix info of the matrix B.
+/// \param [in] nnz_b Non-zero elements number of matrix B.
 /// \param [in] val_b An array containing the non-zero elements of the matrix B.
 /// \param [in] row_ptr_b An array of length row number + 1.
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
 /// \param [in] beta Scaling factor.
 /// \param [in] info_d Matrix info of the matrix D.
+/// \param [in] nnz_d Non-zero elements number of matrix D.
 /// \param [in] val_d An array containing the non-zero elements of the matrix D.
 /// \param [in] row_ptr_d An array of length row number + 1.
 /// \param [in] col_ind_d An array containing the column indices in index-based
@@ -1640,6 +1700,8 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
 /// \param [in] row_ptr_c An array of length row number + 1.
 /// \param [out] col_ind_c An array containing the column indices in index-based
 /// numbering.
+/// \param [in] info The information of csrgemm2 operation.
+/// \param [in] buffer Workspace memory.
 template <typename T>
 void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
               const std::shared_ptr<matrix_info> info_a, int nnz_a,
@@ -1662,8 +1724,8 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
                                             row_ptr_a, col_ind_a, val_a);
   info->matrix_handle_b.set_matrix_data<Ty>(k, n, info_b->get_index_base(),
                                             row_ptr_b, col_ind_b, val_b);
-  __MATMAT(oneapi::mkl::sparse::matmat_request::compute, nullptr);
-  __MATMAT(oneapi::mkl::sparse::matmat_request::finalize, nullptr);
+  __MATMAT(compute, nullptr, nullptr);
+  __MATMAT(finalize, nullptr, nullptr);
 
   info->matrix_handle_d.set_matrix_data<Ty>(m, n, info_d->get_index_base(),
                                             row_ptr_d, col_ind_d, val_d);
@@ -1689,10 +1751,23 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
   queue.submit([&](sycl::handler &cgh) {
     cgh.depends_on(events);
     cgh.host_task([_p1 = info->row_ptr_c1, _p2 = info->col_ind_c1,
-                   _p3 = info->val_c1, _q = queue] {
+                   _p3 = info->val_c1, _p4 = info->temp_buffer_1_size,
+                   _p5 = info->temp_buffer_1, _p6 = info->temp_buffer_2_size,
+                   _p7 = info->temp_buffer_2, _q = queue] {
       ::dpct::cs::free(_p1, _q);
       ::dpct::cs::free(_p2, _q);
       ::dpct::cs::free(_p3, _q);
+#ifdef DPCT_USM_LEVEL_NONE
+      delete _p4;
+      delete _p5;
+      delete _p6;
+      delete _p7;
+#else
+      sycl::free(_p4, _q);
+      sycl::free(_p5, _q);
+      sycl::free(_p6, _q);
+      sycl::free(_p7, _q);
+#endif
     });
   });
 }
