@@ -1765,7 +1765,7 @@ ENTRY(cuMemPrefetchAsync, cuMemPrefetchAsync, true, NO_FLAG, P4, "Partial: USM o
 ENTRY(cuMemPrefetchAsync_v2, cuMemPrefetchAsync_v2, false, NO_FLAG, P4, "Partial: USM only, DPCT1007")
 ENTRY(cuMemRangeGetAttribute, cuMemRangeGetAttribute, false, NO_FLAG, P4, "comment")
 ENTRY(cuMemRangeGetAttributes, cuMemRangeGetAttributes, false, NO_FLAG, P4, "comment")
-ENTRY(cuPointerGetAttribute, cuPointerGetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuPointerGetAttribute, cuPointerGetAttribute, true, NO_FLAG, P4, "Partial: none USM for start address API, DPCT1007.")
 ENTRY(cuPointerGetAttributes, cuPointerGetAttributes, true, NO_FLAG, P4, "Partial: Only 5 attributes are supported")
 ENTRY(cuPointerSetAttribute, cuPointerSetAttribute, false, NO_FLAG, P4, "comment")
 

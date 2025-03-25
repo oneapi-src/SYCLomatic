@@ -77,6 +77,7 @@ SYCLCOMPAT_UNSUPPORT("cub::StoreDirectWarpStriped")
 SYCLCOMPAT_UNSUPPORT("cub::ShuffleDown")
 SYCLCOMPAT_UNSUPPORT("cub::ShuffleUp")
 SYCLCOMPAT_UNSUPPORT("cuPointerGetAttributes")
+SYCLCOMPAT_UNSUPPORT("cuPointerGetAttribute")
   });
   // clang-format on
   initRewriterMethodMapCooperativeGroupsSYCLcompat(RewriterMap);

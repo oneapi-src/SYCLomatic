@@ -124,6 +124,13 @@ static inline bool is_device_ptr(T ptr) {
   }
   return false;
 }
+
+template <class T> static inline void *get_base_ptr(T ptr) {
+  if constexpr (std::is_pointer<T>::value) {
+    return detail::mem_mgr::instance().get_base_ptr(ptr);
+  }
+  return nullptr;
+}
 #endif
 
 /// Get the buffer and the offset of a piece of memory pointed to by \p ptr.
