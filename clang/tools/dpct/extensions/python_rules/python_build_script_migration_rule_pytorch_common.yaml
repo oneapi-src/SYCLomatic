@@ -34,6 +34,19 @@
       In: ${arg}.cpp
       Out: ${arg}.${rewrite_extention_name}
 
+- Rule: rule_cpp_file_in_dict
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cpp_file_in_dict
+  In: "{${value}}"
+  Out: "{${value}}"
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cpp
+      Out: ${arg}.${rewrite_extention_name}
+
 - Rule: rule_cu_file_in_func
   Kind: PythonRule
   Priority: Fallback
@@ -54,6 +67,19 @@
   PythonSyntax: cu_file_in_list
   In: "[${value}]"
   Out: "[${value}]"
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.${rewrite_extention_name}
+
+- Rule: rule_cu_file_in_dict
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cu_file_in_dict
+  In: "{${value}}"
+  Out: "{${value}}"
   Subrules:
     value:
       MatchMode: Full
