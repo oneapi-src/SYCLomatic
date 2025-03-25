@@ -965,7 +965,6 @@ void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
                 ObjTypeStr.find("class cub::BlockScan") == 0 ||
                 ObjTypeStr.find("class cub::BlockReduce") == 0)) {
             DeleteFlag = false;
-            std::cout << "2" << std::endl;
             break;
           }
         }
@@ -974,12 +973,10 @@ void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
         auto VarType = AncestorVD->getType().getCanonicalType();
         std::string VarTypeStr =
             AncestorVD->getType().getCanonicalType().getAsString();
-        std::cout << VarTypeStr << std::endl;
         if (isTypeInAnalysisScope(VarType.getTypePtr()) ||
             !(VarTypeStr.find("TempStorage") != std::string::npos &&
               VarTypeStr.find("struct cub::") == 0)) {
           DeleteFlag = false;
-          std::cout << "1" << std::endl;
           break;
         }
       }
@@ -1701,7 +1698,6 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processCubTypeDefOrUsing(TD);
   } else if (const TypeAliasDecl *TAD =
                  getNodeAsType<TypeAliasDecl>(Result, "UsingDecl")) {
-    // std::cout << "found" << std::endl;
     processCubTypeDefOrUsing(TAD);
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
     processTypeLoc(TL);

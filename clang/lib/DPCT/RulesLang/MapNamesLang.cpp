@@ -90,7 +90,7 @@ const std::map<std::string, int> MapNamesLang::VectorTypeMigratedTypeSizeMap{
     {"float3", 16},     {"float4", 16},     {"double1", 8},
     {"double2", 16},    {"double3", 32},    {"double4", 32},
     {"__half", 2},      {"__half2", 4},     {"__half_raw", 2},
-    {"__half2_raw", 4}};
+    {"__half2_raw", 4}, {"__nv_half", 2},   {"__nv_half2", 4}};
 
 const std::map<clang::dpct::KernelArgType, int>
     MapNamesLang::KernelArgTypeSizeMap{

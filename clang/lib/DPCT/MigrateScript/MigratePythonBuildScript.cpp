@@ -73,7 +73,8 @@ applyPythonMigrationRules(const clang::tooling::UnifiedPath InRoot,
     for (const auto &PythonSyntaxEntry : PythonBuildInRules) {
       const auto &PR = PythonSyntaxEntry.second;
       if (!PR.In.empty() || !PR.Out.empty()) {
-        Buffer = applyPatternRewriter(PR, Buffer);
+        Buffer = applyPatternRewriter(PR, Buffer, Entry.first.getPath().str(),
+                                      "", OutRoot);
       }
     }
   }
