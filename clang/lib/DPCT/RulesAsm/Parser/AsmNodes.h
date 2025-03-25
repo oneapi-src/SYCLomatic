@@ -99,9 +99,9 @@ public:
     return ((K == Kind) || ...);
   }
   template <class... Ks> bool isNot(Ks... K) { return ((K != Kind) && ...); }
-  bool isBit() const { return isOneOf(b8, b16, b32, b64); }
-  bool isSigned() const { return isOneOf(s8, s16, s32, s64); }
-  bool isUnsigned() const { return isOneOf(u8, u16, u32, u64); }
+  bool isBit() const { return isOneOf(b1, b8, b16, b32, b64); }
+  bool isSigned() const { return isOneOf(s4, s8, s16, s32, s64); }
+  bool isUnsigned() const { return isOneOf(u4, u8, u16, u32, u64); }
   bool isInt() const { return isSigned() || isUnsigned(); }
   bool isFloat() const { return isOneOf(f16, f32, f64); }
   bool isScalar() const { return isInt() || isFloat(); }
@@ -116,7 +116,7 @@ public:
 // This class is used for device asm vector types.
 class InlineAsmVectorType : public InlineAsmType {
 public:
-  enum VecKind { v2, v4, v8, x1, x2, x4 };
+  enum VecKind { v1, v2, v4, v8, x1, x2, x4 };
 
 private:
   VecKind Kind;
@@ -322,7 +322,7 @@ class InlineAsmInstruction : public InlineAsmStmt {
 
   /// This represents arrtibutes like: comparsion operator, rounding modifiers,
   /// ... e.g. instruction setp.eq.s32 has a comparsion operator 'eq'.
-  SmallSet<InstAttr, 4> Attributes;
+  SmallVector<InstAttr, 4> Attributes;
 
   /// This represents types in instruction, e.g. mov.u32.
   SmallVector<InlineAsmType *, 4> Types;
@@ -350,11 +350,11 @@ public:
         OutputOp(Out), PredOutputOp(Pred), InputOps(InOps) {
     StateSpaces.insert(StateSpaces.begin(), AsmStateSpaces.begin(),
                        AsmStateSpaces.end());
-    Attributes.insert(Attrs.begin(), Attrs.end());
+    Attributes.insert(Attributes.begin(), Attrs.begin(), Attrs.end());
   }
 
   using attr_range =
-      llvm::iterator_range<SmallSet<InstAttr, 4>::const_iterator>;
+      llvm::iterator_range<SmallVector<InstAttr, 4>::const_iterator>;
   using type_range =
       llvm::iterator_range<SmallVector<InlineAsmType *, 4>::const_iterator>;
   using op_range =
@@ -369,12 +369,16 @@ public:
   }
 
   template <typename... Ts> bool hasAttr(Ts... Attrs) const {
-    return (Attributes.contains(Attrs) || ...);
+    return (llvm::is_contained(Attributes, Attrs) || ...);
   }
   const InlineAsmIdentifierInfo *getOpcodeID() const { return Opcode; }
   asmtok::TokenKind getOpcode() const { return Opcode->getTokenID(); }
   ArrayRef<InlineAsmType *> getTypes() const { return Types; }
   const InlineAsmType *getType(unsigned I) const { return Types[I]; }
+  InstAttr getAttr(unsigned I) const {
+    assert(I < Attributes.size() && "Attributes index out of range");
+    return Attributes[I];
+  }
   unsigned getNumTypes() const { return Types.size(); }
   const InlineAsmExpr *getOutputOperand() const { return OutputOp; }
   const InlineAsmExpr *getPredOutputOperand() const { return PredOutputOp; }
