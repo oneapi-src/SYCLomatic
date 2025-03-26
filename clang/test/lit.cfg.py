@@ -349,7 +349,7 @@ if config.have_llvm_driver:
     config.available_features.add("llvm-driver")
 
 #SYCLomatic Code
-if "BUILD_LIT" in os.environ and os.environ["BUILD_LIT"] == 'TRUE':
+if os.getenv("BUILD_LIT", "").lower() == 'true':
     config.available_features.add("build_lit")
 #End SYCLomatic
 
