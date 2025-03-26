@@ -446,14 +446,34 @@ void mipmap() {
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMipmappedArrayCreate was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   cuMipmappedArrayCreate(pArray, &texdesc, numMipmapLevels);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMipmappedArrayDestroy was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
-  // CHECK-NEXT: */
-  cuMipmappedArrayDestroy(*pArray);
 
   CUarray level_arr;
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMipmappedArrayGetLevel was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   cuMipmappedArrayGetLevel(&level_arr, *pArray, 1);
+
+  CUtexref texRef;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuTexRefSetMipmappedArray was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuTexRefSetMipmappedArray(texRef, *pArray, 0);
+
+  // sycl::filter_mode fm = sycl::filtering_mode::nearest;
+  CUfilter_mode fm = CU_TR_FILTER_MODE_POINT;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuTexRefSetMipmapFilterMode was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuTexRefSetMipmapFilterMode(texRef, fm);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuTexRefGetMipmapFilterMode was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuTexRefGetMipmapFilterMode(&fm, texRef);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMipmappedArrayDestroy was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuMipmappedArrayDestroy(*pArray);
 }
