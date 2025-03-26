@@ -21,7 +21,7 @@ namespace experimental {
 
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
 
-/// The wrapper structure for external memory handle desc
+/// The wrapper structure for external memory resource handle desc
 class external_mem_handle_desc {
 #ifdef _WIN32
   void *handle;
@@ -49,59 +49,62 @@ public:
 
 #ifdef _WIN32
   /// handle setter
-  /// \param [in] win32_handle The win32 NT handle of the external resource
+  /// \param [in] win32_handle The win32 NT handle of the external memory
+  /// resource
   void set_win32_handle(void *win32_handle) { handle = win32_handle; }
 
   /// name setter
-  /// \param [in] win32_obj_name The object of the external resource
+  /// \param [in] win32_obj_name The object of the external memory resource
   void set_win32_obj_name(const void *win32_obj_name) { name = win32_obj_name; }
 #else
   /// fd setter
-  /// \param [in] fd The file descriptor of the external resource
+  /// \param [in] fd The file descriptor of the external memory resource
   void set_fd_handle(int fd) { handle = fd; }
 #endif // _WIN32
 
   /// handle_type setter
-  /// \param [in] type The type of the external resource handle
+  /// \param [in] type The type of the external memory resource handle
   void set_handle_type(
       sycl::ext::oneapi::experimental::external_mem_handle_type type) {
     handle_type = type;
   }
 
   /// size setter
-  /// \param [in] size The size (in bytes) of the external resource
+  /// \param [in] size The size (in bytes) of the external memory resource
   void set_res_size(unsigned long long size) { size_in_bytes = size; }
 
   /// flags setter
-  /// \param [in] flags The flags used to handle importing of external resource
+  /// \param [in] flags The flags used to handle importing of external memory
+  /// resource
   void set_flags(int flags) { this->flags = flags; }
 
 #ifdef _WIN32
   /// handle getter
-  /// \param [out] handle The win32 NT handle of the external resource
+  /// \param [out] handle The win32 NT handle of the external memory resource
   void *get_win32_handle() { return handle; }
 
   /// name getter
-  /// \param [out] name The object of the external resource
+  /// \param [out] name The object of the external memory resource
   const void *get_win32_obj_name() { return name; }
 #else
   /// fd getter
-  /// \param [out] fd The file descriptor of the external resource
+  /// \param [out] fd The file descriptor of the external memory resource
   int get_fd_handle() { return handle; }
 #endif // _WIN32
 
   /// handle_type getter
-  /// \param [out] handle_type The type of the external resource handle
+  /// \param [out] handle_type The type of the external memory resource handle
   sycl::ext::oneapi::experimental::external_mem_handle_type get_handle_type() {
     return handle_type;
   }
 
   /// size getter
-  /// \param [out] size The size (in bytes) of the external resource
+  /// \param [out] size The size (in bytes) of the external memory resource
   unsigned long long get_res_size() { return size_in_bytes; }
 
   /// flags getter
-  /// \param [out] flags The flags used to handle importing of external resource
+  /// \param [out] flags The flags used to handle importing of external memory
+  /// resource
   int get_flags() { return flags; }
 };
 
@@ -207,6 +210,139 @@ public:
   unsigned int get_flags() { return flags; }
 };
 
+/// The wrapper class for external semaphore resource handle desc
+class external_sem_handle_desc {
+#ifdef _WIN32
+  void *handle;
+  const void *name;
+#else
+  int handle;
+#endif // _WIN32
+  sycl::ext::oneapi::experimental::external_semaphore_handle_type handle_type;
+  int flags;
+
+public:
+  external_sem_handle_desc() {
+#ifdef _WIN32
+    handle = nullptr;
+    name = nullptr;
+#else
+    handle = -1;
+#endif // _WIN32
+    handle_type = sycl::ext::oneapi::experimental::
+        external_semaphore_handle_type::opaque_fd;
+    flags = 0;
+  }
+
+#ifdef _WIN32
+  /// handle setter
+  /// \param [in] win32_handle The win32 NT handle of the external semaphore
+  /// resource
+  void set_win32_handle(void *win32_handle) { handle = win32_handle; }
+
+  /// name setter
+  /// \param [in] win32_obj_name The object of the external semaphore resource
+  void set_win32_obj_name(const void *win32_obj_name) { name = win32_obj_name; }
+#else
+  /// fd setter
+  /// \param [in] fd The file descriptor of the external semaphore resource
+  void set_fd_handle(int fd) { handle = fd; }
+#endif // _WIN32
+
+  /// handle_type setter
+  /// \param [in] type The type of the external semaphore resource handle
+  void set_handle_type(
+      sycl::ext::oneapi::experimental::external_semaphore_handle_type type) {
+    handle_type = type;
+  }
+
+  /// flags setter
+  /// \param [in] flags The flags used to handle importing of external semaphore
+  /// resource
+  void set_flags(int flags) { this->flags = flags; }
+
+#ifdef _WIN32
+  /// handle getter
+  /// \param [out] handle The win32 NT handle of the external semaphore resource
+  void *get_win32_handle() { return handle; }
+
+  /// name getter
+  /// \param [out] name The object of the external semaphore resource
+  const void *get_win32_obj_name() { return name; }
+#else
+  /// fd getter
+  /// \param [out] fd The file descriptor of the external semaphore resource
+  int get_fd_handle() { return handle; }
+#endif // _WIN32
+
+  /// handle_type getter
+  /// \param [out] handle_type The type of the external semaphore resource
+  /// handle
+  sycl::ext::oneapi::experimental::external_semaphore_handle_type
+  get_handle_type() {
+    return handle_type;
+  }
+
+  /// flags getter
+  /// \param [out] flags The flags used to handle importing of external
+  /// semaphore
+  int get_flags() { return flags; }
+};
+
+/// The wrapper structure for external semaphore signal/wait params
+class external_sem_params {
+  uint64_t value;
+
+public:
+  external_sem_params() { value = 0; }
+
+  /// value setter
+  /// \param [in] val The state value of the semaphore
+  void set_value(unsigned long long val) { value = val; }
+
+  /// value getter
+  /// \param [out] value The state value of the semaphore
+  unsigned long long get_value() { return value; }
+};
+
+/// The wrapper class of external semaphore
+class external_sem_wrapper {
+  sycl::ext::oneapi::experimental::external_semaphore ext_sem;
+  sycl::ext::oneapi::experimental::external_semaphore_handle_type
+      ext_sem_handle_type;
+
+public:
+  /// Create external semaphore wrapper.
+  /// \param [in] ext_sem The external semaphore resource object
+  /// \param [in] ext_sem_handle_type The external semaphore resource handle
+  /// type
+  external_sem_wrapper(
+      sycl::ext::oneapi::experimental::external_semaphore ext_sem,
+      sycl::ext::oneapi::experimental::external_semaphore_handle_type
+          ext_sem_handle_type) {
+    this->ext_sem = ext_sem;
+    this->ext_sem_handle_type = ext_sem_handle_type;
+  }
+
+  /// destory external semaphore resource
+  ~external_sem_wrapper() {
+    sycl::ext::oneapi::experimental::release_external_semaphore(
+        ext_sem, get_default_queue());
+  }
+
+  /// ext_sem getter
+  /// \param [out] ext_sem The external semaphore resource object
+  sycl::ext::oneapi::experimental::external_semaphore get() { return ext_sem; }
+
+  /// ext_sem_handle_type getter
+  /// \param [out] ext_sem_handle_type The external semaphore resource handle
+  /// type
+  sycl::ext::oneapi::experimental::external_semaphore_handle_type
+  get_handle_type() {
+    return ext_sem_handle_type;
+  }
+};
+
 /// The wrapper class of bindless image memory handle.
 class image_mem_wrapper {
 public:
@@ -267,7 +403,7 @@ public:
     init_mip_level_wrappers(q);
   }
   /// Create bindless image memory wrapper.
-  /// \param [in] extMem SYCL external memory object.
+  /// \param [in] extMem SYCL external memory resource object.
   /// \param [in] ext_img_mem_desc The img desc of the imported image resource.
   image_mem_wrapper(sycl::ext::oneapi::experimental::external_mem extMem,
                     external_mem_img_desc *ext_img_mem_desc) {
@@ -355,7 +491,7 @@ private:
   image_mem_wrapper *_sub_wrappers{nullptr};
 };
 
-/// The base wrapper class of external memory handle.
+/// The base wrapper class of external memory resource handle.
 class external_mem_wrapper_base {
 public:
   /// Cleans up the external mem wrapper by releasing the SYCL external
@@ -517,7 +653,7 @@ private:
 #ifdef _WIN32
 class external_mem_wrapper : public external_mem_wrapper_base {
 public:
-  /// Creates external memory wrapper for a given DX11 resource.
+  /// Creates external memory resource wrapper for a given DX11 resource.
   /// \param [in] d3d11_res Pointer to the ID3D11Resource to be wrapped.
   /// \param [in] reg_flags Registration flags used for resource registration.
   external_mem_wrapper(ID3D11Resource *d3d11_res, unsigned reg_flags)
@@ -536,7 +672,7 @@ public:
     // Create a shared handle for the DX11 resource to enable interoperability.
     _res_win_nt_handle = create_shared_handle(_res_D3D11);
 
-    // Prepare the external memory descriptor for SYCL interop.
+    // Prepare the external memory resource descriptor for SYCL interop.
     sycl::ext::oneapi::experimental::resource_win32_handle ext_mem_win_handle{
         _res_win_nt_handle};
 
@@ -547,7 +683,7 @@ public:
                          win32_nt_dx12_resource,
                      _res_size_bytes};
 
-    // Import the external memory into SYCL for use with SYCL APIs.
+    // Import resource's external memory into SYCL for use with SYCL APIs.
     _res_external_mem = sycl::ext::oneapi::experimental::external_mem(
         sycl::ext::oneapi::experimental::import_external_memory(
             ext_mem_desc, get_default_queue()));
@@ -568,7 +704,8 @@ public:
     // Close the shared handle to the DX11 resource.
     CloseHandle(_res_win_nt_handle);
 
-    // Release the external memory associated with the SYCL external mem handle.
+    // Release the resource's external memory associated with the SYCL external
+    // mem handle.
     sycl::ext::oneapi::experimental::release_external_memory(
         get_external_mem(), get_default_queue());
 
@@ -1065,10 +1202,12 @@ inline void unmap_resources(int count, external_mem_wrapper **handles,
 }
 #endif // _WIN32
 
-/// Imports external memory into a SYCL external memory object.
+/// Imports resource's external memory into a SYCL external memory object.
 /// \param [in] extMem SYCL external memory object ptr to be initialized.
-/// \param [in] memHandleDesc Pointer to the external memory handle descriptor.
-/// \throws std::runtime_error If no valid external memory handle is provided.
+/// \param [in] memHandleDesc Pointer to the external memory resource handle
+/// descriptor.
+/// \throws std::runtime_error If no valid external memory resource handle is
+/// provided.
 inline void
 import_external_memory(sycl::ext::oneapi::experimental::external_mem *extMem,
                        external_mem_handle_desc *memHandleDesc) {
@@ -1082,9 +1221,10 @@ import_external_memory(sycl::ext::oneapi::experimental::external_mem *extMem,
             memHandleDesc->get_res_size()},
         get_default_queue());
   } else if (memHandleDesc->get_win32_obj_name()) {
-    throw std::runtime_error("Importing external resource using Windows NT name"
-                             " type is not supported. Only NT handle type is"
-                             " supported");
+    throw std::runtime_error(
+        "Importing external memory resource using Windows NT name"
+        " type is not supported. Only NT handle type is"
+        " supported");
   }
 #else
   if (memHandleDesc->get_fd_handle() != -1) {
@@ -1098,7 +1238,118 @@ import_external_memory(sycl::ext::oneapi::experimental::external_mem *extMem,
   }
 #endif // _WIN32
   else {
-    throw std::runtime_error("No external memory handle is set for importing!");
+    throw std::runtime_error(
+        "No external memory resource handle is set for importing!");
+  }
+}
+
+/// Imports external semaphore resource into a SYCL external semaphore object.
+/// \param [in] extSem SYCL external semaphore object ptr to be initialized.
+/// \param [in] semHandleDesc Pointer to the external semaphore resource handle
+/// descriptor.
+/// \throws std::runtime_error If no valid external semaphore resource handle is
+/// provided.
+inline void import_external_semaphore(external_sem_wrapper **extSem,
+                                      external_sem_handle_desc *semHandleDesc) {
+  sycl::ext::oneapi::experimental::external_semaphore extSemObj;
+#ifdef _WIN32
+  if (semHandleDesc->get_win32_handle()) {
+    extSemObj = sycl::ext::oneapi::experimental::import_external_semaphore(
+        sycl::ext::oneapi::experimental::external_semaphore_descriptor<
+            sycl::ext::oneapi::experimental::resource_win32_handle>{
+            {semHandleDesc->get_win32_handle()},
+            semHandleDesc->get_handle_type()},
+        get_default_queue());
+  } else if (semHandleDesc->get_win32_obj_name()) {
+    throw std::runtime_error(
+        "Importing external semaphore resource using Windows NT name"
+        " type is not supported. Only NT handle type is"
+        " supported");
+  }
+#else
+  if (semHandleDesc->get_fd_handle() != -1) {
+    extSemObj = sycl::ext::oneapi::experimental::import_external_semaphore(
+        sycl::ext::oneapi::experimental::external_semaphore_descriptor<
+            sycl::ext::oneapi::experimental::resource_fd>{
+            {semHandleDesc->get_fd_handle()}, semHandleDesc->get_handle_type()},
+        get_default_queue());
+  }
+#endif // _WIN32
+  else {
+    throw std::runtime_error(
+        "No external semaphore resource handle is set for importing!");
+  }
+
+  *extSem =
+      new external_sem_wrapper(extSemObj, semHandleDesc->get_handle_type());
+}
+
+/// Signals the external semaphore resource.
+/// \param [in] extSem ptr to dpct external semaphore resource ptr
+/// \param [in] semSignalParams Pointer to the external semaphore signal
+/// parameters.
+/// \param [in] numExtSems Number of external semaphores to signal.
+/// \param [in] q_ptr The queue used to signal the external semaphore resource.
+inline void signal_external_semaphore(external_sem_wrapper **extSem,
+                                      external_sem_params *semSignalParams,
+                                      unsigned int numExtSems,
+                                      queue_ptr q_ptr = &get_default_queue()) {
+  for (int i = 0; i < numExtSems; i++) {
+    auto extSemType = extSem[i]->get_handle_type();
+#ifdef _WIN32
+    if (extSemType == sycl::ext::oneapi::experimental::
+                          external_semaphore_handle_type::win32_nt_dx12_fence) {
+      q_ptr->ext_oneapi_signal_external_semaphore(
+          extSem[i]->get(), semSignalParams[i].get_value());
+    } else if (extSemType ==
+               sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+                   win32_nt_handle) {
+      q_ptr->ext_oneapi_signal_external_semaphore(extSem[i]->get());
+    }
+#else
+    if (extSemType == sycl::ext::oneapi::experimental::
+                          external_semaphore_handle_type::opaque_fd) {
+      q_ptr->ext_oneapi_signal_external_semaphore(extSem[i]->get());
+    }
+#endif // _WIN32
+    else {
+      throw std::runtime_error(
+          "Unsupported external semaphore resource handle type!");
+    }
+  }
+}
+
+/// Wait for the external semaphore resource.
+/// \param [in] extSem ptr to dpct external semaphore resource ptr
+/// \param [in] semWaitParams Pointer to the external semaphore wait parameters.
+/// \param [in] numExtSems Number of external semaphores to wait.
+/// \param [in] q_ptr The queue used to wait on the external semaphore resource.
+inline void wait_external_semaphore(external_sem_wrapper **extSem,
+                                    external_sem_params *semWaitParams,
+                                    unsigned int numExtSems,
+                                    queue_ptr q_ptr = &get_default_queue()) {
+  for (int i = 0; i < numExtSems; i++) {
+    auto extSemType = extSem[i]->get_handle_type();
+#ifdef _WIN32
+    if (extSemType == sycl::ext::oneapi::experimental::
+                          external_semaphore_handle_type::win32_nt_dx12_fence) {
+      q_ptr->ext_oneapi_wait_external_semaphore(extSem[i]->get(),
+                                                semWaitParams[i].get_value());
+    } else if (extSemType ==
+               sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+                   win32_nt_handle) {
+      q_ptr->ext_oneapi_wait_external_semaphore(extSem[i]->get());
+    }
+#else
+    if (extSemType == sycl::ext::oneapi::experimental::
+                          external_semaphore_handle_type::opaque_fd) {
+      q_ptr->ext_oneapi_wait_external_semaphore(extSem[i]->get());
+    }
+#endif // _WIN32
+    else {
+      throw std::runtime_error(
+          "Unsupported external semaphore resource handle type!");
+    }
   }
 }
 
@@ -1692,6 +1943,7 @@ using external_mem_wrapper_ptr = external_mem_wrapper *;
 #else
 using external_mem_wrapper_ptr = external_mem_wrapper_base *;
 #endif // _WIN32
+using external_sem_wrapper_ptr = external_sem_wrapper *;
 using bindless_image_wrapper_base_p = bindless_image_wrapper_base *;
 
 #endif

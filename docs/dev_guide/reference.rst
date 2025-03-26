@@ -15,6 +15,7 @@ mapping CUDA* concepts and APIs to SYCL*.
    reference/dpct-namespace-reference
    reference/compare-prog-models
    reference/term-mapping-quick-ref
+   reference/migration-examples
 
 
 
