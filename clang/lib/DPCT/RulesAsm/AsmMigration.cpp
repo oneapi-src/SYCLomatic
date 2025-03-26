@@ -1043,10 +1043,12 @@ protected:
           BI->getKind() != InlineAsmBuiltinType::u32 &&
           BI->getKind() != InlineAsmBuiltinType::s64 &&
           BI->getKind() != InlineAsmBuiltinType::u64 &&
+          BI->getKind() != InlineAsmBuiltinType::f16x2 &&
           BI->getKind() != InlineAsmBuiltinType::s16x2 &&
           BI->getKind() != InlineAsmBuiltinType::u16x2)
         return false;
       isVec = BI->getKind() == InlineAsmBuiltinType::s16x2 ||
+              BI->getKind() == InlineAsmBuiltinType::f16x2 ||
               BI->getKind() == InlineAsmBuiltinType::u16x2;
     } else {
       return false;
@@ -1088,12 +1090,21 @@ protected:
         OS() << MapNames::getClNamespace()
              << llvm::formatv("sub_sat({0}, {1})", Op[0], Op[1]);
     } else {
-      if (Inst->is(asmtok::op_add))
-        OS() << llvm::formatv("{0} + {1}", Op[0], Op[1]);
-      else
-        OS() << llvm::formatv("{0} - {1}", Op[0], Op[1]);
-    }
+      if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0))) {
+        std::string operatorStr = Inst->is(asmtok::op_add) ? "+" : "-";
 
+        if (BI->getKind() == InlineAsmBuiltinType::f16x2) {
+          std::string FormatTemp =
+              "(((sycl::vec<int, 1>({0})).as<sycl::vec<sycl::half, 2>>() {1} "
+              "(sycl::vec<int, 1>({2})).as<sycl::vec<sycl::half, "
+              "2>>()).as<sycl::vec<int, 1>>()).x();";
+          OS() << llvm::formatv(FormatTemp.c_str(), Op[0], operatorStr, Op[1]);
+
+        } else {
+          OS() << llvm::formatv("{0} {1} {2}", Op[0], operatorStr, Op[1]);
+        }
+      }
+    }
     endstmt();
     return SYCLGenSuccess();
   }
@@ -2417,7 +2428,44 @@ protected:
     }
   }
 
+  bool HandleCvtVec(const InlineAsmInstruction *Inst) {
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    std::string Op;
+    if (tryEmitStmt(Op, Inst->getInputOperand(0)))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string FormatTemp =
+        "(sycl::ushort2(sycl::vec<float, 1>({0}).convert<sycl::half, "
+        "sycl::rounding_mode::rte>().as<sycl::vec<uint16_t, 1>>().x(),"
+        "sycl::vec<float, 1>({1}).convert<sycl::half, "
+        "sycl::rounding_mode::rte>().as<sycl::vec<uint16_t, 1>>().x()))"
+        ".as<sycl::vec<int, 1>>().x()";
+
+    std::string InputOp[2];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I) {
+      if (tryEmitStmt(InputOp[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+      if (Inst->hasAttr(InstAttr::sat))
+        InputOp[I] = Cast(Inst->getType(0), Inst->getInputOperand(I)->getType(),
+                          InputOp[I]);
+    }
+
+    OS() << llvm::formatv(FormatTemp.c_str(), InputOp[1], InputOp[0]);
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
   bool handle_cvt(const InlineAsmInstruction *Inst) override {
+
+    if (Inst->getNumInputOperands() == 2 && Inst->getNumTypes() == 2 &&
+        isa<InlineAsmBuiltinType>(Inst->getType(0)) &&
+        isa<InlineAsmBuiltinType>(Inst->getType(1))) {
+      return HandleCvtVec(Inst);
+    }
+
     if (Inst->getNumInputOperands() != 1 || Inst->getNumTypes() != 2 ||
         !isa<InlineAsmBuiltinType>(Inst->getType(0)) ||
         !isa<InlineAsmBuiltinType>(Inst->getType(1)))

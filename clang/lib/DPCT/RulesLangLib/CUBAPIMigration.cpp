@@ -965,7 +965,6 @@ void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
                 ObjTypeStr.find("class cub::BlockScan") == 0 ||
                 ObjTypeStr.find("class cub::BlockReduce") == 0)) {
             DeleteFlag = false;
-            std::cout << "2" << std::endl;
             break;
           }
         }
@@ -974,12 +973,10 @@ void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
         auto VarType = AncestorVD->getType().getCanonicalType();
         std::string VarTypeStr =
             AncestorVD->getType().getCanonicalType().getAsString();
-        std::cout << VarTypeStr << std::endl;
         if (isTypeInAnalysisScope(VarType.getTypePtr()) ||
             !(VarTypeStr.find("TempStorage") != std::string::npos &&
               VarTypeStr.find("struct cub::") == 0)) {
           DeleteFlag = false;
-          std::cout << "1" << std::endl;
           break;
         }
       }
@@ -1084,17 +1081,16 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
     if (!TA)
       return;
     WarpSize = TA->get(0).getAsIntegral().getExtValue();
-    std::string ValueType =
-        TA->get(1).getAsType().getUnqualifiedType().getAsString();
     const auto *MemberMask = CE->getArg(2);
-    const auto *Mask = dyn_cast<IntegerLiteral>(MemberMask);
     const Expr *Value = CE->getArg(0);
     const Expr *Lane = CE->getArg(1);
     const auto *DeviceFuncDecl = getImmediateOuterFuncDecl(CE);
     ExprAnalysis ValueEA(Value);
     ExprAnalysis LaneEA(Lane);
     llvm::raw_string_ostream OS(Repl);
-    if (Mask) {
+
+    if (const auto *Mask =
+            dyn_cast<IntegerLiteral>(MemberMask->IgnoreImplicitAsWritten())) {
       if (Mask->getValue().getZExtValue() == 0xffffffff) {
         OS << MapNames::getDpctNamespace() << "select_from_sub_group("
            << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
@@ -1102,20 +1098,26 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
         if (WarpSize != 32)
           OS << ", " << WarpSize;
         OS << ')';
-      } else {
-        OS << MapNames::getDpctNamespace() << "experimental::"
-           << "select_from_sub_group(" << getStmtSpelling(Mask) << ", "
-           << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
-           << ValueEA.getReplacedString() << ", " << LaneEA.getReplacedString();
-        if (WarpSize != 32)
-          OS << ", " << WarpSize;
-        OS << ')';
+        emplaceTransformation(new ReplaceStmt(CE, Repl));
+        return;
       }
+    }
+    if (DpctGlobalInfo::useExpNonUniformGroups()) {
+      ExprAnalysis MaskEA(MemberMask);
+      OS << MapNames::getDpctNamespace() << "experimental::"
+         << "select_from_sub_group(" << MaskEA.getReplacedString() << ", "
+         << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
+         << ValueEA.getReplacedString() << ", " << LaneEA.getReplacedString();
+      if (WarpSize != 32)
+        OS << ", " << WarpSize;
+      OS << ')';
       emplaceTransformation(new ReplaceStmt(CE, Repl));
     } else {
-      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             GetFunctionName(CE));
+      report(CE->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+             "cub::ShuffleIndex",
+             "--use-experimental-features=non-uniform-groups");
     }
+    return;
   }
 }
 
@@ -1701,7 +1703,6 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processCubTypeDefOrUsing(TD);
   } else if (const TypeAliasDecl *TAD =
                  getNodeAsType<TypeAliasDecl>(Result, "UsingDecl")) {
-    // std::cout << "found" << std::endl;
     processCubTypeDefOrUsing(TAD);
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
     processTypeLoc(TL);

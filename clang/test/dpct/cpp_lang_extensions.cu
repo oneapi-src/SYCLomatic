@@ -4,6 +4,20 @@
 
 #include "cpp_lang_extensions.cuh"
 
+template<class ElementType>
+struct alignas(16) Packed128 {
+    static constexpr const size_t size = sizeof(int4) / sizeof(ElementType);
+    ElementType payload[size];
+};
+
+
+// load a Packed128 from an aligned memory address with streaming cache hint
+template<class ElementType>
+__device__ Packed128<ElementType> load128cs(const ElementType* address) {
+    // CHECK: return Packed128<ElementType>{*(reinterpret_cast<const sycl::int4*>(address))};
+    return Packed128<ElementType>{__ldcs(reinterpret_cast<const int4*>(address))};
+}
+
 __device__ float df(float f) {
   float a[23];
   // CHECK: /*
