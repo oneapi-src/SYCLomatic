@@ -592,6 +592,9 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexRefGetFlags",
       "cuTexRefSetAddress_v2",
       "cuTexRefSetAddress2D_v3",
+      "cuTexRefGetMipmapFilterMode",
+      "cuTexRefSetMipmapFilterMode",
+      "cuTexRefSetMipmappedArray",
   };
 
   auto hasAnyFuncName = [&]() {
@@ -922,6 +925,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
                                              std::string(ReplType)));
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "call")) {
     auto Name = CE->getDirectCallee()->getNameAsString();
+    std::cout << "Processing " << Name << "\n";
     if (DpctGlobalInfo::useSYCLCompat()) {
       report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false, Name);
       return;
@@ -972,6 +976,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     A.analyze(CE);
     emplaceTransformation(A.getReplacement());
     A.applyAllSubExprRepl();
+    std::cout << "Done applying replacements\n";
   } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "texEnum")) {
     if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
       std::string EnumName = ECD->getName().str();

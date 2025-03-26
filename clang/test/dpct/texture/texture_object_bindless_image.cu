@@ -687,7 +687,7 @@ void test_mipmap_driver_api() {
   cuMipmappedArrayGetLevel(&level_arr, mmArray, 1);
 
   CUtexref texRef;
-  // CHECK: texRef->attach(&mmArray);
+  // CHECK: texRef->attach(mmArray);
   cuTexRefSetMipmappedArray(texRef, mmArray, 0);
 
   // sycl::filter_mode fm = sycl::filtering_mode::nearest;
