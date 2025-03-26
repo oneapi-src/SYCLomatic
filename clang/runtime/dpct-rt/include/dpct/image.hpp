@@ -547,7 +547,7 @@ public:
 
   /// Get the method in which sampling between mipmap levels is performed.
   /// \returns The method in which sampling between mipmap levels is performed.
-  sycl::filtering_mode get_mip_filtering() const noexcept {
+  sycl::filtering_mode get_mipmap_filtering() const noexcept {
     // Make sure the return value is legal filtering_mode when using memset.
     return _mipmap_filtering == sycl::filtering_mode::linear
                ? sycl::filtering_mode::linear
@@ -556,7 +556,7 @@ public:
   /// Set the method in which sampling between mipmap levels is performed.
   /// \param [in] filtering_mode The method in which sampling between mipmap
   /// levels is performed.
-  void set_mip_filtering(sycl::filtering_mode filtering_mode) noexcept {
+  void set_mipmap_filtering(sycl::filtering_mode filtering_mode) noexcept {
     _mipmap_filtering = filtering_mode;
   }
 

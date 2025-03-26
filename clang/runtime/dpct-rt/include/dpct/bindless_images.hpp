@@ -1479,7 +1479,7 @@ public:
 
   /// Set mipmap sample filtering mode for bindless image handle
   /// \param [in] filtering_mode The mipmap filtering mode
-  inline void set_mipmap_filtering_mode(sycl::filtering_mode mode) {
+  inline void set_mip_filtering_mode(sycl::filtering_mode mode) {
     assert(_img != 0)
     sampling_info = get_sampling_info(_img);
     sampling_info.set_mipmap_filtering(mode);
@@ -1487,7 +1487,7 @@ public:
 
   /// Get mipmap sample filtering mode for bindless image handle
   /// \return The mipmap filtering mode
-  inline sycl::filtering_mode get_mipmap_filtering_mode(void) {
+  inline sycl::filtering_mode get_mip_filtering_mode(void) {
     assert(_img != 0)
     sampling_info = get_sampling_info(_img);
     return sampling_info.get_mipmap_filtering();
