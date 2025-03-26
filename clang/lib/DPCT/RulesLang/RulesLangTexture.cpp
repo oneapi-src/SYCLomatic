@@ -520,7 +520,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
               "CUresourcetype", "CUresourcetype_enum", "CUaddress_mode",
               "CUaddress_mode_enum", "CUfilter_mode", "CUfilter_mode_enum",
               "CUDA_TEXTURE_DESC", "CUtexref", "textureReference",
-              "cudaMipmappedArray", "cudaMipmappedArray_t"))))))
+              "cudaMipmappedArray", "cudaMipmappedArray_t", "CUmipmappedArray"))))))
           .bind("texType"),
       this);
 
@@ -574,6 +574,8 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuSurfObjectDestroy",
       "cuArray3DCreate_v2",
       "cuArrayCreate_v2",
+      "cuMipmappedArrayCreate",
+      "cuMipmappedArrayDestroy",
       "cuArrayDestroy",
       "cuTexObjectCreate",
       "cuTexObjectDestroy",

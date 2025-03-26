@@ -284,6 +284,17 @@ public:
 
     init_mip_level_wrappers(q);
   }
+  /// Create bindless image memory wrapper.
+  /// \param [in] desc The image descriptor of bindless image.
+  /// \param [in] num_levels Number of mipmap levels to allocate
+  image_mem_wrapper(sycl::ext::oneapi::experimental::image_descriptor desc, unsigned int num_levels) : _desc(desc){
+    _desc.type = sycl::ext::oneapi::experimental::image_type::mipmap;
+    _desc.num_levels = num_levels;
+    auto q = get_default_queue();
+    _handle = alloc_image_mem(_desc, q);
+    init_mip_level_wrappers(q);
+  }
+
   image_mem_wrapper(const image_mem_wrapper &) = delete;
   image_mem_wrapper &operator=(const image_mem_wrapper &) = delete;
   /// Destroy bindless image memory wrapper.

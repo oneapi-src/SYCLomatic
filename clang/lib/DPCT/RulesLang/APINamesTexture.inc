@@ -314,6 +314,24 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                                           "image_matrix",
                                 ARG(1)))))
 ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuArrayDestroy", ARG(0)))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuMipmappedArrayCreate", DEREF(0),
+        NEW(DpctGlobalInfo::useExtBindlessImages()
+                ? MapNames::getDpctNamespace() +
+                      "experimental::image_mem_wrapper"
+                : MapNames::getDpctNamespace() +
+                      "image_matrix",
+            DEREF(1), ARG(2)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuMipmappedArrayCreate", 
+                                      MipmapNeedBindlessImage))
+CONDITIONAL_FACTORY_ENTRY(
+  UseExtBindlessImages, 
+  ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuMipmappedArrayDestroy", ARG(0))),
+  REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuMipmappedArrayDestroy", MipmapNeedBindlessImage))
+
 ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::API_NOT_MIGRATED)
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,

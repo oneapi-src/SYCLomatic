@@ -654,3 +654,34 @@ int main() {
   cudaFreeMipmappedArray(pMipMapArr);
   return 0;
 }
+
+// CHECK: void set_3D_descriptor(sycl::ext::oneapi::experimental::image_descriptor &desc) {
+void set_3D_descriptor(CUDA_ARRAY3D_DESCRIPTOR &desc) {
+  desc.Width = 1;
+  desc.Depth = 2;
+  desc.Height = 1;
+  // CHECK: desc.channel_type = sycl::image_channel_type::unsigned_int16;
+  desc.Format = CU_AD_FORMAT_SIGNED_INT16;
+  desc.NumChannels = 2;
+}
+
+void test_mipmap_driver_api() {
+  // CHECK: sycl::ext::oneapi::experimental::image_descriptor desc;
+  CUDA_ARRAY3D_DESCRIPTOR desc;
+  unsigned int numMipmapLevels = 2;
+  set_3D_descriptor(desc);
+
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr array;
+  CUmipmappedArray array;
+  // CHECK: array = new dpct::experimental::image_mem_wrapper(desc, numMipmapLevels);
+  cuMipmappedArrayCreate(&array, &desc, numMipmapLevels);
+  // CHECK: delete array;
+  cuMipmappedArrayDestroy(array);
+
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr *pArray;
+  CUmipmappedArray *pArray;
+  // CHECK: *pArray = new dpct::experimental::image_mem_wrapper(desc, numMipmapLevels);
+  cuMipmappedArrayCreate(pArray, &desc, numMipmapLevels);
+  // CHECK: delete (*pArray);
+  cuMipmappedArrayDestroy(*pArray);
+}

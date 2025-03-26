@@ -437,4 +437,17 @@ void mipmap() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::maxMipmapLevelClamp is not supported.
   // CHECK-NEXT: */
   texDesc.maxMipmapLevelClamp = 1;
+
+  CUDA_ARRAY3D_DESCRIPTOR texdesc;
+  unsigned int numMipmapLevels = 2;
+
+  CUmipmappedArray *pArray;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMipmappedArrayCreate was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuMipmappedArrayCreate(pArray, &texdesc, numMipmapLevels);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMipmappedArrayDestroy was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuMipmappedArrayDestroy(*pArray);
 }
