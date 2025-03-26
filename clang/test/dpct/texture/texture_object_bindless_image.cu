@@ -671,21 +671,37 @@ void test_mipmap_driver_api() {
   unsigned int numMipmapLevels = 2;
   set_3D_descriptor(desc);
 
-  // CHECK: dpct::experimental::image_mem_wrapper_ptr array;
-  CUmipmappedArray array;
-  // CHECK: array = new dpct::experimental::image_mem_wrapper(desc, numMipmapLevels);
-  cuMipmappedArrayCreate(&array, &desc, numMipmapLevels);
-  // CHECK: delete array;
-  cuMipmappedArrayDestroy(array);
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr mmArray;
+  CUmipmappedArray mmArray;
+
+  // CHECK: mmArray = new dpct::experimental::image_mem_wrapper(desc, numMipmapLevels);
+  cuMipmappedArrayCreate(&mmArray, &desc, numMipmapLevels);
 
   // CHECK: dpct::experimental::image_mem_wrapper_ptr *pArray;
   CUmipmappedArray *pArray;
   // CHECK: *pArray = new dpct::experimental::image_mem_wrapper(desc, numMipmapLevels);
   cuMipmappedArrayCreate(pArray, &desc, numMipmapLevels);
-  // CHECK: delete (*pArray);
-  cuMipmappedArrayDestroy(*pArray);
 
   CUarray level_arr;
-  // CHECK: level_arr = array->get_mip_level(1);
-  cuMipmappedArrayGetLevel(&level_arr, array, 1);
+  // CHECK: level_arr = mmArray->get_mip_level(1);
+  cuMipmappedArrayGetLevel(&level_arr, mmArray, 1);
+
+  CUtexref texRef;
+  // CHECK: texRef->attach(&mmArray);
+  cuTexRefSetMipmappedArray(texRef, mmArray, 0);
+
+  // sycl::filter_mode fm = sycl::filtering_mode::nearest;
+  CUfilter_mode fm = CU_TR_FILTER_MODE_POINT;
+
+  // CHECK: texRef->set_mip_filtering_mode(fm);
+  cuTexRefSetMipmapFilterMode(texRef, fm);
+
+  // CHECK: fm = texRef->get_mip_filtering_mode();
+  cuTexRefGetMipmapFilterMode(&fm, texRef);
+
+  // CHECK: delete mmArray;
+  cuMipmappedArrayDestroy(mmArray);
+
+  // CHECK: delete (*pArray);
+  cuMipmappedArrayDestroy(*pArray);
 }
