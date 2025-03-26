@@ -5232,7 +5232,9 @@ void DeviceFunctionDecl::insertWrapper() {
         Printer << ">";
         Printer.newLine();
       }
-      Printer << "void " << FuncName << "_wrapper(";
+      Printer << (IsStaticSpecified ? "static " : "")
+              << (IsInlineSpecified ? "inline " : "") << "void " << FuncName
+              << "_wrapper(";
       for (size_t i = 0; i < ParamsInfo.size(); i++) {
         Printer << (i == 0 ? "" : " ,") << ParamsInfo[i].first << " "
                 << ParamsInfo[i].second << ParameterDefaultValueMap[i];
@@ -5312,7 +5314,8 @@ void DeviceFunctionDecl::collectInfoForWrapper(const FunctionDecl *FD) {
   if (HasBody && FD != Def) {
     HasBody = false;
   }
-
+  IsInlineSpecified = FD->isInlineSpecified();
+  IsStaticSpecified = FD->isStatic();
   if (auto FTD = FD->getDescribedFunctionTemplate()) {
     if (auto TemplateParmsList = FTD->getTemplateParameters()) {
       for (size_t i = 0; i < TemplateParmsList->size(); ++i) {

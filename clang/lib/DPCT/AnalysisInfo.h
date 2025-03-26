@@ -2617,6 +2617,8 @@ protected:
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   FormatInfo FormatInformation;
   bool HasBody = false;
+  bool IsInlineSpecified = false;
+  bool IsStaticSpecified = false;
   size_t DeclEnd = 0;
   std::map<int, std::string> TemplateParameterDefaultValueMap;
   std::map<int, std::string> ParameterDefaultValueMap;

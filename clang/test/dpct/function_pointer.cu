@@ -5,14 +5,14 @@
 #include <cuda_runtime.h>
 #include <iostream>
 
-__global__ void vectorAdd(const int *A, int *B, int *C, int N) {
+__global__ static inline void vectorAdd(const int *A, int *B, int *C, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) {
         C[i] = A[i] + B[i];
     }
 }
 
-// CHECK:  void vectorAdd_wrapper(const int * A ,int * B ,int * C ,int N) {
+// CHECK:  static inline void vectorAdd_wrapper(const int * A ,int * B ,int * C ,int N) {
 // CHECK:        sycl::queue queue = *dpct::kernel_launcher::_que;
 // CHECK:        unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
 // CHECK:        sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
@@ -24,7 +24,7 @@ __global__ void vectorAdd(const int *A, int *B, int *C, int N) {
 // CHECK:  }
 
 template<typename T>
-__global__ void vectorTemplateAdd(const T *A, T *B, T *C, int N) {
+__global__ static inline void vectorTemplateAdd(const T *A, T *B, T *C, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) {
         C[i] = A[i] + B[i];
@@ -32,7 +32,7 @@ __global__ void vectorTemplateAdd(const T *A, T *B, T *C, int N) {
 }
 
 // CHECK:  template<typename T>
-// CHECK:  void vectorTemplateAdd_wrapper(const T * A ,T * B ,T * C ,int N) {
+// CHECK:  static inline void vectorTemplateAdd_wrapper(const T * A ,T * B ,T * C ,int N) {
 // CHECK:      sycl::queue queue = *dpct::kernel_launcher::_que;
 // CHECK:      unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
 // CHECK:      sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
