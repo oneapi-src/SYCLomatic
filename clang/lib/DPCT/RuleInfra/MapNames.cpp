@@ -260,6 +260,13 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaExternalMemoryDedicated",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "cudaExternalMemoryDedicated", "0")},
+      {"cudaExternalSemaphoreSignalSkipNvSciBufMemSync",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaExternalSemaphoreSignalSkipNvSciBufMemSync",
+                          "0")},
+      {"cudaExternalSemaphoreWaitSkipNvSciBufMemSync",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaExternalSemaphoreWaitSkipNvSciBufMemSync", "0")},
       {"cudaArrayDefault",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "cudaArrayDefault",
@@ -290,6 +297,10 @@ void MapNames::setExplicitNamespaceMap(
       {"CubDebugExit",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "CubDebugExit", MapNames::getCheckErrorMacroName())},
+      {"cudaCpuDeviceId",
+       MacroMigrationRule("cudaCpuDeviceId", RulePriority::Fallback,
+                          "cudaCpuDeviceId",
+                          getDpctNamespace() + "get_cpu_device_id()")},
       //...
   };
   // Type names mapping.
@@ -327,6 +338,9 @@ void MapNames::setExplicitNamespaceMap(
       {"__half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
       {"half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
+      {"__nv_half2",
+       std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
+      {"__nv_half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"cudaEvent_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "event_ptr",
                                       HelperFeatureEnum::device_ext)},
@@ -880,6 +894,9 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaExternalMemoryHandleType",
        std::make_shared<TypeNameRule>(getExpNamespace() +
                                       "external_mem_handle_type")},
+      {"cudaExternalSemaphoreHandleType",
+       std::make_shared<TypeNameRule>(getExpNamespace() +
+                                      "external_semaphore_handle_type")},
       // ...
   };
   // SYCLcompat unsupport types
@@ -1515,6 +1532,24 @@ void MapNames::setExplicitNamespaceMap(
                ? getExpNamespace() +
                      "external_mem_handle_type::win32_nt_dx12_resource"
                : "cudaExternalMemoryHandleTypeD3D12Resource")},
+      // enum cudaExternalSemaphoreHandleType
+      {"cudaExternalSemaphoreHandleTypeOpaqueFd",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() + "external_semaphore_handle_type::opaque_fd"
+               : "cudaExternalSemaphoreHandleTypeOpaqueFd")},
+      {"cudaExternalSemaphoreHandleTypeOpaqueWin32",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_semaphore_handle_type::win32_nt_handle"
+               : "cudaExternalSemaphoreHandleTypeOpaqueWin32")},
+      {"cudaExternalSemaphoreHandleTypeD3D12Fence",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_semaphore_handle_type::win32_nt_dx12_fence"
+               : "cudaExternalSemaphoreHandleTypeD3D12Fence")},
       // ...
   };
 

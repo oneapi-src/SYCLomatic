@@ -6667,19 +6667,25 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
       Printer.line("cgh.depends_on(dpct::get_current_device().get_in_order_"
                    "queues_last_events());");
     } else {
-      Printer.line("#ifdef __INTEL_LLVM_COMPILER");
-      Printer.newLine();
-      Printer.line("cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_"
-                   "last_event());");
-      Printer.newLine();
-      Printer.line("#else");
-      Printer.newLine();
-      Printer.line("auto e_opt = dpct::get_default_queue().ext_oneapi_get_last_"
-                   "event();");
-      Printer.newLine();
-      Printer.line("if (e_opt) cgh.depends_on(*e_opt);");
-      Printer.newLine();
-      Printer.line("#endif");
+      Printer.line("auto last_event = "
+                   "dpct::get_default_queue().ext_oneapi_get_last_event();");
+      Printer.line("[&](auto &&_e) {");
+      {
+        Printer.indent();
+        Printer.line("if constexpr "
+                     "(std::is_same_v<std::remove_reference_t<decltype(last_"
+                     "event)>, sycl::event>)");
+        {
+          Printer.indent();
+          Printer.line("cgh.depends_on(_e);");
+        }
+        Printer.line("else if (_e.has_value())");
+        {
+          Printer.indent();
+          Printer.line("cgh.depends_on(_e.value());");
+        }
+      }
+      Printer.line("}(last_event);");
     }
     Printer.newLine();
   }

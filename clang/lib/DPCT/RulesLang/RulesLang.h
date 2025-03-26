@@ -1011,11 +1011,14 @@ public:
 };
 
 class GraphicsInteropRule : public NamedMigrationRule<GraphicsInteropRule> {
-  static MapNames::MapTy ExtMemHandleDescNames;
+  static MapNames::MapTy ExtResMemHandleDescNames, ExtResSemParamsNames;
 
   const Expr *getAssignedBO(const Expr *E, ASTContext &Context);
   const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context);
-  void replaceExtMemHandleDataExpr(const MemberExpr *ME, ASTContext &Context);
+  void replaceExtResMemHandleDataExpr(const MemberExpr *ME,
+                                      ASTContext &Context);
+  void replaceExtResSemParamsDataExpr(const MemberExpr *ME,
+                                      ASTContext &Context);
   inline const MemberExpr *getParentMemberExpr(const Stmt *S) {
     return DpctGlobalInfo::findParent<MemberExpr>(S);
   }
