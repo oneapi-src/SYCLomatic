@@ -576,6 +576,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuArrayCreate_v2",
       "cuMipmappedArrayCreate",
       "cuMipmappedArrayDestroy",
+      "cuMipmappedArrayGetLevel",
       "cuArrayDestroy",
       "cuTexObjectCreate",
       "cuTexObjectDestroy",

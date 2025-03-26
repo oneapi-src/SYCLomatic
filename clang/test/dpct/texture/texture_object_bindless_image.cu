@@ -684,4 +684,8 @@ void test_mipmap_driver_api() {
   cuMipmappedArrayCreate(pArray, &desc, numMipmapLevels);
   // CHECK: delete (*pArray);
   cuMipmappedArrayDestroy(*pArray);
+
+  CUarray level_arr;
+  // CHECK: level_arr = array->get_mip_level(1);
+  cuMipmappedArrayGetLevel(&level_arr, array, 1);
 }

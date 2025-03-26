@@ -450,4 +450,10 @@ void mipmap() {
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMipmappedArrayDestroy was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   cuMipmappedArrayDestroy(*pArray);
+
+  CUarray level_arr;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMipmappedArrayGetLevel was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuMipmappedArrayGetLevel(&level_arr, *pArray, 1);
 }

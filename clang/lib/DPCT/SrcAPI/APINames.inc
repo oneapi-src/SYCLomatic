@@ -1714,7 +1714,7 @@ ENTRY(cuMemsetD8, cuMemsetD8_v2, true, NO_FLAG, P4, "comment")
 ENTRY(cuMemsetD8Async, cuMemsetD8Async, true, NO_FLAG, P4, "comment")
 ENTRY(cuMipmappedArrayCreate, cuMipmappedArrayCreate, true, NO_FLAG, P4, "Successful")
 ENTRY(cuMipmappedArrayDestroy, cuMipmappedArrayDestroy, true, NO_FLAG, P4, "Successful")
-ENTRY(cuMipmappedArrayGetLevel, cuMipmappedArrayGetLevel, false, NO_FLAG, P4, "comment")
+ENTRY(cuMipmappedArrayGetLevel, cuMipmappedArrayGetLevel, true, NO_FLAG, P4, "Successful")
 ENTRY(cuMipmappedArrayGetMemoryRequirements, cuMipmappedArrayGetMemoryRequirements, false, NO_FLAG, P4, "comment")
 ENTRY(cuMipmappedArrayGetSparseProperties, cuMipmappedArrayGetSparseProperties, false, NO_FLAG, P7, "comment")
 
