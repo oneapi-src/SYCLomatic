@@ -306,6 +306,9 @@
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct1130.html">DPCT1130</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct1131.html">DPCT1131</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct1132.html">DPCT1132</a></li>
+<li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct1134.html">DPCT1134</a></li>
+<li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct1135.html">DPCT1135</a></li>
+<li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct1136.html">DPCT1136</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct2001.html">DPCT2001</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct3000.html">DPCT3000</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct3001.html">DPCT3001</a></li>
@@ -315,6 +318,7 @@
 <li class="toctree-l2"><a class="reference internal" href="dpct-namespace-reference.html">DPCT Namespace Reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="compare-prog-models.html">CUDA* and SYCL* Programming Model Comparison</a></li>
 <li class="toctree-l2"><a class="reference internal" href="term-mapping-quick-ref.html">CUDA* to SYCL* Term Mapping Quick Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="migration-examples.html">Migration Examples</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../api-mapping-status.html">CUDA API Migration Support</a></li>
@@ -574,14 +578,15 @@ Consult with your hardware vendor to find a replacement.</p>
 </td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1009.html#dpct1009"><span class="std std-ref">DPCT1009</span></a></p></td>
-<td><p>SYCL uses exceptions to report errors and does not use the error codes. The
-original code was commented out and a warning string was inserted. You need to
-rewrite this code.</p>
+<td><p>SYCL reports errors using exceptions and does not use error codes. Please replace the
+&quot;get_error_string_dummy(…)&quot; with a real error-handling function.</p>
 </td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1010.html#dpct1010"><span class="std std-ref">DPCT1010</span></a></p></td>
-<td><p>SYCL uses exceptions to report errors and does not use the error codes. The call
-was replaced with 0. You need to rewrite this code.</p>
+<td><p>SYCL uses exceptions to report errors and does not
+use the error codes. The &lt;function name&gt; function
+call was replaced with 0. You need to rewrite this
+code.</p>
 </td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1011.html#dpct1011"><span class="std std-ref">DPCT1011</span></a></p></td>
@@ -604,8 +609,13 @@ function rounding mode is aligned with OpenCL C 1.2 standard.</p>
 </td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1014.html#dpct1014"><span class="std std-ref">DPCT1014</span></a></p></td>
-<td><p>The flag and priority options are not supported for SYCL queues. The output
+<td><p>The flag and priority options are not supported
+for SYCL queues. The output
 parameter(s) are set to 0.</p>
+<p>Or</p>
+<p>The &lt;CUDA event property name&gt; is not supported
+for SYCL event. The output parameter(s) is set to
+0.</p>
 </td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1015.html#dpct1015"><span class="std std-ref">DPCT1015</span></a></p></td>
@@ -956,9 +966,11 @@ address space. If it points to a local or private memory address space, replace
 </td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1083.html#dpct1083"><span class="std std-ref">DPCT1083</span></a></p></td>
-<td><p>The size of <em>&lt;placeholder&gt;</em> in the migrated code may be different
+<td><p>The size of local memory in the migrated code may be different
 from the original code. Check that the allocated memory size in the migrated code
 is correct.</p>
+<p>Or</p>
+<p>The size of &lt;type name&gt; in the migrated code may be different from the original code. You may need to adjust the code.</p>
 </td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1084.html#dpct1084"><span class="std std-ref">DPCT1084</span></a></p></td>
@@ -1202,6 +1214,42 @@ replaced with member variable “<em>&lt;variable name&gt;</em>”. Please set t
 “<em>&lt;variable name&gt;</em>”.</p>
 </td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1134.html#dpct1134"><span class="std std-ref">DPCT1134</span></a></p></td>
+<td><p>The tool cannot deduce the consumer API (<code class="docutils literal notranslate"><span class="pre">dpct::sparse::csrgemm</span></code>) of this API,
+and this API has 2 arguments depending on the 8th and the 12th parameters of the
+consumer API. Please replace the 2 arguments tagged as <code class="docutils literal notranslate"><span class="pre">dpct_placeholder</span></code> with
+the corresponding value.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1135.html#dpct1135"><span class="std std-ref">DPCT1135</span></a></p></td>
+<td><p>Please check if joint_matrix implementations support the combination of data type and
+matrix shape type in the target hardware.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1136.html#dpct1136"><span class="std std-ref">DPCT1136</span></a></p></td>
+<td><p>SYCL* Bindless Images extension only supports importing external resource memory using NT handle on Windows.
+If <code class="docutils literal notranslate"><span class="pre">assert(memHandleDesc.get_win32_handle())</span></code> fails, you may need to adjust the code to use <code class="docutils literal notranslate"><span class="pre">(memHandleDesc.get_win32_handle())</span></code>.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct2001.html#dpct2001"><span class="std std-ref">DPCT2001</span></a></p></td>
+<td><p>You can link with more libraries by adding them here.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct3000.html#dpct3000"><span class="std std-ref">DPCT3000</span></a></p></td>
+<td><p>Migration of syntax “<em>&lt;CMake CUDA* specific command&gt;</em>” is not supported. You may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct3001.html#dpct3001"><span class="std std-ref">DPCT3001</span></a></p></td>
+<td><p>“&lt;CMake common command&gt;” is used to generate an output file by performing transformation
+on input file. You may need to update the name of the input and output file, as well as
+migrate the input file if the input file contains CUDA syntax.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct3002.html#dpct3002"><span class="std std-ref">DPCT3002</span></a></p></td>
+<td><p>“&lt;Library specific to CUDA&gt;” is removed because it is not supported for use alongside
+option “-fsycl” of SYCL compiler. You may need to check the build options.</p>
+</td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -1267,7 +1315,7 @@ replaced with member variable “<em>&lt;variable name&gt;</em>”. Please set t
   <div class="footer-item">
     
 <div class="extra_footer">
-  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 30 October, 2024</div>
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 25 March, 2025</div>
 </div>
   </div>
   

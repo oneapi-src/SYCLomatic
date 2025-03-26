@@ -563,3 +563,31 @@ messages, detailed help, and suggestion to fix your errors.
      - .. include:: diagnostic_ref/dpct1132.rst
           :start-after: msg-1132-start:
           :end-before: msg-1132-end:
+   * - :ref:`DPCT1134`
+     - .. include:: diagnostic_ref/dpct1134.rst
+          :start-after: msg-1134-start:
+          :end-before: msg-1134-end:
+   * - :ref:`DPCT1135`
+     - .. include:: diagnostic_ref/dpct1135.rst
+          :start-after: msg-1135-start:
+          :end-before: msg-1135-end:
+   * - :ref:`DPCT1136`
+     - .. include:: diagnostic_ref/dpct1136.rst
+          :start-after: msg-1136-start:
+          :end-before: msg-1136-end:
+   * - :ref:`DPCT2001`
+     - .. include:: diagnostic_ref/dpct2001.rst
+          :start-after: msg-2001-start:
+          :end-before: msg-2001-end:
+   * - :ref:`DPCT3000`
+     - .. include:: diagnostic_ref/dpct3000.rst
+          :start-after: msg-3000-start:
+          :end-before: msg-3000-end:
+   * - :ref:`DPCT3001`
+     - .. include:: diagnostic_ref/dpct3001.rst
+          :start-after: msg-3001-start:
+          :end-before: msg-3001-end:
+   * - :ref:`DPCT3002`
+     - .. include:: diagnostic_ref/dpct3002.rst
+          :start-after: msg-3002-start:
+          :end-before: msg-3002-end:

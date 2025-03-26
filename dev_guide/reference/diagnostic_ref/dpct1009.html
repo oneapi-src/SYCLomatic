@@ -306,6 +306,9 @@
 <li class="toctree-l3"><a class="reference internal" href="dpct1130.html">DPCT1130</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dpct1131.html">DPCT1131</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dpct1132.html">DPCT1132</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dpct1134.html">DPCT1134</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dpct1135.html">DPCT1135</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dpct1136.html">DPCT1136</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dpct2001.html">DPCT2001</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dpct3000.html">DPCT3000</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dpct3001.html">DPCT3001</a></li>
@@ -315,6 +318,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../dpct-namespace-reference.html">DPCT Namespace Reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../compare-prog-models.html">CUDA* and SYCL* Programming Model Comparison</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../term-mapping-quick-ref.html">CUDA* to SYCL* Term Mapping Quick Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../migration-examples.html">Migration Examples</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../api-mapping-status.html">CUDA API Migration Support</a></li>
@@ -530,9 +534,8 @@ document.write(`
 <span id="id1"></span><h1>DPCT1009<a class="headerlink" href="#dpct1009" title="Permalink to this headline">#</a></h1>
 <section id="message">
 <h2>Message<a class="headerlink" href="#message" title="Permalink to this headline">#</a></h2>
-<p id="msg-1009-start">SYCL uses exceptions to report errors and does not use the error codes. The
-original code was commented out and a warning string was inserted. You need to
-rewrite this code.</p>
+<p id="msg-1009-start">SYCL reports errors using exceptions and does not use error codes. Please replace the
+&quot;get_error_string_dummy(…)&quot; with a real error-handling function.</p>
 </section>
 <section id="detailed-help">
 <span id="msg-1009-end"></span><h2>Detailed Help<a class="headerlink" href="#detailed-help" title="Permalink to this headline">#</a></h2>
@@ -553,24 +556,29 @@ require such functionality.</p>
 </pre></div>
 </div>
 <p>results in the following migrated SYCL code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="k">try</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="linenos"> 2</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 3</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">sycl</span><span class="o">::</span><span class="n">malloc_device</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_default_queue</span><span class="p">()),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
-<span class="linenos"> 4</span><span class="w">  </span><span class="cm">/*</span>
-<span class="linenos"> 5</span><span class="cm">  DPCT1009:1: SYCL uses exceptions to report errors and does not use the error</span>
-<span class="linenos"> 6</span><span class="cm">  codes. The original code was commented out and a warning string was inserted.</span>
-<span class="linenos"> 7</span><span class="cm">  You need to rewrite this code.</span>
-<span class="linenos"> 8</span><span class="cm">  */</span><span class="w"></span>
-<span class="linenos"> 9</span><span class="w">  </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="linenos">10</span><span class="w">         </span><span class="s">&quot;cudaGetErrorString is not supported&quot;</span><span class="w"> </span><span class="cm">/*cudaGetErrorString(err)*/</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">err0</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DPCT_CHECK_ERROR</span><span class="p">(</span><span class="w"></span>
+<span class="linenos"> 4</span><span class="w">      </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">sycl</span><span class="o">::</span><span class="n">malloc_device</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_in_order_queue</span><span class="p">()));</span><span class="w"></span>
+<span class="linenos"> 5</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos"> 6</span><span class="cm">  DPCT1009:1: SYCL uses exceptions to report errors and does not use the error</span>
+<span class="linenos"> 7</span><span class="cm">  codes. The original code was commented out and a warning string was inserted.</span>
+<span class="linenos"> 8</span><span class="cm">  You need to rewrite this code.</span>
+<span class="linenos"> 9</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos">10</span><span class="w">  </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_error_string_dummy</span><span class="p">(</span><span class="n">err</span><span class="p">));</span><span class="w"></span>
 <span class="linenos">11</span><span class="p">}</span><span class="w"></span>
+<span class="linenos">12</span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">exception</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">&amp;</span><span class="n">exc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">13</span><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="n">exc</span><span class="p">.</span><span class="n">what</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Exception caught at file.&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">__FILE__</span><span class="w"></span>
+<span class="linenos">14</span><span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;, line:&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">__LINE__</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">:</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">15</span><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">16</span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
-<p id="example-dpct-end">which is rewritten to:</p>
+<p id="example-dpct-end">which needs to be rewritten to:</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="linenos">2</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">;</span><span class="w"></span>
 <span class="linenos">3</span><span class="w">  </span><span class="k">try</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos">4</span><span class="w">    </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">sycl</span><span class="o">::</span><span class="n">malloc_device</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_default_queue</span><span class="p">())</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">    </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">sycl</span><span class="o">::</span><span class="n">malloc_device</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_in_order_queue</span><span class="p">())</span><span class="w"></span>
 <span class="linenos">5</span><span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">exception</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">&amp;</span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="linenos">6</span><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">what</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
 <span class="linenos">7</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
@@ -657,7 +665,7 @@ require such functionality.</p>
   <div class="footer-item">
     
 <div class="extra_footer">
-  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 30 October, 2024</div>
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 25 March, 2025</div>
 </div>
   </div>
   

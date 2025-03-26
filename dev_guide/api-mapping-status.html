@@ -47,7 +47,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Frequently Asked Questions" href="frequently-asked-questions-faq.html" />
-    <link rel="prev" title="CUDA* to SYCL* Term Mapping Quick Reference" href="reference/term-mapping-quick-ref.html" />
+    <link rel="prev" title="Migration Examples" href="reference/migration-examples.html" />
 
 <script type="text/javascript">
   // Configure TMS settings
@@ -306,6 +306,9 @@
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1130.html">DPCT1130</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1131.html">DPCT1131</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1132.html">DPCT1132</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1134.html">DPCT1134</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1135.html">DPCT1135</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1136.html">DPCT1136</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct2001.html">DPCT2001</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct3000.html">DPCT3000</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct3001.html">DPCT3001</a></li>
@@ -315,6 +318,7 @@
 <li class="toctree-l2"><a class="reference internal" href="reference/dpct-namespace-reference.html">DPCT Namespace Reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/compare-prog-models.html">CUDA* and SYCL* Programming Model Comparison</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/term-mapping-quick-ref.html">CUDA* to SYCL* Term Mapping Quick Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/migration-examples.html">Migration Examples</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">CUDA API Migration Support</a></li>
@@ -540,7 +544,7 @@ document.write(`
                   
   <section id="cuda-api-migration-support">
 <span id="mapping-status"></span><h1>CUDA API Migration Support<a class="headerlink" href="#cuda-api-migration-support" title="Permalink to this headline">#</a></h1>
-<p>Migration support status updated on 30 October, 2024.</p>
+<p>Migration support status updated on 25 March, 2025.</p>
 <p>The following tables provide the current status for CUDA* API migration support.</p>
 <section id="asm-api">
 <h2>ASM API<a class="headerlink" href="#asm-api" title="Permalink to this headline">#</a></h2>
@@ -694,8 +698,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>fence</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
 </tr>
 <tr class="row-odd"><td><p>fma</p></td>
 <td><p>YES</p></td>
@@ -770,8 +774,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>membar</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
 </tr>
 <tr class="row-even"><td><p>min</p></td>
 <td><p>YES</p></td>
@@ -826,262 +830,258 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>prefetch</p></td>
-<td><p>NO</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>prefetchu</p></td>
-<td><p>NO</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>prmt</p></td>
-<td><p>NO</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>rcp</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>red</p></td>
-<td><p>NO</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>redux</p></td>
-<td><p>NO</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>rem</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>ret</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>rsqrt</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>sad</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>selp</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>set</p></td>
-<td><p>NO</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>setmaxnreg</p></td>
-<td><p>NO</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>setp</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>shf</p></td>
-<td><p>NO</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>shfl</p></td>
-<td><p>NO</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>shl</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>shr</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>sin</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>slct</p></td>
 <td><p>YES</p></td>
 <td><p>Partial</p></td>
 </tr>
-<tr class="row-odd"><td><p>sqrt</p></td>
+<tr class="row-even"><td><p>prmt</p></td>
 <td><p>YES</p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>st</p></td>
+<tr class="row-odd"><td><p>rcp</p></td>
 <td><p>YES</p></td>
-<td><p>Partial</p></td>
+<td></td>
 </tr>
-<tr class="row-odd"><td><p>stackrestore</p></td>
+<tr class="row-even"><td><p>red</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>stacksave</p></td>
+<tr class="row-odd"><td><p>redux</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>stmatrix</p></td>
+<tr class="row-even"><td><p>rem</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>ret</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>rsqrt</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>sad</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>selp</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>set</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>sub</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>subc</p></td>
+<tr class="row-even"><td><p>setmaxnreg</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>suld</p></td>
+<tr class="row-odd"><td><p>setp</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>shf</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>suq</p></td>
+<tr class="row-odd"><td><p>shfl</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>shl</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>shr</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>sin</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>slct</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>sqrt</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>st</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>stackrestore</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>sured</p></td>
+<tr class="row-odd"><td><p>stacksave</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>sust</p></td>
+<tr class="row-even"><td><p>stmatrix</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>szext</p></td>
+<tr class="row-odd"><td><p>sub</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>subc</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>tanh</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>testp</p></td>
-<td><p>YES</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>tex</p></td>
+<tr class="row-odd"><td><p>suld</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>tld4</p></td>
+<tr class="row-even"><td><p>suq</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>trap</p></td>
+<tr class="row-odd"><td><p>sured</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>txq</p></td>
+<tr class="row-even"><td><p>sust</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>vabsdiff</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-even"><td><p>vabsdiff2</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>vabsdiff4</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-even"><td><p>vadd</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>vadd2</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-even"><td><p>vadd4</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>vavrg2</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-even"><td><p>vavrg4</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>vmad</p></td>
+<tr class="row-odd"><td><p>szext</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>vmax</p></td>
+<tr class="row-even"><td><p>tanh</p></td>
 <td><p>YES</p></td>
-<td><p>Partial</p></td>
+<td></td>
 </tr>
-<tr class="row-odd"><td><p>vmax2</p></td>
+<tr class="row-odd"><td><p>testp</p></td>
 <td><p>YES</p></td>
-<td><p>Partial</p></td>
+<td></td>
 </tr>
-<tr class="row-even"><td><p>vmax4</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>vmin</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-even"><td><p>vmin2</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>vmin4</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-even"><td><p>vote</p></td>
+<tr class="row-even"><td><p>tex</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>vset</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-even"><td><p>vset2</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>vset4</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-even"><td><p>vshl</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>vshr</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-even"><td><p>vsub</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>vsub2</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-even"><td><p>vsub4</p></td>
-<td><p>YES</p></td>
-<td><p>Partial</p></td>
-</tr>
-<tr class="row-odd"><td><p>wgmma</p></td>
+<tr class="row-odd"><td><p>tld4</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>wmma</p></td>
+<tr class="row-even"><td><p>trap</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>xor</p></td>
+<tr class="row-odd"><td><p>txq</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>vabsdiff</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vabsdiff2</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>vabsdiff4</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vadd</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>vadd2</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vadd4</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>vavrg2</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vavrg4</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>vmad</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>vmax</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>vmax2</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vmax4</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>vmin</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vmin2</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>vmin4</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vote</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>vset</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vset2</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>vset4</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vshl</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>vshr</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vsub</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>vsub2</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-odd"><td><p>vsub4</p></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
+</tr>
+<tr class="row-even"><td><p>wgmma</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>wmma</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>xor</p></td>
 <td><p>YES</p></td>
 <td><p>Partial</p></td>
 </tr>
@@ -1316,19 +1316,19 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cub::BlockShuffle::Offset</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cub::BlockShuffle::Rotate</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cub::BlockShuffle::Up</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cub::BlockShuffle::Down</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cub::BlockDiscontinuity::FlagHeads</p></td>
@@ -1904,7 +1904,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cub::Debug</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cub::MaxSmOccupancy</p></td>
@@ -2351,107 +2351,107 @@ document.write(`
 </tr>
 <tr class="row-odd"><td><p>cublasSger</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDger</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCgeru</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCgerc</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZgeru</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZgerc</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasSsbmv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDsbmv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasSspmv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDspmv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasSspr</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDspr</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasSspr2</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDspr2</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasSsymv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDsymv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCsymv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZsymv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasSsyr</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDsyr</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCsyr</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZsyr</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasSsyr2</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDsyr2</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCsyr2</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZsyr2</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasStbmv</p></td>
 <td><p>YES</p></td>
@@ -2471,19 +2471,19 @@ document.write(`
 </tr>
 <tr class="row-odd"><td><p>cublasStbsv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDtbsv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCtbsv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZtbsv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasStpmv</p></td>
 <td><p>YES</p></td>
@@ -2551,87 +2551,87 @@ document.write(`
 </tr>
 <tr class="row-odd"><td><p>cublasChemv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZhemv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasChbmv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZhbmv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasChpmv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZhpmv</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCher</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZher</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCher2</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZher2</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasChpr</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZhpr</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasChpr2</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZhpr2</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasSgemm</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDgemm</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCgemm</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZgemm</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasHgemm</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCgemm3m</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZgemm3m</p></td>
 <td><p>YES</p></td>
-<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1034.html#dpct1034"><span class="std std-ref">DPCT1034</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1041.html#dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasHgemmBatched</p></td>
 <td><p>YES</p></td>
@@ -3002,20 +3002,20 @@ document.write(`
 <td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCsyrkEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCsyrk3mEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCherkEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCherk3mEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasNrm2Ex</p></td>
 <td><p>YES</p></td>
@@ -3978,20 +3978,20 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cublasAsumEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCgemm3mBatched</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cublasCgemm3mEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCopyEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDotcEx</p></td>
 <td><p>YES</p></td>
@@ -4002,12 +4002,12 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cublasIamaxEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasIaminEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasRotEx</p></td>
 <td><p>YES</p></td>
@@ -4018,16 +4018,16 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cublasRotmEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasRotmgEx</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cublasSwapEx</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasUint8gemmBias</p></td>
 <td><p>NO</p></td>
@@ -4490,180 +4490,180 @@ document.write(`
 <td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasStbsv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasDtbsv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCtbsv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZtbsv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSsymv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasDsymv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCsymv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZsymv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasChemv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZhemv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSsbmv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasDsbmv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasChbmv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZhbmv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSspmv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasDspmv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasChpmv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZhpmv_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSger_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasDger_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCgeru_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCgerc_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZgeru_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZgerc_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSsyr_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasDsyr_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCsyr_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZsyr_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCher_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZher_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSspr_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasDspr_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasChpr_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZhpr_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSsyr2_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasDsyr2_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCsyr2_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZsyr2_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCher2_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZher2_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSspr2_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasDspr2_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasChpr2_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasZhpr2_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSgemm_64</p></td>
 <td><p>YES</p></td>
@@ -4850,52 +4850,52 @@ document.write(`
 <td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1018.html#dpct1018"><span class="std std-ref">DPCT1018</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasNrm2Ex_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasDotEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasDotcEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasScalEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasAxpyEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCopyEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSwapEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasIamaxEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasIaminEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasAsumEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasRotEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasRotmEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSgemvBatched_64</p></td>
 <td><p>NO</p></td>
@@ -4966,8 +4966,8 @@ document.write(`
 <td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCgemm3mEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasZgemm3m_64</p></td>
 <td><p>YES</p></td>
@@ -4978,32 +4978,32 @@ document.write(`
 <td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasSgemmEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasGemmEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCgemmEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCsyrkEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCsyrk3mEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasCherkEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasCherk3mEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasSsyrkx_64</p></td>
 <td><p>YES</p></td>
@@ -5078,12 +5078,12 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cublasGemmBatchedEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cublasGemmStridedBatchedEx_64</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1020.html#dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cublasSgemmGroupedBatched</p></td>
 <td><p>NO</p></td>
@@ -10064,23 +10064,23 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseXcsrgemmNnz</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1130.html#dpct1130"><span class="std std-ref">DPCT1130</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseScsrgemm</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseDcsrgemm</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseCcsrgemm</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseZcsrgemm</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseScsrgemm2_bufferSizeExt</p></td>
@@ -13586,7 +13586,7 @@ document.write(`
 <td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1012.html#dpct1012"><span class="std std-ref">DPCT1012</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cudaDestroyExternalMemory</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaDestroyExternalSemaphore</p></td>
@@ -13594,15 +13594,15 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cudaExternalMemoryGetMappedBuffer</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaExternalMemoryGetMappedMipmappedArray</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cudaImportExternalMemory</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaImportExternalSemaphore</p></td>
@@ -14414,15 +14414,15 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaCreateSurfaceObject</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cudaDestroySurfaceObject</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaGetSurfaceObjectResourceDesc</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cudaDriverGetVersion</p></td>
@@ -17710,147 +17710,147 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__viaddmax_s16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__viaddmax_s16x2_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__viaddmax_s32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__viaddmax_s32_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__viaddmax_u16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__viaddmax_u32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__viaddmin_s16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__viaddmin_s16x2_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__viaddmin_s32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__viaddmin_s32_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__viaddmin_u16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__viaddmin_u32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vibmax_s16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vibmax_s32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vibmax_u16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vibmax_u32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vibmin_s16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vibmin_s32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vibmin_u16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vibmin_u32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vimax3_s16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vimax3_s16x2_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vimax3_s32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vimax3_s32_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vimax3_u16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vimax3_u32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vimax_s16x2_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vimax_s32_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vimin3_s16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vimin3_s16x2_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vimin3_s32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vimin3_s32_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vimin3_u16x2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vimin3_u32</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vimin_s16x2_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>__vimin_s32_relu</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>__vmaxs2</p></td>
@@ -18402,27 +18402,27 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>surf1Dread</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>surf1Dwrite</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>surf2Dread</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>surf2Dwrite</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>surf3Dread</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>surf3Dwrite</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>surf1DLayeredread</p></td>
@@ -18438,7 +18438,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>surf2DLayeredwrite</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>surfCubemapread</p></td>
@@ -18602,7 +18602,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuGetErrorName</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuGetErrorString</p></td>
@@ -19238,15 +19238,15 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuMemAddressFree</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuMemAddressReserve</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuMemCreate</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuMemExportToShareableHandle</p></td>
@@ -19258,11 +19258,11 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuMemGetAllocationGranularity</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuMemGetAllocationPropertiesFromHandle</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuMemImportFromShareableHandle</p></td>
@@ -19270,7 +19270,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuMemMap</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuMemMapArrayAsync</p></td>
@@ -19278,7 +19278,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuMemRelease</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuMemRetainAllocationHandle</p></td>
@@ -19286,11 +19286,11 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuMemSetAccess</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuMemUnmap</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuMemAllocAsync</p></td>
@@ -19462,7 +19462,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuStreamGetCtx</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuStreamGetCtx_v2</p></td>
@@ -20210,15 +20210,15 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuSurfObjectCreate</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuSurfObjectDestroy</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuSurfObjectGetResourceDesc</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuTensorMapEncodeIm2col</p></td>
@@ -20250,16 +20250,16 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuGraphicsMapResources</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cuGraphicsResourceGetMappedMipmappedArray</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuGraphicsResourceGetMappedPointer</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cuGraphicsResourceSetMapFlags</p></td>
 <td><p>NO</p></td>
@@ -20270,12 +20270,12 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuGraphicsUnmapResources</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cuGraphicsUnregisterResource</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cuGetProcAddress</p></td>
 <td><p>NO</p></td>
@@ -20962,7 +20962,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cooperative_groups::thread_block_tile::meta_group_size</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cooperative_groups::thread_block_tile::meta_group_rank</p></td>
@@ -21261,6 +21261,38 @@ document.write(`
 <td><p>YES</p></td>
 <td></td>
 </tr>
+<tr class="row-even"><td><p>__cvta_generic_to_global</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>__cvta_generic_to_shared</p></td>
+<td><p>YES</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>__cvta_generic_to_constant</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>__cvta_generic_to_local</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>__cvta_global_to_generic</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>__cvta_shared_to_generic</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>__cvta_constant_to_generic</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>__cvta_local_to_generic</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
 <tr class="row-even"><td><p>cuGetExportTable</p></td>
 <td><p>YES</p></td>
 <td><p>Partial</p></td>
@@ -21316,7 +21348,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>thrust::arg</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>thrust::asin</p></td>
@@ -21995,12 +22027,12 @@ document.write(`
     <div class="footer-article-item"><!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
-       href="reference/term-mapping-quick-ref.html"
+       href="reference/migration-examples.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">CUDA* to SYCL* Term Mapping Quick Reference</p>
+        <p class="prev-next-title">Migration Examples</p>
       </div>
     </a>
     <a class="right-next"
@@ -22071,7 +22103,7 @@ document.write(`
   <div class="footer-item">
     
 <div class="extra_footer">
-  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 30 October, 2024</div>
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 25 March, 2025</div>
 </div>
   </div>
   
