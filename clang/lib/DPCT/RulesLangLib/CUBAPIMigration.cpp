@@ -1450,7 +1450,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
          << ValidItemsEA.getReplacedString() << ") ? "
          << InEA.getReplacedString() << " : " << MapNames::getClNamespace()
          << "known_identity_v<" << StringRef(OpRepl).drop_back(2) << ", "
-         << DpctGlobalInfo::getTypeName(InData->getType()) << ">";
+         << DpctGlobalInfo::getReplacedTypeName(InData->getType()) << ">";
       In = std::move(tmp);
     } else
       In = InEA.getReplacedString();
