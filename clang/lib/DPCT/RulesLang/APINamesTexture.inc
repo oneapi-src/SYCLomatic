@@ -322,26 +322,32 @@ CONDITIONAL_FACTORY_ENTRY(
         NEW(DpctGlobalInfo::useExtBindlessImages()
                 ? MapNames::getDpctNamespace() +
                       "experimental::image_mem_wrapper"
-                : MapNames::getDpctNamespace() +
-                      "image_matrix",
+                : MapNames::getDpctNamespace() + "image_matrix",
             DEREF(1), ARG(2)))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuMipmappedArrayCreate", 
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuMipmappedArrayCreate",
                                       MipmapNeedBindlessImage))
 CONDITIONAL_FACTORY_ENTRY(
-  UseExtBindlessImages, 
-  ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuMipmappedArrayDestroy", ARG(0))),
-  REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuMipmappedArrayDestroy", MipmapNeedBindlessImage))
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuMipmappedArrayDestroy",
+                                             ARG(0))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuMipmappedArrayDestroy",
+                                      MipmapNeedBindlessImage))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetMipmappedArray", ARG(0), true, "attach", ARG(1))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefSetMipmappedArray", MipmapNeedBindlessImage))
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetMipmappedArray",
+                                                 ARG(0), true, "attach",
+                                                 ARG(1))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefSetMipmappedArray",
+                                      MipmapNeedBindlessImage))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetMipmapFilterMode", 
-                              ARG(0), true, "set_mip_filtering_mode", ARG(1))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefSetMipmapFilterMode", 
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetMipmapFilterMode",
+                                                 ARG(0), true,
+                                                 "set_mip_filtering_mode",
+                                                 ARG(1))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefSetMipmapFilterMode",
                                       MipmapNeedBindlessImage))
 
 CONDITIONAL_FACTORY_ENTRY(
@@ -349,14 +355,16 @@ CONDITIONAL_FACTORY_ENTRY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cuTexRefGetMipmapFilterMode", DEREF(0),
         MEMBER_CALL(ARG(1), true, "get_mip_filtering_mode"))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefGetMipmapFilterMode", 
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefGetMipmapFilterMode",
                                       MipmapNeedBindlessImage))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefGetMipmapLevelClamp", 
-                              ARG(2), true, "get_mip_level_clamp", ARG(0), ARG(1))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefGetMipmapLevelClamp", 
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefGetMipmapLevelClamp",
+                                                 ARG(2), true,
+                                                 "get_mip_level_clamp", ARG(0),
+                                                 ARG(1))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefGetMipmapLevelClamp",
                                       MipmapNeedBindlessImage))
 
 CONDITIONAL_FACTORY_ENTRY(
@@ -364,7 +372,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cuTexRefGetMipmappedArray", DEREF(0),
         MEMBER_CALL(ARG(1), true, "get_attached_mipmap_data"))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefGetMipmappedArray", 
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefGetMipmappedArray",
                                       MipmapNeedBindlessImage))
 
 ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::API_NOT_MIGRATED)

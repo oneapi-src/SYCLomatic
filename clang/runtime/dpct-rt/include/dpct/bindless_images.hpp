@@ -287,7 +287,9 @@ public:
   /// Create bindless image memory wrapper.
   /// \param [in] desc The image descriptor of bindless image.
   /// \param [in] num_levels Number of mipmap levels to allocate
-  image_mem_wrapper(sycl::ext::oneapi::experimental::image_descriptor desc, unsigned int num_levels) : _desc(desc){
+  image_mem_wrapper(sycl::ext::oneapi::experimental::image_descriptor desc,
+                    unsigned int num_levels)
+      : _desc(desc) {
     _desc.type = sycl::ext::oneapi::experimental::image_type::mipmap;
     _desc.num_levels = num_levels;
     auto q = get_default_queue();
@@ -1497,7 +1499,8 @@ public:
 
   /// Get mipmap sample filtering mode for bindless image handle
   /// \return The mipmap filtering mode
-  inline void get_mip_level_clamp(float* min_level_clamp, float* max_level_clamp) {
+  inline void get_mip_level_clamp(float *min_level_clamp,
+                                  float *max_level_clamp) {
     auto sampling_info = get_sampling_info(_img);
     *min_level_clamp = sampling_info.get_min_mipmap_level_clamp();
     *max_level_clamp = sampling_info.get_max_mipmap_level_clamp();
@@ -1505,10 +1508,11 @@ public:
 
   /// Get mipmap memory wrapper attached the bindless image
   /// \return The mipmap memory wrapper
-  inline image_mem_wrapper* get_attached_mipmap_data(void) {
+  inline image_mem_wrapper *get_attached_mipmap_data(void) {
     auto mem = detail::get_img_mem_map(_img);
 
-    if (mem->get_image_type() != sycl::ext::oneapi::experimental::image_type::mipmap)
+    if (mem->get_image_type() !=
+        sycl::ext::oneapi::experimental::image_type::mipmap)
       throw std::runtime_error("Bindless image data is not of mipmap type");
 
     return mem;
