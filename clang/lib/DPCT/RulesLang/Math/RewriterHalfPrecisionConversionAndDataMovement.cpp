@@ -816,7 +816,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                         EMPTY_FACTORY_ENTRY("__ldcs"),
                         EMPTY_FACTORY_ENTRY("__ldcs"),
                         WARNING_FACTORY_ENTRY(
-                            "__ldcs", DEREF_FACTORY_ENTRY("__ldcs", ARG_WC(0)),
+                            "__ldcs", DEREF_FACTORY_ENTRY("__ldcs", DEREF(0)),
                             Diagnostics::MATH_EMULATION_EXPRESSION,
                             std::string("__ldcs"), std::string("'*'"))))
       // __ldcv

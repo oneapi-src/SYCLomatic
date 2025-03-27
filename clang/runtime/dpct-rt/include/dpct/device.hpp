@@ -953,6 +953,10 @@ static inline unsigned int get_device_id(const sycl::device &dev){
   return dev_mgr::instance().get_device_id(dev);
 }
 
+static inline unsigned int get_cpu_device_id() {
+  return get_device_id(cpu_device());
+}
+
 /// Util function to do implicit sync among queues of the same device then
 /// insert a synchronize barrier in the queue. For USM, If the queue is the
 /// default in-order queue, try to sync with all queues available in the current
