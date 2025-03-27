@@ -352,6 +352,21 @@ CONDITIONAL_FACTORY_ENTRY(
     REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefGetMipmapFilterMode", 
                                       MipmapNeedBindlessImage))
 
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefGetMipmapLevelClamp", 
+                              ARG(2), true, "get_mip_level_clamp", ARG(0), ARG(1))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefGetMipmapLevelClamp", 
+                                      MipmapNeedBindlessImage))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuTexRefGetMipmappedArray", DEREF(0),
+        MEMBER_CALL(ARG(1), true, "get_attached_mipmap_data"))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuTexRefGetMipmappedArray", 
+                                      MipmapNeedBindlessImage))
+
 ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::API_NOT_MIGRATED)
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,

@@ -592,9 +592,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexRefGetFlags",
       "cuTexRefSetAddress_v2",
       "cuTexRefSetAddress2D_v3",
+      "cuTexRefSetMipmappedArray",
+      "cuTexRefGetMipmappedArray",
       "cuTexRefGetMipmapFilterMode",
       "cuTexRefSetMipmapFilterMode",
-      "cuTexRefSetMipmappedArray",
+      "cuTexRefGetMipmapLevelClamp",
   };
 
   auto hasAnyFuncName = [&]() {

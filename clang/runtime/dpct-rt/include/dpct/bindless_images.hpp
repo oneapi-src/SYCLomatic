@@ -337,6 +337,10 @@ public:
     return _sub_wrappers + level;
   }
 
+  sycl::ext::oneapi::experimental::image_type get_image_type(void) {
+    return _desc.type;
+  }
+
 private:
   image_mem_wrapper(
       const image_channel &channel,
@@ -439,11 +443,11 @@ public:
   image_mem_wrapper *get_mapped_mipmapped_array() {
     if (_res_is_buffer) {
       throw std::runtime_error(
-          "Buffer resouce cannot be accessed as an array!");
+          "Buffer resource cannot be accessed as an array!");
     }
     if (!_res_img_mem_wrapper_ptr) {
       throw std::runtime_error(
-          "Resouce is not mapped! "
+          "Resource is not mapped! "
           "Resource should be mapped before accessing its memory.");
     }
 
@@ -1489,6 +1493,25 @@ public:
   inline sycl::filtering_mode get_mip_filtering_mode(void) {
     auto sampling_info = get_sampling_info(_img);
     return sampling_info.get_mipmap_filtering();
+  }
+
+  /// Get mipmap sample filtering mode for bindless image handle
+  /// \return The mipmap filtering mode
+  inline void get_mip_level_clamp(float* min_level_clamp, float* max_level_clamp) {
+    auto sampling_info = get_sampling_info(_img);
+    *min_level_clamp = sampling_info.get_min_mipmap_level_clamp();
+    *max_level_clamp = sampling_info.get_max_mipmap_level_clamp();
+  }
+
+  /// Get mipmap memory wrapper attached the bindless image
+  /// \return The mipmap memory wrapper
+  inline image_mem_wrapper* get_attached_mipmap_data(void) {
+    auto mem = detail::get_img_mem_map(_img);
+
+    if (mem->get_image_type() != sycl::ext::oneapi::experimental::image_type::mipmap)
+      throw std::runtime_error("Bindless image data is not of mipmap type");
+
+    return mem;
   }
 
 private:

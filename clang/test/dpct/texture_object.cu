@@ -472,6 +472,18 @@ void mipmap() {
   // CHECK-NEXT: */
   cuTexRefGetMipmapFilterMode(&fm, texRef);
 
+  float min_clamp, max_clamp;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuTexRefGetMipmapLevelClamp was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuTexRefGetMipmapLevelClamp(&min_clamp, &max_clamp, texRef);
+
+  CUmipmappedArray anotherArray;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuTexRefGetMipmappedArray was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuTexRefGetMipmappedArray(&anotherArray, texRef);
+
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMipmappedArrayDestroy was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
   // CHECK-NEXT: */

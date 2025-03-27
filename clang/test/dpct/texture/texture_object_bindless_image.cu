@@ -699,6 +699,14 @@ void test_mipmap_driver_api() {
   // CHECK: fm = texRef->get_mip_filtering_mode();
   cuTexRefGetMipmapFilterMode(&fm, texRef);
 
+  float min_clamp, max_clamp;
+  // CHECK: texRef->get_mip_level_clamp(&min_clamp, &max_clamp);
+  cuTexRefGetMipmapLevelClamp(&min_clamp, &max_clamp, texRef);
+
+  CUmipmappedArray anotherArray;
+  // CHECK: anotherArray = texRef->get_attached_mipmap_data();
+  cuTexRefGetMipmappedArray(&anotherArray, texRef);
+
   // CHECK: delete mmArray;
   cuMipmappedArrayDestroy(mmArray);
 
