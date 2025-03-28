@@ -10,7 +10,9 @@ __global__ void ShuffleDownKernel(int *data) {
   int tid = cub::LaneId();
   unsigned mask = 0x8;
   int val = tid;
-  // CHECK: DPCT1007:{{.*}}: Migration of cub::ShuffleDown is not supported.
+// CHECK:   /*
+// CHECK:   DPCT1119:{{.*}}: Migration of cub::ShuffleDown is not supported, please try to remigrate with option: --use-experimental-features=non-uniform-groups.
+// CHECK:   */
   data[tid] = cub::ShuffleDown<8>(val, 3, 6, mask);
 }
 
@@ -18,6 +20,8 @@ __global__ void ShuffleUpKernel(int *data) {
   int tid = cub::LaneId();
   unsigned mask = 0x8;
   int val = tid;
-  // CHECK: DPCT1007:{{.*}}: Migration of cub::ShuffleUp is not supported.
+// CHECK:   /*
+// CHECK:   DPCT1119:{{.*}}: Migration of cub::ShuffleUp is not supported, please try to remigrate with option: --use-experimental-features=non-uniform-groups.
+// CHECK:   */
   data[tid] = cub::ShuffleUp<8>(val, 3, 6, mask);
 }

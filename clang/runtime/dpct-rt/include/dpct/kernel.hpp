@@ -28,6 +28,7 @@
 
 #include "image.hpp"
 #include <fstream>
+#include <mutex>
 #include <random>
 
 namespace dpct {
@@ -493,6 +494,7 @@ class kernel_launcher {
         static_cast<sycl::range<3>>(local_range));
     _local_mem_size = local_mem_size;
   };
+  static inline std::mutex kernel_function_ptr_map_mutex;
 
 public:
   /// Variables for storing execution configuration.
@@ -513,6 +515,7 @@ public:
       const void *func,
       std::function<void(dim3, dim3, void **, unsigned int, queue_ptr)>
           launcher) {
+    std::lock_guard<std::mutex> lock(kernel_function_ptr_map_mutex);
     kernel_function_ptr_map[func] = std::move(launcher);
   }
   /// Launches a kernel function with arguments provided directly through
@@ -543,8 +546,13 @@ public:
   /// \param [in] que SYCL queue used to execute kernel.
   static void launch(const void *func, dim3 group_range, dim3 local_range,
                      void **args, unsigned int local_mem_size, queue_ptr que) {
-    kernel_function_ptr_map[func](group_range, local_range, args,
-                                  local_mem_size, que);
+    std::lock_guard<std::mutex> lock(kernel_function_ptr_map_mutex);
+    auto Iter = kernel_function_ptr_map.find(func);
+    if (Iter == kernel_function_ptr_map.end()) {
+      throw std::runtime_error(
+          "dpct::launch() : no registered kernel function wrapper found.");
+    }
+    (Iter->second)(group_range, local_range, args, local_mem_size, que);
   }
   /// Launches a kernel function with packed arguments through kernel
   /// function wrapper.
