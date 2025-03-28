@@ -20,6 +20,7 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/OperationKinds.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
 #include <deque>
@@ -829,6 +830,19 @@ void DpctFileInfo::setFirstIncludeOffset(unsigned Offset) {
     HasInclusionDirectiveSet.insert(std::move(MF));
   }
 }
+void DpctFileInfo::setHeaderInserted(HeaderType Header) {
+  DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][Header] = true;
+}
+void DpctFileInfo::setMathHeaderInserted(bool B) {
+  DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][HeaderType::HT_Math] = B;
+}
+void DpctFileInfo::setAlgorithmHeaderInserted(bool B) {
+  DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath]
+                                           [HeaderType::HT_Algorithm] = B;
+}
+void DpctFileInfo::setTimeHeaderInserted(bool B) {
+  DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][HeaderType::HT_Time] = B;
+}
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS) {}
 template <class FirstT, class... Args>
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS, FirstT &&First,
@@ -862,9 +876,9 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
             Type, FirstIncludeOffset.at(MF));
       }
   }
-  if (HeaderInsertedBitMap[Type])
+  if (DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][Type])
     return;
-  HeaderInsertedBitMap[Type] = true;
+  DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][Type] = true;
   std::string ReplStr;
   llvm::raw_string_ostream OS(ReplStr);
   std::string MigratedMacroDefinitionStr;
@@ -898,10 +912,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     concatHeader(OS, getHeaderSpelling(Type));
     if (DpctGlobalInfo::useSYCLCompat()) {
       concatHeader(OS, getHeaderSpelling(HT_COMPAT_SYCLcompat));
-      HeaderInsertedBitMap[HT_COMPAT_SYCLcompat] = true;
+      DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath]
+                                               [HT_COMPAT_SYCLcompat] = true;
     } else {
       concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
-      HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
+      DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][HT_DPCT_Dpct] = true;
     }
     DpctGlobalInfo::printUsingNamespace(OS);
     if (DpctGlobalInfo::useNoQueueDevice()) {
@@ -1456,8 +1471,8 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
     return getStringForRegexDefaultQueueAndDevice(
         HelperFuncType::HFT_DefaultQueuePtr, Index);
   case 'E': {
-    auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileInfo();
-    return Vec[Index]->hasCUDASyntax()
+    auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileList();
+    return DpctGlobalInfo::hasCUDASyntax(Vec[Index])
                ? ("c" + DpctGlobalInfo::getSYCLSourceExtension())
                : "c";
   }
@@ -2493,7 +2508,7 @@ bool DpctGlobalInfo::CVersionCUDALaunchUsedFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
-std::vector<std::shared_ptr<DpctFileInfo>> DpctGlobalInfo::CSourceFileInfo;
+std::vector<tooling::UnifiedPath> DpctGlobalInfo::CSourceFileList;
 bool DpctGlobalInfo::OptimizeMigrationFlag = false;
 std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
     DpctGlobalInfo::PriorityReplInfoMap;
@@ -2520,6 +2535,8 @@ std::vector<std::pair<std::string, std::vector<std::string>>>
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 std::unordered_set<std::string>
     DpctGlobalInfo::CustomHelperFunctionAddtionalIncludes = {};
+std::unordered_map<clang::tooling::UnifiedPath, std::bitset<32>>
+    DpctGlobalInfo::HeaderInsertedBitMap = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
                                   llvm::raw_ostream &OS) {

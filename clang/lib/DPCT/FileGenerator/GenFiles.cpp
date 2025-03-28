@@ -213,12 +213,10 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
                               DpctGlobalInfo::getSYCLSourceExtension());
     } else if (FileType & SPT_CppSource) {
       if (Extension == ".c") {
-        if (auto FileInfo = DpctGlobalInfo::getInstance().findFile(FileName)) {
-          if (FileInfo->hasCUDASyntax()) {
-            path::replace_extension(
-                CanonicalPathStr,
-                Extension + DpctGlobalInfo::getSYCLSourceExtension());
-          }
+        if (DpctGlobalInfo::hasCUDASyntax(FileName)) {
+          path::replace_extension(CanonicalPathStr,
+                                  Extension +
+                                      DpctGlobalInfo::getSYCLSourceExtension());
         }
       } else {
         path::replace_extension(CanonicalPathStr,
@@ -578,11 +576,8 @@ int writeReplacementsToFiles(
         auto Hash = llvm::sys::fs::md5_contents(Entry.first);
 
         bool HasCUDASyntax = false;
-        if (auto FileInfo =
-                dpct::DpctGlobalInfo::getInstance().findFile(Entry.first)) {
-          if (FileInfo->hasCUDASyntax()) {
-            HasCUDASyntax = true;
-          }
+        if (DpctGlobalInfo::hasCUDASyntax(Entry.first)) {
+          HasCUDASyntax = true;
         }
 
         bool IsMainSrcFileChanged = false;
