@@ -155,7 +155,7 @@
 - Rule: rule_torch_Tensor
   Kind: Class
   Priority: Takeover
-  In: torch::Tensor
+  In: at::Tensor # The underlying type of torch::Tensor is at::Tensor
   Out: torch::Tensor
   Methods:
     - In: is_cuda
