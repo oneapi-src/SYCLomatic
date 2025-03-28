@@ -1601,6 +1601,18 @@ void MapNames::setExplicitNamespaceMap(
                ? getExpNamespace() +
                      "external_semaphore_handle_type::win32_nt_dx12_fence"
                : "cudaExternalSemaphoreHandleTypeD3D12Fence")},
+      {"cudaExternalSemaphoreHandleTypeTimelineSemaphoreFd",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_semaphore_handle_type::timeline_fd"
+               : "cudaExternalSemaphoreHandleTypeTimelineSemaphoreFd")},
+      {"cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_semaphore_handle_type::timeline_win32_nt_handle"
+               : "cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32")},
       {"NVSHMEM_TEAM_WORLD",
        std::make_shared<EnumNameRule>("ISHMEM_TEAM_WORLD")},
       {"NVSHMEM_TEAM_SHARED",

@@ -1114,6 +1114,8 @@
 // CHECK-NEXT: cudaCreateChannelDesc
 // CHECK-NEXT: cudaCreateTextureObject
 // CHECK-NEXT: cudaCtxResetPersistingL2Cache
+// CHECK-NEXT: cudaDestroyExternalMemory
+// CHECK-NEXT: cudaDestroyExternalSemaphore
 // CHECK-NEXT: cudaDestroyTextureObject
 // CHECK-NEXT: cudaDeviceCanAccessPeer
 // CHECK-NEXT: cudaDeviceDisablePeerAccess
@@ -1135,6 +1137,8 @@
 // CHECK-NEXT: cudaEventQuery
 // CHECK-NEXT: cudaEventRecord
 // CHECK-NEXT: cudaEventSynchronize
+// CHECK-NEXT: cudaExternalMemoryGetMappedBuffer
+// CHECK-NEXT: cudaExternalMemoryGetMappedMipmappedArray
 // CHECK-NEXT: cudaFree
 // CHECK-NEXT: cudaFreeArray
 // CHECK-NEXT: cudaFreeHost
@@ -1168,6 +1172,8 @@
 // CHECK-NEXT: cudaHostGetFlags
 // CHECK-NEXT: cudaHostRegister
 // CHECK-NEXT: cudaHostUnregister
+// CHECK-NEXT: cudaImportExternalMemory
+// CHECK-NEXT: cudaImportExternalSemaphore
 // CHECK-NEXT: cudaLaunchCooperativeKernel
 // CHECK-NEXT: cudaLaunchKernel
 // CHECK-NEXT: cudaMalloc
@@ -1213,6 +1219,7 @@
 // CHECK-NEXT: cudaRuntimeGetVersion
 // CHECK-NEXT: cudaSetDevice
 // CHECK-NEXT: cudaSetDeviceFlags
+// CHECK-NEXT: cudaSignalExternalSemaphoresAsync
 // CHECK-NEXT: cudaStreamAddCallback
 // CHECK-NEXT: cudaStreamAttachMemAsync
 // CHECK-NEXT: cudaStreamBeginCapture
@@ -1233,6 +1240,7 @@
 // CHECK-NEXT: cudaThreadSetLimit
 // CHECK-NEXT: cudaThreadSynchronize
 // CHECK-NEXT: cudaUnbindTexture
+// CHECK-NEXT: cudaWaitExternalSemaphoresAsync
 // CHECK-NEXT: cudnnActivationBackward
 // CHECK-NEXT: cudnnActivationForward
 // CHECK-NEXT: cudnnAddTensor
