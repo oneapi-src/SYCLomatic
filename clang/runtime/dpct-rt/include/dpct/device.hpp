@@ -592,14 +592,15 @@ public:
     lock.unlock();
     for (const auto &q : current_queues) {
       if (q->is_in_order()) {
-#ifdef __INTEL_LLVM_COMPILER
-        last_events.push_back(q->ext_oneapi_get_last_event());
-#else
         auto last_event = q->ext_oneapi_get_last_event();
-        if (last_event) {
-          last_events.push_back(*last_event);
-        }
-#endif
+        [&](auto &&_e) {
+          if constexpr (std::is_same_v<
+                            std::remove_reference_t<decltype(last_event)>,
+                            sycl::event>)
+            last_events.push_back(_e);
+          else if (_e.has_value())
+            last_events.push_back(_e.value());
+        }(last_event);
       }
     }
     // Guard the destruct of current_queues to make sure the ref count is safe.
@@ -950,6 +951,10 @@ static inline void list_devices() { dev_mgr::instance().list_devices(); }
 
 static inline unsigned int get_device_id(const sycl::device &dev){
   return dev_mgr::instance().get_device_id(dev);
+}
+
+static inline unsigned int get_cpu_device_id() {
+  return get_device_id(cpu_device());
 }
 
 /// Util function to do implicit sync among queues of the same device then

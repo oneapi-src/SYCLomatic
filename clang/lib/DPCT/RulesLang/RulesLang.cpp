@@ -346,8 +346,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatmulHeuristicResult_t", "CUjit_target",
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
-              "CUstreamCallback", "cudaHostFn_t", "__nv_half2",
-              "__nv_half"))))))
+              "cudaExternalSemaphoreHandleType", "CUstreamCallback",
+              "cudaHostFn_t", "__nv_half2", "__nv_half"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -360,7 +360,10 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaGraphicsResource_t", "CUgraphicsResource",
                   "cudaExternalMemory_t", "cudaExternalMemoryHandleDesc",
                   "cudaExternalMemoryMipmappedArrayDesc",
-                  "cudaExternalMemoryBufferDesc"))))))
+                  "cudaExternalMemoryBufferDesc", "cudaExternalSemaphore_t",
+                  "cudaExternalSemaphoreHandleDesc",
+                  "cudaExternalSemaphoreSignalParams",
+                  "cudaExternalSemaphoreWaitParams"))))))
           .bind("cudaTypeDefEA"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -1981,7 +1984,14 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       EnumName == "cudaExternalMemoryHandleTypeD3D12Heap" ||
       EnumName == "cudaExternalMemoryHandleTypeD3D11Resource" ||
       EnumName == "cudaExternalMemoryHandleTypeD3D11ResourceKmt" ||
-      EnumName == "cudaExternalMemoryHandleTypeNvSciBuf") {
+      EnumName == "cudaExternalMemoryHandleTypeNvSciBuf" ||
+      EnumName == "cudaExternalSemaphoreHandleTypeOpaqueWin32Kmt" ||
+      EnumName == "cudaExternalSemaphoreHandleTypeD3D11Fence" ||
+      EnumName == "cudaExternalSemaphoreHandleTypeNvSciSync" ||
+      EnumName == "cudaExternalSemaphoreHandleTypeKeyedMutex" ||
+      EnumName == "cudaExternalSemaphoreHandleTypeKeyedMutexKmt" ||
+      EnumName == "cudaExternalSemaphoreHandleTypeTimelineSemaphoreFd" ||
+      EnumName == "cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32") {
     report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
     return;
   } else if (EnumName == "cudaComputeModeDefault" ||
@@ -2007,7 +2017,10 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
               EnumName == "cudaGraphicsMapFlagsWriteDiscard" ||
               EnumName == "cudaExternalMemoryHandleTypeOpaqueFd" ||
               EnumName == "cudaExternalMemoryHandleTypeOpaqueWin32" ||
-              EnumName == "cudaExternalMemoryHandleTypeD3D12Resource")) {
+              EnumName == "cudaExternalMemoryHandleTypeD3D12Resource" ||
+              EnumName == "cudaExternalSemaphoreHandleTypeOpaqueFd" ||
+              EnumName == "cudaExternalSemaphoreHandleTypeOpaqueWin32" ||
+              EnumName == "cudaExternalSemaphoreHandleTypeD3D12Fence")) {
     report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
            EnumName, "--use-experimental-features=bindless_images");
     return;
