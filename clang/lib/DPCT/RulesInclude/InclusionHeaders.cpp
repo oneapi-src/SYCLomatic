@@ -8,6 +8,7 @@
 
 #include "InclusionHeaders.h"
 #include "PreProcessor.h"
+#include "UserDefinedRules/UserDefinedRules.h"
 #include <optional>
 
 namespace clang {
@@ -34,11 +35,10 @@ private:
   bool UpdateNeeded;
 };
 
-std::optional<std::string> applyUserDefinedHeader(const std::string &FileName) {
-  // Apply user-defined rule if needed
+std::optional<std::pair<std::string, RulePriority>>
+getUserDefinedHeader(const std::string &FileName) {
   auto It = MapNames::HeaderRuleMap.find(FileName);
-  if (It != MapNames::HeaderRuleMap.end() &&
-      It->second.Priority == RulePriority::Takeover) {
+  if (It != MapNames::HeaderRuleMap.end()) {
     auto &Rule = It->second;
     std::string ReplHeaderStr = Rule.Prefix;
     llvm::raw_string_ostream OS(ReplHeaderStr);
@@ -58,7 +58,7 @@ std::optional<std::string> applyUserDefinedHeader(const std::string &FileName) {
     if (!Rule.Out.empty())
       PrintHeader(Rule.Out);
     OS << Rule.Postfix;
-    return ReplHeaderStr;
+    return std::make_pair(ReplHeaderStr, Rule.Priority);
   }
   return std::nullopt;
 }
@@ -153,9 +153,12 @@ void IncludesCallbacks::InclusionDirective(
   };
 
   // Apply user-defined rule if needed
-  if (auto ReplacedStr = applyUserDefinedHeader(FileName.str()); ReplacedStr) {
-    EmplaceReplacement(std::move(ReplacedStr.value()));
-    return;
+  auto UserDefinedInfo = getUserDefinedHeader(FileName.str());
+  if (UserDefinedInfo.has_value()) {
+    if (UserDefinedInfo.value().second == RulePriority::Takeover) {
+      EmplaceReplacement(std::move(UserDefinedInfo.value().first));
+      return;
+    }
   }
 
   if (Global.isInAnalysisScope(IncludedFile)) {
@@ -207,6 +210,7 @@ void IncludesCallbacks::InclusionDirective(
                         .getReplacement(DpctGlobalInfo::getContext());
         DpctGlobalInfo::getIncludeMapSet().push_back({IncludedFile, Repl});
       }
+      UserDefinedInfo.reset();
     }
     if (Global.isInRoot(IncludedFile))
       return;
@@ -215,6 +219,11 @@ void IncludesCallbacks::InclusionDirective(
   if (!Global.isInAnalysisScope(LocInfo.first) &&
       !Global.getSourceManager().isWrittenInMainFile(HashLoc))
     return;
+
+  if (UserDefinedInfo.has_value()) {
+    EmplaceReplacement(std::move(UserDefinedInfo.value().first));
+    return;
+  }
 
   do {
     auto InfoPtr = DpctInclusionHeadersMap::findHeaderInfo(FileName);
