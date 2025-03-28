@@ -184,4 +184,54 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cudaDestroyExternalMemory", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaDestroyExternalMemory"),
                             ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaImportExternalSemaphore",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::import_external_semaphore",
+                                ARG(0), ARG(1)))),
+    UNSUPPORT_FACTORY_ENTRY("cudaImportExternalSemaphore", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaImportExternalSemaphore"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckNot(CheckArgIsDefaultCudaStream(3)),
+        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaSignalExternalSemaphoresAsync_v2",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::signal_external_semaphore",
+                                ARG(0), ARG(1), ARG(2), ARG(3)))),
+        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaSignalExternalSemaphoresAsync_v2",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::signal_external_semaphore",
+                                ARG(0), ARG(1), ARG(2))))),
+    UNSUPPORT_FACTORY_ENTRY("cudaSignalExternalSemaphoresAsync_v2", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaSignalExternalSemaphoresAsync_v2"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckNot(CheckArgIsDefaultCudaStream(3)),
+        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaWaitExternalSemaphoresAsync_v2",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::wait_external_semaphore",
+                                ARG(0), ARG(1), ARG(2), ARG(3)))),
+        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaWaitExternalSemaphoresAsync_v2",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::wait_external_semaphore",
+                                ARG(0), ARG(1), ARG(2))))),
+    UNSUPPORT_FACTORY_ENTRY("cudaWaitExternalSemaphoresAsync_v2", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaWaitExternalSemaphoresAsync_v2"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    DELETER_FACTORY_ENTRY("cudaDestroyExternalSemaphore", ARG(0)),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cudaDestroyExternalSemaphore", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cudaDestroyExternalSemaphore"),
+        ARG("--use-experimental-features=bindless_images"))))
 // clang-format on
