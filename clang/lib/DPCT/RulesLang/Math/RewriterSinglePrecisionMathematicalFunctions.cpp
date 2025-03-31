@@ -14,31 +14,17 @@ RewriterMap dpct::createSinglePrecisionMathematicalFunctionsRewriterMap() {
   return RewriterMap{
       // fabsf
       MATH_API_REWRITERS_V2(
-          "fabsf",
-          MATH_API_REWRITER_PAIR(
-              math::Tag::device_normal,
-              CALL_FACTORY_ENTRY(
-                  "fabsf",
-                  CALL(MapNames::getClNamespace() + "fabs",
-                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
-          MATH_API_REWRITER_PAIR(
-              math::Tag::host_normal,
-              CALL_FACTORY_ENTRY(
-                  "fabsf",
-                  CALL(MapNames::getClNamespace() + "fabs",
-                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))))
+          "fabsf", MATH_API_REWRITER_PAIR(
+                       math::Tag::host_device,
+                       CALL_FACTORY_ENTRY(
+                           "fabsf", CALL(MapNames::getClNamespace() + "fabs",
+                                         CAST_IF_NOT_SAME(makeLiteral("float"),
+                                                          ARG(0))))))
       // fmaxf
       MATH_API_REWRITERS_V2(
           "fmaxf",
           MATH_API_REWRITER_PAIR(
-              math::Tag::device_normal,
-              CALL_FACTORY_ENTRY(
-                  "fmaxf",
-                  CALL(MapNames::getClNamespace() + "fmax",
-                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
-                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(1))))),
-          MATH_API_REWRITER_PAIR(
-              math::Tag::host_normal,
+              math::Tag::host_device,
               CALL_FACTORY_ENTRY(
                   "fmaxf",
                   CALL(MapNames::getClNamespace() + "fmax",
@@ -48,14 +34,7 @@ RewriterMap dpct::createSinglePrecisionMathematicalFunctionsRewriterMap() {
       MATH_API_REWRITERS_V2(
           "fminf",
           MATH_API_REWRITER_PAIR(
-              math::Tag::device_normal,
-              CALL_FACTORY_ENTRY(
-                  "fminf",
-                  CALL(MapNames::getClNamespace() + "fmin",
-                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
-                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(1))))),
-          MATH_API_REWRITER_PAIR(
-              math::Tag::host_normal,
+              math::Tag::host_device,
               CALL_FACTORY_ENTRY(
                   "fminf",
                   CALL(MapNames::getClNamespace() + "fmin",

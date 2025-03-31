@@ -196,6 +196,11 @@ inline auto IsPureHost = [](const CallExpr *C) -> bool {
   if (!(FD->hasAttr<CUDADeviceAttr>()))
     return true;
 
+  if (!HasDirectCallee()(C))
+    return false;
+  if (IsDirectCalleeHasAttribute<CUDADeviceAttr>()(C))
+    return false;
+
   SourceLocation DeclLoc =
       dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
           FD->getLocation());
@@ -344,8 +349,9 @@ public:
   //   4. math_libdevice
   //   5. device_std
   // c. Host and device
-  //   1. emulation
-  //   2. unsupported_warning
+  //   1. host_device
+  //   2. emulation
+  //   3. unsupported_warning
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     if (math::IsPureHost(C)) {
       // HOST
@@ -355,6 +361,8 @@ public:
           return HostPerfRewriter.value().second.second->create(C);
         if (HostNormalRewriter && HostNormalRewriter.value().first(C))
           return HostNormalRewriter.value().second.second->create(C);
+      } else {
+        return NoRewriteRewriter.value().second.second->create(C);
       }
     } else {
       // DEVICE
@@ -378,11 +386,11 @@ public:
     }
 
     // Host and device
-    if (EmulationRewriter && EmulationRewriter.value().first(C))
-      return EmulationRewriter.value().second.second->create(C);
-
     if (HostDeviceRewriter && HostDeviceRewriter.value().first(C))
       return HostDeviceRewriter.value().second.second->create(C);
+
+    if (EmulationRewriter && EmulationRewriter.value().first(C))
+      return EmulationRewriter.value().second.second->create(C);
 
     if (UnsupportedWarningRewriter &&
         UnsupportedWarningRewriter.value().first(C))
