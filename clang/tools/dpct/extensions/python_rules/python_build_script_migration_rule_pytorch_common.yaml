@@ -248,19 +248,19 @@
   In: CUDA_HOME
   Out: SYCL_HOME
 
-- Rule: rule_remove_cuda_flag_use_fast_math
+- Rule: rule_cuda_flag_use_fast_math
   Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
-  PythonSyntax: remove_cuda_flag_use_fast_math
+  PythonSyntax: cuda_flag_use_fast_math
   In: '--use_fast_math'
-  Out: ''
+  Out: '-ffast-math'
 
-- Rule: rule_remove_cuda_flag_allow-unsupported-compiler
+- Rule: rule_cuda_flag_allow-unsupported-compiler
   Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
-  PythonSyntax: remove_cuda_flag_allow-unsupported-compiler
+  PythonSyntax: cuda_flag_allow-unsupported-compiler
   In: '--allow-unsupported-compiler'
   Out: ''
 
