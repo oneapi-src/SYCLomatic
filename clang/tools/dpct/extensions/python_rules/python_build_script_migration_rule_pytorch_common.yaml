@@ -254,7 +254,7 @@
   MatchMode: Partial
   PythonSyntax: cuda_flag_use_fast_math
   In: '--use_fast_math'
-  Out: '-ffast-math'
+  Out: ''
 
 - Rule: rule_cuda_flag_allow-unsupported-compiler
   Kind: PythonRule
