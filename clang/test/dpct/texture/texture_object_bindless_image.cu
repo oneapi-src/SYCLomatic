@@ -180,8 +180,13 @@ void driverMemoryManagement() {
   p3d.Depth = s;
   // CHECK: *pArr = new dpct::experimental::image_mem_wrapper(&p3DDesc);
   cuArray3DCreate(pArr, &p3DDesc);
+  // CHECK: p3DDesc = (*pArr)->get_desc();
+  cuArray3DGetDescriptor(&p3DDesc, *pArr);
   // CHECK: *pArr = new dpct::experimental::image_mem_wrapper(&pDesc);
   cuArrayCreate(pArr, &pDesc);
+  // CHECK: pDesc = (*pArr)->get_desc();
+  cuArrayGetDescriptor(&pDesc, *pArr);
+
   // CHECK: delete (*pArr);
   cuArrayDestroy(*pArr);
   // CHECK: dpct::dpct_memcpy(p2d);

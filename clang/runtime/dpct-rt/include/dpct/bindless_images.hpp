@@ -1466,6 +1466,10 @@ public:
     return _img;
   }
 
+  inline image_mem_wrapper *&get_img_mem() {
+    return detail::get_img_mem_map(_img);
+  }
+
 private:
   image_channel _channel;
   sycl::addressing_mode _addressing_mode = sycl::addressing_mode::clamp_to_edge;
@@ -1684,6 +1688,17 @@ DataT fetch_image_by_byte(
     return sycl::ext::oneapi::experimental::fetch_image<DataT, HintT, CoordT>(
         imageHandle, coords);
   }
+}
+
+static inline image_mem_wrapper *&get_img_mem(
+    const sycl::ext::oneapi::experimental::unsampled_image_handle handle) {
+  return dpct::experimental::detail::get_img_mem_map(handle);
+}
+
+static inline void set_img_mem(
+    const sycl::ext::oneapi::experimental::unsampled_image_handle handle,
+    image_mem_wrapper *image_mem) {
+  dpct::experimental::detail::get_img_mem_map(handle) = image_mem;
 }
 
 using image_mem_wrapper_ptr = image_mem_wrapper *;

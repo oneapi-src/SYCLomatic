@@ -63,6 +63,10 @@ int main() {
   cuArray3DCreate(a3d_ptr, &p3DDesc);
   cuArrayDestroy(*a3d_ptr);
   delete a3d_ptr;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cuArray3DGetDescriptor is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuArray3DGetDescriptor(&p3DDesc, *a3d_ptr);
 
   // CHECK: dpct::image_matrix **a_ptr = new dpct::image_matrix_p;
   // CHECK-NEXT: dpct::image_matrix_p a42;
@@ -78,7 +82,10 @@ int main() {
   cuArrayDestroy(*a_ptr);
   cuArrayDestroy(a42);
   delete a_ptr;
-
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cuArrayGetDescriptor is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cuArrayGetDescriptor(&halfDesc, *a_ptr);
   // Test IsAssigned
   {
     int errorCode;
@@ -139,7 +146,14 @@ void test_texref() {
   CUtexref tex;
   CUresult err_code;
   int flags, chn_num;
-
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cuTexRefCreate is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+#ifndef NO_BUILD_TEST
+  cuTexRefCreate(&tex);
+#endif
+  // CHECK: delete tex;
+  cuTexRefDestroy(tex);
   // CHECK: tex->set_channel_type(format);
   // CHECK-NEXT: tex->set_channel_num(4);
   // CHECK-NEXT: err_code = DPCT_CHECK_ERROR((tex->set_channel_type(sycl::image_channel_type::fp32), tex->set_channel_num(chn_num)));
@@ -224,7 +238,18 @@ void test_texref() {
   CUDA_ARRAY_DESCRIPTOR desc;
   cuTexRefSetAddress2D(tex, &desc, dptr, b);
 }
-
+void test_surf_ref() {
+ CUarray arr;
+ CUsurfref ref;
+ //CHECK: /*
+ //CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuSurfRefGetArray is not supported.
+ //CHECK-NEXT: */
+ cuSurfRefGetArray(&arr, ref);
+ //CHECK: /*
+ //CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuSurfRefSetArray is not supported.
+ //CHECK-NEXT: */
+ cuSurfRefSetArray(ref, arr, 0);
+}
 // CHECK: sycl::addressing_mode AddrMode[] =
 // CHECK-NEXT: {
 // CHECK-NEXT:   sycl::addressing_mode::repeat,
