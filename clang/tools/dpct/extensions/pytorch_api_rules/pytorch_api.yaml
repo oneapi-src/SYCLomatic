@@ -168,3 +168,28 @@
   In: get_in_order_queue
   Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
   Includes: [<c10/xpu/XPUStream.h>]
+
+- Rule: rule_THC_THCAtomics_cuh
+  Kind: Header
+  Priority: Takeover
+  In: THC/THCAtomics.cuh
+  Out: |
+
+- Rule: rule_ATen_cuda_Exceptions_h
+  Kind: Header
+  Priority: Takeover
+  In: ATen/cuda/Exceptions.h
+  Out: |
+
+- Rule: rule_remove_C10_CUDA_CHECK
+  Kind: Macro
+  Priority: Takeover
+  In: C10_CUDA_CHECK
+  Out: |
+
+- Rule: rule_at_cuda_CUDAGuard
+  Kind: Type
+  Priority: Takeover
+  In: c10::cuda::CUDAGuard
+  Out: c10::DeviceGuard
+  Includes: [<c10/core/DeviceGuard.h>]
