@@ -90,7 +90,7 @@ const std::map<std::string, int> MapNamesLang::VectorTypeMigratedTypeSizeMap{
     {"float3", 16},     {"float4", 16},     {"double1", 8},
     {"double2", 16},    {"double3", 32},    {"double4", 32},
     {"__half", 2},      {"__half2", 4},     {"__half_raw", 2},
-    {"__half2_raw", 4}};
+    {"__half2_raw", 4}, {"__nv_half", 2},   {"__nv_half2", 4}};
 
 const std::map<clang::dpct::KernelArgType, int>
     MapNamesLang::KernelArgTypeSizeMap{
@@ -235,13 +235,18 @@ MapNamesLang::MapTy TextureRule::ResourceTypeNames{
     {"format", "channel_type"},
     {"numChannels", "channel_num"}};
 
-// External memory handle descs fields mapping
-MapNamesLang::MapTy GraphicsInteropRule::ExtMemHandleDescNames{
+// External resource mem handle descs fields mapping
+MapNamesLang::MapTy GraphicsInteropRule::ExtResMemHandleDescNames{
     {"fd", "fd_handle"},        {"handle", "win32_handle"},
     {"name", "win32_obj_name"}, {"size", "res_size"},
     {"type", "handle_type"},    {"flags", "flags"},
     {"offset", "mem_offset"},   {"numLevels", "num_levels"},
-    {"extent", "size"},         {"formatDesc", "image_channel"}};
+    {"extent", "size"},         {"formatDesc", "image_channel"},
+    {"value", "value"}};
+
+// External resource sem param descs fields mapping
+MapNamesLang::MapTy GraphicsInteropRule::ExtResSemParamsNames{
+    {"value", "value"}};
 
 const MapNamesLang::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data_ptr"}, {"xsize", "x"}, {"ysize", "y"}};

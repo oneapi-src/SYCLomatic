@@ -24,6 +24,11 @@ prefetch{.tensormap_space}.tensormap [a];       // prefetch the tensormap
 .tensormap_space =          { .const, .param };
 */
 
+__device__ void prefetch_h(const uint32_t *addr) {
+  // CHECK: sycl::ext::oneapi::experimental::prefetch(addr, sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::experimental::prefetch_hint_L1});
+  asm("prefetch.L1 [ %1 ];" : "=l"(addr) : "l"(addr));
+}
+
 __global__ void prefetch(int *arr) {
   /* prefetch of no address space */
   // CHECK: sycl::ext::oneapi::experimental::prefetch(arr, sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::experimental::prefetch_hint_L1});

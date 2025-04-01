@@ -11,6 +11,10 @@ __global__ void kernelFuncBfloat162Arithmetic() {
   __nv_bfloat162 bf162, bf162_1, bf162_2;
   // CHECK: bf162 = bf162_1 / bf162_2;
   bf162 = __h2div(bf162_1, bf162_2);
+  // CHECK: bf162 = bf162_1 * bf162_2;
+  bf162 = __hmul2(bf162_1, bf162_2);
+  // CHECK: bf162 = bf162_1 - bf162_2;
+  bf162 = __hsub2(bf162_1, bf162_2);
 }
 
 __global__ void kernelFuncBfloat16Comparison() {

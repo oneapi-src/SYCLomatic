@@ -31,9 +31,10 @@ namespace dpct {
 
 void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto externalResourceMember = [&]() {
-    return hasAnyName("cudaExternalMemoryHandleDesc",
-                      "cudaExternalMemoryMipmappedArrayDesc",
-                      "cudaExternalMemoryBufferDesc");
+    return hasAnyName(
+        "cudaExternalMemoryHandleDesc", "cudaExternalMemoryMipmappedArrayDesc",
+        "cudaExternalMemoryBufferDesc", "cudaExternalSemaphoreHandleDesc",
+        "cudaExternalSemaphoreSignalParams", "cudaExternalSemaphoreWaitParams");
   };
   MF.addMatcher(
       memberExpr(hasObjectExpression(hasType(
@@ -42,8 +43,9 @@ void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("extResMember"),
       this);
 
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(
-                                hasAnyName("cudaExternalMemoryHandleType"))))))
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
+                                "cudaExternalMemoryHandleType",
+                                "cudaExternalSemaphoreHandleType"))))))
                     .bind("extResEnum"),
                 this);
 
@@ -58,7 +60,9 @@ void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cuGraphicsUnmapResources", "cudaGraphicsUnregisterResource",
         "cuGraphicsUnregisterResource", "cudaImportExternalMemory",
         "cudaExternalMemoryGetMappedMipmappedArray",
-        "cudaExternalMemoryGetMappedBuffer", "cudaDestroyExternalMemory");
+        "cudaExternalMemoryGetMappedBuffer", "cudaDestroyExternalMemory",
+        "cudaImportExternalSemaphore", "cudaSignalExternalSemaphoresAsync_v2",
+        "cudaWaitExternalSemaphoresAsync_v2", "cudaDestroyExternalSemaphore");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(graphicsInteropAPI()))).bind("call"), this);
@@ -82,13 +86,13 @@ void GraphicsInteropRule::runRule(
         ME->getBase()->getType().getDesugaredType(*Result.Context),
         *Result.Context);
     auto MemberName = ME->getMemberNameInfo().getAsString();
-    if (BaseTy == "cudaExternalMemoryHandleDesc") {
+    if (BaseTy == "cudaExternalMemoryHandleDesc" ||
+        BaseTy == "cudaExternalSemaphoreHandleDesc") {
       if (MemberName == "handle") {
-        removeExtraMemberAccess(ME);
-        replaceExtMemHandleDataExpr(getParentMemberExpr(ME), *Result.Context);
+        replaceExtResMemHandleDataExpr(ME, *Result.Context);
       } else {
         auto FieldName =
-            ExtMemHandleDescNames[ME->getMemberNameInfo().getAsString()];
+            ExtResMemHandleDescNames[ME->getMemberNameInfo().getAsString()];
         if (FieldName.empty() ||
             (FieldName == "flags" && !DpctGlobalInfo::useExtBindlessImages())) {
           report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
@@ -109,6 +113,7 @@ void GraphicsInteropRule::runRule(
               ReplacedArg = "0";
             }
           }
+
           emplaceTransformation(
               ReplaceMemberAssignAsSetMethod(BO, ME, FieldName, ReplacedArg));
         } else {
@@ -116,9 +121,19 @@ void GraphicsInteropRule::runRule(
               ME, buildString("get_", FieldName, "()")));
         }
       }
+    } else if (BaseTy == "cudaExternalSemaphoreSignalParams" ||
+               BaseTy == "cudaExternalSemaphoreWaitParams") {
+      if (MemberName == "params") {
+        replaceExtResSemParamsDataExpr(ME, *Result.Context);
+      } else {
+        report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
+                   "::" + ME->getMemberDecl()->getName().str());
+        return;
+      }
     } else if (BaseTy == "cudaExternalMemoryMipmappedArrayDesc") {
       auto FieldName =
-          ExtMemHandleDescNames[ME->getMemberNameInfo().getAsString()];
+          ExtResMemHandleDescNames[ME->getMemberNameInfo().getAsString()];
       if (FieldName.empty() || FieldName == "mem_offset" ||
           (FieldName == "flags" && !DpctGlobalInfo::useExtBindlessImages())) {
         report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
@@ -158,6 +173,7 @@ void GraphicsInteropRule::runRule(
             if (flag > 4) {
               report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
                      ReplacedArg);
+              return;
             }
           }
         }
@@ -169,7 +185,7 @@ void GraphicsInteropRule::runRule(
       }
     } else if (BaseTy == "cudaExternalMemoryBufferDesc") {
       auto FieldName =
-          ExtMemHandleDescNames[ME->getMemberNameInfo().getAsString()];
+          ExtResMemHandleDescNames[ME->getMemberNameInfo().getAsString()];
       if (FieldName.empty()) {
         report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
                DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
@@ -194,7 +210,8 @@ void GraphicsInteropRule::runRule(
     }
 
 #ifdef __WIN32
-    if (Name == "cudaImportExternalMemory") {
+    if (Name == "cudaImportExternalMemory" ||
+        Name == "cudaImportExternalSemaphore") {
       if (auto ICE = dyn_cast<ImplicitCastExpr>(CE->getArg(1))) {
         if (auto UO = dyn_cast<UnaryOperator>(ICE->getSubExpr())) {
           if (UO->getOpcode() == UO_AddrOf) {
@@ -222,17 +239,21 @@ void GraphicsInteropRule::runRule(
       } else {
         report(DRE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
                EnumName);
+        return;
       }
     }
   }
 }
 
-void GraphicsInteropRule::replaceExtMemHandleDataExpr(const MemberExpr *ME,
-                                                      ASTContext &Context) {
+void GraphicsInteropRule::replaceExtResMemHandleDataExpr(const MemberExpr *ME,
+                                                         ASTContext &Context) {
+  removeExtraMemberAccess(ME);
+  ME = getParentMemberExpr(ME);
   if (!ME)
     return;
 
-  if (ME->getMemberNameInfo().getAsString() == "win32") {
+  auto MemberName = ME->getMemberNameInfo().getAsString();
+  if (MemberName == "win32") {
     removeExtraMemberAccess(ME);
 
     ME = getParentMemberExpr(ME);
@@ -240,11 +261,68 @@ void GraphicsInteropRule::replaceExtMemHandleDataExpr(const MemberExpr *ME,
       return;
   }
 
-  auto FieldName = ExtMemHandleDescNames[ME->getMemberNameInfo().getAsString()];
+  auto FieldName =
+      ExtResMemHandleDescNames[ME->getMemberNameInfo().getAsString()];
   if (FieldName.empty()) {
     report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
                "::" + ME->getMemberDecl()->getName().str());
+    return;
+  }
+
+  requestFeature(HelperFeatureEnum::device_ext);
+  auto AssignedBO = getParentAsAssignedBO(ME, Context);
+  if (AssignedBO) {
+    emplaceTransformation(
+        ReplaceMemberAssignAsSetMethod(AssignedBO, ME, FieldName));
+  } else {
+    emplaceTransformation(
+        new RenameFieldInMemberExpr(ME, buildString("get_", FieldName, "()")));
+  }
+}
+
+void GraphicsInteropRule::replaceExtResSemParamsDataExpr(const MemberExpr *ME,
+                                                         ASTContext &Context) {
+  std::string BaseType =
+      DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType());
+
+  BaseType += "::" + ME->getMemberDecl()->getName().str();
+
+  // skip 'params' member
+  ME = getParentMemberExpr(ME);
+  if (!ME)
+    return;
+
+  auto MemberName = ME->getMemberNameInfo().getAsString();
+  if (MemberName == "nvSciSync" || MemberName == "keyedMutex") {
+    report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+           BaseType + "::" + ME->getMemberDecl()->getName().str());
+    return;
+  } else if (MemberName == "fence") {
+    // remove 'params' member
+    ME = dyn_cast<MemberExpr>(ME->getBase());
+    if (!ME)
+      return;
+
+    removeExtraMemberAccess(ME);
+
+    // remove 'fence' member
+    ME = getParentMemberExpr(ME);
+    if (!ME)
+      return;
+
+    removeExtraMemberAccess(ME);
+
+    ME = getParentMemberExpr(ME);
+    if (!ME)
+      return;
+  }
+
+  auto FieldName = ExtResSemParamsNames[ME->getMemberNameInfo().getAsString()];
+  if (FieldName.empty()) {
+    report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+           BaseType + "::" + ME->getMemberDecl()->getName().str());
+    return;
   }
 
   requestFeature(HelperFeatureEnum::device_ext);

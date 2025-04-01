@@ -9,10 +9,10 @@
 #include "UserDefinedRules/PatternRewriter.h"
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
+#include "FileGenerator/GenFiles.h"
 #include "MigrateScript/MigrateCmakeScript.h"
 #include "MigrateScript/MigratePythonBuildScript.h"
 #include "UserDefinedRules/UserDefinedRules.h"
-#include "FileGenerator/GenFiles.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Path.h"
@@ -24,7 +24,6 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
-
 
 namespace clang {
 namespace dpct {
@@ -62,8 +61,26 @@ static bool isWhitespace(char Character) {
 
 static bool isNotWhitespace(char Character) { return !isWhitespace(Character); }
 
+static bool isLeftDelimiter(char Character) {
+  return Character == '{' || Character == '[' || Character == '(';
+}
+
 static bool isRightDelimiter(char Character) {
   return Character == '}' || Character == ']' || Character == ')';
+}
+
+static char getRightDelimiter(char Character) {
+  char rightChar = '\0';
+
+  if (Character == '{') {
+    rightChar = '}';
+  } else if (Character == '[') {
+    rightChar = ']';
+  } else if (Character == '(') {
+    rightChar = ')';
+  }
+
+  return rightChar;
 }
 
 static int detectIndentation(const std::string &Input, int Start) {
@@ -239,11 +256,11 @@ findMatch(const MatchPattern &Pattern, const std::string &Input,
 
 static int parseCodeElement(const MatchPattern &Suffix,
                             const std::string &Input, const int Start,
-                            RuleMatchMode Mode);
+                            RuleMatchMode Mode, bool IsInsideBlock = false);
 
 static int parseBlock(char LeftDelimiter, char RightDelimiter,
                       const std::string &Input, const int Start,
-                      RuleMatchMode Mode) {
+                      RuleMatchMode Mode, const MatchPattern &Suffix = {}) {
   const int Size = Input.size();
   int Index = Start;
 
@@ -252,25 +269,21 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
   }
   Index++;
 
-  Index = parseCodeElement({}, Input, Index, Mode);
-  if (Index == -1) {
+  Index = parseCodeElement(Suffix, Input, Index, Mode, true);
+
+  if (Index == -1 || Index >= Size) {
     return -1;
   }
 
-  if (Index >= Size || Input[Index] != RightDelimiter) {
-    return -1;
-  }
-  Index++;
   return Index;
 }
 
 static int parseCodeElement(const MatchPattern &Suffix,
                             const std::string &Input, const int Start,
-                            RuleMatchMode Mode) {
+                            RuleMatchMode Mode, bool IsInsideBlock) {
   int Index = Start;
   const int Size = Input.size();
   while (Index >= 0 && Index < Size) {
-
     if (SrcFileType == SourceFileType::SFT_CMakeScript ||
         SrcFileType == SourceFileType::SFT_PySetupScript) {
       if (Input[Index] == '#') {
@@ -281,11 +294,10 @@ static int parseCodeElement(const MatchPattern &Suffix,
     }
 
     const auto Character = Input[Index];
-    if (SrcFileType != SourceFileType::SFT_PySetupScript) {
-      if (Suffix.size() == 0 && Character == '"') {
-        return Index;
-      }
+    if (Suffix.size() == 0 && Character == '"') {
+      return Index;
     }
+
     if (Suffix.size() > 0) {
       std::optional<MatchResult> SuffixMatch;
 
@@ -295,24 +307,29 @@ static int parseCodeElement(const MatchPattern &Suffix,
         return Index;
       }
 
-      if (isRightDelimiter(Character) || Index == Size - 1) {
+      if (Index == Size - 1) {
         return -1;
+      }
+
+      if (isRightDelimiter(Character)) {
+        return IsInsideBlock ? Index : -1;
       }
     }
 
-    if (Character == '{') {
-      Index = parseBlock('{', '}', Input, Index, Mode);
-      continue;
-    }
+    if (isLeftDelimiter(Character)) {
+      char RightDelimiter = getRightDelimiter(Character);
 
-    if (Character == '[') {
-      Index = parseBlock('[', ']', Input, Index, Mode);
-      continue;
-    }
-
-    if (Character == '(') {
-      Index = parseBlock('(', ')', Input, Index, Mode);
-      continue;
+      if (SrcFileType == SourceFileType::SFT_PySetupScript) {
+        Index =
+            parseBlock(Character, RightDelimiter, Input, Index, Mode, Suffix);
+      } else {
+        Index = parseBlock(Character, RightDelimiter, Input, Index, Mode);
+      }
+      if (Index != -1 && isRightDelimiter(Input[Index])) {
+        Index++;
+        continue;
+      } else
+        return Index;
     }
 
     if (isRightDelimiter(Input[Index])) {
@@ -394,6 +411,7 @@ static int parseCodeElement(const MatchPattern &Suffix,
 
     Index++;
   }
+
   return Suffix.size() == 0 ? Index : -1;
 }
 
@@ -402,11 +420,22 @@ static int parseCodeElement(const MatchPattern &Suffix,
 static bool isIdentifiedChar(char Char) {
 
   if ((Char >= 'a' && Char <= 'z') || (Char >= 'A' && Char <= 'Z') ||
-      (Char >= '0' && Char <= '9') || (Char == '_') || (Char == '-')) {
+      (Char >= '0' && Char <= '9') || (Char == '_')) {
     return true;
+  } else if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+    if (Char == '-')
+      return true;
   }
 
   return false;
+}
+
+static bool isValidFilePrefix(char Char) {
+  return isIdentifiedChar(Char) || Char == '.' || Char == '/' || Char == '\\';
+}
+
+static bool isValidFilePostfix(char Char) {
+  return !(isIdentifiedChar(Char) || Char == '.');
 }
 
 static void applyExtenstionNameChange(
@@ -414,12 +443,20 @@ static void applyExtenstionNameChange(
     std::unordered_map<std::string, std::string> &Bindings,
     const std::string &FileName, const clang::tooling::UnifiedPath &OutRoot,
     std::string ExtensionType) {
-  size_t Pos = Next - 1;
-  for (; Pos > 0 && !isWhitespace(Input[Pos]); Pos--) {
+
+  // Check for valid postfix for a file name
+  if (!isValidFilePostfix(Input[Next + ExtensionType.length() + 1])) {
+    Bindings["rewrite_extention_name"] = std::move(ExtensionType);
+    return;
   }
-  Pos = Pos == 0 ? 0 : Pos + 1;
-  if (Input[Pos] == '"' || Input[Pos] == '\'')
-    Pos += 1;
+
+  size_t Pos = Next - 1;
+  // Find the starting position of the file name
+  for (; Pos > 0 && isValidFilePrefix(Input[Pos]); Pos--) {
+  }
+  if (!isValidFilePrefix(Input[Pos]))
+    Pos++;
+
   std::string SrcFile = Input.substr(Pos, Next + ExtensionType.length() +
                                               1 /*strlen of "."*/ - Pos);
   bool HasCudaSyntax = false;
@@ -477,6 +514,14 @@ static void applyExtenstionNameChange(
         llvm::sys::path::native(CMakeFilePath);
       }
       if (llvm::StringRef(File).ends_with(CMakeFilePath)) {
+        HasCudaSyntax = true;
+        break;
+      }
+    } else if (llvm::sys::path::filename(FileName).ends_with(".py")) {
+      llvm::SmallString<512> _SrcFile(SrcFile);
+      llvm::sys::path::native(_SrcFile);
+
+      if (llvm::StringRef(File).ends_with(_SrcFile)) {
         HasCudaSyntax = true;
         break;
       }

@@ -593,3 +593,60 @@ TYPE_REWRITE_ENTRY(
             WARNING_FACTORY(
                 Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                 STR("--use-experimental-features=bindless_images")))))
+
+// External Semaphore Handle Descs
+TYPE_REWRITE_ENTRY(
+    "cudaExternalSemaphore_t",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalSemaphore_t")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_sem_wrapper_ptr")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaExternalSemaphoreHandleDesc",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalSemaphoreHandleDesc")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_sem_handle_desc")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaExternalSemaphoreSignalParams",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalSemaphoreSignalParams")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_sem_params")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaExternalSemaphoreWaitParams",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalSemaphoreWaitParams")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_sem_params")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))

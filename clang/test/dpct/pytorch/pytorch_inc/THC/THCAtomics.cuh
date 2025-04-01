@@ -1,0 +1,1 @@
+// RUN: echo "empty command"

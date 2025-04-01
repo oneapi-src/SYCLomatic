@@ -261,22 +261,30 @@ RewriterMap dpct::createHalf2ArithmeticFunctionsRewriterMap() {
                               makeCallArgCreatorWithCall(2)),
                            LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))))))
       // __hmul2
-      MATH_API_REWRITER_DEVICE(
-          "__hmul2",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hmul2"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half2"),
+      MATH_API_REWRITER_DEVICE_OVERLOAD(
+          CheckArgType(0, "__half2"),
+          MATH_API_REWRITERS_V2(
+              "__hmul2",
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::math_libdevice,
                   HEADER_INSERT_FACTORY(
                       HeaderType::HT_SYCL_Math,
                       CALL_FACTORY_ENTRY("__hmul2",
                                          CALL(MapNames::getClNamespace() +
                                                   "ext::intel::math::hmul2",
                                               ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hmul2"),
-              BINARY_OP_FACTORY_ENTRY("__hmul2", BinaryOperatorKind::BO_Mul,
-                                      makeCallArgCreatorWithCall(0),
-                                      makeCallArgCreatorWithCall(1))))
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::emulation,
+                  BINARY_OP_FACTORY_ENTRY("__hmul2", BinaryOperatorKind::BO_Mul,
+                                          makeCallArgCreatorWithCall(0),
+                                          makeCallArgCreatorWithCall(1)))),
+          MATH_API_REWRITERS_V2(
+              "__hmul2",
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::emulation,
+                  BINARY_OP_FACTORY_ENTRY("__hmul2", BinaryOperatorKind::BO_Mul,
+                                          makeCallArgCreatorWithCall(0),
+                                          makeCallArgCreatorWithCall(1)))))
       // __hmul2_rn
       MATH_API_REWRITER_DEVICE(
           "__hmul2_rn",
@@ -343,22 +351,30 @@ RewriterMap dpct::createHalf2ArithmeticFunctionsRewriterMap() {
               UNARY_OP_FACTORY_ENTRY("__hneg2", UnaryOperatorKind::UO_Minus,
                                      makeCallArgCreatorWithCall(0))))
       // __hsub2
-      MATH_API_REWRITER_DEVICE(
-          "__hsub2",
-          MATH_API_DEVICE_NODES(
-              EMPTY_FACTORY_ENTRY("__hsub2"),
-              MATH_API_SPECIFIC_ELSE_EMU(
-                  CheckArgType(0, "__half2"),
+      MATH_API_REWRITER_DEVICE_OVERLOAD(
+          CheckArgType(0, "__half2"),
+          MATH_API_REWRITERS_V2(
+              "__hsub2",
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::math_libdevice,
                   HEADER_INSERT_FACTORY(
                       HeaderType::HT_SYCL_Math,
                       CALL_FACTORY_ENTRY("__hsub2",
                                          CALL(MapNames::getClNamespace() +
                                                   "ext::intel::math::hsub2",
                                               ARG(0), ARG(1))))),
-              EMPTY_FACTORY_ENTRY("__hsub2"),
-              BINARY_OP_FACTORY_ENTRY("__hsub2", BinaryOperatorKind::BO_Sub,
-                                      makeCallArgCreatorWithCall(0),
-                                      makeCallArgCreatorWithCall(1))))
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::emulation,
+                  BINARY_OP_FACTORY_ENTRY("__hsub2", BinaryOperatorKind::BO_Sub,
+                                          makeCallArgCreatorWithCall(0),
+                                          makeCallArgCreatorWithCall(1)))),
+          MATH_API_REWRITERS_V2(
+              "__hsub2",
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::emulation,
+                  BINARY_OP_FACTORY_ENTRY("__hsub2", BinaryOperatorKind::BO_Sub,
+                                          makeCallArgCreatorWithCall(0),
+                                          makeCallArgCreatorWithCall(1)))))
       // __hsub2_rn
       MATH_API_REWRITER_DEVICE(
           "__hsub2_rn",
