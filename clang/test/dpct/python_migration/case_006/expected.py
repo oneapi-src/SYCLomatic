@@ -60,4 +60,4 @@ xpu.set_stream(st)
 if torch.xpu.current_stream() != torch.xpu.current_stream():
     print("Not default stream")
 device = torch.device('xpu')
-extra_cuda_cflags=['-ffast-math', '']
+extra_cuda_cflags=['', '']
