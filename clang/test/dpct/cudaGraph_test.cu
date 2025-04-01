@@ -141,5 +141,12 @@ int main() {
   cudaGraphExecDestroy(**execGraph3);
   CUDA_CHECK_THROW(cudaGraphExecDestroy(**execGraph3));
 
+  // CHECK: delete (graph);
+  // CHECK-NEXT: delete (*graph2);
+  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(delete (**graph3)));
+  cudaGraphDestroy(graph);
+  cudaGraphDestroy(*graph2);
+  CUDA_CHECK_THROW(cudaGraphDestroy(**graph3));
+
   return 0;
 }
