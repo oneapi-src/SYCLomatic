@@ -8,6 +8,8 @@
 
 #include "InclusionHeaders.h"
 #include "PreProcessor.h"
+#include "UserDefinedRules/UserDefinedRules.h"
+#include <optional>
 
 namespace clang {
 namespace dpct {
@@ -33,11 +35,10 @@ private:
   bool UpdateNeeded;
 };
 
-std::string applyUserDefinedHeader(const std::string &FileName) {
-  // Apply user-defined rule if needed
+std::optional<std::pair<std::string, RulePriority>>
+getUserDefinedHeader(const std::string &FileName) {
   auto It = MapNames::HeaderRuleMap.find(FileName);
-  if (It != MapNames::HeaderRuleMap.end() &&
-      It->second.Priority == RulePriority::Takeover) {
+  if (It != MapNames::HeaderRuleMap.end()) {
     auto &Rule = It->second;
     std::string ReplHeaderStr = Rule.Prefix;
     llvm::raw_string_ostream OS(ReplHeaderStr);
@@ -54,11 +55,12 @@ std::string applyUserDefinedHeader(const std::string &FileName) {
     for (auto &Header : Rule.Includes) {
       PrintHeader(Header);
     }
-    PrintHeader(Rule.Out);
+    if (!Rule.Out.empty())
+      PrintHeader(Rule.Out);
     OS << Rule.Postfix;
-    return ReplHeaderStr;
+    return std::make_pair(ReplHeaderStr, Rule.Priority);
   }
-  return "";
+  return std::nullopt;
 }
 
 void insertHeaders(std::shared_ptr<DpctFileInfo> File,
@@ -150,6 +152,15 @@ void IncludesCallbacks::InclusionDirective(
     Updater.give_up();
   };
 
+  // Apply user-defined rule if needed
+  auto UserDefinedInfo = getUserDefinedHeader(FileName.str());
+  if (UserDefinedInfo.has_value()) {
+    if (UserDefinedInfo.value().second == RulePriority::Takeover) {
+      EmplaceReplacement(std::move(UserDefinedInfo.value().first));
+      return;
+    }
+  }
+
   if (Global.isInAnalysisScope(IncludedFile)) {
     IncludeFileMap[IncludedFile] = false;
     Global.getIncludingFileSet().insert(IncludedFile);
@@ -199,6 +210,7 @@ void IncludesCallbacks::InclusionDirective(
                         .getReplacement(DpctGlobalInfo::getContext());
         DpctGlobalInfo::getIncludeMapSet().push_back({IncludedFile, Repl});
       }
+      UserDefinedInfo.reset();
     }
     if (Global.isInRoot(IncludedFile))
       return;
@@ -208,11 +220,8 @@ void IncludesCallbacks::InclusionDirective(
       !Global.getSourceManager().isWrittenInMainFile(HashLoc))
     return;
 
-
-  // Apply user-defined rule if needed
-  if (auto ReplacedStr = applyUserDefinedHeader(FileName.str());
-      !ReplacedStr.empty()) {
-    EmplaceReplacement(std::move(ReplacedStr));
+  if (UserDefinedInfo.has_value()) {
+    EmplaceReplacement(std::move(UserDefinedInfo.value().first));
     return;
   }
 
