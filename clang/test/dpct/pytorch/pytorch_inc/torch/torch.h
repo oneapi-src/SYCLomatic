@@ -1,6 +1,4 @@
+#include <ATen/Tensor.h>
 namespace torch {
-class Tensor {
-    public:
-        bool is_cuda();
-};
-}
+using namespace at;
+} // namespace torch
