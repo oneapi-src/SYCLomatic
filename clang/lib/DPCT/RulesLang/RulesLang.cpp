@@ -347,7 +347,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
               "cudaExternalSemaphoreHandleType", "CUstreamCallback",
-              "cudaHostFn_t", "__nv_half2", "__nv_half"))))))
+              "cudaHostFn_t", "__nv_half2", "__nv_half",
+              "cudaGraphNodeType"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -918,6 +919,13 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       if (!DpctGlobalInfo::useExtGraph()) {
         report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
                "cudaStreamCaptureStatus", "--use-experimental-features=graph");
+      }
+    }
+
+    if (CanonicalTypeStr == "cudaGraphNodeType") {
+      if (!DpctGlobalInfo::useExtGraph()) {
+        report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               "cudaGraphNodeType", "--use-experimental-features=graph");
       }
     }
 
@@ -1909,17 +1917,17 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
 // Rule for Enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      declRefExpr(
-          to(enumConstantDecl(anyOf(
-              hasType(enumDecl(hasAnyName(
-                  "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
-                  "cudaStreamCaptureStatus", "cudaDeviceAttr",
-                  "libraryPropertyType_t", "cudaDataType_t",
-                  "CUmem_advise_enum", "cufftType_t",
-                  "cufftType", "cudaMemoryType", "CUctx_flags_enum",
-                  "CUpointer_attribute_enum", "CUmemorytype_enum",
-                  "cudaGraphicsMapFlags", "cudaGraphicsRegisterFlags"))),
-              matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
+      declRefExpr(to(enumConstantDecl(anyOf(
+                      hasType(enumDecl(hasAnyName(
+                          "cudaComputeMode", "cudaMemcpyKind",
+                          "cudaMemoryAdvise", "cudaStreamCaptureStatus",
+                          "cudaDeviceAttr", "libraryPropertyType_t",
+                          "cudaDataType_t", "CUmem_advise_enum", "cufftType_t",
+                          "cufftType", "cudaMemoryType", "CUctx_flags_enum",
+                          "CUpointer_attribute_enum", "CUmemorytype_enum",
+                          "cudaGraphicsMapFlags", "cudaGraphicsRegisterFlags",
+                          "cudaGraphNodeType"))),
+                      matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
       this);
 }
@@ -1991,7 +1999,14 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       EnumName == "cudaExternalSemaphoreHandleTypeKeyedMutex" ||
       EnumName == "cudaExternalSemaphoreHandleTypeKeyedMutexKmt" ||
       EnumName == "cudaExternalSemaphoreHandleTypeTimelineSemaphoreFd" ||
-      EnumName == "cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32") {
+      EnumName == "cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32" ||
+      EnumName == "cudaGraphNodeTypeWaitEvent" ||
+      EnumName == "cudaGraphNodeTypeEventRecord" ||
+      EnumName == "cudaGraphNodeTypeExtSemaphoreSignal" ||
+      EnumName == "cudaGraphNodeTypeExtSemaphoreWait" ||
+      EnumName == "cudaGraphNodeTypeMemAlloc" ||
+      EnumName == "cudaGraphNodeTypeMemFree" ||
+      EnumName == "cudaGraphNodeTypeConditional") {
     report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
     return;
   } else if (EnumName == "cudaComputeModeDefault" ||
@@ -2023,6 +2038,16 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
               EnumName == "cudaExternalSemaphoreHandleTypeD3D12Fence")) {
     report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
            EnumName, "--use-experimental-features=bindless_images");
+    return;
+  } else if (!DpctGlobalInfo::useExtGraph() &&
+             (EnumName == "cudaGraphNodeTypeKernel" ||
+              EnumName == "cudaGraphNodeTypeMemcpy" ||
+              EnumName == "cudaGraphNodeTypeMemset" ||
+              EnumName == "cudaGraphNodeTypeHost" ||
+              EnumName == "cudaGraphNodeTypeGraph" ||
+              EnumName == "cudaGraphNodeTypeEmpty")) {
+    report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+           EnumName, "--use-experimental-features=graph");
     return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
