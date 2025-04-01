@@ -54,7 +54,7 @@ void registerMacroRule(MetaRuleObject &R) {
       It->second.Id = R.RuleId;
       It->second.Priority = R.Priority;
       It->second.In = R.In;
-      It->second.Out = R.Out;
+      It->second.Out = R.Out.value();
       It->second.HelperFeature =
           clang::dpct::HelperFeatureEnum::none;
       It->second.Includes = R.Includes;
@@ -62,9 +62,8 @@ void registerMacroRule(MetaRuleObject &R) {
   } else {
     MapNames::MacroRuleMap.emplace(
         R.In,
-        MacroMigrationRule(R.RuleId, R.Priority, R.In, R.Out,
-                           clang::dpct::HelperFeatureEnum::none,
-                           R.Includes));
+        MacroMigrationRule(R.RuleId, R.Priority, R.In, R.Out.value(),
+                           clang::dpct::HelperFeatureEnum::none, R.Includes));
   }
 }
 
@@ -134,7 +133,7 @@ void registerTypeRule(MetaRuleObject &R) {
   TOB->Kind = TypeOutputBuilder::Kind::Top;
   TOB->RuleName = R.RuleId;
   TOB->RuleFile = R.RuleFile;
-  TOB->parse(R.Out);
+  TOB->parse(R.Out.value());
 
   if (R.RuleAttributes.NumOfTemplateArgs != -1) {
     dpct::TypeMatchingDesc TMD =
@@ -155,7 +154,7 @@ void registerTypeRule(MetaRuleObject &R) {
   auto It = MapNames::TypeNamesMap.find(R.In);
   if (It != MapNames::TypeNamesMap.end()) {
     if (It->second->Priority > R.Priority) {
-      It->second->NewName = R.Out;
+      It->second->NewName = R.Out.value();
       It->second->Priority = R.Priority;
       It->second->RequestFeature =
           clang::dpct::HelperFeatureEnum::none;
@@ -167,7 +166,7 @@ void registerTypeRule(MetaRuleObject &R) {
       return std::make_unique<clang::dpct::UserDefinedTypeRule>(In);
     });
     auto RulePtr = std::make_shared<TypeNameRule>(
-        R.Out, clang::dpct::HelperFeatureEnum::none, R.Priority);
+        R.Out.value(), clang::dpct::HelperFeatureEnum::none, R.Priority);
     RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                              R.Includes.end());
     MapNames::TypeNamesMap.emplace(R.In, RulePtr);
@@ -176,7 +175,8 @@ void registerTypeRule(MetaRuleObject &R) {
 
 void registerClassRule(MetaRuleObject &R) {
   // register class name migration rule
-  registerTypeRule(R);
+  if (R.Out.has_value())
+    registerTypeRule(R);
   // register all field rules
   for (auto ItField = R.Fields.begin(); ItField != R.Fields.end(); ItField++) {
     std::string BaseAndFieldName = R.In + "." + (*ItField)->In;
@@ -254,7 +254,7 @@ void registerEnumRule(MetaRuleObject &R) {
   if (It != MapNames::EnumNamesMap.end()) {
     if (It->second->Priority > R.Priority) {
       It->second->Priority = R.Priority;
-      It->second->NewName = R.Out;
+      It->second->NewName = R.Out.value();
       It->second->RequestFeature =
           clang::dpct::HelperFeatureEnum::none;
       It->second->Includes.insert(It->second->Includes.end(),
@@ -268,7 +268,7 @@ void registerEnumRule(MetaRuleObject &R) {
       return std::make_unique<clang::dpct::UserDefinedEnumRule>(Enum);
     });
     auto RulePtr = std::make_shared<EnumNameRule>(
-        R.Out, clang::dpct::HelperFeatureEnum::none, R.Priority);
+        R.Out.value(), clang::dpct::HelperFeatureEnum::none, R.Priority);
     RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                              R.Includes.end());
     MapNames::EnumNamesMap.emplace(
@@ -283,7 +283,7 @@ void deregisterAPIRule(MetaRuleObject &R) {
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
   MapNames::PatternRewriters.emplace_back(MetaRuleObject::PatternRewriter(
-      R.In, R.Out, R.Subrules, R.MatchMode, R.Warning, R.RuleId,
+      R.In, R.Out.value(), R.Subrules, R.MatchMode, R.Warning, R.RuleId,
       R.BuildScriptSyntax, R.Priority));
 }
 
@@ -300,7 +300,7 @@ void registerHelperFunctionRule(MetaRuleObject &R) {
       // This map is inited here.
       // It saves the customized string which used for each kind of helper
       // function call in the migrated code.
-      MapNames::CustomHelperFunctionMap.insert({Iter->second, R.Out});
+      MapNames::CustomHelperFunctionMap.insert({Iter->second, R.Out.value()});
       dpct::DpctGlobalInfo::setUsingDRYPattern(false);
       dpct::DpctGlobalInfo::getCustomHelperFunctionAddtionalIncludes().insert(
           R.Includes.begin(), R.Includes.end());

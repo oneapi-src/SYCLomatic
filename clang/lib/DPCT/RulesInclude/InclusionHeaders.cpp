@@ -54,7 +54,7 @@ std::string applyUserDefinedHeader(const std::string &FileName) {
     for (auto &Header : Rule.Includes) {
       PrintHeader(Header);
     }
-    PrintHeader(Rule.Out);
+    PrintHeader(Rule.Out.value());
     OS << Rule.Postfix;
     return ReplHeaderStr;
   }

@@ -91,7 +91,7 @@ void doPythonBuildScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 }
 
 void registerPythonMigrationRule(MetaRuleObject &R) {
-  auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules,
+  auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out.value(), R.Subrules,
                                             R.MatchMode, R.Warning, R.RuleId,
                                             R.BuildScriptSyntax, R.Priority);
 

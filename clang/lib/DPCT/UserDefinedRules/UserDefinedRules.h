@@ -14,6 +14,30 @@
 #include <string>
 #include <vector>
 
+namespace llvm::yaml {
+template <> struct ScalarTraits<std::optional<std::string>> {
+  static void output(const std::optional<std::string> &Value, void *,
+                     raw_ostream &Out) {
+    if (Value)
+      Out << *Value;
+    else
+      Out << "null";
+  }
+
+  static StringRef input(StringRef Scalar, void *,
+                         std::optional<std::string> &Val) {
+    if (Scalar == "null") {
+      Val = std::nullopt;
+      return "";
+    }
+    Val = Scalar.str();
+    return "";
+  }
+
+  static QuotingType mustQuote(StringRef S) { return needsQuotes(S); }
+};
+} // namespace llvm::yaml
+
 namespace clang {
 namespace dpct {
 
@@ -130,7 +154,7 @@ public:
   std::string BuildScriptSyntax;
   RuleKind Kind;
   std::string In;
-  std::string Out;
+  std::optional<std::string> Out = std::nullopt;
   std::string EnumName;
   std::string Prefix;
   std::string Postfix;
