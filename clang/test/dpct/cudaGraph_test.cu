@@ -99,6 +99,13 @@ int main() {
   CUDA_CHECK_THROW(cudaGraphLaunch(execGraph, stream));
   cudaGraphLaunch(*execGraph2, *stream2);
 
+  // CHECK: graph->print_graph((std::string) "graph.dot", true);
+  // CHECK-NEXT: graph->print_graph((std::string) "graph.dot", true);
+  // CHECK-NEXT: graph->print_graph((std::string) "graph.dot", true);
+  cudaGraphDebugDotPrint(graph, "graph.dot", 1);
+  cudaGraphDebugDotPrint(graph, "graph.dot", cudaGraphDebugDotFlagsVerbose);
+  cudaGraphDebugDotPrint(graph, "graph.dot", cudaGraphDebugDotFlagsConditionalNodeParams);
+
 #ifndef DNO_BUILD_TEST
   // CHECK: execGraph->update(*graph);
   cudaGraphExecUpdate(execGraph, graph, nullptr, nullptr);

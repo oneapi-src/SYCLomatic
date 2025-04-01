@@ -66,3 +66,14 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphExecUpdate"),
                             ARG("--use-experimental-features=graph"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cudaGraphDebugDotPrint", ARG(0), true, "print_graph",
+        CAST_IF_NOT_SAME(makeLiteral("std::string"), ARG(1)),
+        makeLiteral("true")),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphDebugDotPrint",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphDebugDotPrint"),
+                            ARG("--use-experimental-features=graph"))))
