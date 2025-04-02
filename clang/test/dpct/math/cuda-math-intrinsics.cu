@@ -2449,7 +2449,7 @@ __device__ float foo2(float f, float g) {
 }
 
 // CHECK:  int  foo3(int i, int j) {
-// CHECK-NEXT:   return std::max(i, j) + std::min(i, j);
+// CHECK-NEXT:   return sycl::max(i, j) + sycl::min(i, j);
 // CHECK-NEXT: }
 __device__ int __host__ foo3(int i, int j) {
   return max(i, j) + min(i, j);
@@ -2619,7 +2619,7 @@ __device__ void do_migration3() {
 }
 __host__ __device__ void do_migration4() {
   int i, j;
-  // CHECK: std::max(i, j);
+  // CHECK: sycl::max(i, j);
   max(i, j);
 }
 namespace t {
@@ -2815,7 +2815,7 @@ __device__ __host__ void do_migration7() {
 
   //CHECK: std::max(i, i);
   //CHECK-NEXT: std::min(i, i);
-  //CHECK-NEXT: std::fabs(f);
+  //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
