@@ -4823,6 +4823,8 @@ DeviceFunctionDecl::DeviceFunctionDecl(
       FuncInfo(getFuncInfo(FD)) {
   if (FD->isFunctionTemplateSpecialization()) {
     SourceRange ReturnTypeRange = FD->getReturnTypeSourceRange();
+    ReturnTypeRange = clang::dpct::getDefinitionRange(
+        ReturnTypeRange.getBegin(), ReturnTypeRange.getEnd());
     OffsetForAttr =
         DpctGlobalInfo::getLocInfo(ReturnTypeRange.getBegin()).second;
   }
@@ -4858,6 +4860,11 @@ DeviceFunctionDecl::DeviceFunctionDecl(
           Specialization->getMostRecentDecl()->getMinRequiredArguments()),
       FuncInfo(getFuncInfo(Specialization)) {
   IsDefFilePathNeeded = false;
+
+  auto ReturnLoc = FTL.getReturnLoc();
+  auto ReturnRange = clang::dpct::getDefinitionRange(ReturnLoc.getBeginLoc(),
+                                                     ReturnLoc.getEndLoc());
+  OffsetForAttr = DpctGlobalInfo::getLocInfo(ReturnRange.getBegin()).second;
 
   buildReplaceLocInfo(FTL, Attrs);
   buildTextureObjectParamsInfo(FTL.getParams());
