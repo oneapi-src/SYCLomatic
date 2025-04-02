@@ -188,6 +188,14 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuMipmappedArrayGetLevel", DEREF(makeCallArgCreatorWithCall(0)),
+        MEMBER_CALL(ARG(1), true, "get_mip_level", ARG(2)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuMipmappedArrayGetLevel",
+                                      MipmapNeedBindlessImage))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaMallocMipmappedArray", DEREF(makeCallArgCreatorWithCall(0)),
         NEW(MapNames::getDpctNamespace() + "experimental::image_mem_wrapper",
             DEREF(1), ARG(2),

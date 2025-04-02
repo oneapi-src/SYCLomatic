@@ -156,7 +156,6 @@
   Kind: Class
   Priority: Takeover
   In: at::Tensor # The underlying type of torch::Tensor is at::Tensor
-  Out: torch::Tensor
   Methods:
     - In: is_cuda
       Out: $method_base is_xpu()

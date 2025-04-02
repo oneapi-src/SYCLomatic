@@ -130,7 +130,7 @@ public:
   std::string BuildScriptSyntax;
   RuleKind Kind;
   std::string In;
-  std::string Out;
+  std::optional<std::string> Out = std::nullopt;
   std::string EnumName;
   std::string Prefix;
   std::string Postfix;
@@ -319,7 +319,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("CmakeSyntax", Doc->BuildScriptSyntax);
     Io.mapOptional("PythonSyntax", Doc->BuildScriptSyntax);
     Io.mapRequired("In", Doc->In);
-    Io.mapRequired("Out", Doc->Out);
+    Io.mapOptional("Out", Doc->Out);
     Io.mapOptional("Includes", Doc->Includes);
     Io.mapOptional("Fields", Doc->Fields);
     Io.mapOptional("Methods", Doc->Methods);
