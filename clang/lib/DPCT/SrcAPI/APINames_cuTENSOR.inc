@@ -94,4 +94,31 @@ ENTRY(cutensorLoggerSetLevel, cutensorLoggerSetLevel, false, NO_FLAG, P4, "comme
 ENTRY(cutensorLoggerSetMask, cutensorLoggerSetMask, false, NO_FLAG, P4, "comment")
 ENTRY(cutensorLoggerForceDisable, cutensorLoggerForceDisable, false, NO_FLAG, P4, "comment")
 
+
+// cuTENSORMg - General Operations
+ENTRY(cutensorMgCreate, cutensorMgCreate, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgDestroy, cutensorMgDestroy, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgCreateTensorDescriptor, cutensorMgCreateTensorDescriptor, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgDestroyTensorDescriptor, cutensorMgDestroyTensorDescriptor, false, NO_FLAG, P4, "comment")
+
+
+// cuTENSORMg - Copy Operations
+ENTRY(cutensorMgCreateCopyDescriptor, cutensorMgCreateCopyDescriptor, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgDestroyCopyDescriptor, cutensorMgDestroyCopyDescriptor, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgCopyGetWorkspace, cutensorMgCopyGetWorkspace, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgCreateCopyPlan, cutensorMgCreateCopyPlan, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgDestroyCopyPlan, cutensorMgDestroyCopyPlan, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgCopy, cutensorMgCopy, false, NO_FLAG, P4, "comment")
+
+
+// cuTENSORMg - Contraction Operations
+ENTRY(cutensorMgCreateContractionDescriptor, cutensorMgCreateContractionDescriptor, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgDestroyContractionDescriptor, cutensorMgDestroyContractionDescriptor, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgCreateContractionFind, cutensorMgCreateContractionFind, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgDestroyContractionFind, cutensorMgDestroyContractionFind, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgContractionGetWorkspace, cutensorMgContractionGetWorkspace, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgCreateContractionPlan, cutensorMgCreateContractionPlan, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgDestroyContractionPlan, cutensorMgDestroyContractionPlan, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgContraction, cutensorMgContraction, false, NO_FLAG, P4, "comment")
+
 // clang-format on
