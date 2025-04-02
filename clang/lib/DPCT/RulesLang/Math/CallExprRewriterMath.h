@@ -189,18 +189,43 @@ inline auto UseBFloat16 = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useBFloat16();
 };
 
+inline auto IsDirectCallerPureDevice = [](const CallExpr *C) -> bool {
+  auto ContextFD = getImmediateOuterFuncDecl(C);
+  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
+    ContextFD = getImmediateOuterFuncDecl(LE);
+  }
+  if (!ContextFD)
+    return false;
+  if ((ContextFD->getAttr<CUDADeviceAttr>() &&
+       !ContextFD->getAttr<CUDAHostAttr>()) ||
+      ContextFD->getAttr<CUDAGlobalAttr>()) {
+    return true;
+  }
+  return false;
+};
+
+inline auto IsDirectCallerPureHost = [](const CallExpr *C) -> bool {
+  auto ContextFD = getImmediateOuterFuncDecl(C);
+  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
+    ContextFD = getImmediateOuterFuncDecl(LE);
+  }
+  if (!ContextFD)
+    return false;
+  if (!ContextFD->getAttr<CUDADeviceAttr>() &&
+      !ContextFD->getAttr<CUDAGlobalAttr>()) {
+    return true;
+  }
+  return false;
+};
+
 inline auto IsPureHost = [](const CallExpr *C) -> bool {
   const FunctionDecl *FD = C->getDirectCallee();
   if (!FD)
     return false;
+  if (!IsDirectCallerPureHost(C))
+    return false;
   if (!(FD->hasAttr<CUDADeviceAttr>()))
     return true;
-
-  if (!HasDirectCallee()(C))
-    return false;
-  if (IsDirectCalleeHasAttribute<CUDADeviceAttr>()(C))
-    return false;
-
   SourceLocation DeclLoc =
       dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
           FD->getLocation());
@@ -214,22 +239,12 @@ inline auto IsPureHost = [](const CallExpr *C) -> bool {
   }
   return false;
 };
-inline auto IsPureDevice = makeCheckAnd(
-    HasDirectCallee(),
-    makeCheckAnd(IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
-                 makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>())));
-
-inline auto IsDirectCallerPureDevice = [](const CallExpr *C) -> bool {
-  auto ContextFD = getImmediateOuterFuncDecl(C);
-  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
-    ContextFD = getImmediateOuterFuncDecl(LE);
-  }
-  if (!ContextFD)
+inline auto IsPureDevice = [](const CallExpr *C) -> bool {
+  if (!HasDirectCallee()(C))
     return false;
-  if (ContextFD->getAttr<CUDADeviceAttr>() &&
-      !ContextFD->getAttr<CUDAHostAttr>()) {
+  if (IsDirectCalleeHasAttribute<CUDADeviceAttr>()(C) &&
+      !IsDirectCalleeHasAttribute<CUDAHostAttr>()(C))
     return true;
-  }
   return false;
 };
 inline auto IsUnresolvedLookupExpr = [](const CallExpr *C) -> bool {
