@@ -14,6 +14,7 @@ struct B{
   int data = 1;
 };
 
+const float init_val = 0;
 
 // CHECK: static sycl::ext::oneapi::experimental::device_global<int> var_a;
 // CHECK: /*
@@ -31,6 +32,7 @@ struct B{
 // CHECK: static sycl::ext::oneapi::experimental::device_global<A> var_e;
 // CHECK: static sycl::ext::oneapi::experimental::device_global<B> var_f;
 // CHECK: inline dpct::global_memory<int, 0> var_g;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<float> var_h{init_val};
 __device__ int var_a;
 __device__ int var_b = 0;
 __constant__ float var_c = 2.f;
@@ -38,6 +40,8 @@ __constant__ float var_d = 1.f;
 __device__ A var_e;
 __constant__ B var_f;
 __device__ int var_g;
+__device__ auto var_h = init_val;
+
 // CHECK: static sycl::ext::oneapi::experimental::device_global<float[10]> arr_a;
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
@@ -82,6 +86,7 @@ TABLE_END()
 // CHECK:   var_a.get() = 0;
 // CHECK:   var_e.get().data = 1;
 // CHECK:   *ptr = var_a.get() + var_b.get() + var_c.get() + var_d.get() + var_e.get().data + var_f.get().data + device_func();
+// CHECK:   sycl::fmax(var_h.get(), (double)0);
 // CHECK: }
 __device__ int device_func() {
   float *p = arr_a;
@@ -94,6 +99,7 @@ __global__ void kernel(int *ptr) {
   var_a = 0;
   var_e.data = 1;
   *ptr = var_a + var_b + var_c + var_d + var_e.data + var_f.data + device_func();
+  fmax(var_h, 0);
 }
 
 // CHECK: void kernel2(int *ptr,

@@ -2625,6 +2625,9 @@ CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold) : CtTypeInfo() {
     auto TL = D->getTypeSourceInfo()->getTypeLoc();
     IsConstantQualified = D->hasAttr<CUDAConstantAttr>();
     setTypeInfo(TL, NeedSizeFold);
+    if (IsAutoSpecified) {
+      DeducedTypeStr = DpctGlobalInfo::getReplacedTypeName(D->getType());
+    }
     if (TL.getTypeLocClass() == TypeLoc::IncompleteArray) {
       if (auto CAT = dyn_cast<ConstantArrayType>(D->getType())) {
         Range[0] = std::to_string(CAT->getSize().getZExtValue());
@@ -2822,6 +2825,12 @@ void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
 }
 void CtTypeInfo::setName(const TypeLoc &TL) {
   ExprAnalysis EA;
+  QualType QT = TL.getType();
+  if (const Type *TP = QT.getTypePtr()) {
+    if (isa<AutoType>(TP)) {
+      IsAutoSpecified = true;
+    }
+  }
   EA.analyze(TL);
   TDSI = EA.getTemplateDependentStringInfo();
   auto SetFromTL = EA.getHelperFeatureSet();
@@ -3019,7 +3028,11 @@ void MemVarInfo::migrateToDeviceGlobal(const VarDecl *MemVar) {
     }
   }
   if (BaseTypeStr.empty()) {
-    BaseTypeStr = getType()->getBaseNameWithoutQualifiers();
+    if (getType()->isAutoSpecified()) {
+      BaseTypeStr = getType()->getDeducedTypeStr();
+    } else {
+      BaseTypeStr = getType()->getBaseNameWithoutQualifiers();
+    }
     TypeReplLoc = TL.getBeginLoc();
     TypeReplLen =
         SM.getFileOffset(TL.getEndLoc()) - SM.getFileOffset(TL.getBeginLoc()) +
