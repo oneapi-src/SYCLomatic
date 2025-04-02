@@ -48,6 +48,8 @@ void registerMigrationRule(const std::string &Name, Functor &&F) {
 }
 
 void registerMacroRule(MetaRuleObject &R) {
+  if (!R.Out.has_value())
+    return;
   auto It = MapNames::MacroRuleMap.find(R.In);
   if (It != MapNames::MacroRuleMap.end()) {
     if (It->second.Priority > R.Priority) {
@@ -68,6 +70,8 @@ void registerMacroRule(MetaRuleObject &R) {
 }
 
 void registerAPIRule(MetaRuleObject &R) {
+  if (!R.Out.has_value())
+    return;
   using namespace clang::dpct;
   // register rule
   registerMigrationRule(
@@ -118,6 +122,8 @@ void registerAPIRule(MetaRuleObject &R) {
 }
 
 void registerHeaderRule(MetaRuleObject &R) {
+  if (!R.Out.has_value())
+    return;
   auto It = MapNames::HeaderRuleMap.find(R.In);
   if (It != MapNames::HeaderRuleMap.end()) {
     if (It->second.Priority > R.Priority) {
@@ -129,6 +135,8 @@ void registerHeaderRule(MetaRuleObject &R) {
 }
 
 void registerTypeRule(MetaRuleObject &R) {
+  if (!R.Out.has_value())
+    return;
   std::shared_ptr TOB = std::make_shared<TypeOutputBuilder>();
   TOB->Kind = TypeOutputBuilder::Kind::Top;
   TOB->RuleName = R.RuleId;
@@ -250,6 +258,8 @@ void registerClassRule(MetaRuleObject &R) {
 }
 
 void registerEnumRule(MetaRuleObject &R) {
+  if (!R.Out.has_value())
+    return;
   auto It = MapNames::EnumNamesMap.find(R.In);
   if (It != MapNames::EnumNamesMap.end()) {
     if (It->second->Priority > R.Priority) {
@@ -277,17 +287,23 @@ void registerEnumRule(MetaRuleObject &R) {
 }
 
 void deregisterAPIRule(MetaRuleObject &R) {
+  if (!R.Out.has_value())
+    return;
   using namespace clang::dpct;
   CallExprRewriterFactoryBase::RewriterMap->erase(R.In);
 }
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
+  if (!R.Out.has_value())
+    return;
   MapNames::PatternRewriters.emplace_back(MetaRuleObject::PatternRewriter(
       R.In, R.Out.value(), R.Subrules, R.MatchMode, R.Warning, R.RuleId,
       R.BuildScriptSyntax, R.Priority));
 }
 
 void registerHelperFunctionRule(MetaRuleObject &R) {
+  if (!R.Out.has_value())
+    return;
   static const std::unordered_map<std::string, dpct::HelperFuncCatalog>
       String2HelperFuncCatalogMap{
           {"get_default_queue", dpct::HelperFuncCatalog::GetDefaultQueue},
