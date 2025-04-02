@@ -124,7 +124,7 @@ public:
     return it->second;
   }
 
-  void *get_base_ptr(const void *ptr) {
+  void *get_base_addr(const void *ptr) {
     allocation alloc = translate_ptr(ptr);
     return alloc.alloc_ptr;
   }

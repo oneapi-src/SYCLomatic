@@ -450,7 +450,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
             HelperFeatureEnum::device_ext,
             ASSIGN_FACTORY_ENTRY(
                 "cuPointerGetAttribute", ARG(0),
-                CALL(MapNames::getDpctNamespace() + "get_base_ptr", ARG(2))))),
+                CALL(MapNames::getDpctNamespace() + "get_base_addr", ARG(2))))),
     UNSUPPORT_FACTORY_ENTRY("cuPointerGetAttribute",
                             Diagnostics::UNSUPPORTED_PARAM, ARG(1))))
 

@@ -124,10 +124,10 @@ static inline bool is_device_ptr(T ptr) {
   }
   return false;
 }
-
-template <class T> static inline void *get_base_ptr(T ptr) {
+/// Get the base address of the allocated memory for the given pointer \p ptr.
+template <class T> static inline void *get_base_addr(T ptr) {
   if constexpr (std::is_pointer<T>::value) {
-    return detail::mem_mgr::instance().get_base_ptr(ptr);
+    return detail::mem_mgr::instance().get_base_addr(ptr);
   }
   return nullptr;
 }
