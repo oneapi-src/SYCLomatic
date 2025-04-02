@@ -18,10 +18,14 @@ int main() {
 // CHECK:  prop.type = 0;
 // CHECK:  prop.location.type = 1;
 // CHECK:  prop.location.id = device;
+// CHECK:  prop.allocFlags.compressionType = 0;
+// CHECK:  prop.allocFlags.compressionType = 1;
     CUmemAllocationProp prop = {};
     prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
     prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
     prop.location.id = device;
+    prop.allocFlags.compressionType = CU_MEM_ALLOCATION_COMP_NONE;
+    prop.allocFlags.compressionType = CU_MEM_ALLOCATION_COMP_GENERIC;
     size_t granularity;
 // CHECK:    granularity = sycl::ext::oneapi::experimental::get_mem_granularity(dpct::get_device(prop.location.id), dpct::get_device(prop.location.id).get_context(), sycl::ext::oneapi::experimental::granularity_mode::minimum);
     cuMemGetAllocationGranularity(&granularity, &prop, CU_MEM_ALLOC_GRANULARITY_MINIMUM);   

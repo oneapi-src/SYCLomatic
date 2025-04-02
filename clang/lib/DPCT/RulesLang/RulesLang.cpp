@@ -8142,7 +8142,8 @@ void VirtualMemRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "CU_MEM_ACCESS_FLAGS_PROT_NONE", "CU_MEM_ACCESS_FLAGS_PROT_READ",
         "CU_MEM_ACCESS_FLAGS_PROT_READWRITE",
         "CU_MEM_ALLOC_GRANULARITY_RECOMMENDED",
-        "CU_MEM_ALLOC_GRANULARITY_MINIMUM");
+        "CU_MEM_ALLOC_GRANULARITY_MINIMUM", "CU_MEM_ALLOCATION_COMP_NONE",
+        "CU_MEM_ALLOCATION_COMP_GENERIC");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(virtualmemoryAPI()))).bind("vmCall"), this);
