@@ -1,5 +1,8 @@
-// RUN: dpct --format-range=none -out-root %T/nvshmem %s --cuda-include-path="%cuda-path/include" --extra-arg="-I%cuda-path/../../nvshmem/latest/include"
+// REQUIRES: system-linux
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1
+// RUN: dpct --format-range=none -out-root %T/nvshmem %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/nvshmem/nvshmem.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/nvshmem/nvshmem.dp.cpp -o %T/nvshmem/nvshmem.dp.o %}
 #include <nvshmem.h>
 #include <nvshmemx.h>
 
@@ -12,6 +15,7 @@ int main() {
 
     // CHECK: ishmemx_attr_t attr;
     nvshmemx_init_attr_t attr;
+#ifndef NO_BUILD_TEST
     // CHECK: /*
     // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of nvshmemx_init_args_t is not supported.
     // CHECK-NEXT: */
@@ -52,20 +56,23 @@ int main() {
     // CHECK-NEXT: */
     char *content = args.content;
 
-    attr.mpi_comm = NULL
+    attr.mpi_comm = NULL;
     // CHECK: /*
     // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of nvshmemx_init_attr_t::args is not supported.
     // CHECK-NEXT: */
     attr.args = args;
+#endif // NO_BUILD_TEST
 
     // CHECK: (&attr)->runtime = ISHMEMX_RUNTIME_MPI;
     // CHECK-NEXT: ishmemx_init_attr(&attr);
     nvshmemx_init_attr(NVSHMEMX_INIT_WITH_MPI_COMM, &attr);
 
+#ifndef NO_BUILD_TEST
     // CHECK: /*
     // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of nvshmemx_init_attr is not supported.
     // CHECK-NEXT: */
     nvshmemx_init_attr(NVSHMEMX_INIT_WITH_MPI_COMM | NVSHMEMX_INIT_WITH_SHMEM, &attr);
+#endif // NO_BUILD_TEST
 
     // CHECK: unsigned int rt = ISHMEMX_RUNTIME_MPI;
     // CHECK-NEXT: (&attr)->runtime = static_cast<ishmemx_runtime_type_t>(rt);
