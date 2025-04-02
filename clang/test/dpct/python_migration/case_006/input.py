@@ -56,3 +56,8 @@ stS = cuda.stream(st)
 
 torch.cuda.set_stream(st)
 cuda.set_stream(st)
+
+if torch.cuda.current_stream() != torch.cuda.default_stream():
+    print("Not default stream")
+device = torch.device('cuda')
+extra_cuda_cflags=['--use_fast_math', '--allow-unsupported-compiler']

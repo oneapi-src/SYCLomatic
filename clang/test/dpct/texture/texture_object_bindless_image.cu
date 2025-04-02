@@ -654,3 +654,62 @@ int main() {
   cudaFreeMipmappedArray(pMipMapArr);
   return 0;
 }
+
+// CHECK: void set_3D_descriptor(sycl::ext::oneapi::experimental::image_descriptor &desc) {
+void set_3D_descriptor(CUDA_ARRAY3D_DESCRIPTOR &desc) {
+  desc.Width = 1;
+  desc.Depth = 2;
+  desc.Height = 1;
+  // CHECK: desc.channel_type = sycl::image_channel_type::unsigned_int16;
+  desc.Format = CU_AD_FORMAT_SIGNED_INT16;
+  desc.NumChannels = 2;
+}
+
+void test_mipmap_driver_api() {
+  // CHECK: sycl::ext::oneapi::experimental::image_descriptor desc;
+  CUDA_ARRAY3D_DESCRIPTOR desc;
+  unsigned int numMipmapLevels = 2;
+  set_3D_descriptor(desc);
+
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr mmArray;
+  CUmipmappedArray mmArray;
+
+  // CHECK: mmArray = new dpct::experimental::image_mem_wrapper(desc, numMipmapLevels);
+  cuMipmappedArrayCreate(&mmArray, &desc, numMipmapLevels);
+
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr *pArray;
+  CUmipmappedArray *pArray;
+  // CHECK: *pArray = new dpct::experimental::image_mem_wrapper(desc, numMipmapLevels);
+  cuMipmappedArrayCreate(pArray, &desc, numMipmapLevels);
+
+  CUarray level_arr;
+  // CHECK: level_arr = mmArray->get_mip_level(1);
+  cuMipmappedArrayGetLevel(&level_arr, mmArray, 1);
+
+  CUtexref texRef;
+  // CHECK: texRef->attach(mmArray);
+  cuTexRefSetMipmappedArray(texRef, mmArray, 0);
+
+  // sycl::filter_mode fm = sycl::filtering_mode::nearest;
+  CUfilter_mode fm = CU_TR_FILTER_MODE_POINT;
+
+  // CHECK: texRef->set_mip_filtering_mode(fm);
+  cuTexRefSetMipmapFilterMode(texRef, fm);
+
+  // CHECK: fm = texRef->get_mip_filtering_mode();
+  cuTexRefGetMipmapFilterMode(&fm, texRef);
+
+  float min_clamp, max_clamp;
+  // CHECK: texRef->get_mip_level_clamp(&min_clamp, &max_clamp);
+  cuTexRefGetMipmapLevelClamp(&min_clamp, &max_clamp, texRef);
+
+  CUmipmappedArray anotherArray;
+  // CHECK: anotherArray = texRef->get_attached_mipmap_data();
+  cuTexRefGetMipmappedArray(&anotherArray, texRef);
+
+  // CHECK: delete mmArray;
+  cuMipmappedArrayDestroy(mmArray);
+
+  // CHECK: delete (*pArray);
+  cuMipmappedArrayDestroy(*pArray);
+}
