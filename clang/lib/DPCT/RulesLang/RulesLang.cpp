@@ -4611,9 +4611,6 @@ void KernelCallRefRule::runRule(
   }
   if (auto ULE =
           getAssistNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedRef")) {
-    if (!DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
-      return;
-    }
     bool KernelRefFound = false;
     for (auto *D : ULE->decls()) {
       const FunctionDecl *FD = dyn_cast<FunctionDecl>(D);
@@ -4645,7 +4642,8 @@ void KernelCallRefRule::runRule(
         }
       }
     }
-    insertWrapperPostfix<UnresolvedLookupExpr>(ULE, getTypeRepl(ULE), true);
+    insertWrapperPostfix<UnresolvedLookupExpr>(
+        ULE, getTypeRepl(ULE), DpctGlobalInfo::isCVersionCUDALaunchUsed());
   }
 }
 
