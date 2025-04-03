@@ -8,7 +8,6 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/dpct-output/p_test_4.dp.cpp -o %T/dpct-output/p_test_4.dp.o %}
 // RUN: FileCheck --match-full-lines --input-file %T/dpct-output/readme_4.txt %T/dpct-output/readme_4.txt
 
-
 #include "cuda_runtime.h"
 #include <stdio.h>
 

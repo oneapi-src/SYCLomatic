@@ -520,7 +520,8 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
               "CUresourcetype", "CUresourcetype_enum", "CUaddress_mode",
               "CUaddress_mode_enum", "CUfilter_mode", "CUfilter_mode_enum",
               "CUDA_TEXTURE_DESC", "CUtexref", "textureReference",
-              "cudaMipmappedArray", "cudaMipmappedArray_t"))))))
+              "cudaMipmappedArray", "cudaMipmappedArray_t",
+              "CUmipmappedArray"))))))
           .bind("texType"),
       this);
 
@@ -576,6 +577,9 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuArrayCreate_v2",
       "cuArray3DGetDescriptor_v2",
       "cuArrayGetDescriptor_v2",
+      "cuMipmappedArrayCreate",
+      "cuMipmappedArrayDestroy",
+      "cuMipmappedArrayGetLevel",
       "cuArrayDestroy",
       "cuTexObjectCreate",
       "cuTexObjectDestroy",
@@ -595,6 +599,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexRefGetFlags",
       "cuTexRefSetAddress_v2",
       "cuTexRefSetAddress2D_v3",
+      "cuTexRefSetMipmappedArray",
+      "cuTexRefGetMipmappedArray",
+      "cuTexRefGetMipmapFilterMode",
+      "cuTexRefSetMipmapFilterMode",
+      "cuTexRefGetMipmapLevelClamp",
   };
 
   auto hasAnyFuncName = [&]() {

@@ -599,7 +599,9 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 }
 
 void registerCmakeMigrationRule(MetaRuleObject &R) {
-  auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules,
+  if (!R.Out.has_value())
+    return;
+  auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out.value(), R.Subrules,
                                             R.MatchMode, R.Warning, R.RuleId,
                                             R.BuildScriptSyntax, R.Priority);
   auto Iter = CmakeBuildInRules.find(PR.BuildScriptSyntax);

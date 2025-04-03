@@ -1735,7 +1735,8 @@ public:
 
 public:
   UserDefinedRewriterFactory(MetaRuleObject &R)
-      : OutStr(R.Out), Includes(R.Includes), RuleAttributes(R.RuleAttributes) {
+      : OutStr(R.Out.value()), Includes(R.Includes),
+        RuleAttributes(R.RuleAttributes) {
     Priority = R.Priority;
     OB.Kind = OutputBuilder::Kind::Top;
     OB.RuleName = R.RuleId;

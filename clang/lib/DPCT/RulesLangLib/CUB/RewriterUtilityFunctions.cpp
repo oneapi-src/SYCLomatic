@@ -336,9 +336,11 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                                            "experimental::shift_sub_group_left",
                                        0, 1),
                       SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
-              UNSUPPORT_FACTORY_ENTRY("cub::ShuffleDown",
-                                      Diagnostics::API_NOT_MIGRATED,
-                                      LITERAL("cub::ShuffleDown"))))
+              UNSUPPORT_FACTORY_ENTRY(
+                  "cub::ShuffleDown",
+                  Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                  LITERAL("cub::ShuffleDown"),
+                  LITERAL("--use-experimental-features=non-uniform-groups"))))
       // cub::ShuffleUp
       SUBGROUPSIZE_FACTORY(
           UINT_MAX,
@@ -352,7 +354,8 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                                "experimental::shift_sub_group_right",
                            0, 1),
                        SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
-              UNSUPPORT_FACTORY_ENTRY("cub::ShuffleUp",
-                                      Diagnostics::API_NOT_MIGRATED,
-                                      LITERAL("cub::ShuffleUp"))))};
+              UNSUPPORT_FACTORY_ENTRY(
+                  "cub::ShuffleUp", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                  LITERAL("cub::ShuffleUp"),
+                  LITERAL("--use-experimental-features=non-uniform-groups"))))};
 }

@@ -54,6 +54,9 @@ __global__ void ShuffleIndexKernel2(int* data) {
   // CHECK: output = dpct::experimental::select_from_sub_group(0xaaaaaaaa, item_ct1.get_sub_group(), input, 0);
   output = cub::ShuffleIndex<32>(input, 0, 0xaaaaaaaa);
   data[threadid] = output;
+  // CHECK: vec_output = dpct::select_from_sub_group(item_ct1.get_sub_group(), vec_input, 0);
+  float2 vec_input, vec_output;
+  vec_output = cub::ShuffleIndex<32>(vec_input, 0, 0xffffffff);
 }
 
 __global__ void ShuffleIndexKernel3(int* data) {
