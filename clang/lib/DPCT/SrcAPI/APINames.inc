@@ -418,7 +418,7 @@ ENTRY(cudaGraphChildGraphNodeGetGraph, cudaGraphChildGraphNodeGetGraph, false, N
 ENTRY(cudaGraphClone, cudaGraphClone, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphConditionalHandleCreate, cudaGraphConditionalHandleCreate, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphCreate, cudaGraphCreate, false, NO_FLAG, P4, "comment")
-ENTRY(cudaGraphDebugDotPrint, cudaGraphDebugDotPrint, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphDebugDotPrint, cudaGraphDebugDotPrint, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY(cudaGraphDestroy, cudaGraphDestroy, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphDestroyNode, cudaGraphDestroyNode, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphEventRecordNodeGetEvent, cudaGraphEventRecordNodeGetEvent, false, NO_FLAG, P4, "comment")
