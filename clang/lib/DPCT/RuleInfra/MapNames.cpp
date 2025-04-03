@@ -1134,20 +1134,6 @@ void MapNames::setExplicitNamespaceMap(
                ? getClNamespace() +
                      "ext::oneapi::experimental::node_type::empty"
                : "cudaGraphNodeTypeEmpty")},
-      {"cudaGraphNodeTypeWaitEvent",
-       std::make_shared<EnumNameRule>("cudaGraphNodeTypeWaitEvent")},
-      {"cudaGraphNodeTypeEventRecord",
-       std::make_shared<EnumNameRule>("cudaGraphNodeTypeEventRecord")},
-      {"cudaGraphNodeTypeExtSemaphoreSignal",
-       std::make_shared<EnumNameRule>("cudaGraphNodeTypeExtSemaphoreSignal")},
-      {"cudaGraphNodeTypeExtSemaphoreWait",
-       std::make_shared<EnumNameRule>("cudaGraphNodeTypeExtSemaphoreWait")},
-      {"cudaGraphNodeTypeMemAlloc",
-       std::make_shared<EnumNameRule>("cudaGraphNodeTypeMemAlloc")},
-      {"cudaGraphNodeTypeMemFree",
-       std::make_shared<EnumNameRule>("cudaGraphNodeTypeMemFree")},
-      {"cudaGraphNodeTypeConditional",
-       std::make_shared<EnumNameRule>("cudaGraphNodeTypeConditional")},
       // enum CUmem_advise_enum
       {"CU_MEM_ADVISE_SET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_UNSET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
