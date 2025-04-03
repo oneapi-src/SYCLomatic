@@ -32,7 +32,7 @@ int main() {
   // CHECK: nodeType = sycl::ext::oneapi::experimental::node_type::empty;
   nodeType = cudaGraphNodeTypeEmpty;
 
-#ifndef DNO_BUILD_TEST
+#ifndef NO_BUILD_TEST
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaGraphNodeTypeWaitEvent is not supported.
