@@ -97,6 +97,21 @@ int main() {
   // CHECK-NEXT: */
   cudaGraphExecDestroy(execGraph);
 
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphNodeType is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphNodeType nodeType;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphNodeGetType is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphNodeGetType(node, &nodeType);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphNodeTypeKernel is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  nodeType = cudaGraphNodeTypeKernel;
+
   return 0;
 }
 

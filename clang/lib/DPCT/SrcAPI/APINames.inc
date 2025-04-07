@@ -479,7 +479,7 @@ ENTRY(cudaGraphNodeGetDependencies_v2, cudaGraphNodeGetDependencies_v2, false, N
 ENTRY(cudaGraphNodeGetDependentNodes, cudaGraphNodeGetDependentNodes, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphNodeGetDependentNodes_v2, cudaGraphNodeGetDependentNodes_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphNodeGetEnabled, cudaGraphNodeGetEnabled, false, NO_FLAG, P4, "comment")
-ENTRY(cudaGraphNodeGetType, cudaGraphNodeGetType, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphNodeGetType, cudaGraphNodeGetType, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY(cudaGraphNodeSetEnabled, cudaGraphNodeSetEnabled, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphNodeSetParams, cudaGraphNodeSetParams, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphReleaseUserObject, cudaGraphReleaseUserObject, false, NO_FLAG, P4, "comment")
@@ -1765,7 +1765,7 @@ ENTRY(cuMemPrefetchAsync, cuMemPrefetchAsync, true, NO_FLAG, P4, "Partial: USM o
 ENTRY(cuMemPrefetchAsync_v2, cuMemPrefetchAsync_v2, false, NO_FLAG, P4, "Partial: USM only, DPCT1007")
 ENTRY(cuMemRangeGetAttribute, cuMemRangeGetAttribute, false, NO_FLAG, P4, "comment")
 ENTRY(cuMemRangeGetAttributes, cuMemRangeGetAttributes, false, NO_FLAG, P4, "comment")
-ENTRY(cuPointerGetAttribute, cuPointerGetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuPointerGetAttribute, cuPointerGetAttribute, true, NO_FLAG, P4, "Partial: none USM for start address API, DPCT1007.")
 ENTRY(cuPointerGetAttributes, cuPointerGetAttributes, true, NO_FLAG, P4, "Partial: Only 5 attributes are supported")
 ENTRY(cuPointerSetAttribute, cuPointerSetAttribute, false, NO_FLAG, P4, "comment")
 

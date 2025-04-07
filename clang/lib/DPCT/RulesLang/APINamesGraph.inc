@@ -66,3 +66,13 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphExecUpdate"),
                             ARG("--use-experimental-features=graph"))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaGraphNodeGetType", DEREF(1),
+                                            MEMBER_CALL(ARG(0), true,
+                                                        "get_type"))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphNodeGetType",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphNodeGetType"),
+                            ARG("--use-experimental-features=graph")))
