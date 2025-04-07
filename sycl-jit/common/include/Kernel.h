@@ -359,7 +359,7 @@ struct InMemoryFile {
   const char *Contents;
 };
 
-using RTCBundleBinaryInfo = SYCLKernelBinaryInfo;
+using RTCDevImgBinaryInfo = SYCLKernelBinaryInfo;
 using FrozenSymbolTable = DynArray<sycl::detail::string>;
 
 // Note: `FrozenPropertyValue` and `FrozenPropertySet` constructors take
@@ -399,11 +399,27 @@ struct FrozenPropertySet {
 
 using FrozenPropertyRegistry = DynArray<FrozenPropertySet>;
 
-struct RTCBundleInfo {
-  RTCBundleBinaryInfo BinaryInfo;
+struct RTCDevImgInfo {
+  RTCDevImgBinaryInfo BinaryInfo;
   FrozenSymbolTable SymbolTable;
   FrozenPropertyRegistry Properties;
+
+  RTCDevImgInfo() = default;
+  RTCDevImgInfo(RTCDevImgInfo &&) = default;
+  RTCDevImgInfo &operator=(RTCDevImgInfo &&) = default;
 };
+
+struct RTCBundleInfo {
+  DynArray<RTCDevImgInfo> DevImgInfos;
+  sycl::detail::string CompileOptions;
+
+  RTCBundleInfo() = default;
+  RTCBundleInfo(RTCBundleInfo &&) = default;
+  RTCBundleInfo &operator=(RTCBundleInfo &&) = default;
+};
+
+// LLVM's APIs prefer `char *` for byte buffers.
+using RTCDeviceCodeIR = DynArray<char>;
 
 } // namespace jit_compiler
 

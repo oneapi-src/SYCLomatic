@@ -298,6 +298,7 @@ define i8 @test_int_x86_avx512_fpclass_bf16_128(<8 x bfloat> %x0) {
 ; CHECK-LABEL: test_int_x86_avx512_fpclass_bf16_128:
 ; CHECK:       # %bb.0:
 ; CHECK-NEXT:    vfpclassbf16 $2, %xmm0, %k1 # encoding: [0x62,0xf3,0x7f,0x08,0x66,0xc8,0x02]
+; CHECK-NEXT:    # k1 = isPositiveZero(xmm0)
 ; CHECK-NEXT:    vfpclassbf16 $4, %xmm0, %k0 {%k1} # encoding: [0x62,0xf3,0x7f,0x09,0x66,0xc0,0x04]
 ; CHECK-NEXT:    kmovd %k0, %eax # encoding: [0xc5,0xfb,0x93,0xc0]
 ; CHECK-NEXT:    # kill: def $al killed $al killed $eax
@@ -313,6 +314,7 @@ define i16 @test_int_x86_avx512_fpclass_bf16_256(<16 x bfloat> %x0) {
 ; CHECK-LABEL: test_int_x86_avx512_fpclass_bf16_256:
 ; CHECK:       # %bb.0:
 ; CHECK-NEXT:    vfpclassbf16 $2, %ymm0, %k1 # encoding: [0x62,0xf3,0x7f,0x28,0x66,0xc8,0x02]
+; CHECK-NEXT:    # k1 = isPositiveZero(ymm0)
 ; CHECK-NEXT:    vfpclassbf16 $4, %ymm0, %k0 {%k1} # encoding: [0x62,0xf3,0x7f,0x29,0x66,0xc0,0x04]
 ; CHECK-NEXT:    kmovd %k0, %eax # encoding: [0xc5,0xfb,0x93,0xc0]
 ; CHECK-NEXT:    # kill: def $ax killed $ax killed $eax
@@ -514,7 +516,7 @@ declare <16 x bfloat> @llvm.x86.avx10.mask.scalef.bf16.256(<16 x bfloat>, <16 x 
 define <8 x bfloat>@test_int_x86_avx512_scalef_bf16_128(<8 x bfloat> %x0, <8 x bfloat> %x1) {
 ; CHECK-LABEL: test_int_x86_avx512_scalef_bf16_128:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    vscalefpbf16 %xmm1, %xmm0, %xmm0 # encoding: [0x62,0xf6,0x7c,0x08,0x2c,0xc1]
+; CHECK-NEXT:    vscalefbf16 %xmm1, %xmm0, %xmm0 # encoding: [0x62,0xf6,0x7c,0x08,0x2c,0xc1]
 ; CHECK-NEXT:    ret{{[l|q]}} # encoding: [0xc3]
   %res = call <8 x bfloat> @llvm.x86.avx10.mask.scalef.bf16.128(<8 x bfloat> %x0, <8 x bfloat> %x1, <8 x bfloat> zeroinitializer, i8 -1)
   ret <8 x bfloat> %res
@@ -524,14 +526,14 @@ define <8 x bfloat>@test_int_x86_avx512_mask_scalef_bf16_128(<8 x bfloat> %x0, <
 ; X64-LABEL: test_int_x86_avx512_mask_scalef_bf16_128:
 ; X64:       # %bb.0:
 ; X64-NEXT:    kmovd %edi, %k1 # encoding: [0xc5,0xfb,0x92,0xcf]
-; X64-NEXT:    vscalefpbf16 %xmm1, %xmm0, %xmm2 {%k1} # encoding: [0x62,0xf6,0x7c,0x09,0x2c,0xd1]
+; X64-NEXT:    vscalefbf16 %xmm1, %xmm0, %xmm2 {%k1} # encoding: [0x62,0xf6,0x7c,0x09,0x2c,0xd1]
 ; X64-NEXT:    vmovaps %xmm2, %xmm0 # EVEX TO VEX Compression encoding: [0xc5,0xf8,0x28,0xc2]
 ; X64-NEXT:    retq # encoding: [0xc3]
 ;
 ; X86-LABEL: test_int_x86_avx512_mask_scalef_bf16_128:
 ; X86:       # %bb.0:
 ; X86-NEXT:    kmovb {{[0-9]+}}(%esp), %k1 # encoding: [0xc5,0xf9,0x90,0x4c,0x24,0x04]
-; X86-NEXT:    vscalefpbf16 %xmm1, %xmm0, %xmm2 {%k1} # encoding: [0x62,0xf6,0x7c,0x09,0x2c,0xd1]
+; X86-NEXT:    vscalefbf16 %xmm1, %xmm0, %xmm2 {%k1} # encoding: [0x62,0xf6,0x7c,0x09,0x2c,0xd1]
 ; X86-NEXT:    vmovaps %xmm2, %xmm0 # EVEX TO VEX Compression encoding: [0xc5,0xf8,0x28,0xc2]
 ; X86-NEXT:    retl # encoding: [0xc3]
   %mask = bitcast i8 %x3 to <8 x i1>
@@ -543,13 +545,13 @@ define <8 x bfloat>@test_int_x86_avx512_maskz_scalef_bf16_128(<8 x bfloat> %x0, 
 ; X64-LABEL: test_int_x86_avx512_maskz_scalef_bf16_128:
 ; X64:       # %bb.0:
 ; X64-NEXT:    kmovd %edi, %k1 # encoding: [0xc5,0xfb,0x92,0xcf]
-; X64-NEXT:    vscalefpbf16 %xmm1, %xmm0, %xmm0 {%k1} {z} # encoding: [0x62,0xf6,0x7c,0x89,0x2c,0xc1]
+; X64-NEXT:    vscalefbf16 %xmm1, %xmm0, %xmm0 {%k1} {z} # encoding: [0x62,0xf6,0x7c,0x89,0x2c,0xc1]
 ; X64-NEXT:    retq # encoding: [0xc3]
 ;
 ; X86-LABEL: test_int_x86_avx512_maskz_scalef_bf16_128:
 ; X86:       # %bb.0:
 ; X86-NEXT:    kmovb {{[0-9]+}}(%esp), %k1 # encoding: [0xc5,0xf9,0x90,0x4c,0x24,0x04]
-; X86-NEXT:    vscalefpbf16 %xmm1, %xmm0, %xmm0 {%k1} {z} # encoding: [0x62,0xf6,0x7c,0x89,0x2c,0xc1]
+; X86-NEXT:    vscalefbf16 %xmm1, %xmm0, %xmm0 {%k1} {z} # encoding: [0x62,0xf6,0x7c,0x89,0x2c,0xc1]
 ; X86-NEXT:    retl # encoding: [0xc3]
   %mask = bitcast i8 %x3 to <8 x i1>
   %res = call <8 x bfloat> @llvm.x86.avx10.mask.scalef.bf16.128(<8 x bfloat> %x0, <8 x bfloat> %x1, <8 x bfloat> zeroinitializer, i8 %x3)
@@ -559,7 +561,7 @@ define <8 x bfloat>@test_int_x86_avx512_maskz_scalef_bf16_128(<8 x bfloat> %x0, 
 define <16 x bfloat>@test_int_x86_avx512_scalef_bf16_256(<16 x bfloat> %x0, <16 x bfloat> %x1) {
 ; CHECK-LABEL: test_int_x86_avx512_scalef_bf16_256:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    vscalefpbf16 %ymm1, %ymm0, %ymm0 # encoding: [0x62,0xf6,0x7c,0x28,0x2c,0xc1]
+; CHECK-NEXT:    vscalefbf16 %ymm1, %ymm0, %ymm0 # encoding: [0x62,0xf6,0x7c,0x28,0x2c,0xc1]
 ; CHECK-NEXT:    ret{{[l|q]}} # encoding: [0xc3]
   %res = call <16 x bfloat> @llvm.x86.avx10.mask.scalef.bf16.256(<16 x bfloat> %x0, <16 x bfloat> %x1, <16 x bfloat> zeroinitializer, i16 -1)
   ret <16 x bfloat> %res
@@ -569,14 +571,14 @@ define <16 x bfloat>@test_int_x86_avx512_mask_scalef_bf16_256(<16 x bfloat> %x0,
 ; X64-LABEL: test_int_x86_avx512_mask_scalef_bf16_256:
 ; X64:       # %bb.0:
 ; X64-NEXT:    kmovd %edi, %k1 # encoding: [0xc5,0xfb,0x92,0xcf]
-; X64-NEXT:    vscalefpbf16 %ymm1, %ymm0, %ymm2 {%k1} # encoding: [0x62,0xf6,0x7c,0x29,0x2c,0xd1]
+; X64-NEXT:    vscalefbf16 %ymm1, %ymm0, %ymm2 {%k1} # encoding: [0x62,0xf6,0x7c,0x29,0x2c,0xd1]
 ; X64-NEXT:    vmovaps %ymm2, %ymm0 # EVEX TO VEX Compression encoding: [0xc5,0xfc,0x28,0xc2]
 ; X64-NEXT:    retq # encoding: [0xc3]
 ;
 ; X86-LABEL: test_int_x86_avx512_mask_scalef_bf16_256:
 ; X86:       # %bb.0:
 ; X86-NEXT:    kmovw {{[0-9]+}}(%esp), %k1 # encoding: [0xc5,0xf8,0x90,0x4c,0x24,0x04]
-; X86-NEXT:    vscalefpbf16 %ymm1, %ymm0, %ymm2 {%k1} # encoding: [0x62,0xf6,0x7c,0x29,0x2c,0xd1]
+; X86-NEXT:    vscalefbf16 %ymm1, %ymm0, %ymm2 {%k1} # encoding: [0x62,0xf6,0x7c,0x29,0x2c,0xd1]
 ; X86-NEXT:    vmovaps %ymm2, %ymm0 # EVEX TO VEX Compression encoding: [0xc5,0xfc,0x28,0xc2]
 ; X86-NEXT:    retl # encoding: [0xc3]
   %mask = bitcast i16 %x3 to <16 x i1>
@@ -588,13 +590,13 @@ define <16 x bfloat>@test_int_x86_avx512_maskz_scalef_bf16_256(<16 x bfloat> %x0
 ; X64-LABEL: test_int_x86_avx512_maskz_scalef_bf16_256:
 ; X64:       # %bb.0:
 ; X64-NEXT:    kmovd %edi, %k1 # encoding: [0xc5,0xfb,0x92,0xcf]
-; X64-NEXT:    vscalefpbf16 %ymm1, %ymm0, %ymm0 {%k1} {z} # encoding: [0x62,0xf6,0x7c,0xa9,0x2c,0xc1]
+; X64-NEXT:    vscalefbf16 %ymm1, %ymm0, %ymm0 {%k1} {z} # encoding: [0x62,0xf6,0x7c,0xa9,0x2c,0xc1]
 ; X64-NEXT:    retq # encoding: [0xc3]
 ;
 ; X86-LABEL: test_int_x86_avx512_maskz_scalef_bf16_256:
 ; X86:       # %bb.0:
 ; X86-NEXT:    kmovw {{[0-9]+}}(%esp), %k1 # encoding: [0xc5,0xf8,0x90,0x4c,0x24,0x04]
-; X86-NEXT:    vscalefpbf16 %ymm1, %ymm0, %ymm0 {%k1} {z} # encoding: [0x62,0xf6,0x7c,0xa9,0x2c,0xc1]
+; X86-NEXT:    vscalefbf16 %ymm1, %ymm0, %ymm0 {%k1} {z} # encoding: [0x62,0xf6,0x7c,0xa9,0x2c,0xc1]
 ; X86-NEXT:    retl # encoding: [0xc3]
   %mask = bitcast i16 %x3 to <16 x i1>
   %res = call <16 x bfloat> @llvm.x86.avx10.mask.scalef.bf16.256(<16 x bfloat> %x0, <16 x bfloat> %x1, <16 x bfloat> zeroinitializer, i16 %x3)

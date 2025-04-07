@@ -71,6 +71,8 @@ enum QueueOrder { Ordered, OOO };
 struct SubmissionInfoImpl {
   optional<detail::SubmitPostProcessF> MPostProcessorFunc = std::nullopt;
   std::shared_ptr<detail::queue_impl> MSecondaryQueue = nullptr;
+  ext::oneapi::experimental::event_mode_enum MEventMode =
+      ext::oneapi::experimental::event_mode_enum::none;
 };
 
 class queue_impl {
@@ -83,7 +85,7 @@ public:
           context{createSyclObjFromImpl<device>(Device), {}, {}});
 
     ContextImplPtr DefaultContext = detail::getSyclObjImpl(
-        Device->get_platform().ext_oneapi_get_default_context());
+        Device->get_platform().khr_get_default_context());
     if (DefaultContext->isDeviceValid(Device))
       return DefaultContext;
     return detail::getSyclObjImpl(
@@ -178,7 +180,7 @@ public:
 #endif
   }
 
-  event getLastEvent();
+  sycl::detail::optional<event> getLastEvent();
 
 private:
   void queue_impl_interop(ur_queue_handle_t UrQueue) {
@@ -338,7 +340,7 @@ public:
   /// \param StoreAdditionalInfo makes additional info be stored in event_impl
   /// \return a SYCL event object, which corresponds to the queue the command
   /// group is being enqueued on.
-  event submit(const std::function<void(handler &)> &CGF,
+  event submit(const detail::type_erased_cgfo_ty &CGF,
                const std::shared_ptr<queue_impl> &Self,
                const std::shared_ptr<queue_impl> &SecondQueue,
                const detail::code_location &Loc, bool IsTopCodeLoc,
@@ -360,7 +362,7 @@ public:
   /// \param Loc is the code location of the submit call (default argument)
   /// \param StoreAdditionalInfo makes additional info be stored in event_impl
   /// \return a SYCL event object for the submitted command group.
-  event submit_with_event(const std::function<void(handler &)> &CGF,
+  event submit_with_event(const detail::type_erased_cgfo_ty &CGF,
                           const std::shared_ptr<queue_impl> &Self,
                           const SubmissionInfo &SubmitInfo,
                           const detail::code_location &Loc, bool IsTopCodeLoc) {
@@ -385,7 +387,7 @@ public:
     return discard_or_return(ResEvent);
   }
 
-  void submit_without_event(const std::function<void(handler &)> &CGF,
+  void submit_without_event(const detail::type_erased_cgfo_ty &CGF,
                             const std::shared_ptr<queue_impl> &Self,
                             const SubmissionInfo &SubmitInfo,
                             const detail::code_location &Loc,
@@ -853,7 +855,7 @@ protected:
   /// \param Loc is the code location of the submit call (default argument)
   /// \param SubmitInfo is additional optional information for the submission.
   /// \return a SYCL event representing submitted command group.
-  event submit_impl(const std::function<void(handler &)> &CGF,
+  event submit_impl(const detail::type_erased_cgfo_ty &CGF,
                     const std::shared_ptr<queue_impl> &Self,
                     const std::shared_ptr<queue_impl> &PrimaryQueue,
                     const std::shared_ptr<queue_impl> &SecondaryQueue,
@@ -868,7 +870,7 @@ protected:
   template <typename HandlerFuncT>
   event submitWithHandler(const std::shared_ptr<queue_impl> &Self,
                           const std::vector<event> &DepEvents,
-                          HandlerFuncT HandlerFunc);
+                          bool CallerNeedsEvent, HandlerFuncT HandlerFunc);
 
   /// Performs submission of a memory operation directly if scheduler can be
   /// bypassed, or with a handler otherwise.

@@ -437,13 +437,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   bool NeedUseLambda = isConditionOfFlowControl(
       CE, OriginStmtType, CanAvoidUsingLambda, OuterInsertLoc);
   bool IsInReturnStmt = isInReturnStmt(CE, OuterInsertLoc);
-  bool CanAvoidBrace = false;
-  const CompoundStmt *CS = findImmediateBlock(CE);
-  if (CS && (CS->size() == 1)) {
-    const Stmt *S = *(CS->child_begin());
-    if (CE == S || dyn_cast<ReturnStmt>(S))
-      CanAvoidBrace = true;
-  }
 
   if (NeedUseLambda) {
     PrefixInsertLoc = FuncNameBegin;

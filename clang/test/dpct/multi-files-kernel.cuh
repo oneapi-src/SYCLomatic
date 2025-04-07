@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 #include <cublas_v2.h>
 #include <curand.h>
 #include <cuda_runtime.h>

@@ -45,6 +45,19 @@ ur_native_handle_t device_image_plain::getNative() const {
   return impl->getNative();
 }
 
+backend device_image_plain::ext_oneapi_get_backend_impl() const noexcept {
+  return impl->get_context().get_backend();
+}
+
+std::pair<const std::byte *, const std::byte *>
+device_image_plain::ext_oneapi_get_backend_content_view_impl() const {
+  return std::make_pair(
+      reinterpret_cast<const std::byte *>(
+          impl->get_bin_image_ref()->getRawData().BinaryStart),
+      reinterpret_cast<const std::byte *>(
+          impl->get_bin_image_ref()->getRawData().BinaryEnd));
+}
+
 ////////////////////////////
 ///// kernel_bundle_plain
 ///////////////////////////
@@ -124,6 +137,11 @@ kernel kernel_bundle_plain::ext_oneapi_get_kernel(detail::string_view name) {
   return impl->ext_oneapi_get_kernel(name.data(), impl);
 }
 
+detail::string
+kernel_bundle_plain::ext_oneapi_get_raw_kernel_name(detail::string_view name) {
+  return detail::string{impl->ext_oneapi_get_raw_kernel_name(name.data())};
+}
+
 //////////////////////////////////
 ///// sycl::detail free functions
 //////////////////////////////////
@@ -195,11 +213,11 @@ bool has_kernel_bundle_impl(const context &Ctx, const std::vector<device> &Devs,
       !checkAllDevicesHaveAspect(Devs, aspect::online_linker))
     return false;
 
-  const std::vector<device_image_plain> DeviceImages =
+  const std::vector<DevImgPlainWithDeps> DeviceImages =
       detail::ProgramManager::getInstance()
           .getSYCLDeviceImagesWithCompatibleState(Ctx, Devs, State);
 
-  return (bool)DeviceImages.size();
+  return !DeviceImages.empty();
 }
 
 bool has_kernel_bundle_impl(const context &Ctx, const std::vector<device> &Devs,
@@ -229,17 +247,19 @@ bool has_kernel_bundle_impl(const context &Ctx, const std::vector<device> &Devs,
   if (!DeviceHasRequireAspectForState)
     return false;
 
-  const std::vector<device_image_plain> DeviceImages =
+  const std::vector<DevImgPlainWithDeps> DeviceImagesWithDeps =
       detail::ProgramManager::getInstance()
           .getSYCLDeviceImagesWithCompatibleState(Ctx, Devs, State);
 
   std::set<kernel_id, LessByNameComp> CombinedKernelIDs;
-  for (const device_image_plain &DeviceImage : DeviceImages) {
-    const std::shared_ptr<device_image_impl> &DeviceImageImpl =
-        getSyclObjImpl(DeviceImage);
+  for (const DevImgPlainWithDeps &DeviceImageWithDeps : DeviceImagesWithDeps) {
+    for (const device_image_plain &DeviceImage : DeviceImageWithDeps) {
+      const std::shared_ptr<device_image_impl> &DeviceImageImpl =
+          getSyclObjImpl(DeviceImage);
 
-    CombinedKernelIDs.insert(DeviceImageImpl->get_kernel_ids_ptr()->begin(),
-                             DeviceImageImpl->get_kernel_ids_ptr()->end());
+      CombinedKernelIDs.insert(DeviceImageImpl->get_kernel_ids_ptr()->begin(),
+                               DeviceImageImpl->get_kernel_ids_ptr()->end());
+    }
   }
 
   const bool AllKernelIDsRepresented =

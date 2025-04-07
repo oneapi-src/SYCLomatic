@@ -187,6 +187,48 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
   return ret;
 }
 
+/// \param [in] low32 The 4 bytes to construct the 8 bytes value as low 32 bits.
+/// \param [in] high32 The 4 bytes to construct the 8 bytes value as high 32
+/// bits.
+/// \param [in] sel The selector value. It is used to generate selectors which are
+/// used to fetch byte value from \p low32 and \p high32 to construct result
+/// value.
+/// \param [in] mode The mode of permutation, together with \p sel, it
+/// further defines the behavior of data selection. \p mode and \p sel define 4
+/// selectors (s[i], i=0, 1, 2, 3), which are used as index to fetch 4 bytes from
+/// the 8 bytes value constructed by \p low32 and \p high32; the byte selected by s[i]
+/// is used to fill the i-th byte of the result.
+/// The available mode values are:
+/// mode value 0: s[i] = sel[i * 4 + 3 : i * 4]
+/// mode value 1: s[i] = sel[1 : 0] + i
+/// mode value 2: s[i] = (sel[1 : 0] + 7) % 8
+/// mode value 3: s[i] = sel[1 : 0]
+/// mode value 4: s[i] = max(sel[1 : 0], i)
+/// mode value 5: s[i] = min(sel[1 : 0], i)
+/// mode value 6: s[0] = sel[0 : 0] * 2
+///               s[1] = sel[0 : 0] * 2 + 1
+///               s[2] = s[0]
+///               s[3] = s[1]
+/// other value: illegal, undefined behavior, return 0.
+inline uint32_t byte_level_permute_custom(uint32_t low32, uint32_t high32,
+                                          uint32_t sel, int mode = 0) {
+  constexpr uint16_t lookup[6][4] = {
+      {0x3210, 0x4321, 0x5432, 0x6543}, // Forward 4-byte extract
+      {0x5670, 0x6701, 0x7012, 0x0123}, // Backward 4-byte extract
+      {0x0000, 0x1111, 0x2222, 0x3333}, // Replicate 8-bit values
+      {0x3210, 0x3211, 0x3222, 0x3333}, // Edge clamp left
+      {0x0000, 0x1110, 0x2210, 0x3210}, // Edge clamp right
+      {0x1010, 0x3232, 0x1010, 0x3232}  // Replicate 16-bit values
+  };
+
+  if (mode >= 1 && mode <= 6) {
+    return byte_level_permute(low32, high32, lookup[mode - 1][sel & 0x3]);
+  } else if (!mode) {
+    return byte_level_permute(low32, high32, sel);
+  }
+  return 0;
+}
+
 /// Find position of first least significant set bit in an integer.
 /// ffs(0) returns 0.
 ///

@@ -83,6 +83,14 @@ inline sycl::ext::oneapi::bfloat16 clamp(sycl::ext::oneapi::bfloat16 val,
     return max_val;
   return val;
 }
+template <>
+inline sycl::vec<sycl::ext::oneapi::bfloat16, 2>
+clamp(sycl::vec<sycl::ext::oneapi::bfloat16, 2> val,
+      sycl::vec<sycl::ext::oneapi::bfloat16, 2> min_val,
+      sycl::vec<sycl::ext::oneapi::bfloat16, 2> max_val) {
+  return {clamp(val[0], min_val[0], max_val[0]),
+          clamp(val[1], min_val[1], max_val[1])};
+}
 #endif
 template <typename T>
 inline sycl::marray<T, 2> clamp(sycl::marray<T, 2> val,

@@ -59,7 +59,7 @@ __global__ void SumKernel(int* data) {
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void ReduceKernel(int* data) {
-  typedef cub::BlockReduce<int, 4> BlockReduce;
+  using  BlockReduce = cub::BlockReduce<int, 4>;
 
   __shared__ typename BlockReduce::TempStorage temp1;
 

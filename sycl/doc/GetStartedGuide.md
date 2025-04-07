@@ -49,15 +49,10 @@ and a wide range of compute accelerators such as GPU and FPGA.
 * C++ compiler
   * See LLVM's [host compiler toolchain requirements](https://github.com/intel/llvm/blob/sycl/llvm/docs/GettingStarted.rst#host-c-toolchain-both-compiler-and-standard-library)
 
-Alternatively, you can use a Docker image that has everything you need for
-building pre-installed:
+Alternatively, you can create a Docker image that has everything you need for
+building pre-installed using the [Ubuntu 24.04 build Dockerfile](https://github.com/intel/llvm/blob/sycl/devops/containers/ubuntu2404_build.Dockerfile).
 
-```bash
-docker run --name sycl_build -it -v /local/workspace/dir/:/src ghcr.io/intel/llvm/ubuntu2204_build /bin/bash
-```
-
-This command will start a terminal session, from which you can proceed with the
-instructions below. See [Docker BKMs](developer/DockerBKMs.md) for more info on
+See [Docker BKMs](developer/DockerBKMs.md) for more info on
 Docker commands.
 
 ### Create DPC++ workspace
@@ -224,13 +219,12 @@ Firstly, **do not** add the toolkit to your standard environment variables
 (`PATH`, `LD_LIBRARY_PATH`), as to do so will create conflicts with OpenCL
 headers.
 
-Secondly, set the `CUDA_LIB_PATH` environment variable and pass the CMake
-variable `CUDA_TOOLKIT_ROOT_DIR` as follows:
+Secondly pass the CMake variable `CUDAToolkit_ROOT` as follows:
 
 ```sh
-CUDA_LIB_PATH=/path/to/cuda/toolkit/lib64/stubs CC=gcc CXX=g++ python $DPCPP_HOME/llvm/buildbot/configure.py --cuda --cmake-opt="-DCUDA_TOOLKIT_ROOT_DIR=/path/to/cuda/toolkit"
+CC=gcc CXX=g++ python $DPCPP_HOME/llvm/buildbot/configure.py --cuda --cmake-opt="-DCUDAToolkit_ROOT=/path/to/cuda/toolkit"
 
-CUDA_LIB_PATH=/path/to/cuda/toolkit/lib64/stubs CC=gcc CXX=g++ python $DPCPP_HOME/llvm/buildbot/compile.py
+CC=gcc CXX=g++ python $DPCPP_HOME/llvm/buildbot/compile.py
 
 $DPCPP_HOME/llvm/build/bin/clang++ -std=c++17 -O3 -fsycl -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/path/to/cuda/toolkit *.cpp -o a.out
 

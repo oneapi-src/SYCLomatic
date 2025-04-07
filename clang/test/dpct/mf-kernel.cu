@@ -10,6 +10,15 @@ __global__ void Reset_kernel_parameters(void)
     g_mutex=0;
 }
 
+// CHECK: template <typename T> SYCL_EXTERNAL void template_test(T v) {};
+// CHECK: #define FUNC(T) template SYCL_EXTERNAL void template_test<T>(T v);
+// CHECK: FUNC(int)
+template <typename T> __global__ void template_test(T v) {};
+
+#define FUNC(T) template __global__ void template_test<T>(T v);
+
+FUNC(int)
+
 // CHECK: SYCL_EXTERNAL void kernel_extern(const sycl::nd_item<3> &item_ct1, int *a) {
 __global__ void kernel_extern() {
   __shared__ int a[360];

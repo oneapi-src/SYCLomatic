@@ -33,6 +33,7 @@ config.suffixes = [
     ".m",
     ".mm",
     ".cu",
+    ".cuh",
     ".hip",
     ".hlsl",
     ".ll",
@@ -105,6 +106,7 @@ tools = [
     "yaml2obj",
     "clang-linker-wrapper",
     "clang-nvlink-wrapper",
+    "clang-sycl-linker",
     "llvm-lto",
     "llvm-lto2",
     "llvm-profdata",
@@ -218,6 +220,9 @@ config.substitutions.append(
 config.substitutions.append(("%host_cc", config.host_cc))
 config.substitutions.append(("%host_cxx", config.host_cxx))
 
+# Determine whether the test target is compatible with execution on the host.
+if "aarch64" in config.host_arch:
+    config.available_features.add("aarch64-host")
 
 # Plugins (loadable modules)
 if config.has_plugins and config.llvm_plugin_ext:
@@ -344,7 +349,7 @@ if config.have_llvm_driver:
     config.available_features.add("llvm-driver")
 
 #SYCLomatic Code
-if "BUILD_LIT" in os.environ and os.environ["BUILD_LIT"] == 'TRUE':
+if os.getenv("BUILD_LIT", "").lower() == 'true':
     config.available_features.add("build_lit")
 #End SYCLomatic
 

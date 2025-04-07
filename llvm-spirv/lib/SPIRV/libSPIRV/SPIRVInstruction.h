@@ -298,6 +298,11 @@ public:
 
   /// Get operand as value.
   /// If the operand is a literal, return it as a uint32 constant.
+  const SPIRVValue *getOpValue(int I) const {
+    return isOperandLiteral(I) ? Module->getLiteralAsConstant(Ops[I])
+                               : getValue(Ops[I]);
+  }
+
   SPIRVValue *getOpValue(int I) {
     return isOperandLiteral(I) ? Module->getLiteralAsConstant(Ops[I])
                                : getValue(Ops[I]);
@@ -318,6 +323,9 @@ public:
     return Operands;
   }
 
+  virtual const SPIRVValue *getOperand(unsigned I) const {
+    return getOpValue(I);
+  }
   virtual SPIRVValue *getOperand(unsigned I) { return getOpValue(I); }
 
   bool hasExecScope() const { return SPIRV::hasExecScope(OpCode); }
@@ -1622,6 +1630,16 @@ private:
   SPIRVId Matrix;
 };
 
+class SPIRVSizeOfInstBase : public SPIRVInstTemplateBase {
+protected:
+  VersionNumber getRequiredSPIRVVersion() const override {
+    return VersionNumber::SPIRV_1_1;
+  }
+};
+
+typedef SPIRVInstTemplate<SPIRVSizeOfInstBase, OpSizeOf, true, 4, false>
+    SPIRVSizeOf;
+
 class SPIRVUnary : public SPIRVInstTemplateBase {
 protected:
   void validate() const override {
@@ -1688,10 +1706,8 @@ _SPIRV_OP(SignBitSet)
 _SPIRV_OP(Any)
 _SPIRV_OP(All)
 _SPIRV_OP(BitCount)
+_SPIRV_OP(ArithmeticFenceEXT)
 #undef _SPIRV_OP
-#define _SPIRV_OP_INTERNAL(x) typedef SPIRVUnaryInst<internal::Op##x> SPIRV##x;
-_SPIRV_OP_INTERNAL(ArithmeticFenceINTEL)
-#undef _SPIRV_OP_INTERNAL
 
 class SPIRVAccessChainBase : public SPIRVInstTemplateBase {
 public:
@@ -1727,6 +1743,16 @@ public:
            OpCode == OpUntypedInBoundsAccessChainKHR ||
            OpCode == OpUntypedPtrAccessChainKHR ||
            OpCode == OpUntypedInBoundsPtrAccessChainKHR;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    if (isUntyped())
+      return getVec(CapabilityUntypedPointersKHR);
+    return {};
+  }
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    if (isUntyped())
+      return ExtensionID::SPV_KHR_untyped_pointers;
+    return {};
   }
 };
 
@@ -2693,6 +2719,22 @@ public:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(CapabilityGroupNonUniformBallot);
   }
+
+  VersionNumber getRequiredSPIRVVersion() const override {
+    switch (OpCode) {
+    case OpGroupNonUniformBroadcast: {
+      assert(Ops.size() == 3 && "Expecting (Execution, Value, Id) operands");
+      if (!isConstantOpCode(getOperand(2)->getOpCode())) {
+        // Before version 1.5, Id must come from a constant instruction.
+        return VersionNumber::SPIRV_1_5;
+      }
+      break;
+    }
+    default:
+      break;
+    }
+    return VersionNumber::SPIRV_1_3;
+  }
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
@@ -3515,9 +3557,9 @@ protected:
   SPIRVCapVec getRequiredCapability() const override {
     SPIRVType *ResCompTy = this->getType();
     if (ResCompTy->isTypeCooperativeMatrixKHR())
-      return getVec(internal::CapabilityBfloat16ConversionINTEL,
+      return getVec(CapabilityBFloat16ConversionINTEL,
                     internal::CapabilityJointMatrixBF16ComponentTypeINTEL);
-    return getVec(internal::CapabilityBfloat16ConversionINTEL);
+    return getVec(CapabilityBFloat16ConversionINTEL);
   }
 
   std::optional<ExtensionID> getRequiredExtension() const override {
@@ -3571,7 +3613,7 @@ protected:
       InCompTy =
           static_cast<SPIRVTypeCooperativeMatrixKHR *>(InCompTy)->getCompType();
     }
-    if (OC == internal::OpConvertFToBF16INTEL) {
+    if (OC == OpConvertFToBF16INTEL) {
       SPVErrLog.checkError(
           ResCompTy->isTypeInt(16), SPIRVEC_InvalidInstruction,
           InstName + "\nResult value must be a scalar or vector of integer "
@@ -3599,7 +3641,7 @@ protected:
 };
 
 #define _SPIRV_OP(x)                                                           \
-  typedef SPIRVBfloat16ConversionINTELInstBase<internal::Op##x> SPIRV##x;
+  typedef SPIRVBfloat16ConversionINTELInstBase<Op##x> SPIRV##x;
 _SPIRV_OP(ConvertFToBF16INTEL)
 _SPIRV_OP(ConvertBF16ToFINTEL)
 #undef _SPIRV_OP
@@ -3683,6 +3725,26 @@ protected:
 _SPIRV_OP(CooperativeMatrixLoadChecked, true, 9, true, 7)
 _SPIRV_OP(CooperativeMatrixStoreChecked, false, 8, true, 8)
 _SPIRV_OP(CooperativeMatrixConstructChecked, true, 8)
+#undef _SPIRV_OP
+
+class SPIRVCooperativeMatrixOffsetInstructionsINTELInstBase
+    : public SPIRVInstTemplateBase {
+protected:
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_joint_matrix;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::CapabilityCooperativeMatrixOffsetInstructionsINTEL);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<                                                   \
+      SPIRVCooperativeMatrixOffsetInstructionsINTELInstBase,                   \
+      internal::Op##x##INTEL, __VA_ARGS__>                                     \
+      SPIRV##x##INTEL;
+_SPIRV_OP(CooperativeMatrixLoadOffset, true, 8, true, 5)
+_SPIRV_OP(CooperativeMatrixStoreOffset, false, 7, true, 6)
 #undef _SPIRV_OP
 
 class SPIRVCooperativeMatrixInvocationInstructionsINTELInstBase
@@ -4245,7 +4307,9 @@ public:
     validate();
   }
 
-  SPIRVUntypedPrefetchKHR() : SPIRVInstruction(OC) {
+  SPIRVUntypedPrefetchKHR()
+      : SPIRVInstruction(OC), PtrTy(SPIRVID_INVALID),
+        NumBytes(SPIRVID_INVALID) {
     setHasNoId();
     setHasNoType();
   }
@@ -4318,6 +4382,69 @@ protected:
   std::vector<SPIRVId> Locality;
   std::vector<SPIRVId> CacheTy;
 };
+
+class SPIRVSubgroup2DBlockIOINTELInst : public SPIRVInstTemplateBase {
+public:
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_2d_block_io;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilitySubgroup2DBlockIOINTEL);
+  }
+};
+
+class SPIRVSubgroup2DBlockLoadTransposeINTELInst
+    : public SPIRVSubgroup2DBlockIOINTELInst {
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilitySubgroup2DBlockTransposeINTEL);
+  }
+};
+
+class SPIRVSubgroup2DBlockLoadTransformINTELInst
+    : public SPIRVSubgroup2DBlockIOINTELInst {
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilitySubgroup2DBlockTransformINTEL);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockIOINTELInst, Op##x##INTEL,     \
+                            __VA_ARGS__>                                       \
+      SPIRV##x##INTEL;
+_SPIRV_OP(Subgroup2DBlockLoad, false, 11)
+_SPIRV_OP(Subgroup2DBlockPrefetch, false, 10)
+_SPIRV_OP(Subgroup2DBlockStore, false, 11)
+#undef _SPIRV_OP
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockLoadTransposeINTELInst,        \
+                            Op##x##INTEL, __VA_ARGS__>                         \
+      SPIRV##x##INTEL;
+_SPIRV_OP(Subgroup2DBlockLoadTranspose, false, 11)
+#undef _SPIRV_OP
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockLoadTransformINTELInst,        \
+                            Op##x##INTEL, __VA_ARGS__>                         \
+      SPIRV##x##INTEL;
+_SPIRV_OP(Subgroup2DBlockLoadTransform, false, 11)
+#undef _SPIRV_OP
+
+class SPIRVSubgroupMatrixMultiplyAccumulateINTELInst
+    : public SPIRVInstTemplateBase {
+public:
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_subgroup_matrix_multiply_accumulate;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilitySubgroupMatrixMultiplyAccumulateINTEL);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVSubgroupMatrixMultiplyAccumulateINTELInst,    \
+                            Op##x##INTEL, __VA_ARGS__>                         \
+      SPIRV##x##INTEL;
+_SPIRV_OP(SubgroupMatrixMultiplyAccumulate, true, 7, true, 4)
+#undef _SPIRV_OP
 
 } // namespace SPIRV
 #endif // SPIRV_LIBSPIRV_SPIRVINSTRUCTION_H

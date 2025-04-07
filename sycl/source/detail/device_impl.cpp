@@ -73,8 +73,9 @@ device_impl::device_impl(ur_native_handle_t InteropDeviceHandle,
   }
   MPlatform = Platform;
 
-  MIsAssertFailSupported =
-      has_extension(UR_DEVICE_INFO_EXTENSION_DEVICELIB_ASSERT);
+  Adapter->call<UrApiKind::urDeviceGetInfo>(
+      MDevice, UR_DEVICE_INFO_USE_NATIVE_ASSERT, sizeof(ur_bool_t),
+      &MUseNativeAssert, nullptr);
 }
 
 device_impl::~device_impl() {
@@ -131,6 +132,7 @@ typename Param::return_type device_impl::get_info() const {
 #include <sycl/info/ext_oneapi_device_traits.def>
 #undef __SYCL_PARAM_TRAITS_SPEC
 
+#ifndef __INTEL_PREVIEW_BREAKING_CHANGES
 template <>
 typename info::platform::version::return_type
 device_impl::get_backend_info<info::platform::version>() const {
@@ -141,7 +143,9 @@ device_impl::get_backend_info<info::platform::version>() const {
   }
   return get_platform().get_info<info::platform::version>();
 }
+#endif
 
+#ifndef __INTEL_PREVIEW_BREAKING_CHANGES
 template <>
 typename info::device::version::return_type
 device_impl::get_backend_info<info::device::version>() const {
@@ -152,7 +156,9 @@ device_impl::get_backend_info<info::device::version>() const {
   }
   return get_info<info::device::version>();
 }
+#endif
 
+#ifndef __INTEL_PREVIEW_BREAKING_CHANGES
 template <>
 typename info::device::backend_version::return_type
 device_impl::get_backend_info<info::device::backend_version>() const {
@@ -166,6 +172,7 @@ device_impl::get_backend_info<info::device::backend_version>() const {
   // information descriptor and implementations are encouraged to return the
   // empty string as per specification.
 }
+#endif
 
 bool device_impl::has_extension(const std::string &ExtensionName) const {
   std::string AllExtensionNames =
@@ -472,7 +479,7 @@ bool device_impl::has(aspect Aspect) const {
   case aspect::ext_oneapi_srgb:
     return get_info<info::device::ext_oneapi_srgb>();
   case aspect::ext_oneapi_native_assert:
-    return isAssertFailSupported();
+    return useNativeAssert();
   case aspect::ext_oneapi_cuda_async_barrier: {
     int async_barrier_supported;
     bool call_successful =
@@ -674,10 +681,11 @@ bool device_impl::has(aspect Aspect) const {
     using arch = sycl::ext::oneapi::experimental::architecture;
     const arch supported_archs[] = {
         arch::intel_cpu_spr,     arch::intel_cpu_gnr,
-        arch::intel_gpu_pvc,     arch::intel_gpu_dg2_g10,
-        arch::intel_gpu_dg2_g11, arch::intel_gpu_dg2_g12,
-        arch::intel_gpu_bmg_g21, arch::intel_gpu_lnl_m,
-        arch::intel_gpu_arl_h,
+        arch::intel_cpu_dmr,     arch::intel_gpu_pvc,
+        arch::intel_gpu_dg2_g10, arch::intel_gpu_dg2_g11,
+        arch::intel_gpu_dg2_g12, arch::intel_gpu_bmg_g21,
+        arch::intel_gpu_lnl_m,   arch::intel_gpu_arl_h,
+        arch::intel_gpu_ptl_h,   arch::intel_gpu_ptl_u,
     };
     try {
       return std::any_of(
@@ -779,14 +787,17 @@ bool device_impl::has(aspect Aspect) const {
                           BE == sycl::backend::opencl;
     return (is_cpu() || is_gpu()) && isCompatibleBE;
   }
+  case aspect::ext_intel_spill_memory_size: {
+    backend BE = getBackend();
+    bool isCompatibleBE = BE == sycl::backend::ext_oneapi_level_zero;
+    return is_gpu() && isCompatibleBE;
+  }
   }
 
   return false; // This device aspect has not been implemented yet.
 }
 
-bool device_impl::isAssertFailSupported() const {
-  return MIsAssertFailSupported;
-}
+bool device_impl::useNativeAssert() const { return MUseNativeAssert; }
 
 std::string device_impl::getDeviceName() const {
   std::call_once(MDeviceNameFlag,

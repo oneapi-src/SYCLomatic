@@ -800,6 +800,8 @@ class DerefExpr {
 
 public:
   DerefExpr(const Expr *E, const CallExpr *C = nullptr);
+  DerefExpr(std::pair<const CallExpr *, const Expr *> P)
+      : DerefExpr(P.second, P.first) {}
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
     print(Stream);
@@ -1733,7 +1735,8 @@ public:
 
 public:
   UserDefinedRewriterFactory(MetaRuleObject &R)
-      : OutStr(R.Out), Includes(R.Includes), RuleAttributes(R.RuleAttributes) {
+      : OutStr(R.Out.value()), Includes(R.Includes),
+        RuleAttributes(R.RuleAttributes) {
     Priority = R.Priority;
     OB.Kind = OutputBuilder::Kind::Top;
     OB.RuleName = R.RuleId;

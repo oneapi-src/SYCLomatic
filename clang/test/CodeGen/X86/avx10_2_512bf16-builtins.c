@@ -146,22 +146,22 @@ __m512bh test_mm512_setr_pbh(__bf16 bf1, __bf16 bf2, __bf16 bf3, __bf16 bf4,
                         bf25, bf26, bf27, bf28, bf29, bf30, bf31, bf32);
 }
 
-__m512 test_mm512_castpbf16_ps(__m512bh A) {
-  // CHECK-LABEL: test_mm512_castpbf16_ps
+__m512 test_mm512_castbf16_ps(__m512bh A) {
+  // CHECK-LABEL: test_mm512_castbf16_ps
   // CHECK: bitcast <32 x bfloat> %{{.*}} to <16 x float>
-  return _mm512_castpbf16_ps(A);
+  return _mm512_castbf16_ps(A);
 }
 
-__m512d test_mm512_castpbf16_pd(__m512bh A) {
-  // CHECK-LABEL: test_mm512_castpbf16_pd
+__m512d test_mm512_castbf16_pd(__m512bh A) {
+  // CHECK-LABEL: test_mm512_castbf16_pd
   // CHECK: bitcast <32 x bfloat> %{{.*}} to <8 x double>
-  return _mm512_castpbf16_pd(A);
+  return _mm512_castbf16_pd(A);
 }
 
-__m512i test_mm512_castpbf16_si512(__m512bh A) {
-  // CHECK-LABEL: test_mm512_castpbf16_si512
+__m512i test_mm512_castbf16_si512(__m512bh A) {
+  // CHECK-LABEL: test_mm512_castbf16_si512
   // CHECK: bitcast <32 x bfloat> %{{.*}} to <8 x i64>
-  return _mm512_castpbf16_si512(A);
+  return _mm512_castbf16_si512(A);
 }
 
 __m512bh test_mm512_castps_pbh(__m512 A) {
@@ -182,40 +182,40 @@ __m512bh test_mm512_castsi512_pbh(__m512i A) {
   return _mm512_castsi512_pbh(A);
 }
 
-__m128bh test_mm512_castpbf16512_pbh128(__m512bh __a) {
-  // CHECK-LABEL: test_mm512_castpbf16512_pbh128
+__m128bh test_mm512_castbf16512_pbh128(__m512bh __a) {
+  // CHECK-LABEL: test_mm512_castbf16512_pbh128
   // CHECK: shufflevector <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <8 x i32> <i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7>
-  return _mm512_castpbf16512_pbh128(__a);
+  return _mm512_castbf16512_pbh128(__a);
 }
 
-__m256bh test_mm512_castpbf16512_pbh256(__m512bh __a) {
-  // CHECK-LABEL: test_mm512_castpbf16512_pbh256
+__m256bh test_mm512_castbf16512_pbh256(__m512bh __a) {
+  // CHECK-LABEL: test_mm512_castbf16512_pbh256
   // CHECK: shufflevector <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <16 x i32> <i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7, i32 8, i32 9, i32 10, i32 11, i32 12, i32 13, i32 14, i32 15>
-  return _mm512_castpbf16512_pbh256(__a);
+  return _mm512_castbf16512_pbh256(__a);
 }
 
-__m512bh test_mm512_castpbf16128_pbh512(__m128bh __a) {
-  // CHECK-LABEL: test_mm512_castpbf16128_pbh512
+__m512bh test_mm512_castbf16128_pbh512(__m128bh __a) {
+  // CHECK-LABEL: test_mm512_castbf16128_pbh512
   // CHECK: shufflevector <8 x bfloat> %{{.*}}, <8 x bfloat> %{{.*}}, <32 x i32> <i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison>
-  return _mm512_castpbf16128_pbh512(__a);
+  return _mm512_castbf16128_pbh512(__a);
 }
 
-__m512bh test_mm512_castpbf16256_pbh512(__m256bh __a) {
-  // CHECK-LABEL: test_mm512_castpbf16256_pbh512
+__m512bh test_mm512_castbf16256_pbh512(__m256bh __a) {
+  // CHECK-LABEL: test_mm512_castbf16256_pbh512
   // CHECK: shufflevector <16 x bfloat> %{{.*}}, <16 x bfloat> %{{.*}}, <32 x i32> <i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7, i32 8, i32 9, i32 10, i32 11, i32 12, i32 13, i32 14, i32 15, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison, i32 poison>
-  return _mm512_castpbf16256_pbh512(__a);
+  return _mm512_castbf16256_pbh512(__a);
 }
 
-__m512bh test_mm512_zextpbf16128_pbh512(__m128bh __a) {
-  // CHECK-LABEL: test_mm512_zextpbf16128_pbh512
+__m512bh test_mm512_zextbf16128_pbh512(__m128bh __a) {
+  // CHECK-LABEL: test_mm512_zextbf16128_pbh512
   // CHECK: shufflevector <8 x bfloat> %{{.*}}, <8 x bfloat> {{.*}}, <32 x i32> <i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7, i32 8, i32 9, i32 10, i32 11, i32 12, i32 13, i32 14, i32 15, i32 8, i32 9, i32 10, i32 11, i32 12, i32 13, i32 14, i32 15, i32 8, i32 9, i32 10, i32 11, i32 12, i32 13, i32 14, i32 15>
-  return _mm512_zextpbf16128_pbh512(__a);
+  return _mm512_zextbf16128_pbh512(__a);
 }
 
-__m512bh test_mm512_zextpbf16256_pbh512(__m256bh __a) {
-  // CHECK-LABEL: test_mm512_zextpbf16256_pbh512
+__m512bh test_mm512_zextbf16256_pbh512(__m256bh __a) {
+  // CHECK-LABEL: test_mm512_zextbf16256_pbh512
   // CHECK: shufflevector <16 x bfloat> %{{.*}}, <16 x bfloat> {{.*}}, <32 x i32>
-  return _mm512_zextpbf16256_pbh512(__a);
+  return _mm512_zextbf16256_pbh512(__a);
 }
 
 __m512bh test_mm512_abs_pbh(__m512bh a) {
@@ -277,76 +277,76 @@ __m512bh test_mm512_permutexvar_epi16(__m512i __A, __m512bh __B) {
   return _mm512_permutexvar_pbh(__A, __B);
 }
 
-__m512bh test_mm512_addne_pbh(__m512bh __A, __m512bh __B) {
-  // CHECK-LABEL: @test_mm512_addne_pbh
+__m512bh test_mm512_add_pbh(__m512bh __A, __m512bh __B) {
+  // CHECK-LABEL: @test_mm512_add_pbh
   // CHECK: %{{.*}} = fadd <32 x bfloat> %{{.*}}, %{{.*}}
-  return _mm512_addne_pbh(__A, __B);
+  return _mm512_add_pbh(__A, __B);
 }
 
-__m512bh test_mm512_mask_addne_pbh(__m512bh __W, __mmask32 __U, __m512bh __A, __m512bh __B) {
-  // CHECK: %{{.*}} = fadd <32 x bfloat> %{{.*}}, %{{.*}}
-  // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask_addne_pbh(__W, __U, __A, __B);
-}
-
-__m512bh test_mm512_maskz_addne_pbh(__mmask32 __U, __m512bh __A, __m512bh __B) {
+__m512bh test_mm512_mask_add_pbh(__m512bh __W, __mmask32 __U, __m512bh __A, __m512bh __B) {
   // CHECK: %{{.*}} = fadd <32 x bfloat> %{{.*}}, %{{.*}}
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_maskz_addne_pbh(__U, __A, __B);
+  return _mm512_mask_add_pbh(__W, __U, __A, __B);
 }
 
-__m512bh test_mm512_subne_pbh(__m512bh __A, __m512bh __B) {
-  // CHECK-LABEL: @test_mm512_subne_pbh
+__m512bh test_mm512_maskz_add_pbh(__mmask32 __U, __m512bh __A, __m512bh __B) {
+  // CHECK: %{{.*}} = fadd <32 x bfloat> %{{.*}}, %{{.*}}
+  // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
+  return _mm512_maskz_add_pbh(__U, __A, __B);
+}
+
+__m512bh test_mm512_sub_pbh(__m512bh __A, __m512bh __B) {
+  // CHECK-LABEL: @test_mm512_sub_pbh
   // CHECK: %{{.*}} = fsub <32 x bfloat> %{{.*}}, %{{.*}}
-  return _mm512_subne_pbh(__A, __B);
+  return _mm512_sub_pbh(__A, __B);
 }
 
-__m512bh test_mm512_mask_subne_pbh(__m512bh __W, __mmask32 __U, __m512bh __A, __m512bh __B) {
+__m512bh test_mm512_mask_sub_pbh(__m512bh __W, __mmask32 __U, __m512bh __A, __m512bh __B) {
   // CHECK: %{{.*}} = fsub <32 x bfloat> %{{.*}}, %{{.*}}
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask_subne_pbh(__W, __U, __A, __B);
+  return _mm512_mask_sub_pbh(__W, __U, __A, __B);
 }
 
-__m512bh test_mm512_maskz_subne_pbh(__mmask32 __U, __m512bh __A, __m512bh __B) {
+__m512bh test_mm512_maskz_sub_pbh(__mmask32 __U, __m512bh __A, __m512bh __B) {
   // CHECK: %{{.*}} = fsub <32 x bfloat> %{{.*}}, %{{.*}}
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_maskz_subne_pbh(__U, __A, __B);
+  return _mm512_maskz_sub_pbh(__U, __A, __B);
 }
 
-__m512bh test_mm512_mulne_pbh(__m512bh __A, __m512bh __B) {
-  // CHECK-LABEL: @test_mm512_mulne_pbh
+__m512bh test_mm512_mul_pbh(__m512bh __A, __m512bh __B) {
+  // CHECK-LABEL: @test_mm512_mul_pbh
   // CHECK: %{{.*}} = fmul <32 x bfloat> %{{.*}}, %{{.*}}
-  return _mm512_mulne_pbh(__A, __B);
+  return _mm512_mul_pbh(__A, __B);
 }
 
-__m512bh test_mm512_mask_mulne_pbh(__m512bh __W, __mmask32 __U, __m512bh __A, __m512bh __B) {
-  // CHECK: %{{.*}} = fmul <32 x bfloat> %{{.*}}, %{{.*}}
-  // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask_mulne_pbh(__W, __U, __A, __B);
-}
-
-__m512bh test_mm512_maskz_mulne_pbh(__mmask32 __U, __m512bh __A, __m512bh __B) {
+__m512bh test_mm512_mask_mul_pbh(__m512bh __W, __mmask32 __U, __m512bh __A, __m512bh __B) {
   // CHECK: %{{.*}} = fmul <32 x bfloat> %{{.*}}, %{{.*}}
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_maskz_mulne_pbh(__U, __A, __B);
+  return _mm512_mask_mul_pbh(__W, __U, __A, __B);
 }
 
-__m512bh test_mm512_divne_pbh(__m512bh __A, __m512bh __B) {
-  // CHECK-LABEL: @test_mm512_divne_pbh
+__m512bh test_mm512_maskz_mul_pbh(__mmask32 __U, __m512bh __A, __m512bh __B) {
+  // CHECK: %{{.*}} = fmul <32 x bfloat> %{{.*}}, %{{.*}}
+  // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
+  return _mm512_maskz_mul_pbh(__U, __A, __B);
+}
+
+__m512bh test_mm512_div_pbh(__m512bh __A, __m512bh __B) {
+  // CHECK-LABEL: @test_mm512_div_pbh
   // CHECK: %{{.*}} = fdiv <32 x bfloat> %{{.*}}, %{{.*}}
-  return _mm512_divne_pbh(__A, __B);
+  return _mm512_div_pbh(__A, __B);
 }
 
-__m512bh test_mm512_mask_divne_pbh(__m512bh __W, __mmask32 __U, __m512bh __A, __m512bh __B) {
+__m512bh test_mm512_mask_div_pbh(__m512bh __W, __mmask32 __U, __m512bh __A, __m512bh __B) {
   // CHECK: %{{.*}} = fdiv <32 x bfloat> %{{.*}}, %{{.*}}
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask_divne_pbh(__W, __U, __A, __B);
+  return _mm512_mask_div_pbh(__W, __U, __A, __B);
 }
 
-__m512bh test_mm512_maskz_divne_pbh(__mmask32 __U, __m512bh __A, __m512bh __B) {
+__m512bh test_mm512_maskz_div_pbh(__mmask32 __U, __m512bh __A, __m512bh __B) {
   // CHECK: %{{.*}} = fdiv <32 x bfloat> %{{.*}}, %{{.*}}
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_maskz_divne_pbh(__U, __A, __B);
+  return _mm512_maskz_div_pbh(__U, __A, __B);
 }
 
 __m512bh test_mm512_max_pbh(__m512bh __A, __m512bh __B) {
@@ -884,40 +884,40 @@ __m512bh test_mm512_maskz_rsqrt_pbh(__mmask32 __U, __m512bh __A) {
   return _mm512_maskz_rsqrt_pbh(__U, __A);
 }
 
-__m512bh test_mm512_reducene_pbh(__m512bh __A) {
-  // CHECK-LABEL: @test_mm512_reducene_pbh
+__m512bh test_mm512_reduce_pbh(__m512bh __A) {
+  // CHECK-LABEL: @test_mm512_reduce_pbh
   // CHECK: @llvm.x86.avx10.mask.reduce.bf16.512
-  return _mm512_reducene_pbh(__A, 3);
+  return _mm512_reduce_pbh(__A, 3);
 }
 
-__m512bh test_mm512_mask_reducene_pbh(__m512bh __W, __mmask16 __U, __m512bh __A) {
-  // CHECK-LABEL: @test_mm512_mask_reducene_pbh
+__m512bh test_mm512_mask_reduce_pbh(__m512bh __W, __mmask16 __U, __m512bh __A) {
+  // CHECK-LABEL: @test_mm512_mask_reduce_pbh
   // CHECK: @llvm.x86.avx10.mask.reduce.bf16.512
-  return _mm512_mask_reducene_pbh(__W, __U, __A, 1);
+  return _mm512_mask_reduce_pbh(__W, __U, __A, 1);
 }
 
-__m512bh test_mm512_maskz_reducene_pbh(__mmask16 __U, __m512bh __A) {
-  // CHECK-LABEL: @test_mm512_maskz_reducene_pbh
+__m512bh test_mm512_maskz_reduce_pbh(__mmask16 __U, __m512bh __A) {
+  // CHECK-LABEL: @test_mm512_maskz_reduce_pbh
   // CHECK: @llvm.x86.avx10.mask.reduce.bf16.512
-  return _mm512_maskz_reducene_pbh(__U, __A, 1);
+  return _mm512_maskz_reduce_pbh(__U, __A, 1);
 }
 
-__m512bh test_mm512_roundscalene_pbh(__m512bh __A) {
-  // CHECK-LABEL: @test_mm512_roundscalene_pbh
+__m512bh test_mm512_roundscale_pbh(__m512bh __A) {
+  // CHECK-LABEL: @test_mm512_roundscale_pbh
   // CHECK: @llvm.x86.avx10.mask.rndscale.bf16.512
-  return _mm512_roundscalene_pbh(__A, 3);
+  return _mm512_roundscale_pbh(__A, 3);
 }
 
-__m512bh test_mm512_mask_roundscalene_pbh(__m512bh __W, __mmask16 __U, __m512bh __A) {
-  // CHECK-LABEL: @test_mm512_mask_roundscalene_pbh
+__m512bh test_mm512_mask_roundscale_pbh(__m512bh __W, __mmask16 __U, __m512bh __A) {
+  // CHECK-LABEL: @test_mm512_mask_roundscale_pbh
   // CHECK: @llvm.x86.avx10.mask.rndscale.bf16.512
-  return _mm512_mask_roundscalene_pbh(__W, __U, __A, 1);
+  return _mm512_mask_roundscale_pbh(__W, __U, __A, 1);
 }
 
-__m512bh test_mm512_maskz_roundscalene_pbh(__mmask16 __U, __m512bh __A) {
-  // CHECK-LABEL: @test_mm512_maskz_roundscalene_pbh
+__m512bh test_mm512_maskz_roundscale_pbh(__mmask16 __U, __m512bh __A) {
+  // CHECK-LABEL: @test_mm512_maskz_roundscale_pbh
   // CHECK: @llvm.x86.avx10.mask.rndscale.bf16.512
-  return _mm512_maskz_roundscalene_pbh(__U, __A, 1 );
+  return _mm512_maskz_roundscale_pbh(__U, __A, 1 );
 }
 
 __m512bh test_mm512_getmant_pbh(__m512bh __A) {
@@ -960,126 +960,126 @@ __m512bh test_mm512_maskz_sqrt_pbh(__mmask32 __U, __m512bh __A) {
   return _mm512_maskz_sqrt_pbh(__U, __A);
 }
 
-__m512bh test_mm512_fmaddne_pbh(__m512bh __A, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_fmaddne_pbh
+__m512bh test_mm512_fmadd_pbh(__m512bh __A, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_fmadd_pbh
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
-  return _mm512_fmaddne_pbh(__A, __B, __C);
+  return _mm512_fmadd_pbh(__A, __B, __C);
 }
 
-__m512bh test_mm512_mask_fmaddne_pbh(__m512bh __A, __mmask32 __U, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_mask_fmaddne_pbh
-  // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
-  // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask_fmaddne_pbh(__A, __U, __B, __C);
-}
-
-__m512bh test_mm512_mask3_fmaddne_pbh(__m512bh __A, __m512bh __B, __m512bh __C, __mmask32 __U) {
-  // CHECK-LABEL: @test_mm512_mask3_fmaddne_pbh
+__m512bh test_mm512_mask_fmadd_pbh(__m512bh __A, __mmask32 __U, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_mask_fmadd_pbh
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask3_fmaddne_pbh(__A, __B, __C, __U);
+  return _mm512_mask_fmadd_pbh(__A, __U, __B, __C);
 }
 
-__m512bh test_mm512_maskz_fmaddne_pbh(__mmask32 __U, __m512bh __A, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_maskz_fmaddne_pbh
+__m512bh test_mm512_mask3_fmadd_pbh(__m512bh __A, __m512bh __B, __m512bh __C, __mmask32 __U) {
+  // CHECK-LABEL: @test_mm512_mask3_fmadd_pbh
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_maskz_fmaddne_pbh(__U, __A, __B, __C);
+  return _mm512_mask3_fmadd_pbh(__A, __B, __C, __U);
 }
 
-__m512bh test_mm512_fmsubne_pbh(__m512bh __A, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_fmsubne_pbh
+__m512bh test_mm512_maskz_fmadd_pbh(__mmask32 __U, __m512bh __A, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_maskz_fmadd_pbh
+  // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
+  // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
+  return _mm512_maskz_fmadd_pbh(__U, __A, __B, __C);
+}
+
+__m512bh test_mm512_fmsub_pbh(__m512bh __A, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_fmsub_pbh
   // CHECK: fneg
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
-  return _mm512_fmsubne_pbh(__A, __B, __C);
+  return _mm512_fmsub_pbh(__A, __B, __C);
 }
 
-__m512bh test_mm512_mask_fmsubne_pbh(__m512bh __A, __mmask32 __U, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_mask_fmsubne_pbh
-  // CHECK: fneg
-  // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
-  // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask_fmsubne_pbh(__A, __U, __B, __C);
-}
-
-__m512bh test_mm512_mask3_fmsubne_pbh(__m512bh __A, __m512bh __B, __m512bh __C, __mmask32 __U) {
-  // CHECK-LABEL: @test_mm512_mask3_fmsubne_pbh
+__m512bh test_mm512_mask_fmsub_pbh(__m512bh __A, __mmask32 __U, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_mask_fmsub_pbh
   // CHECK: fneg
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask3_fmsubne_pbh(__A, __B, __C, __U);
+  return _mm512_mask_fmsub_pbh(__A, __U, __B, __C);
 }
 
-__m512bh test_mm512_maskz_fmsubne_pbh(__mmask32 __U, __m512bh __A, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_maskz_fmsubne_pbh
+__m512bh test_mm512_mask3_fmsub_pbh(__m512bh __A, __m512bh __B, __m512bh __C, __mmask32 __U) {
+  // CHECK-LABEL: @test_mm512_mask3_fmsub_pbh
   // CHECK: fneg
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_maskz_fmsubne_pbh(__U, __A, __B, __C);
+  return _mm512_mask3_fmsub_pbh(__A, __B, __C, __U);
 }
 
-__m512bh test_mm512_fnmaddne_pbh(__m512bh __A, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_fnmaddne_pbh
-  // CHECK: fneg
-  // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
-  return _mm512_fnmaddne_pbh(__A, __B, __C);
-}
-
-__m512bh test_mm512_mask_fnmaddne_pbh(__m512bh __A, __mmask32 __U, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_mask_fnmaddne_pbh
+__m512bh test_mm512_maskz_fmsub_pbh(__mmask32 __U, __m512bh __A, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_maskz_fmsub_pbh
   // CHECK: fneg
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask_fnmaddne_pbh(__A, __U, __B, __C);
+  return _mm512_maskz_fmsub_pbh(__U, __A, __B, __C);
 }
 
-__m512bh test_mm512_mask3_fnmaddne_pbh(__m512bh __A, __m512bh __B, __m512bh __C, __mmask32 __U) {
-  // CHECK-LABEL: @test_mm512_mask3_fnmaddne_pbh
+__m512bh test_mm512_fnmadd_pbh(__m512bh __A, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_fnmadd_pbh
+  // CHECK: fneg
+  // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
+  return _mm512_fnmadd_pbh(__A, __B, __C);
+}
+
+__m512bh test_mm512_mask_fnmadd_pbh(__m512bh __A, __mmask32 __U, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_mask_fnmadd_pbh
   // CHECK: fneg
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask3_fnmaddne_pbh(__A, __B, __C, __U);
+  return _mm512_mask_fnmadd_pbh(__A, __U, __B, __C);
 }
 
-__m512bh test_mm512_maskz_fnmaddne_pbh(__mmask32 __U, __m512bh __A, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_maskz_fnmaddne_pbh
+__m512bh test_mm512_mask3_fnmadd_pbh(__m512bh __A, __m512bh __B, __m512bh __C, __mmask32 __U) {
+  // CHECK-LABEL: @test_mm512_mask3_fnmadd_pbh
   // CHECK: fneg
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_maskz_fnmaddne_pbh(__U, __A, __B, __C);
+  return _mm512_mask3_fnmadd_pbh(__A, __B, __C, __U);
 }
 
-__m512bh test_mm512_fnmsubne_pbh(__m512bh __A, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_fnmsubne_pbh
-  // CHECK: fneg
-  // CHECK: fneg
-  // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
-  return _mm512_fnmsubne_pbh(__A, __B, __C);
-}
-
-__m512bh test_mm512_mask_fnmsubne_pbh(__m512bh __A, __mmask32 __U, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_mask_fnmsubne_pbh
-  // CHECK: fneg
+__m512bh test_mm512_maskz_fnmadd_pbh(__mmask32 __U, __m512bh __A, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_maskz_fnmadd_pbh
   // CHECK: fneg
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask_fnmsubne_pbh(__A, __U, __B, __C);
+  return _mm512_maskz_fnmadd_pbh(__U, __A, __B, __C);
 }
 
-__m512bh test_mm512_mask3_fnmsubne_pbh(__m512bh __A, __m512bh __B, __m512bh __C, __mmask32 __U) {
-  // CHECK-LABEL: @test_mm512_mask3_fnmsubne_pbh
+__m512bh test_mm512_fnmsub_pbh(__m512bh __A, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_fnmsub_pbh
+  // CHECK: fneg
+  // CHECK: fneg
+  // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
+  return _mm512_fnmsub_pbh(__A, __B, __C);
+}
+
+__m512bh test_mm512_mask_fnmsub_pbh(__m512bh __A, __mmask32 __U, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_mask_fnmsub_pbh
   // CHECK: fneg
   // CHECK: fneg
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_mask3_fnmsubne_pbh(__A, __B, __C, __U);
+  return _mm512_mask_fnmsub_pbh(__A, __U, __B, __C);
 }
 
-__m512bh test_mm512_maskz_fnmsubne_pbh(__mmask32 __U, __m512bh __A, __m512bh __B, __m512bh __C) {
-  // CHECK-LABEL: @test_mm512_maskz_fnmsubne_pbh
+__m512bh test_mm512_mask3_fnmsub_pbh(__m512bh __A, __m512bh __B, __m512bh __C, __mmask32 __U) {
+  // CHECK-LABEL: @test_mm512_mask3_fnmsub_pbh
   // CHECK: fneg
   // CHECK: fneg
   // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
   // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
-  return _mm512_maskz_fnmsubne_pbh(__U, __A, __B, __C);
+  return _mm512_mask3_fnmsub_pbh(__A, __B, __C, __U);
+}
+
+__m512bh test_mm512_maskz_fnmsub_pbh(__mmask32 __U, __m512bh __A, __m512bh __B, __m512bh __C) {
+  // CHECK-LABEL: @test_mm512_maskz_fnmsub_pbh
+  // CHECK: fneg
+  // CHECK: fneg
+  // CHECK: call <32 x bfloat> @llvm.fma.v32bf16(<32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}})
+  // CHECK: select <32 x i1> %{{.*}}, <32 x bfloat> %{{.*}}, <32 x bfloat> %{{.*}}
+  return _mm512_maskz_fnmsub_pbh(__U, __A, __B, __C);
 }

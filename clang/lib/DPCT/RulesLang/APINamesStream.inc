@@ -25,11 +25,18 @@ CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
     HeaderType::HT_Future,
-    CALL_FACTORY_ENTRY("cuStreamAddCallback",
-                       CALL("std::async",
-                            LAMBDA(true, false,
-                                   MEMBER_CALL(ARG(0), true, "wait"),
-                                   CALL(ARG(1), ARG(0), ARG("0"), ARG(2)))))))
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckNot(CheckArgIsDefaultCudaStream(0)),
+        CALL_FACTORY_ENTRY(
+            "cuStreamAddCallback",
+            CALL("std::async",
+                 LAMBDA(true, false, MEMBER_CALL(ARG(0), true, "wait"),
+                        CALL(ARG(1), ARG(0), ARG("0"), ARG(2))))),
+        CALL_FACTORY_ENTRY(
+            "cuStreamAddCallback",
+            CALL("std::async",
+                 LAMBDA(true, false, MEMBER_CALL(QUEUESTR, false, "wait"),
+                        CALL(ARG(1), QUEUEPTRSTR, ARG("0"), ARG(2))))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,

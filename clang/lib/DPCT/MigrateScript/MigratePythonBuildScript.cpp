@@ -73,7 +73,8 @@ applyPythonMigrationRules(const clang::tooling::UnifiedPath InRoot,
     for (const auto &PythonSyntaxEntry : PythonBuildInRules) {
       const auto &PR = PythonSyntaxEntry.second;
       if (!PR.In.empty() || !PR.Out.empty()) {
-        Buffer = applyPatternRewriter(PR, Buffer);
+        Buffer = applyPatternRewriter(PR, Buffer, Entry.first.getPath().str(),
+                                      "", OutRoot);
       }
     }
   }
@@ -90,7 +91,9 @@ void doPythonBuildScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 }
 
 void registerPythonMigrationRule(MetaRuleObject &R) {
-  auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules,
+  if (!R.Out.has_value())
+    return;
+  auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out.value(), R.Subrules,
                                             R.MatchMode, R.Warning, R.RuleId,
                                             R.BuildScriptSyntax, R.Priority);
 

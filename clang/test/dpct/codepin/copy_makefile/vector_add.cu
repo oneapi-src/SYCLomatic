@@ -1,21 +1,14 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct -out-root %T/vector_add %s --cuda-include-path="%cuda-path/include" --enable-codepin --gen-build-script -- -std=c++14  -x cuda --cuda-host-only
-// RUN: echo "begin" > %T/diff_sycl_makefile.txt
 // RUN: diff --strip-trailing-cr %S/expected_makefile %T/vector_add_codepin_sycl/Makefile.dpct >> %T/diff_sycl_makefile.txt
-// RUN: echo "end" >> %T/diff_sycl_makefile.txt
-// RUN: FileCheck --input-file %T/diff_sycl_makefile.txt --check-prefix=CHECK %s
 
 // RUN: cd %T/vector_add_codepin_cuda
 // RUN: ls > default.log
 // RUN: FileCheck --input-file default.log --match-full-lines %T/vector_add_codepin_sycl/vector_add.dp.cpp -check-prefix=DEFAULT
 // DEFAULT: Makefile
 
-// RUN: echo "begin" > %T/diff.txt
 // RUN: diff --strip-trailing-cr %S/expected.txt %T/vector_add_codepin_cuda/Makefile >> %T/diff.txt
-// RUN: echo "end" >> %T/diff.txt
-// RUN: FileCheck --input-file %T/diff.txt --check-prefix=CHECK %s
-// CHECK: begin
-// CHECK-NEXT:end
+
 #include <cuda.h>
 #include <stdio.h>
 #define VECTOR_SIZE 256

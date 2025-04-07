@@ -1,0 +1,1 @@
+nvcc '-DNAMD="message"' test.cu

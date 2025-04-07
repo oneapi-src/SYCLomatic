@@ -7,10 +7,6 @@
 // RUN:   | FileCheck -check-prefix=CHECK-DEFAULT %s
 // RUN:   %clang_cl -### -fsycl --offload-new-driver -fsycl-device-only %s 2>&1 \
 // RUN:   | FileCheck -check-prefix=CHECK-DEFAULT %s
-// RUN:   %clang -### -fintelfpga -fsycl-early-optimizations %s 2>&1 \
-// RUN:   | FileCheck -check-prefix=CHECK-DEFAULT %s
-// RUN:   %clang_cl -### -fintelfpga -fsycl-early-optimizations %s 2>&1 \
-// RUN:   | FileCheck -check-prefix=CHECK-DEFAULT %s
 // CHECK-DEFAULT-NOT: "-fno-sycl-early-optimizations"
 // CHECK-DEFAULT-NOT: "-disable-llvm-passes"
 // CHECK-DEFAULT: "-fsycl-is-device"
@@ -24,10 +20,6 @@
 // RUN:   %clang -### -fsycl --offload-new-driver -fsycl-device-only -fno-sycl-early-optimizations %s 2>&1 \
 // RUN:   | FileCheck -check-prefix=CHECK-NO-SYCL-EARLY-OPTS %s
 // RUN:   %clang_cl -### -fsycl --offload-new-driver -fsycl-device-only -fno-sycl-early-optimizations %s 2>&1 \
-// RUN:   | FileCheck -check-prefix=CHECK-NO-SYCL-EARLY-OPTS %s
-// RUN:   %clang -### -fintelfpga %s 2>&1 \
-// RUN:   | FileCheck -check-prefix=CHECK-NO-SYCL-EARLY-OPTS %s
-// RUN:   %clang_cl -### -fintelfpga %s 2>&1 \
 // RUN:   | FileCheck -check-prefix=CHECK-NO-SYCL-EARLY-OPTS %s
 // CHECK-NO-SYCL-EARLY-OPTS: "-fno-sycl-early-optimizations"
 
@@ -53,3 +45,25 @@
 // RUN:   %clang -### -fsycl --offload-new-driver %s 2>&1 \
 // RUN:   | FileCheck -check-prefix=CHECK-NO-THRESH %s
 // CHECK-NO-THRESH-NOT: "-mllvm" "-inline-threshold
+
+/// Check that optimizations for sycl device are disabled with -g passed:
+// RUN:   %clang -### -fsycl -g %s 2>&1 \
+// RUN:   | FileCheck -check-prefix=CHECK-DEBUG %s
+// RUN:   %clang_cl -### -fsycl -g %s 2>&1 \
+// RUN:   | FileCheck -check-prefix=CHECK-DEBUG %s
+// CHECK-DEBUG: clang{{.*}} "-fsycl-is-device{{.*}}" "-O0"
+// CHECK-DEBUG: sycl-post-link{{.*}} "-O0"
+// CHECK-DEBUG-NOT: "-O2"
+
+/// Check that optimizations for sycl device are enabled with -g and O2 passed:
+// RUN:   %clang -### -fsycl -O2 -g %s 2>&1 \
+// RUN:   | FileCheck -check-prefix=CHECK-G-O2 %s
+// For clang_cl, -O2 maps to -O3
+// RUN:   %clang_cl -### -fsycl -O2 -g %s 2>&1 \
+// RUN:   | FileCheck -check-prefix=CHECK-G-O3 %s
+// CHECK-G-O2: clang{{.*}} "-fsycl-is-device{{.*}}" "-O2"
+// CHECK-G-O2: sycl-post-link{{.*}} "-O2"
+// CHECK-G-O2-NOT: "-O0"
+// CHECK-G-O3: clang{{.*}} "-fsycl-is-device{{.*}}" "-O3"
+// CHECK-G-O3: sycl-post-link{{.*}} "-O3"
+// CHECK-G-O3-NOT: "-O0"

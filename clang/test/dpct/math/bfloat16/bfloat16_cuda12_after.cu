@@ -7,7 +7,7 @@
 #include "cuda_bf16.h"
 
 __global__ void kernelFuncBfloat162Comparison() {
-  // CHECK: sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
+  // CHECK: sycl::vec<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
   __nv_bfloat162 bf162, bf162_1, bf162_2;
   unsigned u;
 

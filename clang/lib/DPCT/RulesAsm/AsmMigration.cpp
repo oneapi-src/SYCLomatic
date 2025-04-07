@@ -8,12 +8,12 @@
 
 #include "AsmMigration.h"
 #include "AnalysisInfo.h"
+#include "Diagnostics/Diagnostics.h"
+#include "ErrorHandle/CrashRecovery.h"
+#include "RuleInfra/MapNames.h"
 #include "RulesAsm/Parser/AsmNodes.h"
 #include "RulesAsm/Parser/AsmParser.h"
 #include "RulesAsm/Parser/AsmTokenKinds.h"
-#include "ErrorHandle/CrashRecovery.h"
-#include "Diagnostics/Diagnostics.h"
-#include "RuleInfra/MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
 #include "clang/AST/Expr.h"
@@ -37,7 +37,7 @@ using namespace clang::dpct;
 namespace {
 
 inline bool SYCLGenError() { return true; }
-inline bool SYCLGenSuccess() {return false; }
+inline bool SYCLGenSuccess() { return false; }
 
 /// This is used to handle all the AST nodes (except specific instructions, Eg.
 /// mov/setp), and generate functionally equivalent SYCL code.
@@ -609,7 +609,7 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     return false;
   };
 
-  if (CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_red))
+  if (CurrInst->is(asmtok::op_ld, asmtok::op_red))
     OS() << "*";
   switch (Dst->getMemoryOpKind()) {
   case InlineAsmAddressExpr::Imm:
@@ -632,8 +632,12 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     std::string Reg;
     if (tryEmitStmt(Reg, Dst->getSymbol()))
       return SYCLGenSuccess();
-    OS() << llvm::formatv("(({0} *)((uintptr_t){1} + {2}))", Type, Reg,
-                          Dst->getImmAddr()->getValue().getZExtValue());
+
+    if (CurrInst->is(asmtok::op_st))
+      OS() << llvm::formatv("(uintptr_t){0}", Reg);
+    else
+      OS() << llvm::formatv("(({0} *)((uintptr_t){1} + {2}))", Type, Reg,
+                            Dst->getImmAddr()->getValue().getZExtValue());
     break;
   }
   case InlineAsmAddressExpr::Var: {
@@ -1043,10 +1047,12 @@ protected:
           BI->getKind() != InlineAsmBuiltinType::u32 &&
           BI->getKind() != InlineAsmBuiltinType::s64 &&
           BI->getKind() != InlineAsmBuiltinType::u64 &&
+          BI->getKind() != InlineAsmBuiltinType::f16x2 &&
           BI->getKind() != InlineAsmBuiltinType::s16x2 &&
           BI->getKind() != InlineAsmBuiltinType::u16x2)
         return false;
       isVec = BI->getKind() == InlineAsmBuiltinType::s16x2 ||
+              BI->getKind() == InlineAsmBuiltinType::f16x2 ||
               BI->getKind() == InlineAsmBuiltinType::u16x2;
     } else {
       return false;
@@ -1088,12 +1094,21 @@ protected:
         OS() << MapNames::getClNamespace()
              << llvm::formatv("sub_sat({0}, {1})", Op[0], Op[1]);
     } else {
-      if (Inst->is(asmtok::op_add))
-        OS() << llvm::formatv("{0} + {1}", Op[0], Op[1]);
-      else
-        OS() << llvm::formatv("{0} - {1}", Op[0], Op[1]);
-    }
+      if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0))) {
+        std::string operatorStr = Inst->is(asmtok::op_add) ? "+" : "-";
 
+        if (BI->getKind() == InlineAsmBuiltinType::f16x2) {
+          std::string FormatTemp =
+              "(((sycl::vec<int, 1>({0})).as<sycl::vec<sycl::half, 2>>() {1} "
+              "(sycl::vec<int, 1>({2})).as<sycl::vec<sycl::half, "
+              "2>>()).as<sycl::vec<int, 1>>()).x();";
+          OS() << llvm::formatv(FormatTemp.c_str(), Op[0], operatorStr, Op[1]);
+
+        } else {
+          OS() << llvm::formatv("{0} {1} {2}", Op[0], operatorStr, Op[1]);
+        }
+      }
+    }
     endstmt();
     return SYCLGenSuccess();
   }
@@ -2177,8 +2192,8 @@ protected:
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
     OS() << " = ";
-    OS() << MapNames::getDpctNamespace() << "bfe_safe<" << TypeStr << ">(" << Op[0]
-         << ", " << Op[1] << ", " << Op[2] << ')';
+    OS() << MapNames::getDpctNamespace() << "bfe_safe<" << TypeStr << ">("
+         << Op[0] << ", " << Op[1] << ", " << Op[2] << ')';
     endstmt();
     insertHeader(HeaderType::HT_DPCT_Math);
     return SYCLGenSuccess();
@@ -2380,8 +2395,8 @@ protected:
     if (DpctGlobalInfo::useIntelDeviceMath() && !RD.empty()) {
       insertHeader(HeaderType::HT_SYCL_Math);
       OS() << MapNames::getClNamespace() << "ext::intel::math::"
-           << (T->getKind() == InlineAsmBuiltinType::f32 ? 'f' : 'd')
-           << "rcp_" << RD << '(' << Op[0] << ')';
+           << (T->getKind() == InlineAsmBuiltinType::f32 ? 'f' : 'd') << "rcp_"
+           << RD << '(' << Op[0] << ')';
     } else {
       OS() << "1 / " << Op[0];
     }
@@ -2417,7 +2432,44 @@ protected:
     }
   }
 
+  bool HandleCvtVec(const InlineAsmInstruction *Inst) {
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    std::string Op;
+    if (tryEmitStmt(Op, Inst->getInputOperand(0)))
+      return SYCLGenError();
+    OS() << " = ";
+    std::string FormatTemp =
+        "(sycl::ushort2(sycl::vec<float, 1>({0}).convert<sycl::half, "
+        "sycl::rounding_mode::rte>().as<sycl::vec<uint16_t, 1>>().x(),"
+        "sycl::vec<float, 1>({1}).convert<sycl::half, "
+        "sycl::rounding_mode::rte>().as<sycl::vec<uint16_t, 1>>().x()))"
+        ".as<sycl::vec<int, 1>>().x()";
+
+    std::string InputOp[2];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I) {
+      if (tryEmitStmt(InputOp[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+      if (Inst->hasAttr(InstAttr::sat))
+        InputOp[I] = Cast(Inst->getType(0), Inst->getInputOperand(I)->getType(),
+                          InputOp[I]);
+    }
+
+    OS() << llvm::formatv(FormatTemp.c_str(), InputOp[1], InputOp[0]);
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
   bool handle_cvt(const InlineAsmInstruction *Inst) override {
+
+    if (Inst->getNumInputOperands() == 2 && Inst->getNumTypes() == 2 &&
+        isa<InlineAsmBuiltinType>(Inst->getType(0)) &&
+        isa<InlineAsmBuiltinType>(Inst->getType(1))) {
+      return HandleCvtVec(Inst);
+    }
+
     if (Inst->getNumInputOperands() != 1 || Inst->getNumTypes() != 2 ||
         !isa<InlineAsmBuiltinType>(Inst->getType(0)) ||
         !isa<InlineAsmBuiltinType>(Inst->getType(1)))
@@ -2642,24 +2694,98 @@ protected:
     return SYCLGenSuccess();
   }
 
+  bool HandleStVec(const InlineAsmInstruction *Inst, int VecNum) {
+    std::string Ops;
+    if (tryEmitStmt(Ops, Inst->getInputOperand(0)))
+      return SYCLGenError();
+
+    // To extract the values from the string like "{x, y, z, w}" and store them
+    // int Values vector
+    std::vector<std::string> Values;
+    size_t start = 1;                  // Skip the '{' character
+    size_t end = Ops.find(',', start); // Find the first comma
+
+    while (end != std::string::npos) {
+      std::string Token = Ops.substr(start, end - start);
+      size_t First = Token.find_first_not_of(' ');
+      size_t Last = Token.find_last_not_of(' ');
+      if (First != std::string::npos && Last != std::string::npos) {
+        Values.push_back(Token.substr(First, Last - First + 1));
+      }
+      start = end + 1;
+      end = Ops.find(',', start);
+    }
+
+    // Extract the last value after the last comma
+    std::string token = Ops.substr(start, Ops.size() - start - 1);
+    size_t first = token.find_first_not_of(' ');
+    size_t last = token.find_last_not_of(' ');
+
+    if (first != std::string::npos && last != std::string::npos) {
+      Values.push_back(token.substr(first, last - first + 1));
+    }
+
+    std::string Output;
+    if (tryEmitStmt(Output, Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    std::string Type;
+    if (tryEmitType(Type, Inst->getType(0)))
+      return SYCLGenError();
+
+    const auto *Dst =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getOutputOperand());
+    if (!Dst)
+      return SYCLGenError();
+
+    for (int Index = 0; Index < VecNum; Index++) {
+      OS() << llvm::formatv("*(({0} *)({1}) + {2}) = {3}{4}", Type, Output,
+                            Index, Values[Index],
+                            Index == VecNum - 1 ? "" : ";\n");
+    }
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
   bool handle_st(const InlineAsmInstruction *Inst) override {
     if (Inst->getNumInputOperands() != 1)
       return SYCLGenError();
-    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
-    CurrInst = Inst;
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst, Inst);
+
+    if (Inst->hasAttr(InstAttr::cs)) {
+      if (Inst->hasAttr(InstAttr::v4))
+        return HandleStVec(Inst, 4);
+      if (Inst->hasAttr(InstAttr::v2))
+        return HandleStVec(Inst, 2);
+    }
+
     const auto *Src = Inst->getInputOperand(0);
     const auto *Dst =
         dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getOutputOperand());
     if (!Dst)
-      return false;
+      return SYCLGenError();
+
     std::string Type;
     if (tryEmitType(Type, Inst->getType(0)))
       return SYCLGenError();
-    if (emitStmt(Dst))
+
+    std::string OutOp;
+    if (tryEmitStmt(OutOp, Inst->getOutputOperand()))
       return SYCLGenError();
+
+    if (Dst->getMemoryOpKind() == InlineAsmAddressExpr::RegImm) {
+      OS() << llvm::formatv("*(({0} *)({1} + {2}))", Type, OutOp,
+                            Dst->getImmAddr()->getValue().getZExtValue());
+    } else {
+      OS() << "*" << OutOp;
+    }
+
     OS() << " = ";
     if (emitStmt(Src))
       return SYCLGenError();
+
     endstmt();
     return SYCLGenSuccess();
   }
@@ -2674,7 +2800,7 @@ protected:
     const auto *Dst = Inst->getOutputOperand();
 
     if (!Src)
-      return false;
+      return SYCLGenError();
     std::string Type;
     if (tryEmitType(Type, Inst->getType(0)))
       return SYCLGenError();
@@ -2773,9 +2899,7 @@ protected:
     return SYCLGenSuccess();
   }
 
-  bool handle_cp(const InlineAsmInstruction *Inst) override {
-    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 1)
-      return SYCLGenError();
+  bool HandleCopyOperation(const InlineAsmInstruction *Inst) {
 
     llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
     CurrInst = Inst;
@@ -2809,7 +2933,94 @@ protected:
     OS() << CommonBody("3");
     endstmt();
 
-    report(Diagnostics::ASYNC_COPY_DEVICE_WARN, true);
+    auto OpStr =
+        llvm::Twine(Inst->getOpcodeID()->getName()).concat(".async").str();
+    report(Diagnostics::ASYNC_COPY_DEVICE_WARN, true, OpStr);
+    return SYCLGenSuccess();
+  }
+
+  bool HandleCopyWait(const InlineAsmInstruction *Inst) {
+    auto CommonStr = llvm::Twine("")
+                         .concat("\"")
+                         .concat(GAS->getAsmString()->getString())
+                         .concat("\"")
+                         .str();
+
+    report(
+        Diagnostics::FUNC_CALL_REMOVED, true, CommonStr,
+        "current \"cp.async\" is migrated to synchronous copy operation. You "
+        "may need to adjust the code to tune the performance.");
+    return SYCLGenSuccess();
+  }
+
+  bool handle_cp(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() == 3 && Inst->getNumTypes() == 1 &&
+        Inst->hasAttr(InstAttr::async))
+      return HandleCopyOperation(Inst);
+
+    if (Inst->getNumInputOperands() == 1 && Inst->hasAttr(InstAttr::async) &&
+        (Inst->hasAttr(InstAttr::commit_group) ||
+         Inst->hasAttr(InstAttr::wait_group) ||
+         Inst->hasAttr(InstAttr::wait_all))) {
+      return HandleCopyWait(Inst);
+    }
+
+    return SYCLGenError();
+  }
+
+  bool handle_brkpt(const InlineAsmInstruction *Inst) override {
+
+    if (Inst->getNumInputOperands() != 0)
+      return SYCLGenError();
+
+    auto CommonStr = llvm::Twine("")
+                         .concat("\"")
+                         .concat(GAS->getAsmString()->getString())
+                         .concat("\"")
+                         .str();
+
+    report(Diagnostics::FUNC_CALL_REMOVED, true, CommonStr,
+           "this instruction is typically used for debugging. You may need to "
+           "rewrite the code.");
+    return SYCLGenSuccess();
+  }
+
+  bool handle_prmt(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3 || Inst->getNumTypes() != 1)
+      return SYCLGenError();
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = " << MapNames::getDpctNamespace()
+         << "byte_level_permute_custom(";
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Save(CurrInst);
+    CurrInst = Inst;
+    std::string Op[3];
+    if (tryEmitAllInputOperands(Op, Inst))
+      return SYCLGenError();
+
+    OS() << Op[0] << ", ";
+    OS() << Op[1] << ", ";
+    OS() << Op[2] << ", ";
+    if (Inst->hasAttr(InstAttr::f4e)) {
+      OS() << "1";
+    } else if (Inst->hasAttr(InstAttr::b4e)) {
+      OS() << "2";
+    } else if (Inst->hasAttr(InstAttr::rc8)) {
+      OS() << "3";
+    } else if (Inst->hasAttr(InstAttr::ecl)) {
+      OS() << "4";
+    } else if (Inst->hasAttr(InstAttr::ecr)) {
+      OS() << "5";
+    } else if (Inst->hasAttr(InstAttr::rc16)) {
+      OS() << "6";
+    } else {
+      OS() << "0";
+    }
+    OS() << ")";
+
+    endstmt();
     return SYCLGenSuccess();
   }
 };

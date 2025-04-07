@@ -20,10 +20,13 @@
  * THE SOFTWARE.
  */
 
-#include "../clcmacro.h"
-#include "config.h"
-#include "math.h"
 #include <clc/clc.h>
+#include <clc/clcmacro.h>
+#include <clc/integer/clc_add_sat.h>
+#include <clc/math/clc_subnormal_config.h>
+#include <clc/math/math.h>
+#include <clc/relational/clc_isinf.h>
+#include <clc/relational/clc_isnan.h>
 #include <clc/shared/clc_clamp.h>
 
 _CLC_DEF _CLC_OVERLOAD float __clc_ldexp(float x, int n) {
@@ -35,7 +38,7 @@ _CLC_DEF _CLC_OVERLOAD float __clc_ldexp(float x, int n) {
     int e = (i >> 23) & 0xff;
     int m = i & 0x007fffff;
     int s = i & 0x80000000;
-    int v = add_sat(e, n);
+    int v = __clc_add_sat(e, n);
     v = __clc_clamp(v, 0, 0xff);
     int mr = e == 0 | v == 0 | v == 0xff ? 0 : m;
     int c = e == 0xff;
@@ -90,7 +93,7 @@ _CLC_DEF _CLC_OVERLOAD float __clc_ldexp(float x, int n) {
   val_ui = dexp == 0 ? dval_ui : val_ui;
   val_f = as_float(val_ui);
 
-  val_f = isnan(x) | isinf(x) | val_x == 0 ? x : val_f;
+  val_f = __clc_isnan(x) | __clc_isinf(x) | val_x == 0 ? x : val_f;
   return val_f;
 }
 
@@ -123,7 +126,7 @@ _CLC_DEF _CLC_OVERLOAD double __clc_ldexp(double x, int n) {
   mr = v == 0x7ff ? as_double(s | PINFBITPATT_DP64) : mr;
   mr = v < -53 ? as_double(s) : mr;
 
-  mr = ((n == 0) | isinf(x) | (x == 0)) ? x : mr;
+  mr = ((n == 0) | __clc_isinf(x) | (x == 0)) ? x : mr;
   return mr;
 }
 

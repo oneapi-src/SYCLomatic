@@ -56,9 +56,21 @@ public:
 
   struct striped_offset {
     template <typename Item> size_t operator()(Item item, size_t i) {
-      size_t offset = i * item.get_local_range(2) * item.get_local_range(1) *
-                          item.get_local_range(0) +
+      size_t offset = i * item.get_group().get_local_linear_range() +
                       item.get_local_linear_id();
+      return adjust_by_padding(offset);
+    }
+  };
+
+  struct sub_group_striped_offset {
+    template <typename Item> size_t operator()(Item item, size_t i) {
+      auto sg = item.get_sub_group();
+      size_t wg_size = item.get_group().get_local_linear_range();
+      size_t sub_group_sliced_items =
+          std::min<size_t>(sg.get_local_linear_range(), wg_size);
+      size_t offset = (sg.get_group_linear_id() * sub_group_sliced_items *
+                       ElementsPerWorkItem) +
+                      (i * sub_group_sliced_items) + sg.get_local_linear_id();
       return adjust_by_padding(offset);
     }
   };
@@ -239,6 +251,60 @@ public:
     scatter_offset<const int *> get_scatter_offset(ranks);
     striped_offset get_striped_offset;
     helper_exchange(item, input, input, get_scatter_offset, get_striped_offset);
+  }
+
+  /// Rearrange elements from blocked order to sub_group striped order.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// blocked \p input across the work-group is:
+  ///
+  ///   { [0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// The sub_group striped order output (with sub_group size 2) is:
+  ///
+  ///   { [0, 4, 1, 5], [2, 6, 3, 7], [8, 12, 9, 13], [10, 14, 11, 15], ...
+  ///     , [506, 510, 507, 511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
+  /// \param output The corresponding output data of each work-item.
+  template <typename Item>
+  __dpct_inline__ void
+  blocked_to_sub_group_striped(Item item, T (&input)[ElementsPerWorkItem],
+                               T (&output)[ElementsPerWorkItem]) {
+    blocked_offset get_blocked_offset;
+    sub_group_striped_offset get_sub_group_striped_offset;
+    helper_exchange(item, input, output, get_blocked_offset,
+                    get_sub_group_striped_offset);
+  }
+
+  /// Rearrange elements from sub_group striped order to blocked order.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// sub_group striped \p input across the work-group is:
+  ///
+  ///   { [0, 4, 1, 5], [2, 6, 3, 7], [8, 12, 9, 13], [10, 14, 11, 15], ...
+  ///     , [506, 510, 507, 511] }.
+  ///
+  /// The blocked order output is:
+  ///
+  ///   { [0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
+  /// \param output The corresponding output data of each work-item.
+  template <typename Item>
+  __dpct_inline__ void
+  sub_group_striped_to_blocked(Item item, T (&input)[ElementsPerWorkItem],
+                               T (&output)[ElementsPerWorkItem]) {
+    blocked_offset get_blocked_offset;
+    sub_group_striped_offset get_sub_group_striped_offset;
+    helper_exchange(item, input, output, get_sub_group_striped_offset,
+                    get_blocked_offset);
   }
 
 private:
@@ -591,6 +657,36 @@ __dpct_inline__ void load_direct_striped(const ItemT &item,
     data[i] = input_iter[work_item_id + i * work_group_size];
 }
 
+/// Load a linear segment of elements into a sub_group striped arrangement
+/// across the work-group.
+///
+/// \tparam T The data type to load.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+template <typename T, int ElementsPerWorkItem, typename InputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+load_direct_sub_group_striped(const ItemT &item, InputIteratorT input_iter,
+                              T (&data)[ElementsPerWorkItem]) {
+  auto sg = item.get_sub_group();
+  size_t wg_size = item.get_group().get_local_linear_range();
+  size_t sub_group_sliced_items =
+      std::min<size_t>(sg.get_local_linear_range(), wg_size);
+
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++) {
+    size_t offset = (sg.get_group_linear_id() * sub_group_sliced_items *
+                     ElementsPerWorkItem) +
+                    (i * sub_group_sliced_items) + sg.get_local_linear_id();
+    data[i] = input_iter[offset];
+  }
+}
+
 /// Load a linear segment of elements into a blocked arrangement across the
 /// work-group, guarded by range.
 ///
@@ -640,6 +736,120 @@ load_direct_striped(const ItemT &item, InputIteratorT input_iter,
       data[i] = input_iter[work_item_id + i * work_group_size];
 }
 
+/// Load a linear segment of elements into a sub_group striped arrangement
+/// across the work-group, guarded by range.
+///
+/// \tparam T The data type to load.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+/// \param valid_items Number of valid items to load.
+template <typename T, int ElementsPerWorkItem, typename InputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+load_direct_sub_group_striped(const ItemT &item, InputIteratorT input_iter,
+                              T (&data)[ElementsPerWorkItem], int valid_items) {
+  auto sg = item.get_sub_group();
+  size_t wg_size = item.get_group().get_local_linear_range();
+  size_t sub_group_sliced_items =
+      std::min<size_t>(sg.get_local_linear_range(), wg_size);
+
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++) {
+    size_t offset = (sg.get_group_linear_id() * sub_group_sliced_items *
+                     ElementsPerWorkItem) +
+                    (i * sub_group_sliced_items) + sg.get_local_linear_id();
+    if (offset < valid_items) {
+      data[i] = input_iter[offset];
+    }
+  }
+}
+
+/// Load a linear segment of elements into a blocked arrangement across the
+/// work-group, guarded by range.
+///
+/// \tparam T The data type to load.
+/// \tparam DefaultT The type of default value to assign out-of-bound items.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+/// \param valid_items Number of valid items to load
+/// \param default_value Default value to assign out-of-bound items.
+template <typename T, typename DefaultT, size_t ElementsPerWorkItem,
+          typename InputIteratorT, typename ItemT>
+__dpct_inline__ void
+load_direct_blocked(const ItemT &item, InputIteratorT input_iter,
+                    T (&data)[ElementsPerWorkItem], int valid_items,
+                    DefaultT default_value) {
+#pragma unroll
+  for (int i = 0; i < ElementsPerWorkItem; i++) {
+    data[i] = default_value;
+  }
+  load_direct_blocked(item, input_iter, data, valid_items);
+}
+
+/// Load a linear segment of elements into a striped arrangement across the
+/// work-group, guarded by range.
+///
+/// \tparam T The data type to load.
+/// \tparam DefaultT The type of default value to assign out-of-bound items.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+/// \param valid_items Number of valid items to load
+/// \param default_value Default value to assign out-of-bound items.
+template <typename T, typename DefaultT, int ElementsPerWorkItem,
+          typename InputIteratorT, typename ItemT>
+__dpct_inline__ void
+load_direct_striped(const ItemT &item, InputIteratorT input_iter,
+                    T (&data)[ElementsPerWorkItem], int valid_items,
+                    DefaultT default_value) {
+#pragma unroll
+  for (int i = 0; i < ElementsPerWorkItem; i++) {
+    data[i] = default_value;
+  }
+  load_direct_striped(item, input_iter, data, valid_items);
+}
+
+/// Load a linear segment of elements into a sub_group striped arrangement
+/// across the work-group, guarded by range.
+///
+/// \tparam T The data type to load.
+/// \tparam DefaultT The type of default value to assign out-of-bound items.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+/// \param valid_items Number of valid items to load.
+/// \param default_value Default value to assign out-of-bound items.
+template <typename T, typename DefaultT, int ElementsPerWorkItem,
+          typename InputIteratorT, typename ItemT>
+__dpct_inline__ void
+load_direct_sub_group_striped(const ItemT &item, InputIteratorT input_iter,
+                              T (&data)[ElementsPerWorkItem], int valid_items,
+                              DefaultT default_value) {
+#pragma unroll
+  for (int i = 0; i < ElementsPerWorkItem; i++) {
+    data[i] = default_value;
+  }
+  load_direct_sub_group_striped(item, input_iter, data, valid_items);
+}
+
 /// Store a blocked arrangement of items across a work-group into a linear
 /// segment of items.
 ///
@@ -676,7 +886,7 @@ __dpct_inline__ void store_direct_blocked(const ItemT &item,
 /// \tparam ItemT The sycl::nd_item index space class.
 /// \param item The calling work-item.
 /// \param output_iter The work-group's base output iterator for writing.
-/// \param items Data to store.
+/// \param data Data to store.
 template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
           typename ItemT>
 __dpct_inline__ void store_direct_striped(const ItemT &item,
@@ -688,6 +898,39 @@ __dpct_inline__ void store_direct_striped(const ItemT &item,
 #pragma unroll
   for (size_t i = 0; i < ElementsPerWorkItem; i++)
     work_item_iter[i * work_group_size] = data[i];
+}
+
+/// Store a sub_group striped arrangement of items across a work-group into a
+/// linear segment of items.
+///
+/// \tparam T The data type to store.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam OutputIteratorT  The random-access iterator type for output.
+/// \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param output_iter The work-group's base output iterator for writing.
+/// \param data Data to store.
+template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+store_direct_sub_group_striped(const ItemT &item, OutputIteratorT output_iter,
+                               T (&data)[ElementsPerWorkItem]) {
+  auto sg = item.get_sub_group();
+  size_t wg_size = item.get_group().get_local_linear_range();
+  size_t sub_group_sliced_items =
+      std::min<size_t>(sg.get_local_linear_range(), wg_size);
+
+  OutputIteratorT work_item_iter =
+      output_iter +
+      sg.get_group_linear_id() * sub_group_sliced_items * ElementsPerWorkItem +
+      sg.get_local_linear_id();
+
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++) {
+    work_item_iter[i * sub_group_sliced_items] = data[i];
+  }
 }
 
 /// Store a blocked arrangement of items across a work-group into a linear
@@ -742,6 +985,44 @@ store_direct_striped(const ItemT &item, OutputIteratorT output_iter,
   for (size_t i = 0; i < ElementsPerWorkItem; i++)
     if ((i * work_group_size) + work_item_id < valid_items)
       work_item_iter[i * work_group_size] = data[i];
+}
+
+/// Store a sub_group striped arrangement of items across a work-group into a
+/// linear segment of items.
+///
+/// \tparam T The data type to store.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam OutputIteratorT  The random-access iterator type for output.
+/// \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param output_iter The work-group's base output iterator for writing.
+/// \param data Data to store.
+/// \param valid_items Number of valid items to load
+template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+store_direct_sub_group_striped(const ItemT &item, OutputIteratorT output_iter,
+                               T (&data)[ElementsPerWorkItem],
+                               size_t valid_items) {
+  auto sg = item.get_sub_group();
+  size_t wg_size = item.get_group().get_local_linear_range();
+  size_t sub_group_sliced_items =
+      std::min<size_t>(sg.get_local_linear_range(), wg_size);
+  size_t sub_group_offset =
+      sg.get_group_linear_id() * sub_group_sliced_items * ElementsPerWorkItem;
+  OutputIteratorT work_item_iter =
+      output_iter + sub_group_offset + sg.get_local_linear_id();
+
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++) {
+    if (sub_group_offset + sg.get_local_linear_id() +
+            i * sub_group_sliced_items <
+        valid_items) {
+      work_item_iter[i * sub_group_sliced_items] = data[i];
+    }
+  }
 }
 
 // loads a linear segment of workgroup items into a subgroup striped
@@ -806,7 +1087,15 @@ enum class group_load_algorithm {
   blocked,
 
   /// A striped arrangement of data is read directly from memory.
-  striped
+  striped,
+
+  /// A striped arrangement of data is read directly from memory and transposed
+  /// into a blocked arrangement.
+  transpose,
+
+  /// A sub_group striped arrangement of data is read directly from memory and
+  /// transposed into a blocked arrangement.
+  sub_group_transpose,
 };
 
 /// Provide methods for loading a linear segment of items from memory into a
@@ -820,10 +1109,16 @@ template <typename T, size_t ElementsPerWorkItem,
           group_load_algorithm LoadAlgorithm = group_load_algorithm::blocked>
 class group_load {
 public:
-  static size_t get_local_memory_size([[maybe_unused]] size_t work_group_size) {
+  static size_t get_local_memory_size(size_t work_group_size) {
+    if constexpr ((LoadAlgorithm == group_load_algorithm::transpose) ||
+                  (LoadAlgorithm ==
+                   group_load_algorithm::sub_group_transpose)) {
+      return dpct::group::exchange<
+          T, ElementsPerWorkItem>::get_local_memory_size(work_group_size);
+    }
     return 0;
   }
-  group_load(uint8_t *) {}
+  group_load(uint8_t *local_memory) : _local_memory(local_memory) {}
 
   /// Load a linear segment of items from memory.
   ///
@@ -856,6 +1151,17 @@ public:
     } else if constexpr (LoadAlgorithm == group_load_algorithm::striped) {
       load_direct_striped<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
           item, input_iter, data);
+    } else if constexpr (LoadAlgorithm == group_load_algorithm::transpose) {
+      load_direct_striped<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
+          item, input_iter, data);
+      dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
+          .striped_to_blocked(item, data, data);
+    } else if constexpr (LoadAlgorithm ==
+                         group_load_algorithm::sub_group_transpose) {
+      load_direct_sub_group_striped<T, ElementsPerWorkItem, InputIteratorT,
+                                    ItemT>(item, input_iter, data);
+      dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
+          .sub_group_striped_to_blocked(item, data, data);
     }
   }
 
@@ -891,8 +1197,75 @@ public:
     } else if constexpr (LoadAlgorithm == group_load_algorithm::striped) {
       load_direct_striped<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
           item, input_iter, data, valid_items);
+    } else if constexpr (LoadAlgorithm == group_load_algorithm::transpose) {
+      load_direct_striped<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
+          item, input_iter, data, valid_items);
+      dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
+          .striped_to_blocked(item, data, data);
+    } else if constexpr (LoadAlgorithm ==
+                         group_load_algorithm::sub_group_transpose) {
+      load_direct_sub_group_striped<T, ElementsPerWorkItem, InputIteratorT,
+                                    ItemT>(item, input_iter, data, valid_items);
+      dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
+          .sub_group_striped_to_blocked(item, data, data);
     }
   }
+
+  /// Load a linear segment of items from memory, guarded by range.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and
+  /// valid_items is 5, the \p input across the work-group is:
+  ///
+  ///   0, 1, 2, 3, 4, 5, 6, 7, ..., 508, 509, 510, 511.
+  ///
+  /// The blocked order \p data of each work-item will be:
+  ///
+  ///   {[0,1,2,3], [4,?,?,?], ..., [?,?,?,?]}.
+  ///
+  /// The striped order \p output of each work-item will be:
+  ///
+  ///   {[0,?,?,?], [1,?,?,?], [2,?,?,?], [3,?,?,?] ..., [?,?,?,?]}.
+  ///
+  /// \tparam ItemT The sycl::nd_item index space class.
+  /// \tparam InputIteratorT The random-access iterator type for input
+  /// \iterator.
+  /// \tparam DefaultT The type of default value to assign out-of-bound items.
+  /// \param item The work-item identifier.
+  /// \param input_iter The work-group's base input iterator for loading from.
+  /// \param data The data to load.
+  /// \param valid_items Number of valid items to load.
+  /// \param default_value Default value to assign out-of-bound items.
+  template <typename ItemT, typename InputIteratorT, typename DefaultT>
+  __dpct_inline__ void load(const ItemT &item, InputIteratorT input_iter,
+                            T (&data)[ElementsPerWorkItem], int valid_items,
+                            DefaultT default_value) {
+    if constexpr (LoadAlgorithm == group_load_algorithm::blocked) {
+      load_direct_blocked<T, DefaultT, ElementsPerWorkItem, InputIteratorT,
+                          ItemT>(item, input_iter, data, valid_items,
+                                 default_value);
+    } else if constexpr (LoadAlgorithm == group_load_algorithm::striped) {
+      load_direct_striped<T, DefaultT, ElementsPerWorkItem, InputIteratorT,
+                          ItemT>(item, input_iter, data, valid_items,
+                                 default_value);
+    } else if constexpr (LoadAlgorithm == group_load_algorithm::transpose) {
+      load_direct_striped<T, DefaultT, ElementsPerWorkItem, InputIteratorT,
+                          ItemT>(item, input_iter, data, valid_items,
+                                 default_value);
+      dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
+          .striped_to_blocked(item, data, data);
+    } else if constexpr (LoadAlgorithm ==
+                         group_load_algorithm::sub_group_transpose) {
+      load_direct_sub_group_striped<T, DefaultT, ElementsPerWorkItem,
+                                    InputIteratorT, ItemT>(
+          item, input_iter, data, valid_items, default_value);
+      dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
+          .sub_group_striped_to_blocked(item, data, data);
+    }
+  }
+
+private:
+  uint8_t *_local_memory;
 };
 
 /// Enumerates alternative algorithms for dpct::group::group_load to write a
@@ -904,6 +1277,14 @@ enum class group_store_algorithm {
 
   /// A striped arrangement of data is written directly to memory.
   striped,
+
+  /// A blocked arrangement of data transposed into a striped arrangement and
+  /// then written directly to memory.
+  transpose,
+
+  /// A blocked arrangement of data transposed into a sub_group striped
+  /// arrangement and then written directly to memory.
+  sub_group_transpose,
 };
 
 /// Provide methods for writing a blocked arrangement of elements partitioned
@@ -917,10 +1298,16 @@ template <typename T, size_t ElementsPerWorkItem,
           group_store_algorithm StoreAlgorithm = group_store_algorithm::blocked>
 class group_store {
 public:
-  static size_t get_local_memory_size([[maybe_unused]] size_t work_group_size) {
+  static size_t get_local_memory_size(size_t work_group_size) {
+    if constexpr ((StoreAlgorithm == group_store_algorithm::transpose) ||
+                  (StoreAlgorithm ==
+                   group_store_algorithm::sub_group_transpose)) {
+      return dpct::group::exchange<
+          T, ElementsPerWorkItem>::get_local_memory_size(work_group_size);
+    }
     return 0;
   }
-  group_store(uint8_t *) {}
+  group_store(uint8_t *local_memory) : _local_memory(local_memory) {}
 
   /// Store items into a linear segment of memory.
   ///
@@ -953,6 +1340,17 @@ public:
     } else if constexpr (StoreAlgorithm == group_store_algorithm::striped) {
       store_direct_striped<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
           item, output_iter, data);
+    } else if constexpr (StoreAlgorithm == group_store_algorithm::transpose) {
+      dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
+          .blocked_to_striped(item, data, data);
+      store_direct_striped<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
+          item, output_iter, data);
+    } else if constexpr (StoreAlgorithm ==
+                         group_store_algorithm::sub_group_transpose) {
+      dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
+          .blocked_to_sub_group_striped(item, data, data);
+      store_direct_sub_group_striped<T, ElementsPerWorkItem, OutputIteratorT,
+                                     ItemT>(item, output_iter, data);
     }
   }
 
@@ -989,8 +1387,23 @@ public:
     } else if constexpr (StoreAlgorithm == group_store_algorithm::striped) {
       store_direct_striped<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
           item, output_iter, data, valid_items);
+    } else if constexpr (StoreAlgorithm == group_store_algorithm::transpose) {
+      dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
+          .blocked_to_striped(item, data, data);
+      store_direct_striped<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
+          item, output_iter, data, valid_items);
+    } else if constexpr (StoreAlgorithm ==
+                         group_store_algorithm::sub_group_transpose) {
+      dpct::group::exchange<T, ElementsPerWorkItem>(_local_memory)
+          .blocked_to_sub_group_striped(item, data, data);
+      store_direct_sub_group_striped<T, ElementsPerWorkItem, OutputIteratorT,
+                                     ItemT>(item, output_iter, data,
+                                            valid_items);
     }
   }
+
+private:
+  uint8_t *_local_memory;
 };
 
 /// The work-group wide shuffle operations that allow work-items to exchange

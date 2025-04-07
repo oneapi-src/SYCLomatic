@@ -185,8 +185,6 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
       "${UNIFIED_RUNTIME_COMMON_INCLUDE_DIR}"
   )
 
-  add_dependencies(${LIB_OBJ_NAME} UnifiedRuntimeAdapters ur_umf)
-
   target_link_libraries(${LIB_NAME}
     PRIVATE
       UnifiedRuntime-Headers
@@ -198,8 +196,6 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
       PRIVATE
       UnifiedRuntimeLoader
     )
-  else()
-    add_dependencies(${LIB_NAME} UnifiedRuntimeLoader)
   endif()
 
   target_include_directories(${LIB_NAME}
@@ -207,8 +203,6 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
       "${UNIFIED_RUNTIME_SRC_INCLUDE_DIR}"
       "${UNIFIED_RUNTIME_COMMON_INCLUDE_DIR}"
   )
-
-  add_dependencies(${LIB_NAME} UnifiedRuntimeAdapters ur_umf)
 
   add_common_options(${LIB_NAME} ${LIB_OBJ_NAME})
 
@@ -221,6 +215,18 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
   if (HAS_INST_AFTER_SPEC)
     target_compile_options(${LIB_OBJ_NAME} PRIVATE
       -Winstantiation-after-specialization)
+  endif()
+
+  # When building using icx on Windows, the VERSION file
+  # produced by cmake is used in source code
+  # when including '<version>' because Windows is
+  # case-insensitive and icx adds the build directory
+  # to the system header search path.
+  if (WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    set(VERSION_FILE "${CMAKE_BINARY_DIR}/VERSION")
+    if(EXISTS ${VERSION_FILE})
+      file(REMOVE ${VERSION_FILE})
+    endif()
   endif()
 endfunction(add_sycl_rt_library)
 
@@ -270,7 +276,6 @@ set(SYCL_COMMON_SOURCES
     "detail/platform_impl.cpp"
     "detail/program_manager/program_manager.cpp"
     "detail/queue_impl.cpp"
-    "detail/online_compiler/online_compiler.cpp"
     "detail/os_util.cpp"
     "detail/persistent_device_code_cache.cpp"
     "detail/platform_util.cpp"

@@ -21,7 +21,7 @@
 // CHECK-NEXT:   __hfma(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
 // CHECK-NEXT:   __hfma(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
 // CHECK-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
-// CHECK-NEXT:   sycl::ext::intel::math::hfma(h1, h2);
+// CHECK-NEXT:   sycl::ext::intel::math::hfma(h1, h2, h3);
 // CHECK-NEXT:   sycl::ext::oneapi::experimental::fma(b1, b2, b3);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --use-syclcompat --query-api-mapping=cudaMallocPitch | FileCheck %s -check-prefix=SYCLCOMPAT
@@ -52,7 +52,7 @@
 // MULTI_QUERY-NEXT:   __hfma(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
 // MULTI_QUERY-NEXT:   __hfma(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
 // MULTI_QUERY-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
-// MULTI_QUERY-NEXT:   sycl::ext::intel::math::hfma(h1, h2);
+// MULTI_QUERY-NEXT:   sycl::ext::intel::math::hfma(h1, h2, h3);
 // MULTI_QUERY-NEXT:   sycl::ext::oneapi::experimental::fma(b1, b2, b3);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMalloc --usm-level=none 2>&1 | FileCheck %s -check-prefix=CONFLICT_OPT

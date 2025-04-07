@@ -59,4 +59,15 @@ __global__ void add() {
   asm("add.u16x2 %0, {1, 1}, %1;" : "=r"(u16x2) : "r"(ua));
 }
 
+// CHECK: inline uint32_t add(uint32_t a, uint32_t b) {
+// CHECK-NEXT:  uint32_t c;
+// CHECK-NEXT:  c = (((sycl::vec<int, 1>(a)).as<sycl::vec<sycl::half, 2>>() + (sycl::vec<int, 1>(b)).as<sycl::vec<sycl::half, 2>>()).as<sycl::vec<int, 1>>()).x();;
+// CHECK-NEXT:  return c;
+// CHECK-NEXT: }
+inline __device__ uint32_t add(uint32_t a, uint32_t b) {
+  uint32_t c;
+  asm volatile("add.f16x2 %0, %1, %2;\n" : "=r"(c) : "r"(a), "r"(b));
+  return c;
+}
+
 // clang-format off

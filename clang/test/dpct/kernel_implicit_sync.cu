@@ -27,7 +27,13 @@ int main() {
 
 // CHECK:  s1->submit(
 // CHECK:      [&](sycl::handler &cgh) {
-// CHECK:        cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_last_event());
+// CHECK:        auto last_event = dpct::get_default_queue().ext_oneapi_get_last_event();
+// CHECK:        [&](auto &&_e) {
+// CHECK:          if constexpr (std::is_same_v<std::remove_reference_t<decltype(last_event)>, sycl::event>)
+// CHECK:            cgh.depends_on(_e);
+// CHECK:          else if (_e.has_value())
+// CHECK:            cgh.depends_on(_e.value());
+// CHECK:        }(last_event);
 // CHECK:        cgh.parallel_for(
 // CHECK:          sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK:          [=](sycl::nd_item<3> item_ct1) {

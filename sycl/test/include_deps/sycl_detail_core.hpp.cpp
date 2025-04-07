@@ -63,7 +63,7 @@
 // CHECK-NEXT: detail/info_desc_helpers.hpp
 // CHECK-NEXT: info/info_desc.hpp
 // CHECK-NEXT: ext/oneapi/experimental/device_architecture.hpp
-// CHECK-NEXT: ext/oneapi/experimental/architectures.def
+// CHECK-NEXT: ext/oneapi/experimental/device_architecture.def
 // CHECK-NEXT: ext/oneapi/experimental/forward_progress.hpp
 // CHECK-NEXT: ext/oneapi/matrix/query-types.hpp
 // CHECK-NEXT: ext/oneapi/matrix/matrix-unified-utils.hpp
@@ -79,6 +79,7 @@
 // CHECK-NEXT: info/event_profiling_traits.def
 // CHECK-NEXT: info/ext_codeplay_device_traits.def
 // CHECK-NEXT: info/ext_intel_device_traits.def
+// CHECK-NEXT: info/ext_intel_kernel_info_traits.def
 // CHECK-NEXT: info/ext_oneapi_device_traits.def
 // CHECK-NEXT: info/ext_oneapi_kernel_queue_specific_traits.def
 // CHECK-NEXT: info/sycl_backend_traits.def
@@ -111,7 +112,11 @@
 // CHECK-NEXT: ext/oneapi/properties/property_value.hpp
 // CHECK-NEXT: ext/oneapi/properties/properties.hpp
 // CHECK-NEXT: ext/oneapi/properties/property_utils.hpp
+// CHECK-NEXT: ext/oneapi/experimental/event_mode_property.hpp
 // CHECK-NEXT: ext/oneapi/experimental/graph.hpp
+// CHECK-NEXT: ext/oneapi/experimental/detail/properties/graph_properties.hpp
+// CHECK-NEXT: ext/oneapi/experimental/detail/properties/graph_properties.def
+// CHECK-NEXT: ext/oneapi/experimental/detail/properties/node_properties.def
 // CHECK-NEXT: handler.hpp
 // CHECK-NEXT: detail/cl.h
 // CHECK-NEXT: CL/cl.h
@@ -131,6 +136,8 @@
 // CHECK-NEXT: ext/oneapi/experimental/use_root_sync_prop.hpp
 // CHECK-NEXT: ext/oneapi/experimental/virtual_functions.hpp
 // CHECK-NEXT: ext/oneapi/kernel_properties/properties.hpp
+// CHECK-NEXT: ext/oneapi/work_group_scratch_memory.hpp
+// CHECK-NEXT: detail/sycl_local_mem_builtins.hpp
 // CHECK-NEXT: kernel.hpp
 // CHECK-NEXT: sampler.hpp
 // CHECK-NEXT: feature_test.hpp

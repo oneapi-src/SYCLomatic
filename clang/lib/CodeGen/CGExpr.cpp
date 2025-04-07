@@ -25,6 +25,7 @@
 #include "ConstantEmitter.h"
 #include "TargetInfo.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/ASTLambda.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/NSAPI.h"
@@ -32,41 +33,35 @@
 #include "clang/Basic/Builtins.h"
 #include "clang/Basic/CodeGenOptions.h"
 #include "clang/Basic/SourceManager.h"
-#include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/ScopeExit.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Intrinsics.h"
-#include "llvm/IR/IntrinsicsWebAssembly.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/MDBuilder.h"
 #include "llvm/IR/MatrixBuilder.h"
-#include "llvm/Passes/OptimizationLevel.h"
 #include "llvm/Support/ConvertUTF.h"
 #include "llvm/Support/Endian.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/Path.h"
-#include "llvm/Support/SaveAndRestore.h"
 #include "llvm/Support/xxhash.h"
 #include "llvm/Transforms/Utils/SanitizerStats.h"
 
+#include <numeric>
 #include <optional>
 #include <string>
 
 using namespace clang;
 using namespace CodeGen;
 
-// Experiment to make sanitizers easier to debug
-static llvm::cl::opt<bool> ClSanitizeDebugDeoptimization(
-    "ubsan-unique-traps", llvm::cl::Optional,
-    llvm::cl::desc("Deoptimize traps for UBSAN so there is 1 trap per check."));
-
+namespace clang {
 // TODO: Introduce frontend options to enabled per sanitizers, similar to
 // `fsanitize-trap`.
-static llvm::cl::opt<bool> ClSanitizeGuardChecks(
+llvm::cl::opt<bool> ClSanitizeGuardChecks(
     "ubsan-guard-checks", llvm::cl::Optional,
     llvm::cl::desc("Guard UBSAN checks with `llvm.allow.ubsan.check()`."));
+} // namespace clang
 
 //===--------------------------------------------------------------------===//
 //                        Defines for metadata
@@ -745,7 +740,8 @@ void CodeGenFunction::EmitTypeCheck(TypeCheckKind TCK, SourceLocation Loc,
 
   SanitizerScope SanScope(this);
 
-  SmallVector<std::pair<llvm::Value *, SanitizerMask>, 3> Checks;
+  SmallVector<std::pair<llvm::Value *, SanitizerKind::SanitizerOrdinal>, 3>
+      Checks;
   llvm::BasicBlock *Done = nullptr;
 
   // Quickly determine whether we have a pointer to an alloca. It's possible
@@ -777,7 +773,7 @@ void CodeGenFunction::EmitTypeCheck(TypeCheckKind TCK, SourceLocation Loc,
         Builder.CreateCondBr(IsNonNull, Rest, Done);
         EmitBlock(Rest);
       } else {
-        Checks.push_back(std::make_pair(IsNonNull, SanitizerKind::Null));
+        Checks.push_back(std::make_pair(IsNonNull, SanitizerKind::SO_Null));
       }
     }
   }
@@ -804,7 +800,8 @@ void CodeGenFunction::EmitTypeCheck(TypeCheckKind TCK, SourceLocation Loc,
       llvm::Value *Dynamic = Builder.getFalse();
       llvm::Value *LargeEnough = Builder.CreateICmpUGE(
           Builder.CreateCall(F, {Ptr, Min, NullIsUnknown, Dynamic}), Size);
-      Checks.push_back(std::make_pair(LargeEnough, SanitizerKind::ObjectSize));
+      Checks.push_back(
+          std::make_pair(LargeEnough, SanitizerKind::SO_ObjectSize));
     }
   }
 
@@ -828,7 +825,7 @@ void CodeGenFunction::EmitTypeCheck(TypeCheckKind TCK, SourceLocation Loc,
       llvm::Value *Aligned =
           Builder.CreateICmpEQ(Align, llvm::ConstantInt::get(IntPtrTy, 0));
       if (Aligned != True)
-        Checks.push_back(std::make_pair(Aligned, SanitizerKind::Alignment));
+        Checks.push_back(std::make_pair(Aligned, SanitizerKind::SO_Alignment));
     }
   }
 
@@ -912,7 +909,7 @@ void CodeGenFunction::EmitTypeCheck(TypeCheckKind TCK, SourceLocation Loc,
         llvm::ConstantInt::get(Int8Ty, TCK)
       };
       llvm::Value *DynamicData[] = { Ptr, Hash };
-      EmitCheck(std::make_pair(EqualHash, SanitizerKind::Vptr),
+      EmitCheck(std::make_pair(EqualHash, SanitizerKind::SO_Vptr),
                 SanitizerHandler::DynamicTypeCacheMiss, StaticData,
                 DynamicData);
     }
@@ -1146,15 +1143,7 @@ static bool getGEPIndicesToField(CodeGenFunction &CGF, const RecordDecl *RD,
   return false;
 }
 
-/// This method is typically called in contexts where we can't generate
-/// side-effects, like in __builtin_dynamic_object_size. When finding
-/// expressions, only choose those that have either already been emitted or can
-/// be loaded without side-effects.
-///
-/// - \p FAMDecl: the \p Decl for the flexible array member. It may not be
-///   within the top-level struct.
-/// - \p CountDecl: must be within the same non-anonymous struct as \p FAMDecl.
-llvm::Value *CodeGenFunction::EmitLoadOfCountedByField(
+llvm::Value *CodeGenFunction::GetCountedByFieldExprGEP(
     const Expr *Base, const FieldDecl *FAMDecl, const FieldDecl *CountDecl) {
   const RecordDecl *RD = CountDecl->getParent()->getOuterLexicalRecordContext();
 
@@ -1183,12 +1172,25 @@ llvm::Value *CodeGenFunction::EmitLoadOfCountedByField(
     return nullptr;
 
   Indices.push_back(Builder.getInt32(0));
-  Res = Builder.CreateInBoundsGEP(
+  return Builder.CreateInBoundsGEP(
       ConvertType(QualType(RD->getTypeForDecl(), 0)), Res,
-      RecIndicesTy(llvm::reverse(Indices)), "..counted_by.gep");
+      RecIndicesTy(llvm::reverse(Indices)), "counted_by.gep");
+}
 
-  return Builder.CreateAlignedLoad(ConvertType(CountDecl->getType()), Res,
-                                   getIntAlign(), "..counted_by.load");
+/// This method is typically called in contexts where we can't generate
+/// side-effects, like in __builtin_dynamic_object_size. When finding
+/// expressions, only choose those that have either already been emitted or can
+/// be loaded without side-effects.
+///
+/// - \p FAMDecl: the \p Decl for the flexible array member. It may not be
+///   within the top-level struct.
+/// - \p CountDecl: must be within the same non-anonymous struct as \p FAMDecl.
+llvm::Value *CodeGenFunction::EmitLoadOfCountedByField(
+    const Expr *Base, const FieldDecl *FAMDecl, const FieldDecl *CountDecl) {
+  if (llvm::Value *GEP = GetCountedByFieldExprGEP(Base, FAMDecl, CountDecl))
+    return Builder.CreateAlignedLoad(ConvertType(CountDecl->getType()), GEP,
+                                     getIntAlign(), "counted_by.load");
+  return nullptr;
 }
 
 void CodeGenFunction::EmitBoundsCheck(const Expr *E, const Expr *Base,
@@ -1225,7 +1227,7 @@ void CodeGenFunction::EmitBoundsCheckImpl(const Expr *E, llvm::Value *Bound,
   };
   llvm::Value *Check = Accessed ? Builder.CreateICmpULT(IndexVal, BoundVal)
                                 : Builder.CreateICmpULE(IndexVal, BoundVal);
-  EmitCheck(std::make_pair(Check, SanitizerKind::ArrayBounds),
+  EmitCheck(std::make_pair(Check, SanitizerKind::SO_ArrayBounds),
             SanitizerHandler::OutOfBounds, StaticData, Index);
 }
 
@@ -1809,8 +1811,7 @@ CodeGenFunction::tryEmitAsConstant(DeclRefExpr *refExpr) {
   if (CGM.getLangOpts().CUDAIsDevice && result.Val.isLValue() &&
       refExpr->refersToEnclosingVariableOrCapture()) {
     auto *MD = dyn_cast_or_null<CXXMethodDecl>(CurCodeDecl);
-    if (MD && MD->getParent()->isLambda() &&
-        MD->getOverloadedOperator() == OO_Call) {
+    if (isLambdaMethod(MD) && MD->getOverloadedOperator() == OO_Call) {
       const APValue::LValueBase &base = result.Val.getLValueBase();
       if (const ValueDecl *D = base.dyn_cast<const ValueDecl *>()) {
         if (const VarDecl *VD = dyn_cast<const VarDecl>(D)) {
@@ -1942,6 +1943,10 @@ bool CodeGenFunction::EmitScalarRangeCheck(llvm::Value *Value, QualType Ty,
       cast<llvm::IntegerType>(Value->getType())->getBitWidth() == 1)
     return false;
 
+  if (NeedsEnumCheck &&
+      getContext().isTypeIgnoredBySanitizer(SanitizerKind::Enum, Ty))
+    return false;
+
   llvm::APInt Min, End;
   if (!getRangeForType(*this, Ty, Min, End, /*StrictEnums=*/true, IsBool))
     return true;
@@ -1961,8 +1966,8 @@ bool CodeGenFunction::EmitScalarRangeCheck(llvm::Value *Value, QualType Ty,
   }
   llvm::Constant *StaticArgs[] = {EmitCheckSourceLocation(Loc),
                                   EmitCheckTypeDescriptor(Ty)};
-  SanitizerMask Kind =
-      NeedsEnumCheck ? SanitizerKind::Enum : SanitizerKind::Bool;
+  SanitizerKind::SanitizerOrdinal Kind =
+      NeedsEnumCheck ? SanitizerKind::SO_Enum : SanitizerKind::SO_Bool;
   EmitCheck(std::make_pair(Check, Kind), SanitizerHandler::LoadInvalidValue,
             StaticArgs, EmitCheckValue(Value));
   return true;
@@ -1999,20 +2004,19 @@ llvm::Value *CodeGenFunction::EmitLoadOfScalar(Address Addr, bool Volatile,
       return EmitFromMemory(V, Ty);
     }
 
-    // Handle vectors of size 3 like size 4 for better performance.
-    const llvm::Type *EltTy = Addr.getElementType();
-    const auto *VTy = cast<llvm::FixedVectorType>(EltTy);
+    // Handles vectors of sizes that are likely to be expanded to a larger size
+    // to optimize performance.
+    auto *VTy = cast<llvm::FixedVectorType>(Addr.getElementType());
+    auto *NewVecTy =
+        CGM.getABIInfo().getOptimalVectorMemoryType(VTy, getLangOpts());
 
-    if (!CGM.getCodeGenOpts().PreserveVec3Type && VTy->getNumElements() == 3) {
-
-      llvm::VectorType *vec4Ty =
-          llvm::FixedVectorType::get(VTy->getElementType(), 4);
-      Address Cast = Addr.withElementType(vec4Ty);
-      // Now load value.
-      llvm::Value *V = Builder.CreateLoad(Cast, Volatile, "loadVec4");
-
-      // Shuffle vector to get vec3.
-      V = Builder.CreateShuffleVector(V, ArrayRef<int>{0, 1, 2}, "extractVec");
+    if (VTy != NewVecTy) {
+      Address Cast = Addr.withElementType(NewVecTy);
+      llvm::Value *V = Builder.CreateLoad(Cast, Volatile, "loadVecN");
+      unsigned OldNumElements = VTy->getNumElements();
+      SmallVector<int, 16> Mask(OldNumElements);
+      std::iota(Mask.begin(), Mask.end(), 0);
+      V = Builder.CreateShuffleVector(V, Mask, "extractVec");
       return EmitFromMemory(V, Ty);
     }
   }
@@ -2043,7 +2047,7 @@ llvm::Value *CodeGenFunction::EmitLoadOfScalar(Address Addr, bool Volatile,
     if (llvm::MDNode *RangeInfo = getRangeForLoadFromType(Ty)) {
       Load->setMetadata(llvm::LLVMContext::MD_range, RangeInfo);
       Load->setMetadata(llvm::LLVMContext::MD_noundef,
-                        llvm::MDNode::get(getLLVMContext(), std::nullopt));
+                        llvm::MDNode::get(getLLVMContext(), {}));
     }
 
   return EmitFromMemory(Load, Ty);
@@ -2142,21 +2146,21 @@ void CodeGenFunction::EmitStoreOfScalar(llvm::Value *Value, Address Addr,
       Addr = Addr.withPointer(Builder.CreateThreadLocalAddress(GV),
                               NotKnownNonNull);
 
+  // Handles vectors of sizes that are likely to be expanded to a larger size
+  // to optimize performance.
   llvm::Type *SrcTy = Value->getType();
   if (const auto *ClangVecTy = Ty->getAs<VectorType>()) {
-    auto *VecTy = dyn_cast<llvm::FixedVectorType>(SrcTy);
-    if (!CGM.getCodeGenOpts().PreserveVec3Type) {
-      // Handle vec3 special.
-      if (VecTy && !ClangVecTy->isExtVectorBoolType() &&
-          cast<llvm::FixedVectorType>(VecTy)->getNumElements() == 3) {
-        // Our source is a vec3, do a shuffle vector to make it a vec4.
-        Value = Builder.CreateShuffleVector(Value, ArrayRef<int>{0, 1, 2, -1},
-                                            "extractVec");
-        SrcTy = llvm::FixedVectorType::get(VecTy->getElementType(), 4);
+    if (auto *VecTy = dyn_cast<llvm::FixedVectorType>(SrcTy)) {
+      auto *NewVecTy =
+          CGM.getABIInfo().getOptimalVectorMemoryType(VecTy, getLangOpts());
+      if (!ClangVecTy->isExtVectorBoolType() && VecTy != NewVecTy) {
+        SmallVector<int, 16> Mask(NewVecTy->getNumElements(), -1);
+        std::iota(Mask.begin(), Mask.begin() + VecTy->getNumElements(), 0);
+        Value = Builder.CreateShuffleVector(Value, Mask, "extractVec");
+        SrcTy = NewVecTy;
       }
-      if (Addr.getElementType() != SrcTy) {
+      if (Addr.getElementType() != SrcTy)
         Addr = Addr.withElementType(SrcTy);
-      }
     }
   }
 
@@ -2411,8 +2415,15 @@ void CodeGenFunction::EmitStoreThroughLValue(RValue Src, LValue Dst,
         Vec = Builder.CreateBitCast(Vec, IRVecTy);
         // iN --> <N x i1>.
       }
-      Vec = Builder.CreateInsertElement(Vec, Src.getScalarVal(),
-                                        Dst.getVectorIdx(), "vecins");
+      llvm::Value *SrcVal = Src.getScalarVal();
+      // Allow inserting `<1 x T>` into an `<N x T>`. It can happen with scalar
+      // types which are mapped to vector LLVM IR types (e.g. for implementing
+      // an ABI).
+      if (auto *EltTy = dyn_cast<llvm::FixedVectorType>(SrcVal->getType());
+          EltTy && EltTy->getNumElements() == 1)
+        SrcVal = Builder.CreateBitCast(SrcVal, EltTy->getElementType());
+      Vec = Builder.CreateInsertElement(Vec, SrcVal, Dst.getVectorIdx(),
+                                        "vecins");
       if (IRStoreTy) {
         // <N x i1> --> <iN>.
         Vec = Builder.CreateBitCast(Vec, IRStoreTy);
@@ -3384,9 +3395,9 @@ llvm::Constant *CodeGenFunction::EmitCheckTypeDescriptor(QualType T) {
   // Format the type name as if for a diagnostic, including quotes and
   // optionally an 'aka'.
   SmallString<32> Buffer;
-  CGM.getDiags().ConvertArgToString(
-      DiagnosticsEngine::ak_qualtype, (intptr_t)T.getAsOpaquePtr(), StringRef(),
-      StringRef(), std::nullopt, Buffer, std::nullopt);
+  CGM.getDiags().ConvertArgToString(DiagnosticsEngine::ak_qualtype,
+                                    (intptr_t)T.getAsOpaquePtr(), StringRef(),
+                                    StringRef(), {}, Buffer, {});
 
   if (IsBitInt) {
     // The Structure is: 0 to end the string, 32 bit unsigned integer in target
@@ -3522,11 +3533,12 @@ enum class CheckRecoverableKind {
 };
 }
 
-static CheckRecoverableKind getRecoverableKind(SanitizerMask Kind) {
-  assert(Kind.countPopulation() == 1);
-  if (Kind == SanitizerKind::Vptr)
+static CheckRecoverableKind
+getRecoverableKind(SanitizerKind::SanitizerOrdinal Ordinal) {
+  if (Ordinal == SanitizerKind::SO_Vptr)
     return CheckRecoverableKind::AlwaysRecoverable;
-  else if (Kind == SanitizerKind::Return || Kind == SanitizerKind::Unreachable)
+  else if (Ordinal == SanitizerKind::SO_Return ||
+           Ordinal == SanitizerKind::SO_Unreachable)
     return CheckRecoverableKind::Unrecoverable;
   else
     return CheckRecoverableKind::Recoverable;
@@ -3550,7 +3562,7 @@ static void emitCheckHandlerCall(CodeGenFunction &CGF,
                                  ArrayRef<llvm::Value *> FnArgs,
                                  SanitizerHandler CheckHandler,
                                  CheckRecoverableKind RecoverKind, bool IsFatal,
-                                 llvm::BasicBlock *ContBB) {
+                                 llvm::BasicBlock *ContBB, bool NoMerge) {
   assert(IsFatal || RecoverKind != CheckRecoverableKind::Unrecoverable);
   std::optional<ApplyDebugLocation> DL;
   if (!CGF.Builder.getCurrentDebugLocation()) {
@@ -3585,6 +3597,10 @@ static void emitCheckHandlerCall(CodeGenFunction &CGF,
                                llvm::AttributeList::FunctionIndex, B),
       /*Local=*/true);
   llvm::CallInst *HandlerCall = CGF.EmitNounwindRuntimeCall(Fn, FnArgs);
+  NoMerge = NoMerge || !CGF.CGM.getCodeGenOpts().OptimizationLevel ||
+            (CGF.CurCodeDecl && CGF.CurCodeDecl->hasAttr<OptimizeNoneAttr>());
+  if (NoMerge)
+    HandlerCall->addFnAttr(llvm::Attribute::NoMerge);
   if (!MayReturn) {
     HandlerCall->setDoesNotReturn();
     CGF.Builder.CreateUnreachable();
@@ -3594,7 +3610,7 @@ static void emitCheckHandlerCall(CodeGenFunction &CGF,
 }
 
 void CodeGenFunction::EmitCheck(
-    ArrayRef<std::pair<llvm::Value *, SanitizerMask>> Checked,
+    ArrayRef<std::pair<llvm::Value *, SanitizerKind::SanitizerOrdinal>> Checked,
     SanitizerHandler CheckHandler, ArrayRef<llvm::Constant *> StaticArgs,
     ArrayRef<llvm::Value *> DynamicArgs) {
   assert(IsSanitizerScope);
@@ -3606,31 +3622,36 @@ void CodeGenFunction::EmitCheck(
   llvm::Value *FatalCond = nullptr;
   llvm::Value *RecoverableCond = nullptr;
   llvm::Value *TrapCond = nullptr;
-  for (int i = 0, n = Checked.size(); i < n; ++i) {
-    llvm::Value *Check = Checked[i].first;
-    // -fsanitize-trap= overrides -fsanitize-recover=.
-    llvm::Value *&Cond =
-        CGM.getCodeGenOpts().SanitizeTrap.has(Checked[i].second)
-            ? TrapCond
-            : CGM.getCodeGenOpts().SanitizeRecover.has(Checked[i].second)
-                  ? RecoverableCond
-                  : FatalCond;
-    Cond = Cond ? Builder.CreateAnd(Cond, Check) : Check;
-  }
-
-  if (ClSanitizeGuardChecks) {
-    llvm::Value *Allow =
-        Builder.CreateCall(CGM.getIntrinsic(llvm::Intrinsic::allow_ubsan_check),
-                           llvm::ConstantInt::get(CGM.Int8Ty, CheckHandler));
-
-    for (llvm::Value **Cond : {&FatalCond, &RecoverableCond, &TrapCond}) {
-      if (*Cond)
-        *Cond = Builder.CreateOr(*Cond, Builder.CreateNot(Allow));
+  bool NoMerge = false;
+  // Expand checks into:
+  //   (Check1 || !allow_ubsan_check) && (Check2 || !allow_ubsan_check) ...
+  // We need separate allow_ubsan_check intrinsics because they have separately
+  // specified cutoffs.
+  // This expression looks expensive but will be simplified after
+  // LowerAllowCheckPass.
+  for (auto &[Check, Ord] : Checked) {
+    llvm::Value *GuardedCheck = Check;
+    if (ClSanitizeGuardChecks ||
+        (CGM.getCodeGenOpts().SanitizeSkipHotCutoffs[Ord] > 0)) {
+      llvm::Value *Allow = Builder.CreateCall(
+          CGM.getIntrinsic(llvm::Intrinsic::allow_ubsan_check),
+          llvm::ConstantInt::get(CGM.Int8Ty, Ord));
+      GuardedCheck = Builder.CreateOr(Check, Builder.CreateNot(Allow));
     }
+
+    // -fsanitize-trap= overrides -fsanitize-recover=.
+    llvm::Value *&Cond = CGM.getCodeGenOpts().SanitizeTrap.has(Ord) ? TrapCond
+                         : CGM.getCodeGenOpts().SanitizeRecover.has(Ord)
+                             ? RecoverableCond
+                             : FatalCond;
+    Cond = Cond ? Builder.CreateAnd(Cond, GuardedCheck) : GuardedCheck;
+
+    if (!CGM.getCodeGenOpts().SanitizeMergeHandlers.has(Ord))
+      NoMerge = true;
   }
 
   if (TrapCond)
-    EmitTrapCheck(TrapCond, CheckHandler);
+    EmitTrapCheck(TrapCond, CheckHandler, NoMerge);
   if (!FatalCond && !RecoverableCond)
     return;
 
@@ -3696,7 +3717,7 @@ void CodeGenFunction::EmitCheck(
     // Simple case: we need to generate a single handler call, either
     // fatal, or non-fatal.
     emitCheckHandlerCall(*this, FnType, Args, CheckHandler, RecoverKind,
-                         (FatalCond != nullptr), Cont);
+                         (FatalCond != nullptr), Cont, NoMerge);
   } else {
     // Emit two handler calls: first one for set of unrecoverable checks,
     // another one for recoverable.
@@ -3706,18 +3727,19 @@ void CodeGenFunction::EmitCheck(
     Builder.CreateCondBr(FatalCond, NonFatalHandlerBB, FatalHandlerBB);
     EmitBlock(FatalHandlerBB);
     emitCheckHandlerCall(*this, FnType, Args, CheckHandler, RecoverKind, true,
-                         NonFatalHandlerBB);
+                         NonFatalHandlerBB, NoMerge);
     EmitBlock(NonFatalHandlerBB);
     emitCheckHandlerCall(*this, FnType, Args, CheckHandler, RecoverKind, false,
-                         Cont);
+                         Cont, NoMerge);
   }
 
   EmitBlock(Cont);
 }
 
 void CodeGenFunction::EmitCfiSlowPathCheck(
-    SanitizerMask Kind, llvm::Value *Cond, llvm::ConstantInt *TypeId,
-    llvm::Value *Ptr, ArrayRef<llvm::Constant *> StaticArgs) {
+    SanitizerKind::SanitizerOrdinal Ordinal, llvm::Value *Cond,
+    llvm::ConstantInt *TypeId, llvm::Value *Ptr,
+    ArrayRef<llvm::Constant *> StaticArgs) {
   llvm::BasicBlock *Cont = createBasicBlock("cfi.cont");
 
   llvm::BasicBlock *CheckBB = createBasicBlock("cfi.slowpath");
@@ -3729,7 +3751,7 @@ void CodeGenFunction::EmitCfiSlowPathCheck(
 
   EmitBlock(CheckBB);
 
-  bool WithDiag = !CGM.getCodeGenOpts().SanitizeTrap.has(Kind);
+  bool WithDiag = !CGM.getCodeGenOpts().SanitizeTrap.has(Ordinal);
 
   llvm::CallInst *CheckCall;
   llvm::FunctionCallee SlowPathFn;
@@ -3861,22 +3883,23 @@ void CodeGenFunction::EmitCfiCheckFail() {
                          {Addr, AllVtables}),
       IntPtrTy);
 
-  const std::pair<int, SanitizerMask> CheckKinds[] = {
-      {CFITCK_VCall, SanitizerKind::CFIVCall},
-      {CFITCK_NVCall, SanitizerKind::CFINVCall},
-      {CFITCK_DerivedCast, SanitizerKind::CFIDerivedCast},
-      {CFITCK_UnrelatedCast, SanitizerKind::CFIUnrelatedCast},
-      {CFITCK_ICall, SanitizerKind::CFIICall}};
+  const std::pair<int, SanitizerKind::SanitizerOrdinal> CheckKinds[] = {
+      {CFITCK_VCall, SanitizerKind::SO_CFIVCall},
+      {CFITCK_NVCall, SanitizerKind::SO_CFINVCall},
+      {CFITCK_DerivedCast, SanitizerKind::SO_CFIDerivedCast},
+      {CFITCK_UnrelatedCast, SanitizerKind::SO_CFIUnrelatedCast},
+      {CFITCK_ICall, SanitizerKind::SO_CFIICall}};
 
-  SmallVector<std::pair<llvm::Value *, SanitizerMask>, 5> Checks;
-  for (auto CheckKindMaskPair : CheckKinds) {
-    int Kind = CheckKindMaskPair.first;
-    SanitizerMask Mask = CheckKindMaskPair.second;
+  SmallVector<std::pair<llvm::Value *, SanitizerKind::SanitizerOrdinal>, 5>
+      Checks;
+  for (auto CheckKindOrdinalPair : CheckKinds) {
+    int Kind = CheckKindOrdinalPair.first;
+    SanitizerKind::SanitizerOrdinal Ordinal = CheckKindOrdinalPair.second;
     llvm::Value *Cond =
         Builder.CreateICmpNE(CheckKind, llvm::ConstantInt::get(Int8Ty, Kind));
-    if (CGM.getLangOpts().Sanitize.has(Mask))
-      EmitCheck(std::make_pair(Cond, Mask), SanitizerHandler::CFICheckFail, {},
-                {Data, Addr, ValidVtable});
+    if (CGM.getLangOpts().Sanitize.has(Ordinal))
+      EmitCheck(std::make_pair(Cond, Ordinal), SanitizerHandler::CFICheckFail,
+                {}, {Data, Addr, ValidVtable});
     else
       EmitTrapCheck(Cond, SanitizerHandler::CFICheckFail);
   }
@@ -3891,15 +3914,16 @@ void CodeGenFunction::EmitUnreachable(SourceLocation Loc) {
   if (SanOpts.has(SanitizerKind::Unreachable)) {
     SanitizerScope SanScope(this);
     EmitCheck(std::make_pair(static_cast<llvm::Value *>(Builder.getFalse()),
-                             SanitizerKind::Unreachable),
+                             SanitizerKind::SO_Unreachable),
               SanitizerHandler::BuiltinUnreachable,
-              EmitCheckSourceLocation(Loc), std::nullopt);
+              EmitCheckSourceLocation(Loc), {});
   }
   Builder.CreateUnreachable();
 }
 
 void CodeGenFunction::EmitTrapCheck(llvm::Value *Checked,
-                                    SanitizerHandler CheckHandlerID) {
+                                    SanitizerHandler CheckHandlerID,
+                                    bool NoMerge) {
   llvm::BasicBlock *Cont = createBasicBlock("cont");
 
   // If we're optimizing, collapse all calls to trap down to just one per
@@ -3909,9 +3933,10 @@ void CodeGenFunction::EmitTrapCheck(llvm::Value *Checked,
 
   llvm::BasicBlock *&TrapBB = TrapBBs[CheckHandlerID];
 
-  if (!ClSanitizeDebugDeoptimization &&
-      CGM.getCodeGenOpts().OptimizationLevel && TrapBB &&
-      (!CurCodeDecl || !CurCodeDecl->hasAttr<OptimizeNoneAttr>())) {
+  NoMerge = NoMerge || !CGM.getCodeGenOpts().OptimizationLevel ||
+            (CurCodeDecl && CurCodeDecl->hasAttr<OptimizeNoneAttr>());
+
+  if (TrapBB && !NoMerge) {
     auto Call = TrapBB->begin();
     assert(isa<llvm::CallInst>(Call) && "Expected call in trap BB");
 
@@ -3923,18 +3948,17 @@ void CodeGenFunction::EmitTrapCheck(llvm::Value *Checked,
     Builder.CreateCondBr(Checked, Cont, TrapBB);
     EmitBlock(TrapBB);
 
-    llvm::CallInst *TrapCall = Builder.CreateCall(
-        CGM.getIntrinsic(llvm::Intrinsic::ubsantrap),
-        llvm::ConstantInt::get(CGM.Int8Ty,
-                               ClSanitizeDebugDeoptimization
-                                   ? TrapBB->getParent()->size()
-                                   : static_cast<uint64_t>(CheckHandlerID)));
+    llvm::CallInst *TrapCall =
+        Builder.CreateCall(CGM.getIntrinsic(llvm::Intrinsic::ubsantrap),
+                           llvm::ConstantInt::get(CGM.Int8Ty, CheckHandlerID));
 
     if (!CGM.getCodeGenOpts().TrapFuncName.empty()) {
       auto A = llvm::Attribute::get(getLLVMContext(), "trap-func-name",
                                     CGM.getCodeGenOpts().TrapFuncName);
       TrapCall->addFnAttr(A);
     }
+    if (NoMerge)
+      TrapCall->addFnAttr(llvm::Attribute::NoMerge);
     TrapCall->setDoesNotReturn();
     TrapCall->setDoesNotThrow();
     Builder.CreateUnreachable();
@@ -4319,14 +4343,14 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
     // GEP indexes are signed, and scaling an index isn't permitted to
     // signed-overflow, so we use the same semantics for our explicit
     // multiply.  We suppress this if overflow is not undefined behavior.
-    if (getLangOpts().isSignedOverflowDefined()) {
+    if (getLangOpts().PointerOverflowDefined) {
       Idx = Builder.CreateMul(Idx, numElements);
     } else {
       Idx = Builder.CreateNSWMul(Idx, numElements);
     }
 
     Addr = emitArraySubscriptGEP(*this, Addr, Idx, vla->getElementType(),
-                                 !getLangOpts().isSignedOverflowDefined(),
+                                 !getLangOpts().PointerOverflowDefined,
                                  SignedIndices, E->getExprLoc());
 
   } else if (const ObjCObjectType *OIT = E->getType()->getAs<ObjCObjectType>()){
@@ -4392,7 +4416,7 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
           ME &&
           ME->isFlexibleArrayMemberLike(getContext(), StrictFlexArraysLevel) &&
           ME->getMemberDecl()->getType()->isCountAttributedType()) {
-        const FieldDecl *FAMDecl = dyn_cast<FieldDecl>(ME->getMemberDecl());
+        const FieldDecl *FAMDecl = cast<FieldDecl>(ME->getMemberDecl());
         if (const FieldDecl *CountFD = FAMDecl->findCountedByField()) {
           if (std::optional<int64_t> Diff =
                   getOffsetDifferenceInBits(*this, CountFD, FAMDecl)) {
@@ -4422,7 +4446,7 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
     QualType arrayType = Array->getType();
     Addr = emitArraySubscriptGEP(
         *this, ArrayLV.getAddress(), {CGM.getSize(CharUnits::Zero()), Idx},
-        E->getType(), !getLangOpts().isSignedOverflowDefined(), SignedIndices,
+        E->getType(), !getLangOpts().PointerOverflowDefined, SignedIndices,
         E->getExprLoc(), &arrayType, E->getBase(), "arrayidx", ArrayDecl);
     EltBaseInfo = ArrayLV.getBaseInfo();
     EltTBAAInfo = CGM.getTBAAInfoForSubobject(ArrayLV, E->getType());
@@ -4441,7 +4465,7 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
       PtrDecl = ME->getMemberDecl();
 
     Addr = emitArraySubscriptGEP(*this, Addr, Idx, E->getType(),
-                                 !getLangOpts().isSignedOverflowDefined(),
+                                 !getLangOpts().PointerOverflowDefined,
                                  SignedIndices, E->getExprLoc(), &ptrType,
                                  E->getBase(), "arrayidx", PtrDecl);
   }
@@ -4588,11 +4612,11 @@ LValue CodeGenFunction::EmitArraySectionExpr(const ArraySectionExpr *E,
                 : llvm::ConstantInt::get(IntPtrTy, ConstLength);
         Idx = Builder.CreateAdd(LowerBoundVal, LengthVal, "lb_add_len",
                                 /*HasNUW=*/false,
-                                !getLangOpts().isSignedOverflowDefined());
+                                !getLangOpts().PointerOverflowDefined);
         if (Length && LowerBound) {
           Idx = Builder.CreateSub(
               Idx, llvm::ConstantInt::get(IntPtrTy, /*V=*/1), "idx_sub_1",
-              /*HasNUW=*/false, !getLangOpts().isSignedOverflowDefined());
+              /*HasNUW=*/false, !getLangOpts().PointerOverflowDefined);
         }
       } else
         Idx = llvm::ConstantInt::get(IntPtrTy, ConstLength + ConstLowerBound);
@@ -4618,7 +4642,7 @@ LValue CodeGenFunction::EmitArraySectionExpr(const ArraySectionExpr *E,
             Length->getType()->hasSignedIntegerRepresentation());
         Idx = Builder.CreateSub(
             LengthVal, llvm::ConstantInt::get(IntPtrTy, /*V=*/1), "len_sub_1",
-            /*HasNUW=*/false, !getLangOpts().isSignedOverflowDefined());
+            /*HasNUW=*/false, !getLangOpts().PointerOverflowDefined);
       } else {
         ConstLength = ConstLength.zextOrTrunc(PointerWidthInBits);
         --ConstLength;
@@ -4645,12 +4669,12 @@ LValue CodeGenFunction::EmitArraySectionExpr(const ArraySectionExpr *E,
     // GEP indexes are signed, and scaling an index isn't permitted to
     // signed-overflow, so we use the same semantics for our explicit
     // multiply.  We suppress this if overflow is not undefined behavior.
-    if (getLangOpts().isSignedOverflowDefined())
+    if (getLangOpts().PointerOverflowDefined)
       Idx = Builder.CreateMul(Idx, NumElements);
     else
       Idx = Builder.CreateNSWMul(Idx, NumElements);
     EltPtr = emitArraySubscriptGEP(*this, Base, Idx, VLA->getElementType(),
-                                   !getLangOpts().isSignedOverflowDefined(),
+                                   !getLangOpts().PointerOverflowDefined,
                                    /*signedIndices=*/false, E->getExprLoc());
   } else if (const Expr *Array = isSimpleArrayDecayOperand(E->getBase())) {
     // If this is A[i] where A is an array, the frontend will have decayed the
@@ -4670,7 +4694,7 @@ LValue CodeGenFunction::EmitArraySectionExpr(const ArraySectionExpr *E,
     // Propagate the alignment from the array itself to the result.
     EltPtr = emitArraySubscriptGEP(
         *this, ArrayLV.getAddress(), {CGM.getSize(CharUnits::Zero()), Idx},
-        ResultExprTy, !getLangOpts().isSignedOverflowDefined(),
+        ResultExprTy, !getLangOpts().PointerOverflowDefined,
         /*signedIndices=*/false, E->getExprLoc());
     BaseInfo = ArrayLV.getBaseInfo();
     TBAAInfo = CGM.getTBAAInfoForSubobject(ArrayLV, ResultExprTy);
@@ -4679,7 +4703,7 @@ LValue CodeGenFunction::EmitArraySectionExpr(const ArraySectionExpr *E,
         emitOMPArraySectionBase(*this, E->getBase(), BaseInfo, TBAAInfo, BaseTy,
                                 ResultExprTy, IsLowerBound);
     EltPtr = emitArraySubscriptGEP(*this, Base, Idx, ResultExprTy,
-                                   !getLangOpts().isSignedOverflowDefined(),
+                                   !getLangOpts().PointerOverflowDefined,
                                    /*signedIndices=*/false, E->getExprLoc());
   }
 
@@ -5186,6 +5210,7 @@ std::optional<LValue> HandleConditionalOperatorLValueSimpleCase(
       // If the true case is live, we need to track its region.
       if (CondExprBool)
         CGF.incrementProfileCounter(E);
+      CGF.markStmtMaybeUsed(Dead);
       // If a throw expression we emit it and return an undefined lvalue
       // because it can't be used.
       if (auto *ThrowExpr = dyn_cast<CXXThrowExpr>(Live->IgnoreParens())) {
@@ -5507,9 +5532,8 @@ LValue CodeGenFunction::EmitOpaqueValueLValue(const OpaqueValueExpr *e) {
   return getOrCreateOpaqueLValueMapping(e);
 }
 
-void CodeGenFunction::EmitHLSLOutArgExpr(const HLSLOutArgExpr *E,
-                                         CallArgList &Args, QualType Ty) {
-
+std::pair<LValue, LValue>
+CodeGenFunction::EmitHLSLOutArgLValues(const HLSLOutArgExpr *E, QualType Ty) {
   // Emitting the casted temporary through an opaque value.
   LValue BaseLV = EmitLValue(E->getArgLValue());
   OpaqueValueMappingData::bind(*this, E->getOpaqueArgLValue(), BaseLV);
@@ -5523,6 +5547,13 @@ void CodeGenFunction::EmitHLSLOutArgExpr(const HLSLOutArgExpr *E,
                                TempLV);
 
   OpaqueValueMappingData::bind(*this, E->getCastedTemporary(), TempLV);
+  return std::make_pair(BaseLV, TempLV);
+}
+
+LValue CodeGenFunction::EmitHLSLOutArgExpr(const HLSLOutArgExpr *E,
+                                           CallArgList &Args, QualType Ty) {
+
+  auto [BaseLV, TempLV] = EmitHLSLOutArgLValues(E, Ty);
 
   llvm::Value *Addr = TempLV.getAddress().getBasePointer();
   llvm::Type *ElTy = ConvertTypeForMem(TempLV.getType());
@@ -5535,6 +5566,7 @@ void CodeGenFunction::EmitHLSLOutArgExpr(const HLSLOutArgExpr *E,
   Args.addWriteback(BaseLV, TmpAddr, nullptr, E->getWritebackCast(),
                     LifetimeSize);
   Args.add(RValue::get(TmpAddr, *this), Ty);
+  return TempLV;
 }
 
 LValue
@@ -5861,9 +5893,12 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
 // This function implements trivial copy assignment for HLSL's
 // assignable constant arrays.
 LValue CodeGenFunction::EmitHLSLArrayAssignLValue(const BinaryOperator *E) {
-  LValue TrivialAssignmentRHS = EmitLValue(E->getRHS());
+  // Don't emit an LValue for the RHS because it might not be an LValue
   LValue LHS = EmitLValue(E->getLHS());
-  EmitAggregateAssign(LHS, TrivialAssignmentRHS, E->getLHS()->getType());
+  // In C the RHS of an assignment operator is an RValue.
+  // EmitAggregateAssign takes anan LValue for the RHS. Instead we can call
+  // EmitInitializationToLValue to emit an RValue into an LValue.
+  EmitInitializationToLValue(E->getRHS(), LHS);
   return LHS;
 }
 
@@ -6081,7 +6116,7 @@ RValue CodeGenFunction::EmitCall(QualType CalleeType,
           Builder.CreateICmpEQ(CalleeTypeHash, TypeHash);
       llvm::Constant *StaticData[] = {EmitCheckSourceLocation(E->getBeginLoc()),
                                       EmitCheckTypeDescriptor(CalleeType)};
-      EmitCheck(std::make_pair(CalleeTypeHashMatch, SanitizerKind::Function),
+      EmitCheck(std::make_pair(CalleeTypeHashMatch, SanitizerKind::SO_Function),
                 SanitizerHandler::FunctionTypeMismatch, StaticData,
                 {CalleePtr});
 
@@ -6118,10 +6153,10 @@ RValue CodeGenFunction::EmitCall(QualType CalleeType,
         EmitCheckTypeDescriptor(QualType(FnType, 0)),
     };
     if (CGM.getCodeGenOpts().SanitizeCfiCrossDso && CrossDsoTypeId) {
-      EmitCfiSlowPathCheck(SanitizerKind::CFIICall, TypeTest, CrossDsoTypeId,
+      EmitCfiSlowPathCheck(SanitizerKind::SO_CFIICall, TypeTest, CrossDsoTypeId,
                            CalleePtr, StaticData);
     } else {
-      EmitCheck(std::make_pair(TypeTest, SanitizerKind::CFIICall),
+      EmitCheck(std::make_pair(TypeTest, SanitizerKind::SO_CFIICall),
                 SanitizerHandler::CFICheckFail, StaticData,
                 {CalleePtr, llvm::UndefValue::get(IntPtrTy)});
     }

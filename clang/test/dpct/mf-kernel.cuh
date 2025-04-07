@@ -1,7 +1,12 @@
+// RUN: echo "empty command"
+
 #include <cuda_runtime.h>
 
 // CHECK: SYCL_EXTERNAL void Reset_kernel_parameters(volatile int &g_mutex);
 __global__ void Reset_kernel_parameters(void);
+
+// CHECK: template <typename T> SYCL_EXTERNAL void template_test(T v);
+template <typename T> __global__ void template_test(T v);
 
 // CHECK: SYCL_EXTERNAL void test_foo();
 __device__ void test_foo(void);

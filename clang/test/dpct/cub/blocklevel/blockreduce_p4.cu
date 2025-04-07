@@ -15,3 +15,11 @@ __global__ void foo() {
   // CHECK: v = sycl::reduce_over_group(item_ct1.get_group(), (item_ct1.get_group().get_local_linear_id() < item_ct1.get_local_range(2)) ? v : sycl::known_identity_v<sycl::plus<>, float>, sycl::plus<>());
   v = BlockReduce(m).Reduce(v, cub::Sum{}, blockDim.x);
 }
+
+__global__ void foo2() {
+  __half v = 0.0f;
+  typedef cub::BlockReduce<__half, 1024> BlockReduce;
+  __shared__ typename BlockReduce::TempStorage m;
+  // CHECK: v = sycl::reduce_over_group(item_ct1.get_group(), (item_ct1.get_group().get_local_linear_id() < item_ct1.get_local_range(2)) ? v : sycl::known_identity_v<sycl::plus<>, sycl::half>, sycl::plus<>());
+  v = BlockReduce(m).Reduce(v, cub::Sum{}, blockDim.x);
+}

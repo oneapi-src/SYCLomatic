@@ -1007,8 +1007,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIsamax_v2_64",
     LAMBDA_FACTORY_ENTRY(
         "cublasIsamax_v2_64",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
@@ -1022,8 +1024,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIdamax_v2_64",
     LAMBDA_FACTORY_ENTRY(
         "cublasIdamax_v2_64",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
@@ -1037,8 +1041,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIcamax_v2_64",
     LAMBDA_FACTORY_ENTRY(
         "cublasIcamax_v2_64",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
@@ -1052,8 +1058,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIzamax_v2_64",
     LAMBDA_FACTORY_ENTRY(
         "cublasIzamax_v2_64",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
@@ -1068,8 +1076,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIsamin_v2_64",
     LAMBDA_FACTORY_ENTRY(
         "cublasIsamin_v2_64",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
@@ -1083,8 +1093,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIdamin_v2_64",
     LAMBDA_FACTORY_ENTRY(
         "cublasIdamin_v2_64",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
@@ -1098,8 +1110,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIcamin_v2_64",
     LAMBDA_FACTORY_ENTRY(
         "cublasIcamin_v2_64",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
@@ -1113,8 +1127,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIzamin_v2_64",
     LAMBDA_FACTORY_ENTRY(
         "cublasIzamin_v2_64",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
@@ -1129,8 +1145,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIsamax_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIsamax_v2",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int_to_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int_to_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
@@ -1144,8 +1162,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIdamax_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIdamax_v2",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int_to_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int_to_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
@@ -1159,8 +1179,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIcamax_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIcamax_v2",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int_to_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int_to_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
@@ -1174,8 +1196,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIzamax_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIzamax_v2",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int_to_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int_to_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamax",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
@@ -1190,8 +1214,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIsamin_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIsamin_v2",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int_to_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int_to_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "float"), ARG(3),
@@ -1205,8 +1231,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIdamin_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIdamin_v2",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int_to_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int_to_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "double"), ARG(3),
@@ -1220,8 +1248,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIcamin_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIcamin_v2",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int_to_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int_to_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<float>"), ARG(3),
@@ -1235,8 +1265,10 @@ WARNING_FACTORY_ENTRY(
     "cublasIzamin_v2",
     LAMBDA_FACTORY_ENTRY(
         "cublasIzamin_v2",
-        DECL(MapNames::getLibraryHelperNamespace() + "blas::wrapper_int_to_int64_out",
-             "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"), ARG(4)),
+        DECLARE(MapNames::getLibraryHelperNamespace() +
+                    "blas::wrapper_int_to_int64_out",
+                "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),
+                ARG(4)),
         CALL("oneapi::mkl::blas::column_major::iamin",
              MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
              BUFFER_OR_USM_PTR(ARG(2), "std::complex<double>"), ARG(3),
@@ -1252,14 +1284,14 @@ WARNING_FACTORY_ENTRY(
       #FUNC,                                                                   \
       LAMBDA_FACTORY_ENTRY(                                                    \
           #FUNC,                                                               \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,                 \
-               "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(4)),                                                        \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,     \
+                  "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(4)),                                                     \
           CALL("oneapi::mkl::blas::column_major::nrm2",                        \
                MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
                BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
                BUFFER_OR_USM_PTR(                                              \
-                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_ptr"),   \
+                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_ptr"),      \
                    #TYPE3)),                                                   \
           LITERAL("return 0")),                                                \
       Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1278,30 +1310,38 @@ NRM2(cublasDznrm2_v2_64, wrapper_double_out, std::complex<double>, double)
       #FUNC,                                                                   \
       LAMBDA_FACTORY_ENTRY(                                                    \
           #FUNC,                                                               \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,                 \
-               "res_wrapper_ct6", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(6)),                                                        \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,     \
+                  "res_wrapper_ct6", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(6)),                                                     \
           CALL("oneapi::mkl::blas::column_major::" #NEW_FUNC,                  \
                MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
                BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
                BUFFER_OR_USM_PTR(ARG(4), #TYPE2), ARG(5),                      \
                BUFFER_OR_USM_PTR(                                              \
-                   MEMBER_CALL(ARG("res_wrapper_ct6"), false, "get_ptr"),   \
+                   MEMBER_CALL(ARG("res_wrapper_ct6"), false, "get_ptr"),      \
                    #TYPE3)),                                                   \
           LITERAL("return 0")),                                                \
       Diagnostics::NOERROR_RETURN_LAMBDA)
 DOT(cublasSdot_v2, dot, wrapper_float_out, float, float)
 DOT(cublasDdot_v2, dot, wrapper_double_out, double, double)
-DOT(cublasCdotu_v2, dotu, wrapper_float2_out, std::complex<float>, std::complex<float>)
-DOT(cublasCdotc_v2, dotc, wrapper_float2_out, std::complex<float>, std::complex<float>)
-DOT(cublasZdotu_v2, dotu, wrapper_double2_out, std::complex<double>, std::complex<double>)
-DOT(cublasZdotc_v2, dotc, wrapper_double2_out, std::complex<double>, std::complex<double>)
+DOT(cublasCdotu_v2, dotu, wrapper_float2_out, std::complex<float>,
+    std::complex<float>)
+DOT(cublasCdotc_v2, dotc, wrapper_float2_out, std::complex<float>,
+    std::complex<float>)
+DOT(cublasZdotu_v2, dotu, wrapper_double2_out, std::complex<double>,
+    std::complex<double>)
+DOT(cublasZdotc_v2, dotc, wrapper_double2_out, std::complex<double>,
+    std::complex<double>)
 DOT(cublasSdot_v2_64, dot, wrapper_float_out, float, float)
 DOT(cublasDdot_v2_64, dot, wrapper_double_out, double, double)
-DOT(cublasCdotu_v2_64, dotu, wrapper_float2_out, std::complex<float>, std::complex<float>)
-DOT(cublasCdotc_v2_64, dotc, wrapper_float2_out, std::complex<float>, std::complex<float>)
-DOT(cublasZdotu_v2_64, dotu, wrapper_double2_out, std::complex<double>, std::complex<double>)
-DOT(cublasZdotc_v2_64, dotc, wrapper_double2_out, std::complex<double>, std::complex<double>)
+DOT(cublasCdotu_v2_64, dotu, wrapper_float2_out, std::complex<float>,
+    std::complex<float>)
+DOT(cublasCdotc_v2_64, dotc, wrapper_float2_out, std::complex<float>,
+    std::complex<float>)
+DOT(cublasZdotu_v2_64, dotu, wrapper_double2_out, std::complex<double>,
+    std::complex<double>)
+DOT(cublasZdotc_v2_64, dotc, wrapper_double2_out, std::complex<double>,
+    std::complex<double>)
 #undef DOT
 
 #define SCAL(FUNC, TYPE1)                                                      \
@@ -1378,14 +1418,14 @@ SWAP(cublasZswap_v2_64, std::complex<double>)
       #FUNC,                                                                   \
       LAMBDA_FACTORY_ENTRY(                                                    \
           #FUNC,                                                               \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,                 \
-               "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(4)),                                                        \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,     \
+                  "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(4)),                                                     \
           CALL("oneapi::mkl::blas::column_major::asum",                        \
                MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
                BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
                BUFFER_OR_USM_PTR(                                              \
-                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_ptr"),   \
+                   MEMBER_CALL(ARG("res_wrapper_ct4"), false, "get_ptr"),      \
                    #TYPE3)),                                                   \
           LITERAL("return 0")),                                                \
       Diagnostics::NOERROR_RETURN_LAMBDA)
@@ -1426,18 +1466,18 @@ ROT(cublasZdrot_v2_64, std::complex<double>)
       #FUNC,                                                                   \
       LAMBDA_FACTORY_ENTRY(                                                    \
           #FUNC,                                                               \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,                 \
-               "res_wrapper_ct1", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(1)),                                                        \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,                 \
-               "res_wrapper_ct2", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(2)),                                                        \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE2,                 \
-               "res_wrapper_ct3", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(3)),                                                        \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE3,                 \
-               "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(4)),                                                        \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,     \
+                  "res_wrapper_ct1", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(1)),                                                     \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,     \
+                  "res_wrapper_ct2", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(2)),                                                     \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE2,     \
+                  "res_wrapper_ct3", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(3)),                                                     \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE3,     \
+                  "res_wrapper_ct4", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(4)),                                                     \
           CALL("oneapi::mkl::blas::column_major::rotg",                        \
                MEMBER_CALL(ARG(0), true, "get_queue"),                         \
                BUFFER_OR_USM_PTR(                                              \
@@ -1454,10 +1494,14 @@ ROT(cublasZdrot_v2_64, std::complex<double>)
                    #TYPE4)),                                                   \
           LITERAL("return 0")),                                                \
       Diagnostics::NOERROR_RETURN_LAMBDA)
-ROTG(cublasSrotg_v2, wrapper_float_inout, wrapper_float_out, wrapper_float_out, float, float)
-ROTG(cublasDrotg_v2, wrapper_double_inout, wrapper_double_out, wrapper_double_out, double, double)
-ROTG(cublasCrotg_v2, wrapper_float2_inout, wrapper_float_out, wrapper_float2_out, std::complex<float>, float)
-ROTG(cublasZrotg_v2, wrapper_double2_inout, wrapper_double_out, wrapper_double2_out, std::complex<double>, double)
+ROTG(cublasSrotg_v2, wrapper_float_inout, wrapper_float_out, wrapper_float_out,
+     float, float)
+ROTG(cublasDrotg_v2, wrapper_double_inout, wrapper_double_out,
+     wrapper_double_out, double, double)
+ROTG(cublasCrotg_v2, wrapper_float2_inout, wrapper_float_out,
+     wrapper_float2_out, std::complex<float>, float)
+ROTG(cublasZrotg_v2, wrapper_double2_inout, wrapper_double_out,
+     wrapper_double2_out, std::complex<double>, double)
 #undef ROTG
 
 #define ROTM(FUNC, TYPE1, TYPE2)                                               \
@@ -1465,9 +1509,9 @@ ROTG(cublasZrotg_v2, wrapper_double2_inout, wrapper_double_out, wrapper_double2_
       #FUNC,                                                                   \
       LAMBDA_FACTORY_ENTRY(                                                    \
           #FUNC,                                                               \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,                 \
-               "res_wrapper_ct6", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(6), ARG("5")),                                              \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,     \
+                  "res_wrapper_ct6", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(6), ARG("5")),                                           \
           CALL("oneapi::mkl::blas::column_major::rotm",                        \
                MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),                 \
                BUFFER_OR_USM_PTR(ARG(2), #TYPE2), ARG(3),                      \
@@ -1488,18 +1532,18 @@ ROTM(cublasDrotm_v2_64, wrapper_double_in, double)
       #FUNC,                                                                   \
       LAMBDA_FACTORY_ENTRY(                                                    \
           #FUNC,                                                               \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,                 \
-               "res_wrapper_ct1", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(1)),                                                        \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,                 \
-               "res_wrapper_ct2", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(2)),                                                        \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,                 \
-               "res_wrapper_ct3", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(3)),                                                        \
-          DECL(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE2,                 \
-               "res_wrapper_ct5", MEMBER_CALL(ARG(0), true, "get_queue"),      \
-               ARG(5), ARG("5")),                                              \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,     \
+                  "res_wrapper_ct1", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(1)),                                                     \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,     \
+                  "res_wrapper_ct2", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(2)),                                                     \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE1,     \
+                  "res_wrapper_ct3", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(3)),                                                     \
+          DECLARE(MapNames::getLibraryHelperNamespace() + "blas::" #TYPE2,     \
+                  "res_wrapper_ct5", MEMBER_CALL(ARG(0), true, "get_queue"),   \
+                  ARG(5), ARG("5")),                                           \
           CALL("oneapi::mkl::blas::column_major::rotmg",                       \
                MEMBER_CALL(ARG(0), true, "get_queue"),                         \
                BUFFER_OR_USM_PTR(                                              \

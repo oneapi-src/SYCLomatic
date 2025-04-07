@@ -24,7 +24,6 @@
 #include "clang/AST/TypeLoc.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
-#include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/Cuda.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Lex/MacroArgs.h"
@@ -521,7 +520,8 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
               "CUresourcetype", "CUresourcetype_enum", "CUaddress_mode",
               "CUaddress_mode_enum", "CUfilter_mode", "CUfilter_mode_enum",
               "CUDA_TEXTURE_DESC", "CUtexref", "textureReference",
-              "cudaMipmappedArray", "cudaMipmappedArray_t"))))))
+              "cudaMipmappedArray", "cudaMipmappedArray_t",
+              "CUmipmappedArray"))))))
           .bind("texType"),
       this);
 
@@ -575,6 +575,9 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuSurfObjectDestroy",
       "cuArray3DCreate_v2",
       "cuArrayCreate_v2",
+      "cuMipmappedArrayCreate",
+      "cuMipmappedArrayDestroy",
+      "cuMipmappedArrayGetLevel",
       "cuArrayDestroy",
       "cuTexObjectCreate",
       "cuTexObjectDestroy",
@@ -590,6 +593,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexRefGetFlags",
       "cuTexRefSetAddress_v2",
       "cuTexRefSetAddress2D_v3",
+      "cuTexRefSetMipmappedArray",
+      "cuTexRefGetMipmappedArray",
+      "cuTexRefGetMipmapFilterMode",
+      "cuTexRefSetMipmapFilterMode",
+      "cuTexRefGetMipmapLevelClamp",
   };
 
   auto hasAnyFuncName = [&]() {

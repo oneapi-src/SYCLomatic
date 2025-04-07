@@ -433,6 +433,7 @@ bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset,
         nullptr);
     if (UseTextBegin)
       R->setInsertPosition(InsertPosition::IP_Right);
+    R->setSYCLHeaderNeeded(false);
     DpctGlobalInfo::getInstance().addReplacement(R);
     UniqueID++;
   }

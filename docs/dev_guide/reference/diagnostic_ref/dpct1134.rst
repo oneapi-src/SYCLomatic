@@ -1,0 +1,137 @@
+.. _DPCT1134:
+
+DPCT1134
+========
+
+Message
+-------
+
+.. _msg-1134-start:
+
+The tool cannot deduce the consumer API (``dpct::sparse::csrgemm``) of this API,
+and this API has 2 arguments depending on the 8th and the 12th parameters of the
+consumer API. Please replace the 2 arguments tagged as ``dpct_placeholder`` with
+the corresponding value.
+
+.. _msg-1134-end:
+
+Detailed Help
+-------------
+
+The output of ``dpct::sparse::csrgemm_nnz`` is a number representing the NNZ
+(number of non-zero). This number is usually used as the size for memory allocation
+which will be used by consumer API ``dpct::sparse::csrgemm``. The API
+``dpct::sparse::csrgemm_nnz`` has 2 arguments depending on the 8th and the 12th
+parameters of the related consumer API ``dpct::sparse::csrgemm``. The tool cannot
+detect the relationship. Users need to manually fill in those 2 arguments.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void bar(cusparseHandle_t handle, cusparseOperation_t trans_a,
+            cusparseMatDescr_t descr_a, int c_nnz, cusparseMatDescr_t descr_b,
+            cusparseMatDescr_t descr_c, const float *val_a_s, const int *row_ptr_a,
+            const int *col_ind_a, const float *val_b_s, const int *row_ptr_b,
+            const int *col_ind_b, float *val_c_s, int *row_ptr_c, int *col_ind_c) {
+     cusparseScsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+                      CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descr_a, 4,
+                      val_a_s, row_ptr_a, col_ind_a, descr_b, 5, val_b_s,
+                      row_ptr_b, col_ind_b, descr_c, val_c_s, row_ptr_c,
+                      col_ind_c);
+   }
+
+   void foo(cusparseHandle_t handle, cusparseOperation_t trans_a,
+            cusparseMatDescr_t descr_a, int c_nnz, cusparseMatDescr_t descr_b,
+            cusparseMatDescr_t descr_c, const float *val_a_s, const int *row_ptr_a,
+            const int *col_ind_a, const float *val_b_s, const int *row_ptr_b,
+            const int *col_ind_b, float *val_c_s, int *row_ptr_c, int *col_ind_c) {
+     cusparseXcsrgemmNnz(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+                         CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descr_a, 4,
+                         row_ptr_a, col_ind_a, descr_b, 5, row_ptr_b, col_ind_b,
+                         descr_c, row_ptr_c, &c_nnz);
+     bar(handle, trans_a, descr_a, c_nnz, descr_b, descr_c, val_a_s, row_ptr_a,
+         col_ind_a, val_b_s, row_ptr_b, col_ind_b, val_c_s, row_ptr_c, col_ind_c);
+   }
+
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void bar(dpct::sparse::descriptor_ptr handle, oneapi::mkl::transpose trans_a,
+            std::shared_ptr<dpct::sparse::matrix_info> descr_a, int c_nnz,
+            std::shared_ptr<dpct::sparse::matrix_info> descr_b,
+            std::shared_ptr<dpct::sparse::matrix_info> descr_c,
+            const float *val_a_s, const int *row_ptr_a, const int *col_ind_a,
+            const float *val_b_s, const int *row_ptr_b, const int *col_ind_b,
+            float *val_c_s, int *row_ptr_c, int *col_ind_c) {
+     dpct::sparse::csrgemm(handle, oneapi::mkl::transpose::nontrans,
+                           oneapi::mkl::transpose::nontrans, 3, 4, 3, descr_a,
+                           val_a_s, row_ptr_a, col_ind_a, descr_b, val_b_s,
+                           row_ptr_b, col_ind_b, descr_c, val_c_s, row_ptr_c,
+                           col_ind_c);
+   }
+
+    void foo(dpct::sparse::descriptor_ptr handle, oneapi::mkl::transpose trans_a,
+             std::shared_ptr<dpct::sparse::matrix_info> descr_a, int c_nnz,
+             std::shared_ptr<dpct::sparse::matrix_info> descr_b,
+             std::shared_ptr<dpct::sparse::matrix_info> descr_c,
+             const float *val_a_s, const int *row_ptr_a, const int *col_ind_a,
+             const float *val_b_s, const int *row_ptr_b, const int *col_ind_b,
+             float *val_c_s, int *row_ptr_c, int *col_ind_c) {
+      /*
+      DPCT1134:0: The tool cannot deduce the consumer API ("dpct::sparse::csrgemm")
+      of this API, and this API has 2 arguments depending on the 8th and the 12th
+      parameters of the consumer API. Please replace the 2 arguments tagged as
+      "dpct_placeholder" with the corresponding value.
+      */
+      dpct::sparse::csrgemm_nnz(handle, oneapi::mkl::transpose::nontrans,
+                                oneapi::mkl::transpose::nontrans, 3, 4, 3, descr_a,
+                                4, dpct_placeholder, row_ptr_a, col_ind_a, descr_b,
+                                5, dpct_placeholder, row_ptr_b, col_ind_b, descr_c,
+                                row_ptr_c, &c_nnz);
+      bar(handle, trans_a, descr_a, c_nnz, descr_b, descr_c, val_a_s, row_ptr_a,
+          col_ind_a, val_b_s, row_ptr_b, col_ind_b, val_c_s, row_ptr_c, col_ind_c);
+    }
+
+which can be rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void bar(dpct::sparse::descriptor_ptr handle, oneapi::mkl::transpose trans_a,
+            std::shared_ptr<dpct::sparse::matrix_info> descr_a, int c_nnz,
+            std::shared_ptr<dpct::sparse::matrix_info> descr_b,
+            std::shared_ptr<dpct::sparse::matrix_info> descr_c,
+            const float *val_a_s, const int *row_ptr_a, const int *col_ind_a,
+            const float *val_b_s, const int *row_ptr_b, const int *col_ind_b,
+            float *val_c_s, int *row_ptr_c, int *col_ind_c) {
+     dpct::sparse::csrgemm(handle, oneapi::mkl::transpose::nontrans,
+                           oneapi::mkl::transpose::nontrans, 3, 4, 3, descr_a,
+                           val_a_s, row_ptr_a, col_ind_a, descr_b, val_b_s,
+                           row_ptr_b, col_ind_b, descr_c, val_c_s, row_ptr_c,
+                           col_ind_c);
+   }
+
+   void foo(dpct::sparse::descriptor_ptr handle, oneapi::mkl::transpose trans_a,
+            std::shared_ptr<dpct::sparse::matrix_info> descr_a, int c_nnz,
+            std::shared_ptr<dpct::sparse::matrix_info> descr_b,
+            std::shared_ptr<dpct::sparse::matrix_info> descr_c,
+            const float *val_a_s, const int *row_ptr_a, const int *col_ind_a,
+            const float *val_b_s, const int *row_ptr_b, const int *col_ind_b,
+            float *val_c_s, int *row_ptr_c, int *col_ind_c) {
+     dpct::sparse::csrgemm_nnz(handle, oneapi::mkl::transpose::nontrans,
+                               oneapi::mkl::transpose::nontrans, 3, 4, 3, descr_a,
+                               4, val_a_s, row_ptr_a, col_ind_a, descr_b, 5,
+                               val_b_s, row_ptr_b, col_ind_b, descr_c, row_ptr_c,
+                               &c_nnz);
+     bar(handle, trans_a, descr_a, c_nnz, descr_b, descr_c, val_a_s, row_ptr_a,
+         col_ind_a, val_b_s, row_ptr_b, col_ind_b, val_c_s, row_ptr_c, col_ind_c);
+   }
+

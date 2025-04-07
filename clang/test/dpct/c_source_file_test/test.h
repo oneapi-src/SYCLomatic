@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// CHECK: #if defined(__ARM_NEON) && defined(SYCL_LANGUAGE_VERSION)
+// CHECK: #if defined(__ARM_NEON) && defined(SYCL_LANGUAGE_VERSION) && (DPCT_COMPAT_RT_MAJOR_VERSION == 11 && DPCT_COMPAT_RT_MINOR_VERSION < 2)
 // CHECK: typedef uint16_t fp16_t;
 // CHECK: #endif
-#if defined(__ARM_NEON) && defined(__CUDACC__)
+#if defined(__ARM_NEON) && defined(__CUDACC__) && (__CUDACC_VER_MAJOR__ == 11 && __CUDACC_VER_MINOR__ < 2)
 typedef uint16_t fp16_t;
 #endif
 

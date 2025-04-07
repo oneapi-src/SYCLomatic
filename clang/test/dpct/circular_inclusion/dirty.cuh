@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 #ifndef LLVM_CLANG_TEST_DPCT_CIRCULAR_INCLUSION_DIRTY_CUH
 #define LLVM_CLANG_TEST_DPCT_CIRCULAR_INCLUSION_DIRTY_CUH
 #include "kernel.cuh"

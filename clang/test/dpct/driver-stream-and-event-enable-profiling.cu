@@ -60,3 +60,8 @@ std::vector<cudaEvent_t> cuda_gpu_benchmark_stop_times;
 void foo(int idx) {
   cudaEventRecord(cuda_gpu_benchmark_stop_times[idx], 0);
 }
+
+void test_with_cast(float timeTaken, unsigned long long start, unsigned long long end) {
+  // CHECK: timeTaken = ((reinterpret_cast<dpct::event_ptr>(end))->get_profiling_info<sycl::info::event_profiling::command_end>() - ((dpct::event_ptr)start)->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
+  cuEventElapsedTime(&timeTaken, (CUevent)start, reinterpret_cast<CUevent>(end));
+}

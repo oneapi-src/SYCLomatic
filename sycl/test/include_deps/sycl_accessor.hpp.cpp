@@ -62,7 +62,7 @@
 // CHECK-NEXT: detail/info_desc_helpers.hpp
 // CHECK-NEXT: info/info_desc.hpp
 // CHECK-NEXT: ext/oneapi/experimental/device_architecture.hpp
-// CHECK-NEXT: ext/oneapi/experimental/architectures.def
+// CHECK-NEXT: ext/oneapi/experimental/device_architecture.def
 // CHECK-NEXT: ext/oneapi/experimental/forward_progress.hpp
 // CHECK-NEXT: ext/oneapi/matrix/query-types.hpp
 // CHECK-NEXT: ext/oneapi/matrix/matrix-unified-utils.hpp
@@ -78,6 +78,7 @@
 // CHECK-NEXT: info/event_profiling_traits.def
 // CHECK-NEXT: info/ext_codeplay_device_traits.def
 // CHECK-NEXT: info/ext_intel_device_traits.def
+// CHECK-NEXT: info/ext_intel_kernel_info_traits.def
 // CHECK-NEXT: info/ext_oneapi_device_traits.def
 // CHECK-NEXT: info/ext_oneapi_kernel_queue_specific_traits.def
 // CHECK-NEXT: info/sycl_backend_traits.def

@@ -1,0 +1,7 @@
+- Rule: rule_call_b
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: call_b
+  In: b()
+  Out: b_repl()

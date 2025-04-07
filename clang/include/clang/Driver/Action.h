@@ -63,7 +63,6 @@ public:
     PrecompileJobClass,
     ExtractAPIJobClass,
     AnalyzeJobClass,
-    MigrateJobClass,
     CompileJobClass,
     BackendJobClass,
     AssembleJobClass,
@@ -105,7 +104,7 @@ public:
     OFK_Cuda = 0x02,
     OFK_OpenMP = 0x04,
     OFK_HIP = 0x08,
-    OFK_SYCL = 0x10
+    OFK_SYCL = 0x10,
   };
 
   static const char *getClassName(ActionClass AC);
@@ -468,17 +467,6 @@ public:
 
   static bool classof(const Action *A) {
     return A->getKind() == AnalyzeJobClass;
-  }
-};
-
-class MigrateJobAction : public JobAction {
-  void anchor() override;
-
-public:
-  MigrateJobAction(Action *Input, types::ID OutputType);
-
-  static bool classof(const Action *A) {
-    return A->getKind() == MigrateJobClass;
   }
 };
 

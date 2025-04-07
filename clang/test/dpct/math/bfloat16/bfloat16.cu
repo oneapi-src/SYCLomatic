@@ -5,25 +5,25 @@
 
 #include "cuda_bf16.h"
 
-// CHECK: class C : public sycl::marray<sycl::ext::oneapi::bfloat16, 2> {
+// CHECK: class C : public sycl::vec<sycl::ext::oneapi::bfloat16, 2> {
 class C : public __nv_bfloat162 {
   void f() {
-    // CHECK: (*this)[0];
-    // CHECK-NEXT: (*this)[1];
+    // CHECK: x();
+    // CHECK-NEXT: y();
     x;
     y;
   }
 };
 
-// CHECK: void foo(sycl::ext::oneapi::bfloat16 *a, sycl::marray<sycl::ext::oneapi::bfloat16, 2> *b) {
+// CHECK: void foo(sycl::ext::oneapi::bfloat16 *a, sycl::vec<sycl::ext::oneapi::bfloat16, 2> *b) {
 void foo(__nv_bfloat16 *a, __nv_bfloat162 *b) {
   int i = 0;
   float f = 3.0f;
   // CHECK: a[i] = (sycl::ext::oneapi::bfloat16)f;
   a[i] = (__nv_bfloat16)f;
 
-  // CHECK: (*b)[0];
-  // CHECK-NEXT: (*b)[1];
+  // CHECK: b->x();
+  // CHECK-NEXT: b->y();
   b->x;
   b->y;
 }
@@ -66,11 +66,11 @@ __global__ void kernelFuncBfloat16Arithmetic() {
 }
 
 __global__ void kernelFuncBfloat162Arithmetic() {
-  // CHECK: sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2, bf162_3;
+  // CHECK: sycl::vec<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2, bf162_3;
   __nv_bfloat162 bf162, bf162_1, bf162_2, bf162_3;
   // CHECK: bf162 = bf162_1 / bf162_2;
   bf162 = __h2div(bf162_1, bf162_2);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::fabs(float(bf162_1[0])), sycl::fabs(float(bf162_1[1])));
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::fabs(float(bf162_1.x())), sycl::fabs(float(bf162_1.y())));
   bf162 = __habs2(bf162_1);
   // CHECK: bf162 = bf162_1 + bf162_2;
   bf162 = __hadd2(bf162_1, bf162_2);
@@ -147,7 +147,7 @@ __global__ void kernelFuncBfloat16Comparison() {
 }
 
 __global__ void kernelFuncBfloat162Comparison() {
-  // CHECK: sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
+  // CHECK: sycl::vec<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
   __nv_bfloat162 bf162, bf162_1, bf162_2;
   bool b;
   // CHECK: b = dpct::compare_both(bf162_1, bf162_2, std::equal_to<>());
@@ -186,7 +186,7 @@ __global__ void kernelFuncBfloat162Comparison() {
   bf162 = __hgt2(bf162_1, bf162_2);
   // CHECK: bf162 = dpct::unordered_compare(bf162_1, bf162_2, std::greater<>());
   bf162 = __hgtu2(bf162_1, bf162_2);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::isnan(float(bf162_1[0])), sycl::isnan(float(bf162_1[1])));
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::isnan(float(bf162_1.x())), sycl::isnan(float(bf162_1.y())));
   bf162 = __hisnan2(bf162_1);
   // CHECK: bf162 = dpct::compare(bf162_1, bf162_2, std::less_equal<>());
   bf162 = __hle2(bf162_1, bf162_2);
@@ -196,11 +196,11 @@ __global__ void kernelFuncBfloat162Comparison() {
   bf162 = __hlt2(bf162_1, bf162_2);
   // CHECK: bf162 = dpct::unordered_compare(bf162_1, bf162_2, std::less<>());
   bf162 = __hltu2(bf162_1, bf162_2);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::fmax(float(bf162_1[0]), float(bf162_2[0])), sycl::fmax(float(bf162_1[1]), float(bf162_2[1])));
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::fmax(float(bf162_1.x()), float(bf162_2.x())), sycl::fmax(float(bf162_1.y()), float(bf162_2.y())));
   bf162 = __hmax2(bf162_1, bf162_2);
   // CHECK: bf162 = dpct::fmax_nan(bf162_1, bf162_2);
   bf162 = __hmax2_nan(bf162_1, bf162_2);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::fmin(float(bf162_1[0]), float(bf162_2[0])), sycl::fmin(float(bf162_1[1]), float(bf162_2[1])));
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::fmin(float(bf162_1.x()), float(bf162_2.x())), sycl::fmin(float(bf162_1.y()), float(bf162_2.y())));
   bf162 = __hmin2(bf162_1, bf162_2);
   // CHECK: bf162 = dpct::fmin_nan(bf162_1, bf162_2);
   bf162 = __hmin2_nan(bf162_1, bf162_2);
@@ -214,7 +214,7 @@ __global__ void kernelFuncBfloat162Comparison() {
 // CHECK-NEXT:   float f, f_1, f_2;
 // CHECK-NEXT:   sycl::float2 f2, f2_1, f2_2;
 // CHECK-NEXT:   sycl::ext::oneapi::bfloat16 bf16, bf16_1, bf16_2;
-// CHECK-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
+// CHECK-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
 __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   float f, f_1, f_2;
   float2 f2, f2_1, f2_2;
@@ -227,9 +227,9 @@ __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   unsigned long long ull;
   unsigned short us;
   double d;
-  // CHECK: f2 = sycl::float2(bf162[0], bf162[1]);
+  // CHECK: f2 = sycl::float2(bf162.x(), bf162.y());
   f2 = __bfloat1622float2(bf162);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf16, bf16);
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(bf16, bf16);
   bf162 = __bfloat162bfloat162(bf16);
   // CHECK: f = static_cast<float>(bf16);
   f = __bfloat162float(bf16);
@@ -291,11 +291,11 @@ __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   us = __bfloat16_as_ushort(bf16);
   // CHECK: bf16 = sycl::ext::oneapi::bfloat16(d);
   bf16 = __double2bfloat16(d);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f2[0], f2[1]);
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(f2.x(), f2.y());
   bf162 = __float22bfloat162_rn(f2);
   // CHECK: bf16 = sycl::ext::oneapi::bfloat16(f);
   bf16 = __float2bfloat16(f);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f, f);
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(f, f);
   bf162 = __float2bfloat162_rn(f);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __float2bfloat16_rd is not supported.
@@ -313,15 +313,15 @@ __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __float2bfloat16_rz is not supported.
   // CHECK-NEXT: */
   bf16 = __float2bfloat16_rz(f);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f_1, f_2);
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(f_1, f_2);
   bf162 = __floats2bfloat162_rn(f_1, f_2);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf16_1, bf16_2);
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(bf16_1, bf16_2);
   bf162 = __halves2bfloat162(bf16_1, bf16_2);
-  // CHECK: bf16 = sycl::ext::oneapi::bfloat16(bf162[1]);
+  // CHECK: bf16 = sycl::ext::oneapi::bfloat16(bf162.y());
   bf16 = __high2bfloat16(bf162);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf162[1], bf162[1]);
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(bf162.y(), bf162.y());
   bf162 = __high2bfloat162(bf162);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf162_1[1], bf162_2[1]);
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(bf162_1.y(), bf162_2.y());
   bf162 = __highs2bfloat162(bf162_1, bf162_2);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __int2bfloat16_rd is not supported.
@@ -355,11 +355,11 @@ __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __ll2bfloat16_rz is not supported.
   // CHECK-NEXT: */
   bf16 = __ll2bfloat16_rz(ll);
-  // CHECK: bf16 = sycl::ext::oneapi::bfloat16(bf162[0]);
+  // CHECK: bf16 = sycl::ext::oneapi::bfloat16(bf162.x());
   bf16 = __low2bfloat16(bf162);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf162[0], bf162[0]);
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(bf162.x(), bf162.x());
   bf162 = __low2bfloat162(bf162);
-  // CHECK: bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf162_1[0], bf162_2[0]);
+  // CHECK: bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(bf162_1.x(), bf162_2.x());
   bf162 = __lows2bfloat162(bf162_1, bf162_2);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __short2bfloat16_rd is not supported.
@@ -614,12 +614,12 @@ __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
 // CHECK-NEXT:   float f, f_1, f_2;
 // CHECK-NEXT:   sycl::float2 f2, f2_1, f2_2;
 // CHECK-NEXT:   sycl::ext::oneapi::bfloat16 bf16, bf16_1, bf16_2;
-// CHECK-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
-// CHECK-NEXT:   f2 = sycl::float2(bf162[0], bf162[1]);
+// CHECK-NEXT:   sycl::vec<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
+// CHECK-NEXT:   f2 = sycl::float2(bf162.x(), bf162.y());
 // CHECK-NEXT:   f = static_cast<float>(bf16);
-// CHECK-NEXT:   bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f2[0], f2[1]);
+// CHECK-NEXT:   bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(f2.x(), f2.y());
 // CHECK-NEXT:   bf16 = sycl::ext::oneapi::bfloat16(f);
-// CHECK-NEXT:   bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(bf16_1, bf16_2);
+// CHECK-NEXT:   bf162 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(bf16_1, bf16_2);
 void test_conversions() {
   float f, f_1, f_2;
   float2 f2, f2_1, f2_2;
@@ -668,37 +668,37 @@ __global__ void kernelFuncBfloat16Math() {
 }
 
 __global__ void kernelFuncBfloat162Math() {
-  // CHECK: sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1;
+  // CHECK: sycl::vec<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1;
   nv_bfloat162 bf162, bf162_1;
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::ceil(float(bf162[0])), sycl::ceil(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::ceil(float(bf162.x())), sycl::ceil(float(bf162.y())));
   bf162_1 = h2ceil(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::cos(float(bf162[0])), sycl::cos(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::cos(float(bf162.x())), sycl::cos(float(bf162.y())));
   bf162_1 = h2cos(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::exp(float(bf162[0])), sycl::exp(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::exp(float(bf162.x())), sycl::exp(float(bf162.y())));
   bf162_1 = h2exp(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::exp10(float(bf162[0])), sycl::exp10(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::exp10(float(bf162.x())), sycl::exp10(float(bf162.y())));
   bf162_1 = h2exp10(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::exp2(float(bf162[0])), sycl::exp2(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::exp2(float(bf162.x())), sycl::exp2(float(bf162.y())));
   bf162_1 = h2exp2(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::floor(float(bf162[0])), sycl::floor(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::floor(float(bf162.x())), sycl::floor(float(bf162.y())));
   bf162_1 = h2floor(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::log(float(bf162[0])), sycl::log(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::log(float(bf162.x())), sycl::log(float(bf162.y())));
   bf162_1 = h2log(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::log10(float(bf162[0])), sycl::log10(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::log10(float(bf162.x())), sycl::log10(float(bf162.y())));
   bf162_1 = h2log10(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::log2(float(bf162[0])), sycl::log2(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::log2(float(bf162.x())), sycl::log2(float(bf162.y())));
   bf162_1 = h2log2(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::half_precision::recip(float(bf162[0])), sycl::half_precision::recip(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::half_precision::recip(float(bf162.x())), sycl::half_precision::recip(float(bf162.y())));
   bf162_1 = h2rcp(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::rint(float(bf162[0])), sycl::rint(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::rint(float(bf162.x())), sycl::rint(float(bf162.y())));
   bf162_1 = h2rint(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::rsqrt(float(bf162[0])), sycl::rsqrt(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::rsqrt(float(bf162.x())), sycl::rsqrt(float(bf162.y())));
   bf162_1 = h2rsqrt(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::sin(float(bf162[0])), sycl::sin(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::sin(float(bf162.x())), sycl::sin(float(bf162.y())));
   bf162_1 = h2sin(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::sqrt(float(bf162[0])), sycl::sqrt(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::sqrt(float(bf162.x())), sycl::sqrt(float(bf162.y())));
   bf162_1 = h2sqrt(bf162);
-  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::trunc(float(bf162[0])), sycl::trunc(float(bf162[1])));
+  // CHECK: bf162_1 = sycl::vec<sycl::ext::oneapi::bfloat16, 2>(sycl::trunc(float(bf162.x())), sycl::trunc(float(bf162.y())));
   bf162_1 = h2trunc(bf162);
 }
 
