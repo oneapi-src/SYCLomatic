@@ -139,3 +139,27 @@ REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuFuncSetAttribute",
 
 REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuGetExportTable",
                          getRemovedAPIWarningMessage("cuGetExportTable"))
+
+ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            CALL_FACTORY_ENTRY(
+                "cudaIpcGetMemHandle", CALL(MapNames::getDpctNamespace() + "experimental::get_mem_ipc_handle", ARG(1), ARG(0)))))
+ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            CALL_FACTORY_ENTRY(
+                "cudaIpcCloseMemHandle", CALL(MapNames::getDpctNamespace() + "experimental::close_mem_ipc_handle", ARG(0)))))
+
+ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            CALL_FACTORY_ENTRY(
+                "cudaIpcOpenMemHandle", CALL(MapNames::getDpctNamespace() + "experimental::open_mem_ipc_handle", ARG(0), ARG(1)))))
+
+ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            CALL_FACTORY_ENTRY(
+                "cudaIpcGetEventHandle", CALL(MapNames::getDpctNamespace() + "experimental::get_event_pool_ipc_handle", ARG(1), ARG(0)))))
+
+ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            CALL_FACTORY_ENTRY(
+                "cudaIpcOpenEventHandle", CALL(MapNames::getDpctNamespace() + "experimental::open_event_pool_ipc_handle", DEREF(makeDerefArgCreatorWithCall(0)), ARG(1)))))
