@@ -2183,10 +2183,10 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaRuntimeGetVersion", "clock64", "__nanosleep",
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
         "cudaPointerGetAttributes", "cuPointerGetAttributes",
-        "cuCtxSetCacheConfig", "cuCtxSetLimit", "cudaCtxResetPersistingL2Cache",
-        "cuCtxResetPersistingL2Cache", "cudaStreamSetAttribute",
-        "cudaStreamGetAttribute", "cudaProfilerStart", "cudaProfilerStop",
-        "__trap", "cuCtxEnablePeerAccess");
+        "cuPointerGetAttribute", "cuCtxSetCacheConfig", "cuCtxSetLimit",
+        "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
+        "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaProfilerStart",
+        "cudaProfilerStop", "__trap", "cuCtxEnablePeerAccess");
   };
 
   MF.addMatcher(

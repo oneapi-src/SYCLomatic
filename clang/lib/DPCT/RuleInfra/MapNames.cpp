@@ -557,6 +557,11 @@ void MapNames::setExplicitNamespaceMap(
            DpctGlobalInfo::useExtBindlessImages()
                ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
                : "cudaMipmappedArray_t")},
+      {"CUmipmappedArray",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
+               : "CUmipmappedArray")},
       {"cudaTextureDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "sampling_info",
                                       HelperFeatureEnum::device_ext)},
@@ -1219,9 +1224,6 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "pointer_attributes::type::device_id")},
       {"CU_POINTER_ATTRIBUTE_IS_LEGACY_CUDA_IPC_CAPABLE",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "pointer_attributes::type::unsupported")},
-      {"CU_POINTER_ATTRIBUTE_RANGE_START_ADDR",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "pointer_attributes::type::unsupported")},
       {"CU_POINTER_ATTRIBUTE_RANGE_SIZE",
