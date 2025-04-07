@@ -1585,8 +1585,7 @@ void csrgemm2_get_buffer_size(
   *buffer_size_in_bytes = ws_size;
 }
 
-/// Calculate the non-zero elements number of the result of the following
-/// operation:
+/// Calculate the non-zero elements number of the matrix C in following operation:
 /// C = alpha * A * B + beta * D
 /// \param [in] desc The descriptor of this calculation.
 /// \param [in] m The rows number of A, D and C.
@@ -1671,7 +1670,7 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
   ::dpct::cs::memcpy(queue, row_ptr_c, &row_ptr_c_0, sizeof(int)).wait();
 }
 
-/// Computes the result of the following operation:
+/// Computes the matrix C in the following operation:
 /// C = alpha * A * B + beta * D
 /// \param [in] desc The descriptor of this calculation.
 /// \param [in] m The rows number of A, D and C.
