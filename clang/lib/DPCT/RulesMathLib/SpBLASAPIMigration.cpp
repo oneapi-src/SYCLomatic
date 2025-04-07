@@ -20,7 +20,7 @@ using namespace clang::ast_matchers;
 void SpBLASTypeLocRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
     return hasAnyName("csrsv2Info_t", "cusparseSolvePolicy_t",
-                      "cusparseAction_t", "csrsm2Info_t");
+                      "cusparseAction_t", "csrgemm2Info_t", "csrsm2Info_t");
   };
 
   MF.addMatcher(
@@ -54,7 +54,8 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseGetMatDiagType", "cusparseSetMatFillMode",
         "cusparseGetMatFillMode", "cusparseCreateSolveAnalysisInfo",
         "cusparseDestroySolveAnalysisInfo", "cusparseCreateCsrsv2Info",
-        "cusparseDestroyCsrsv2Info",
+        "cusparseDestroyCsrsv2Info", "cusparseCreateCsrgemm2Info",
+        "cusparseDestroyCsrgemm2Info",
         /*level 2*/
         "cusparseScsrmv", "cusparseDcsrmv", "cusparseCcsrmv", "cusparseZcsrmv",
         "cusparseScsrmv_mp", "cusparseDcsrmv_mp", "cusparseCcsrmv_mp",
@@ -84,6 +85,10 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseCcsrsm2_analysis", "cusparseZcsrsm2_analysis",
         "cusparseScsrsm2_solve", "cusparseDcsrsm2_solve",
         "cusparseCcsrsm2_solve", "cusparseZcsrsm2_solve",
+        "cusparseScsrgemm2_bufferSizeExt", "cusparseDcsrgemm2_bufferSizeExt",
+        "cusparseCcsrgemm2_bufferSizeExt", "cusparseZcsrgemm2_bufferSizeExt",
+        "cusparseXcsrgemm2Nnz", "cusparseScsrgemm2", "cusparseDcsrgemm2",
+        "cusparseCcsrgemm2", "cusparseZcsrgemm2",
         /*Generic*/
         "cusparseCreateCsr", "cusparseDestroySpMat", "cusparseCsrGet",
         "cusparseSpMatGetFormat", "cusparseSpMatGetIndexBase",
@@ -182,7 +187,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                     .bind("CallExpr"));
     auto CEResults = match(Matcher, *CS1, DpctGlobalInfo::getContext());
     // Find the correct call
-    const CallExpr* CorrectCall = nullptr;
+    const CallExpr *CorrectCall = nullptr;
     for (auto &Result : CEResults) {
       const CallExpr *MatchedCE = Result.getNodeAs<CallExpr>("CallExpr");
       if (MatchedCE) {
@@ -261,7 +266,6 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   }
 }
-
 
 // Rule for spBLAS enums.
 // Migrate spBLAS status values to corresponding int values

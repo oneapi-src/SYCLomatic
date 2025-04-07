@@ -77,6 +77,9 @@ void test() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   }
   test_fp<<<1, 1>>>();
+
+  template_test<int><<<1, 1>>>(0);
+
 }
 
 

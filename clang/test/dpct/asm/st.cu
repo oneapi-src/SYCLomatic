@@ -37,4 +37,28 @@ __device__ void shared_address_store32(uint32_t addr, uint32_t val) {
   asm volatile("{st.shared.b32 [%0], %1;}" : : "r"(__addr), "r"(__val) : "memory"); 
 }
 
+#if (defined(_MSC_VER) && defined(_WIN64)) || defined(__LP64__)
+#define __PTR "l"
+#else
+#define __PTR "r"
+#endif
+
+// CHECK: inline void store_streaming_short4(sycl::short4 *addr, short x, short y, short z, short w) {
+// CHECK-NEXT:    *((int16_t *)((uintptr_t)addr) + 0) = x;
+// CHECK-NEXT:    *((int16_t *)((uintptr_t)addr) + 1) = y;
+// CHECK-NEXT:    *((int16_t *)((uintptr_t)addr) + 2) = z;
+// CHECK-NEXT:    *((int16_t *)((uintptr_t)addr) + 3) = w;
+// CHECK-NEXT: }
+__device__ inline void store_streaming_short4(short4 *addr, short x, short y, short z, short w) {
+    asm("st.cs.global.v4.s16 [%0+0], {%1, %2, %3, %4};" ::__PTR(addr), "h"(x), "h"(y), "h"(z), "h"(w));
+}
+
+// CHECK: inline void store_streaming_short2(sycl::short2 *addr, short x, short y) {
+// CHECK-NEXT:    *((int16_t *)((uintptr_t)addr) + 0) = x;
+// CHECK-NEXT:    *((int16_t *)((uintptr_t)addr) + 1) = y;
+// CHECK-NEXT: }
+__device__ inline void store_streaming_short2(short2 *addr, short x, short y) {
+    asm("st.cs.global.v2.s16 [%0+0], {%1, %2};" ::__PTR(addr), "h"(x), "h"(y));
+}
+
 // clang-format on
