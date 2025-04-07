@@ -1353,17 +1353,19 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   desc->get_csrgemm_info_map().erase(args);
 }
 
+/// Contains internal information for csrgemm2 by analyzing the provided
+/// matrix structure and operation parameters.
 class csrgemm2_info {
   detail::matrix_handle_manager matrix_handle_a;
   detail::matrix_handle_manager matrix_handle_b;
-  detail::matrix_handle_manager matrix_handle_c1;
+  detail::matrix_handle_manager matrix_handle_axb;
   detail::matrix_handle_manager matrix_handle_d;
   detail::matrix_handle_manager matrix_handle_c;
   detail::handle_manager<oneapi::mkl::sparse::matmat_descr_t> matmat_desc;
   detail::handle_manager<oneapi::mkl::sparse::omatadd_descr_t> omatadd_desc;
-  void *row_ptr_c1 = nullptr;
-  void *col_ind_c1 = nullptr;
-  void *val_c1 = nullptr;
+  void *row_ptr_axb = nullptr;
+  void *col_ind_axb = nullptr;
+  void *val_axb = nullptr;
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<std::int64_t, 1> *temp_buffer_1_size;
   sycl::buffer<std::int64_t, 1> *temp_buffer_2_size;
@@ -1396,7 +1398,7 @@ class csrgemm2_info {
   void init(sycl::queue *q_ptr) {
     matrix_handle_a.init(q_ptr);
     matrix_handle_b.init(q_ptr);
-    matrix_handle_c1.init(q_ptr);
+    matrix_handle_axb.init(q_ptr);
     matrix_handle_d.init(q_ptr);
     matrix_handle_c.init(q_ptr);
     matmat_desc.init(q_ptr);
@@ -1405,7 +1407,7 @@ class csrgemm2_info {
   sycl::event release(sycl::queue q, sycl::event dep) {
     matrix_handle_a.add_dependency(dep);
     matrix_handle_b.add_dependency(dep);
-    matrix_handle_c1.add_dependency(dep);
+    matrix_handle_axb.add_dependency(dep);
     matrix_handle_d.add_dependency(dep);
     matrix_handle_c.add_dependency(dep);
     matmat_desc.add_dependency(dep);
@@ -1413,7 +1415,7 @@ class csrgemm2_info {
     std::vector<sycl::event> events;
     events.push_back(matrix_handle_a.release());
     events.push_back(matrix_handle_b.release());
-    events.push_back(matrix_handle_c1.release());
+    events.push_back(matrix_handle_axb.release());
     events.push_back(matrix_handle_d.release());
     events.push_back(matrix_handle_c.release());
     events.push_back(matmat_desc.release());
@@ -1454,8 +1456,7 @@ class csrgemm2_info {
            std::shared_ptr<csrgemm2_info> info, void *buffer);
 };
 
-/// Calculate the workspace size of a sparse matrix (CSR format)-sparse matrix
-/// (CSR format) product:
+/// Calculate the required workspace size of the following operation:
 /// C = alpha * A * B + beta * D
 /// \param [in] desc The descriptor of this calculation.
 /// \param [in] m The rows number of A, D and C.
@@ -1464,18 +1465,18 @@ class csrgemm2_info {
 /// \param [in] alpha Scaling factor.
 /// \param [in] info_a Matrix info of the matrix A.
 /// \param [in] nnz_a Non-zero elements number of matrix A.
-/// \param [in] row_ptr_a An array of length row number + 1.
+/// \param [in] row_ptr_a An array of length \p m + 1.
 /// \param [in] col_ind_a An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_b Matrix info of the matrix B.
 /// \param [in] nnz_b Non-zero elements number of matrix B.
-/// \param [in] row_ptr_b An array of length row number + 1.
+/// \param [in] row_ptr_b An array of length \p k + 1.
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
 /// \param [in] beta Scaling factor.
 /// \param [in] info_d Matrix info of the matrix D.
 /// \param [in] nnz_d Non-zero elements number of matrix D.
-/// \param [in] row_ptr_d An array of length row number + 1.
+/// \param [in] row_ptr_d An array of length \p m + 1.
 /// \param [in] col_ind_d An array containing the column indices in index-based
 /// numbering.
 /// \param [in, out] info The information of csrgemm2 operation.
@@ -1493,15 +1494,15 @@ void csrgemm2_get_buffer_size(
   sycl::queue &queue = desc->get_queue();
   info->set_matrix_c_datatype<Ty>();
 
-  info->row_ptr_c1 = (int *)::dpct::cs::malloc((m + 1) * sizeof(int), queue);
+  info->row_ptr_axb = (int *)::dpct::cs::malloc((m + 1) * sizeof(int), queue);
   info->init(&queue);
 
   info->matrix_handle_a.set_matrix_data<Ty>(m, k, info_a->get_index_base(),
                                             row_ptr_a, col_ind_a, nullptr);
   info->matrix_handle_b.set_matrix_data<Ty>(k, n, info_b->get_index_base(),
                                             row_ptr_b, col_ind_b, nullptr);
-  info->matrix_handle_c1.set_matrix_data<Ty>(
-      m, n, oneapi::mkl::index_base::zero, info->row_ptr_c1, nullptr, nullptr);
+  info->matrix_handle_axb.set_matrix_data<Ty>(
+      m, n, oneapi::mkl::index_base::zero, info->row_ptr_axb, nullptr, nullptr);
   info->matrix_handle_d.set_matrix_data<Ty>(m, n, info_d->get_index_base(),
                                             row_ptr_d, col_ind_d, nullptr);
   info->matrix_handle_c.set_matrix_data<Ty>(m, n, oneapi::mkl::index_base::zero,
@@ -1519,19 +1520,19 @@ void csrgemm2_get_buffer_size(
 #define __MATMAT(STEP, PTR1, PTR2)                                             \
   oneapi::mkl::sparse::matmat(queue, info->matrix_handle_a.get_handle(),       \
                               info->matrix_handle_b.get_handle(),              \
-                              info->matrix_handle_c1.get_handle(),             \
+                              info->matrix_handle_axb.get_handle(),            \
                               oneapi::mkl::sparse::matmat_request::STEP,       \
                               info->matmat_desc.get_handle(), PTR1, PTR2)
 #else
 #define __MATMAT(STEP, PTR1, PTR2)                                             \
   oneapi::mkl::sparse::matmat(queue, info->matrix_handle_a.get_handle(),       \
                               info->matrix_handle_b.get_handle(),              \
-                              info->matrix_handle_c1.get_handle(),             \
+                              info->matrix_handle_axb.get_handle(),            \
                               oneapi::mkl::sparse::matmat_request::STEP,       \
                               info->matmat_desc.get_handle(), PTR1, PTR2, {})
 #endif
 
-  std::int64_t nnz_c1 = 0;
+  std::int64_t nnz_axb = 0;
 #ifdef DPCT_USM_LEVEL_NONE
   info->temp_buffer_1_size = new sycl::buffer<std::int64_t, 1>(1);
   __MATMAT(get_work_estimation_buf_size, info->temp_buffer_1_size, nullptr);
@@ -1543,9 +1544,9 @@ void csrgemm2_get_buffer_size(
   info->temp_buffer_2 = new sycl::buffer<std::uint8_t, 1>(
       info->temp_buffer_2_size->get_host_access(sycl::read_only)[0]);
   __MATMAT(compute_structure, info->temp_buffer_2_size, info->temp_buffer_2);
-  sycl::buffer<std::int64_t, 1> nnz_c1_buf(1);
-  __MATMAT(get_nnz, &nnz_c1_buf, nullptr);
-  nnz_c1 = nnz_c1_buf.get_host_access(sycl::read_only)[0];
+  sycl::buffer<std::int64_t, 1> nnz_axb_buf(1);
+  __MATMAT(get_nnz, &nnz_axb_buf, nullptr);
+  nnz_axb = nnz_axb_buf.get_host_access(sycl::read_only)[0];
 #else
   info->temp_buffer_1_size = sycl::malloc_host<std::int64_t>(1, queue);
   __MATMAT(get_work_estimation_buf_size, info->temp_buffer_1_size, nullptr);
@@ -1559,33 +1560,33 @@ void csrgemm2_get_buffer_size(
   info->temp_buffer_2 =
       sycl::malloc_device<std::uint8_t>(info->temp_buffer_2_size[0], queue);
   __MATMAT(compute_structure, info->temp_buffer_2_size, info->temp_buffer_2);
-  std::int64_t *nnz_c1_ptr = sycl::malloc_host<std::int64_t>(1, queue);
-  __MATMAT(get_nnz, nnz_c1_ptr, nullptr);
+  std::int64_t *nnz_axb_ptr = sycl::malloc_host<std::int64_t>(1, queue);
+  __MATMAT(get_nnz, nnz_axb_ptr, nullptr);
   queue.wait();
-  nnz_c1 = *nnz_c1_ptr;
-  sycl::free(nnz_c1_ptr, queue);
+  nnz_axb = *nnz_axb_ptr;
+  sycl::free(nnz_axb_ptr, queue);
 #endif
 
-  info->col_ind_c1 = (int *)::dpct::cs::malloc(nnz_c1 * sizeof(int), queue);
-  info->val_c1 = (Ty *)::dpct::cs::malloc(nnz_c1 * sizeof(Ty), queue);
-  info->matrix_handle_c1.set_matrix_data<Ty>(
-      m, n, oneapi::mkl::index_base::zero, info->row_ptr_c1, info->col_ind_c1,
-      info->val_c1);
+  info->col_ind_axb = (int *)::dpct::cs::malloc(nnz_axb * sizeof(int), queue);
+  info->val_axb = (Ty *)::dpct::cs::malloc(nnz_axb * sizeof(Ty), queue);
+  info->matrix_handle_axb.set_matrix_data<Ty>(
+      m, n, oneapi::mkl::index_base::zero, info->row_ptr_axb, info->col_ind_axb,
+      info->val_axb);
 
   __MATMAT(finalize_structure, nullptr, nullptr);
 
   std::int64_t ws_size = 0;
   oneapi::mkl::sparse::omatadd_buffer_size(
       queue, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans,
-      info->matrix_handle_c1.get_handle(), info->matrix_handle_d.get_handle(),
+      info->matrix_handle_axb.get_handle(), info->matrix_handle_d.get_handle(),
       info->matrix_handle_c.get_handle(),
       oneapi::mkl::sparse::omatadd_alg::default_alg,
       info->omatadd_desc.get_handle(), ws_size);
   *buffer_size_in_bytes = ws_size;
 }
 
-/// Calculate the non-zero elements number of the result of a
-/// sparse matrix (CSR format)-sparse matrix (CSR format) product:
+/// Calculate the non-zero elements number of the result of the following
+/// operation:
 /// C = alpha * A * B + beta * D
 /// \param [in] desc The descriptor of this calculation.
 /// \param [in] m The rows number of A, D and C.
@@ -1593,21 +1594,21 @@ void csrgemm2_get_buffer_size(
 /// \param [in] k The columns number of A and rows number of B.
 /// \param [in] info_a Matrix info of the matrix A.
 /// \param [in] nnz_a Non-zero elements number of matrix A.
-/// \param [in] row_ptr_a An array of length row number + 1.
+/// \param [in] row_ptr_a An array of length \p m + 1.
 /// \param [in] col_ind_a An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_b Matrix info of the matrix B.
 /// \param [in] nnz_b Non-zero elements number of matrix B.
-/// \param [in] row_ptr_b An array of length row number + 1.
+/// \param [in] row_ptr_b An array of length \p k + 1.
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_d Matrix info of the matrix D.
 /// \param [in] nnz_d Non-zero elements number of matrix D.
-/// \param [in] row_ptr_d An array of length row number + 1.
+/// \param [in] row_ptr_d An array of length \p m + 1.
 /// \param [in] col_ind_d An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_c Matrix info of the matrix C.
-/// \param [in] row_ptr_c An array of length row number + 1.
+/// \param [in] row_ptr_c An array of length \p m + 1.
 /// \param [out] nnz_ptr Non-zero elements number of matrix C.
 /// \param [in] info The information of csrgemm2 operation.
 /// \param [in] buffer Workspace memory.
@@ -1641,7 +1642,7 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
   auto data_buffer = dpct::detail::get_memory<std::uint8_t>(buffer);
   oneapi::mkl::sparse::omatadd_analyze(
       queue, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans,
-      info->matrix_handle_c1.get_handle(), info->matrix_handle_d.get_handle(),
+      info->matrix_handle_axb.get_handle(), info->matrix_handle_d.get_handle(),
       info->matrix_handle_c.get_handle(),
       oneapi::mkl::sparse::omatadd_alg::default_alg,
       info->omatadd_desc.get_handle(),
@@ -1654,10 +1655,12 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
   std::int64_t nnz_c = 0;
   oneapi::mkl::sparse::omatadd_get_nnz(
       queue, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans,
-      info->matrix_handle_c1.get_handle(), info->matrix_handle_d.get_handle(),
+      info->matrix_handle_axb.get_handle(), info->matrix_handle_d.get_handle(),
       info->matrix_handle_c.get_handle(),
       oneapi::mkl::sparse::omatadd_alg::default_alg,
       info->omatadd_desc.get_handle(), nnz_c);
+
+  assert(nnz_c >= INT_MIN && nnz_c <= INT_MAX, "nnz_c is out of range.");
   int nnz_c_int = nnz_c;
   if (nnz_ptr)
     ::dpct::cs::memcpy(queue, nnz_ptr, &nnz_c_int, sizeof(int)).wait();
@@ -1668,7 +1671,7 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
   ::dpct::cs::memcpy(queue, row_ptr_c, &row_ptr_c_0, sizeof(int)).wait();
 }
 
-/// Computes a sparse matrix (CSR format)-sparse matrix (CSR format) product:
+/// Computes the result of the following operation:
 /// C = alpha * A * B + beta * D
 /// \param [in] desc The descriptor of this calculation.
 /// \param [in] m The rows number of A, D and C.
@@ -1678,26 +1681,26 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
 /// \param [in] info_a Matrix info of the matrix A.
 /// \param [in] nnz_a Non-zero elements number of matrix A.
 /// \param [in] val_a An array containing the non-zero elements of the matrix A.
-/// \param [in] row_ptr_a An array of length row number + 1.
+/// \param [in] row_ptr_a An array of length \p m + 1.
 /// \param [in] col_ind_a An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_b Matrix info of the matrix B.
 /// \param [in] nnz_b Non-zero elements number of matrix B.
 /// \param [in] val_b An array containing the non-zero elements of the matrix B.
-/// \param [in] row_ptr_b An array of length row number + 1.
+/// \param [in] row_ptr_b An array of length \p k + 1.
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
 /// \param [in] beta Scaling factor.
 /// \param [in] info_d Matrix info of the matrix D.
 /// \param [in] nnz_d Non-zero elements number of matrix D.
 /// \param [in] val_d An array containing the non-zero elements of the matrix D.
-/// \param [in] row_ptr_d An array of length row number + 1.
+/// \param [in] row_ptr_d An array of length \p m + 1.
 /// \param [in] col_ind_d An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info_c Matrix info of the matrix C.
 /// \param [out] val_c An array containing the non-zero elements of the matrix
 /// C.
-/// \param [in] row_ptr_c An array of length row number + 1.
+/// \param [in] row_ptr_c An array of length \p m + 1.
 /// \param [out] col_ind_c An array containing the column indices in index-based
 /// numbering.
 /// \param [in] info The information of csrgemm2 operation.
@@ -1739,7 +1742,7 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
       oneapi::mkl::sparse::omatadd(
           queue, oneapi::mkl::transpose::nontrans,
           oneapi::mkl::transpose::nontrans, alpha_value,
-          info->matrix_handle_c1.get_handle(), beta_value,
+          info->matrix_handle_axb.get_handle(), beta_value,
           info->matrix_handle_d.get_handle(),
           info->matrix_handle_c.get_handle(),
           oneapi::mkl::sparse::omatadd_alg::default_alg,
@@ -1750,8 +1753,8 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
   events.push_back(info->release(queue, e));
   queue.submit([&](sycl::handler &cgh) {
     cgh.depends_on(events);
-    cgh.host_task([_p1 = info->row_ptr_c1, _p2 = info->col_ind_c1,
-                   _p3 = info->val_c1, _p4 = info->temp_buffer_1_size,
+    cgh.host_task([_p1 = info->row_ptr_axb, _p2 = info->col_ind_axb,
+                   _p3 = info->val_axb, _p4 = info->temp_buffer_1_size,
                    _p5 = info->temp_buffer_1, _p6 = info->temp_buffer_2_size,
                    _p7 = info->temp_buffer_2, _q = queue] {
       ::dpct::cs::free(_p1, _q);
