@@ -1660,7 +1660,7 @@ void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
       oneapi::mkl::sparse::omatadd_alg::default_alg,
       info->omatadd_desc.get_handle(), nnz_c);
 
-  assert(nnz_c >= INT_MIN && nnz_c <= INT_MAX, "nnz_c is out of range.");
+  assert((nnz_c >= INT_MIN && nnz_c <= INT_MAX) && "nnz_c is out of range.");
   int nnz_c_int = nnz_c;
   if (nnz_ptr)
     ::dpct::cs::memcpy(queue, nnz_ptr, &nnz_c_int, sizeof(int)).wait();
