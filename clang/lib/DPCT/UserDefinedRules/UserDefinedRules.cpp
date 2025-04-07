@@ -565,6 +565,10 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
 bool validateOutFieldAndWarn(const MetaRuleObject &R) {
   if (R.Out.has_value())
     return true;
+  if (R.Kind == RuleKind::Class) {
+    if (!R.Fields.empty() || !R.Methods.empty())
+      return false;
+  }
   llvm::errs() << "warning: The \"Out\" field of rule " << R.RuleId << " (in "
                << R.RuleFile << ") is not specified. This rule is ignored.\n";
   return false;

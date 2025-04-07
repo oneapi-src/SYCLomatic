@@ -1,1 +1,0 @@
-// CHECK: warning: The "Out" field of rule rule_MACRO_A (in {{[._0-9a-zA-Z\/\(\)\:\-]+}}/ignore_rule/rule.yaml) is not specified. This rule is ignored.

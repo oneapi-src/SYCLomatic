@@ -1,0 +1,7 @@
+- Rule: rule_Tensor
+  Kind: Class
+  Priority: Takeover
+  In: Tensor
+  Methods:
+    - In: is_cuda
+      Out: $method_base is_xpu()

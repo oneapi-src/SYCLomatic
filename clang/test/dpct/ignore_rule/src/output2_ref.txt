@@ -1,0 +1,1 @@
+// CHECK-NOT: warning: The "Out" field of rule rule_Tensor (in {{[._0-9a-zA-Z\/\(\)\:\-]+}}/ignore_rule/src/rule2.yaml) is not specified. This rule is ignored.
