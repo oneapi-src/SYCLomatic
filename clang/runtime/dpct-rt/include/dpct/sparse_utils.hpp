@@ -833,7 +833,8 @@ inline void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
 }
 
 /// Performs internal optimizations for dpct::sparse::csrsm by analyzing
-/// the provided matrix structure and operation parameters.
+/// the provided matrix structure and operation parameters. The matrix A must be
+/// a triangular sparse matrix with the CSR format.
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
 /// \param [in] transa The operation applied to A.
@@ -856,8 +857,12 @@ void optimize_csrsm(sycl::queue &queue, oneapi::mkl::transpose transa,
                                    val, row_ptr, col_ind, optimize_info);
 }
 
-/// Solves the sparse triangular system op_a(A) * op_b(X) = alpha * op_b(B)
-/// where A is a sparse triangular matrix of size \p row_col by \p row_col .
+/// Solves the sparse triangular system op_a(A) * op_b(X) = alpha * op_b(B).
+/// A is a sparse triangular matrix with the CSR format of size \p row_col
+/// by \p row_col .
+/// B is a dense matrix of size \p row_col by \p nrhs ( \p transb is nontrans)
+/// or \p nrhs by \p row_col ( \p transb isn't nontrans).
+/// X is the solution dense matrix.
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
 /// \param [in] transa The operation applied to A.
