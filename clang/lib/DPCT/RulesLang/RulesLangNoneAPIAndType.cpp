@@ -809,7 +809,6 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
   auto Decl = getAssistNodeAsType<VarDecl>(Result, "decl");
-  DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
   if (MemVarRef && Func && Decl) {
     if (isCubVar(Decl)) {
       return;
