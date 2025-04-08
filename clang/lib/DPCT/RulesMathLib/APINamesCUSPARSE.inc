@@ -556,3 +556,79 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
          ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8), ARG(9),
          ARG(10), ARG(11), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17), ARG(18),
          ARG(19))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseScsrgemm2_bufferSizeExt",
+    CALL(MapNames::getLibraryHelperNamespace() +
+             "sparse::csrgemm2_get_buffer_size<float>",
+         ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
+         ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
+         ARG(17), ARG(18), ARG(19))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseDcsrgemm2_bufferSizeExt",
+    CALL(MapNames::getLibraryHelperNamespace() +
+             "sparse::csrgemm2_get_buffer_size<double>",
+         ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
+         ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
+         ARG(17), ARG(18), ARG(19))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseCcsrgemm2_bufferSizeExt",
+    CALL(MapNames::getLibraryHelperNamespace() +
+             "sparse::csrgemm2_get_buffer_size<" + MapNames::getClNamespace() +
+             "float2>",
+         ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
+         ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
+         ARG(17), ARG(18), ARG(19))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseZcsrgemm2_bufferSizeExt",
+    CALL(MapNames::getLibraryHelperNamespace() +
+             "sparse::csrgemm2_get_buffer_size<" + MapNames::getClNamespace() +
+             "double2>",
+         ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
+         ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
+         ARG(17), ARG(18), ARG(19))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseXcsrgemm2Nnz",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrgemm2_nnz", ARG(0),
+         ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
+         ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+         ARG(18), ARG(19), ARG(20))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseScsrgemm2",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrgemm2<float>",
+         ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
+         ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
+         ARG(17), ARG(18), ARG(19), ARG(20), ARG(21), ARG(22), ARG(23), ARG(24),
+         ARG(25), ARG(26))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseDcsrgemm2",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrgemm2<double>",
+         ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
+         ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
+         ARG(17), ARG(18), ARG(19), ARG(20), ARG(21), ARG(22), ARG(23), ARG(24),
+         ARG(25), ARG(26))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseCcsrgemm2",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrgemm2<" +
+             MapNames::getClNamespace() + "float2>",
+         ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
+         ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
+         ARG(17), ARG(18), ARG(19), ARG(20), ARG(21), ARG(22), ARG(23), ARG(24),
+         ARG(25), ARG(26))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseZcsrgemm2",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrgemm2<" +
+             MapNames::getClNamespace() + "double2>",
+         ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
+         ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
+         ARG(17), ARG(18), ARG(19), ARG(20), ARG(21), ARG(22), ARG(23), ARG(24),
+         ARG(25), ARG(26))))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cusparseCreateCsrgemm2Info", DEREF(0),
+    CALL("std::make_shared<" + MapNames::getLibraryHelperNamespace() +
+         "sparse::csrgemm2_info>")))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroyCsrgemm2Info",
+                                             ARG(0), false, "reset"))
