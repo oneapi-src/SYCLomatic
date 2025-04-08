@@ -8,12 +8,12 @@
 
 #include "AsmMigration.h"
 #include "AnalysisInfo.h"
+#include "Diagnostics/Diagnostics.h"
+#include "ErrorHandle/CrashRecovery.h"
+#include "RuleInfra/MapNames.h"
 #include "RulesAsm/Parser/AsmNodes.h"
 #include "RulesAsm/Parser/AsmParser.h"
 #include "RulesAsm/Parser/AsmTokenKinds.h"
-#include "ErrorHandle/CrashRecovery.h"
-#include "Diagnostics/Diagnostics.h"
-#include "RuleInfra/MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
 #include "clang/AST/Expr.h"
@@ -609,7 +609,7 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     return false;
   };
 
-  if (CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_red))
+  if (CurrInst->is(asmtok::op_ld, asmtok::op_red))
     OS() << "*";
   switch (Dst->getMemoryOpKind()) {
   case InlineAsmAddressExpr::Imm:
@@ -632,8 +632,12 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     std::string Reg;
     if (tryEmitStmt(Reg, Dst->getSymbol()))
       return SYCLGenSuccess();
-    OS() << llvm::formatv("(({0} *)((uintptr_t){1} + {2}))", Type, Reg,
-                          Dst->getImmAddr()->getValue().getZExtValue());
+
+    if (CurrInst->is(asmtok::op_st))
+      OS() << llvm::formatv("(uintptr_t){0}", Reg);
+    else
+      OS() << llvm::formatv("(({0} *)((uintptr_t){1} + {2}))", Type, Reg,
+                            Dst->getImmAddr()->getValue().getZExtValue());
     break;
   }
   case InlineAsmAddressExpr::Var: {
@@ -2690,24 +2694,98 @@ protected:
     return SYCLGenSuccess();
   }
 
+  bool HandleStVec(const InlineAsmInstruction *Inst, int VecNum) {
+    std::string Ops;
+    if (tryEmitStmt(Ops, Inst->getInputOperand(0)))
+      return SYCLGenError();
+
+    // To extract the values from the string like "{x, y, z, w}" and store them
+    // int Values vector
+    std::vector<std::string> Values;
+    size_t start = 1;                  // Skip the '{' character
+    size_t end = Ops.find(',', start); // Find the first comma
+
+    while (end != std::string::npos) {
+      std::string Token = Ops.substr(start, end - start);
+      size_t First = Token.find_first_not_of(' ');
+      size_t Last = Token.find_last_not_of(' ');
+      if (First != std::string::npos && Last != std::string::npos) {
+        Values.push_back(Token.substr(First, Last - First + 1));
+      }
+      start = end + 1;
+      end = Ops.find(',', start);
+    }
+
+    // Extract the last value after the last comma
+    std::string token = Ops.substr(start, Ops.size() - start - 1);
+    size_t first = token.find_first_not_of(' ');
+    size_t last = token.find_last_not_of(' ');
+
+    if (first != std::string::npos && last != std::string::npos) {
+      Values.push_back(token.substr(first, last - first + 1));
+    }
+
+    std::string Output;
+    if (tryEmitStmt(Output, Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    std::string Type;
+    if (tryEmitType(Type, Inst->getType(0)))
+      return SYCLGenError();
+
+    const auto *Dst =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getOutputOperand());
+    if (!Dst)
+      return SYCLGenError();
+
+    for (int Index = 0; Index < VecNum; Index++) {
+      OS() << llvm::formatv("*(({0} *)({1}) + {2}) = {3}{4}", Type, Output,
+                            Index, Values[Index],
+                            Index == VecNum - 1 ? "" : ";\n");
+    }
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
   bool handle_st(const InlineAsmInstruction *Inst) override {
     if (Inst->getNumInputOperands() != 1)
       return SYCLGenError();
-    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
-    CurrInst = Inst;
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst, Inst);
+
+    if (Inst->hasAttr(InstAttr::cs)) {
+      if (Inst->hasAttr(InstAttr::v4))
+        return HandleStVec(Inst, 4);
+      if (Inst->hasAttr(InstAttr::v2))
+        return HandleStVec(Inst, 2);
+    }
+
     const auto *Src = Inst->getInputOperand(0);
     const auto *Dst =
         dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getOutputOperand());
     if (!Dst)
-      return false;
+      return SYCLGenError();
+
     std::string Type;
     if (tryEmitType(Type, Inst->getType(0)))
       return SYCLGenError();
-    if (emitStmt(Dst))
+
+    std::string OutOp;
+    if (tryEmitStmt(OutOp, Inst->getOutputOperand()))
       return SYCLGenError();
+
+    if (Dst->getMemoryOpKind() == InlineAsmAddressExpr::RegImm) {
+      OS() << llvm::formatv("*(({0} *)({1} + {2}))", Type, OutOp,
+                            Dst->getImmAddr()->getValue().getZExtValue());
+    } else {
+      OS() << "*" << OutOp;
+    }
+
     OS() << " = ";
     if (emitStmt(Src))
       return SYCLGenError();
+
     endstmt();
     return SYCLGenSuccess();
   }
@@ -2722,7 +2800,7 @@ protected:
     const auto *Dst = Inst->getOutputOperand();
 
     if (!Src)
-      return false;
+      return SYCLGenError();
     std::string Type;
     if (tryEmitType(Type, Inst->getType(0)))
       return SYCLGenError();
