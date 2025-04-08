@@ -691,9 +691,6 @@ struct mem_location {
 
 struct mem_prop {
   mem_location location;
-  struct {
-    unsigned char compressionType;
-  } allocFlags;
   int type = 1; // Memory type. Value 1 means default device memory.
 };
 
