@@ -23,7 +23,6 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
-#include "clang/AST/OperationKinds.h"
 #include "clang/AST/Stmt.h"
 #include "clang/AST/Type.h"
 #include "clang/AST/TypeLoc.h"
@@ -35,7 +34,6 @@
 #include "clang/Lex/MacroArgs.h"
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/SmallString.h"
-#include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
 
 #include <algorithm>
