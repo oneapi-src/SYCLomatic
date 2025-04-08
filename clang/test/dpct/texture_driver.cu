@@ -242,11 +242,11 @@ void test_surf_ref() {
  CUarray arr;
  CUsurfref ref;
  //CHECK: /*
- //CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuSurfRefGetArray is not supported.
+ //CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cuSurfRefGetArray is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
  //CHECK-NEXT: */
  cuSurfRefGetArray(&arr, ref);
  //CHECK: /*
- //CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuSurfRefSetArray is not supported.
+ //CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cuSurfRefSetArray is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
  //CHECK-NEXT: */
  cuSurfRefSetArray(ref, arr, 0);
 }
