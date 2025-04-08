@@ -83,21 +83,25 @@ public:
   void get_root_nodes(dpct::experimental::command_graph_ptr graph,
                       dpct::experimental::node_ptr *nodesArray,
                       std::size_t *numberOfNodes) {
-    auto nodes = graph->get_root_nodes();
-    nodes_map[graph] = nodes;
-    *numberOfNodes = nodes.size();
+    auto root_nodes = graph->get_root_nodes();
+    root_nodes_map[graph] = root_nodes;
+    *numberOfNodes = root_nodes.size();
     if (!nodesArray) {
       return;
     }
     for (std::size_t i = 0; i < *numberOfNodes; i++) {
-      nodesArray[i] = &nodes_map[graph][i];
+      nodesArray[i] = &root_nodes_map[graph][i];
     }
   }
 
 private:
   std::unordered_map<sycl::queue *, command_graph_ptr> queue_graph_map;
-  std::unordered_map<dpct::experimental::command_graph_ptr, std::vector<sycl::ext::oneapi::experimental::node>> nodes_map;
-  
+  std::unordered_map<dpct::experimental::command_graph_ptr,
+                     std::vector<sycl::ext::oneapi::experimental::node>>
+      nodes_map;
+  std::unordered_map<dpct::experimental::command_graph_ptr,
+                     std::vector<sycl::ext::oneapi::experimental::node>>
+      root_nodes_map;
 };
 } // namespace detail
 
@@ -183,7 +187,8 @@ static void get_nodes(dpct::experimental::command_graph_ptr graph,
 static void get_root_nodes(dpct::experimental::command_graph_ptr graph,
                            dpct::experimental::node_ptr *nodesArray,
                            std::size_t *numberOfNodes) {
-  detail::graph_mgr::instance().get_root_nodes(graph, nodesArray, numberOfNodes);
+  detail::graph_mgr::instance().get_root_nodes(graph, nodesArray,
+                                               numberOfNodes);
 }
 
 } // namespace experimental
