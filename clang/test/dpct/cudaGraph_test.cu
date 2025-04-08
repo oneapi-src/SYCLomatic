@@ -107,6 +107,13 @@ int main() {
   CUDA_CHECK_THROW(cudaGraphExecUpdate(execGraph, graph, nullptr, nullptr));
 #endif
 
+  // CHECK: sycl::ext::oneapi::experimental::node_type nodeType;
+  // CHECK-NEXT: nodeType = node->get_type();
+  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(nodeType = node->get_type()));
+  cudaGraphNodeType nodeType;
+  cudaGraphNodeGetType(node, &nodeType);
+  CUDA_CHECK_THROW(cudaGraphNodeGetType(node, &nodeType));
+
   // CHECK: delete (execGraph);
   // CHECK-NEXT: delete (*execGraph2);
   // CHECK-NEXT:  delete (**execGraph3);

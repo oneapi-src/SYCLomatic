@@ -38,6 +38,7 @@ struct csrgemm_args_info_hash {
     return std::hash<std::string>{}(ss.str());
   }
 };
+
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 template <typename handle_t> class handle_manager {
 public:
@@ -47,18 +48,24 @@ public:
   ~handle_manager() {
     if (!_q || !_h)
       return;
+    release();
+  }
+  void init(sycl::queue *q) {
+    _q = q;
+    _h = new handle_t;
+    _init_func(*_q, _h);
+  }
+  sycl::event release() {
+    if (!_q || !_h)
+      return sycl::event();
     sycl::event e = _rel_func(*_q, _h, _deps);
-    _q->submit([&](sycl::handler &cgh) {
+    sycl::event ret = _q->submit([&](sycl::handler &cgh) {
       cgh.depends_on(e);
       cgh.host_task([_hh = _h] { delete _hh; });
     });
     _h = nullptr;
     _q = nullptr;
-  }
-  void init(sycl::queue *q) {
-    _q = q;
-    _h = new handle_t;
-    _init_func(_h);
+    return ret;
   }
   handle_t &get_handle() { return *_h; }
   void add_dependency(sycl::event e) { _deps.push_back(e); }
@@ -68,7 +75,7 @@ protected:
   sycl::queue *_q = nullptr;
 
 private:
-  using init_func_t = std::function<void(handle_t *)>;
+  using init_func_t = std::function<void(sycl::queue &, handle_t *)>;
   using rel_func_t = std::function<sycl::event(
       sycl::queue &, handle_t *, const std::vector<sycl::event> &dependencies)>;
   handle_t *_h = nullptr;
@@ -79,16 +86,33 @@ private:
 template <>
 inline handle_manager<oneapi::mkl::sparse::matrix_handle_t>::init_func_t
     handle_manager<oneapi::mkl::sparse::matrix_handle_t>::_init_func =
-        oneapi::mkl::sparse::init_matrix_handle;
+        [](sycl::queue &queue, oneapi::mkl::sparse::matrix_handle_t *p_desc) {
+          oneapi::mkl::sparse::init_matrix_handle(p_desc);
+        };
 template <>
 inline handle_manager<oneapi::mkl::sparse::matrix_handle_t>::rel_func_t
     handle_manager<oneapi::mkl::sparse::matrix_handle_t>::_rel_func =
         oneapi::mkl::sparse::release_matrix_handle;
 
 template <>
+inline handle_manager<oneapi::mkl::sparse::omatadd_descr_t>::init_func_t
+    handle_manager<oneapi::mkl::sparse::omatadd_descr_t>::_init_func =
+        oneapi::mkl::sparse::init_omatadd_descr;
+template <>
+inline handle_manager<oneapi::mkl::sparse::omatadd_descr_t>::rel_func_t
+    handle_manager<oneapi::mkl::sparse::omatadd_descr_t>::_rel_func =
+        [](sycl::queue &queue, oneapi::mkl::sparse::omatadd_descr_t *p_desc,
+           const std::vector<sycl::event> &dependencies) -> sycl::event {
+  return oneapi::mkl::sparse::release_omatadd_descr(queue, *p_desc,
+                                                    dependencies);
+};
+
+template <>
 inline handle_manager<oneapi::mkl::sparse::matmat_descr_t>::init_func_t
     handle_manager<oneapi::mkl::sparse::matmat_descr_t>::_init_func =
-        oneapi::mkl::sparse::init_matmat_descr;
+        [](sycl::queue &queue, oneapi::mkl::sparse::matmat_descr_t *p_desc) {
+          oneapi::mkl::sparse::init_matmat_descr(p_desc);
+        };
 template <>
 inline handle_manager<oneapi::mkl::sparse::matmat_descr_t>::rel_func_t
     handle_manager<oneapi::mkl::sparse::matmat_descr_t>::_rel_func =
