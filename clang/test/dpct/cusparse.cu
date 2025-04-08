@@ -370,7 +370,7 @@ void foo5() {
   cusparseCsrsv_solveEx(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, &alpha_s, CUDA_R_32F, descrA, a_s_val, CUDA_R_32F, a_row_ptr, a_col_ind, info, f_s, CUDA_R_32F, x_s, CUDA_R_32F, CUDA_R_32F);
 }
 
-void foo5() {
+void foo6() {
   cusparseHandle_t handle;
   float* a_s_val;
   double* a_d_val;
@@ -395,7 +395,7 @@ void foo5() {
   cusparseZcsr2csc(handle, 3, 4, 7, a_z_val, a_row_ptr, a_col_ind, b_z_val, b_col_ptr, b_row_ind, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO);
 }
 
-void foo6(){
+void foo7(){
   int c_nnz;
   cusparseMatDescr_t descrB;
   cusparseMatDescr_t descrC;
@@ -470,4 +470,102 @@ void foo7_1(int c_nnz,
   cusparseXcsrgemmNnz(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descrA, 4, row_ptr_a,col_ind_a, descrB, 5, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
 #endif
   foo7_2(c_nnz, descrB, descrC, val_a_s, row_ptr_a, col_ind_a, val_b_s, row_ptr_b, col_ind_b, val_c_s, row_ptr_c, col_ind_c);
+}
+
+void foo8(){
+  cusparseMatDescr_t descrB;
+  cusparseMatDescr_t descrD;
+  cusparseMatDescr_t descrC;
+
+  const float* val_a_s;
+  const double* val_a_d;
+  const float2* val_a_c;
+  const double2* val_a_z;
+  const int* row_ptr_a;
+  const int* col_ind_a;
+
+  const float* val_b_s;
+  const double* val_b_d;
+  const float2* val_b_c;
+  const double2* val_b_z;
+  const int* row_ptr_b;
+  const int* col_ind_b;
+
+  const float* val_d_s;
+  const double* val_d_d;
+  const float2* val_d_c;
+  const double2* val_d_z;
+  const int* row_ptr_d;
+  const int* col_ind_d;
+
+  float* val_c_s;
+  double* val_c_d;
+  float2* val_c_c;
+  double2* val_c_z;
+  int* row_ptr_c;
+  int* col_ind_c;
+
+  int nnzA, nnzB, nnzD;
+  float* alpha_s;
+  double* alpha_d;
+  float2* alpha_c;
+  double2* alpha_z;
+  float* beta_s;
+  double* beta_d;
+  float2* beta_c;
+  double2* beta_z;
+
+  int nnzC;
+  // CHECK: std::shared_ptr<dpct::sparse::csrgemm2_info> info_s, info_d, info_c, info_z;
+  csrgemm2Info_t info_s, info_d, info_c, info_z;
+  void *ws_s;
+  void *ws_d;
+  void *ws_c;
+  void *ws_z;
+
+  // CHECK: info_s = std::make_shared<dpct::sparse::csrgemm2_info>();
+  // CHECK-NEXT: info_d = std::make_shared<dpct::sparse::csrgemm2_info>();
+  // CHECK-NEXT: info_c = std::make_shared<dpct::sparse::csrgemm2_info>();
+  // CHECK-NEXT: info_z = std::make_shared<dpct::sparse::csrgemm2_info>();
+  cusparseCreateCsrgemm2Info(&info_s);
+  cusparseCreateCsrgemm2Info(&info_d);
+  cusparseCreateCsrgemm2Info(&info_c);
+  cusparseCreateCsrgemm2Info(&info_z);
+
+  size_t ws_size;
+  // CHECK: dpct::sparse::csrgemm2_get_buffer_size<float>(handle, 3, 4, 3, alpha_s, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_s, descrD, nnzD, row_ptr_d, col_ind_d, info_s, &ws_size);
+  // CHECK-NEXT: dpct::sparse::csrgemm2_get_buffer_size<double>(handle, 3, 4, 3, alpha_d, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_d, descrD, nnzD, row_ptr_d, col_ind_d, info_d, &ws_size);
+  // CHECK-NEXT: dpct::sparse::csrgemm2_get_buffer_size<sycl::float2>(handle, 3, 4, 3, alpha_c, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_c, descrD, nnzD, row_ptr_d, col_ind_d, info_c, &ws_size);
+  // CHECK-NEXT: dpct::sparse::csrgemm2_get_buffer_size<sycl::double2>(handle, 3, 4, 3, alpha_z, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_z, descrD, nnzD, row_ptr_d, col_ind_d, info_z, &ws_size);
+  cusparseScsrgemm2_bufferSizeExt(handle, 3, 4, 3, alpha_s, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_s, descrD, nnzD, row_ptr_d, col_ind_d, info_s, &ws_size);
+  cusparseDcsrgemm2_bufferSizeExt(handle, 3, 4, 3, alpha_d, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_d, descrD, nnzD, row_ptr_d, col_ind_d, info_d, &ws_size);
+  cusparseCcsrgemm2_bufferSizeExt(handle, 3, 4, 3, alpha_c, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_c, descrD, nnzD, row_ptr_d, col_ind_d, info_c, &ws_size);
+  cusparseZcsrgemm2_bufferSizeExt(handle, 3, 4, 3, alpha_z, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, beta_z, descrD, nnzD, row_ptr_d, col_ind_d, info_z, &ws_size);
+
+  // CHECK: dpct::sparse::csrgemm2_nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_s, ws_s);
+  // CHECK-NEXT: dpct::sparse::csrgemm2_nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_d, ws_d);
+  // CHECK-NEXT: dpct::sparse::csrgemm2_nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_c, ws_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm2_nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_z, ws_z);
+  cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_s, ws_s);
+  cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_d, ws_d);
+  cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_c, ws_c);
+  cusparseXcsrgemm2Nnz(handle, 3, 4, 3, descrA, nnzA, row_ptr_a, col_ind_a, descrB, nnzB, row_ptr_b, col_ind_b, descrD, nnzD, row_ptr_d, col_ind_d, descrC, row_ptr_c, &nnzC, info_z, ws_z);
+
+  // CHECK: dpct::sparse::csrgemm2<float>(handle, 3, 4, 3, alpha_s, descrA, nnzA, val_a_s, row_ptr_a, col_ind_a, descrB, nnzB, val_b_s, row_ptr_b, col_ind_b, beta_s, descrD, nnzD, val_d_s, row_ptr_d, col_ind_d, descrC, val_c_s, row_ptr_c, col_ind_c, info_s, ws_s);
+  // CHECK-NEXT: dpct::sparse::csrgemm2<double>(handle, 3, 4, 3, alpha_d, descrA, nnzA, val_a_d, row_ptr_a, col_ind_a, descrB, nnzB, val_b_d, row_ptr_b, col_ind_b, beta_d, descrD, nnzD, val_d_d, row_ptr_d, col_ind_d, descrC, val_c_d, row_ptr_c, col_ind_c, info_d, ws_d);
+  // CHECK-NEXT: dpct::sparse::csrgemm2<sycl::float2>(handle, 3, 4, 3, alpha_c, descrA, nnzA, val_a_c, row_ptr_a, col_ind_a, descrB, nnzB, val_b_c, row_ptr_b, col_ind_b, beta_c, descrD, nnzD, val_d_c, row_ptr_d, col_ind_d, descrC, val_c_c, row_ptr_c, col_ind_c, info_c, ws_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm2<sycl::double2>(handle, 3, 4, 3, alpha_z, descrA, nnzA, val_a_z, row_ptr_a, col_ind_a, descrB, nnzB, val_b_z, row_ptr_b, col_ind_b, beta_z, descrD, nnzD, val_d_z, row_ptr_d, col_ind_d, descrC, val_c_z, row_ptr_c, col_ind_c, info_z, ws_z);
+  cusparseScsrgemm2(handle, 3, 4, 3, alpha_s, descrA, nnzA, val_a_s, row_ptr_a, col_ind_a, descrB, nnzB, val_b_s, row_ptr_b, col_ind_b, beta_s, descrD, nnzD, val_d_s, row_ptr_d, col_ind_d, descrC, val_c_s, row_ptr_c, col_ind_c, info_s, ws_s);
+  cusparseDcsrgemm2(handle, 3, 4, 3, alpha_d, descrA, nnzA, val_a_d, row_ptr_a, col_ind_a, descrB, nnzB, val_b_d, row_ptr_b, col_ind_b, beta_d, descrD, nnzD, val_d_d, row_ptr_d, col_ind_d, descrC, val_c_d, row_ptr_c, col_ind_c, info_d, ws_d);
+  cusparseCcsrgemm2(handle, 3, 4, 3, alpha_c, descrA, nnzA, val_a_c, row_ptr_a, col_ind_a, descrB, nnzB, val_b_c, row_ptr_b, col_ind_b, beta_c, descrD, nnzD, val_d_c, row_ptr_d, col_ind_d, descrC, val_c_c, row_ptr_c, col_ind_c, info_c, ws_c);
+  cusparseZcsrgemm2(handle, 3, 4, 3, alpha_z, descrA, nnzA, val_a_z, row_ptr_a, col_ind_a, descrB, nnzB, val_b_z, row_ptr_b, col_ind_b, beta_z, descrD, nnzD, val_d_z, row_ptr_d, col_ind_d, descrC, val_c_z, row_ptr_c, col_ind_c, info_z, ws_z);
+
+  // CHECK: info_s.reset();
+  // CHECK-NEXT: info_d.reset();
+  // CHECK-NEXT: info_c.reset();
+  // CHECK-NEXT: info_z.reset();
+  cusparseDestroyCsrgemm2Info(info_s);
+  cusparseDestroyCsrgemm2Info(info_d);
+  cusparseDestroyCsrgemm2Info(info_c);
+  cusparseDestroyCsrgemm2Info(info_z);
 }

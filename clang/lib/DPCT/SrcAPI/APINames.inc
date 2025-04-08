@@ -479,7 +479,7 @@ ENTRY(cudaGraphNodeGetDependencies_v2, cudaGraphNodeGetDependencies_v2, false, N
 ENTRY(cudaGraphNodeGetDependentNodes, cudaGraphNodeGetDependentNodes, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphNodeGetDependentNodes_v2, cudaGraphNodeGetDependentNodes_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphNodeGetEnabled, cudaGraphNodeGetEnabled, false, NO_FLAG, P4, "comment")
-ENTRY(cudaGraphNodeGetType, cudaGraphNodeGetType, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphNodeGetType, cudaGraphNodeGetType, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY(cudaGraphNodeSetEnabled, cudaGraphNodeSetEnabled, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphNodeSetParams, cudaGraphNodeSetParams, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphReleaseUserObject, cudaGraphReleaseUserObject, false, NO_FLAG, P4, "comment")
