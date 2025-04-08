@@ -63,11 +63,9 @@ int main() {
   // CHECK: auto currentStream = c10::xpu::getCurrentXPUStream();
   auto currentStream = c10::cuda::getCurrentCUDAStream();
 
-  // CHECK: dpct::queue_ptr curr_cuda_st =
-  // CHECK-NEXT: &static_cast<sycl::queue &>(currentStream.queue());
+  // CHECK: dpct::queue_ptr curr_cuda_st = &(currentStream.queue());
   cudaStream_t curr_cuda_st = currentStream.stream();
-  // CHECK: curr_cuda_st =
-  // CHECK-NEXT: &static_cast<sycl::queue &>(c10::xpu::getCurrentXPUStream().queue());
+  // CHECK: curr_cuda_st = &(c10::xpu::getCurrentXPUStream().queue());
   curr_cuda_st = c10::cuda::getCurrentCUDAStream().stream();
 
   // CHECK: auto deviceStream = c10::xpu::getCurrentXPUStream(0);

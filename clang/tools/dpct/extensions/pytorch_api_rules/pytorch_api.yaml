@@ -87,7 +87,7 @@
   Out: c10::xpu::XPUStream
   Methods:
     - In: stream
-      Out: \&static_cast<sycl::queue &>($method_base queue())
+      Out: \&($method_base queue())
 
 - Rule: rule_c10_cuda_getCurrentCUDAStream
   Kind: API
@@ -165,7 +165,7 @@
   Kind: HelperFunction
   Priority: Takeover
   In: get_in_order_queue
-  Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
+  Out: c10::xpu::getCurrentXPUStream()
   Includes: [<c10/xpu/XPUStream.h>]
 
 - Rule: rule_THC_THCAtomics_cuh
