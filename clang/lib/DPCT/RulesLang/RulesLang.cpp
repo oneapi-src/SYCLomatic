@@ -348,7 +348,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
               "cudaExternalSemaphoreHandleType", "CUstreamCallback",
               "cudaHostFn_t", "__nv_half2", "__nv_half",
-              "cudaGraphNodeType"))))))
+              "cudaGraphNodeType", "CUsurfref"))))))
           .bind("cudaTypeDef"),
       this);
 
