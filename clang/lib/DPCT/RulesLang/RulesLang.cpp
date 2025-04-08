@@ -347,8 +347,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
               "cudaExternalSemaphoreHandleType", "CUstreamCallback",
-              "cudaHostFn_t", "__nv_half2", "__nv_half",
-              "cudaGraphNodeType"))))))
+              "cudaHostFn_t", "__nv_half2", "__nv_half", "cudaGraphNodeType",
+              "CUdevice_P2PAttribute"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -941,6 +941,14 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
                CanonicalTypeStr,
                "--use-experimental-features=bindless_images");
+      }
+    }
+
+    if (CanonicalTypeStr == "CUdevice_P2PAttribute") {
+      if (!DpctGlobalInfo::usePeerAccess()) {
+        report(TL->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               CanonicalTypeStr);
+        return;
       }
     }
 
@@ -1926,7 +1934,7 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                           "cufftType", "cudaMemoryType", "CUctx_flags_enum",
                           "CUpointer_attribute_enum", "CUmemorytype_enum",
                           "cudaGraphicsMapFlags", "cudaGraphicsRegisterFlags",
-                          "cudaGraphNodeType"))),
+                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum"))),
                       matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
       this);
@@ -2006,7 +2014,8 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       EnumName == "cudaGraphNodeTypeExtSemaphoreWait" ||
       EnumName == "cudaGraphNodeTypeMemAlloc" ||
       EnumName == "cudaGraphNodeTypeMemFree" ||
-      EnumName == "cudaGraphNodeTypeConditional") {
+      EnumName == "cudaGraphNodeTypeConditional" ||
+      EnumName == "CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK") {
     report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
     return;
   } else if (EnumName == "cudaComputeModeDefault" ||
@@ -5941,7 +5950,8 @@ void MemoryMigrationRule::memcpyMigration(
     handleAsync(C, 7, Result);
   } else if (NameRef.rfind("cudaMemcpy3D", 0) == 0 ||
              NameRef.rfind("cuMemcpy3D", 0) == 0 ||
-             NameRef.rfind("cuMemcpy2D", 0) == 0) {
+             NameRef.rfind("cuMemcpy2D", 0) == 0 ||
+             NameRef.rfind("cuMemcpy2DUnaligned", 0) == 0) {
     handleAsync(C, 1, Result);
     std::string Replacement;
     llvm::raw_string_ostream OS(Replacement);
@@ -6766,14 +6776,14 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaGetChannelDesc", "cuMemHostAlloc", "cuMemFreeHost",
         "cuMemGetInfo_v2", "cuMemAlloc_v2", "cuMemcpyHtoD_v2",
         "cuMemcpyDtoH_v2", "cuMemcpyHtoDAsync_v2", "cuMemcpyDtoHAsync_v2",
-        "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2",
-        "cuMemcpy3DAsync_v2", "cuMemcpy3DPeer", "cuMemcpy3DPeerAsync",
-        "cudaMemGetInfo", "cuMemAllocManaged", "cuMemAllocHost_v2",
-        "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2",
-        "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2", "cuMemPrefetchAsync",
-        "cuMemFree_v2", "cuDeviceTotalMem_v2", "cuMemHostGetFlags",
-        "cuMemHostRegister_v2", "cuMemHostUnregister", "cuMemcpy",
-        "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
+        "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy2DUnaligned_v2",
+        "cuMemcpy3D_v2", "cuMemcpy3DAsync_v2", "cuMemcpy3DPeer",
+        "cuMemcpy3DPeerAsync", "cudaMemGetInfo", "cuMemAllocManaged",
+        "cuMemAllocHost_v2", "cuMemHostGetDevicePointer_v2",
+        "cuMemcpyDtoDAsync_v2", "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2",
+        "cuMemPrefetchAsync", "cuMemFree_v2", "cuDeviceTotalMem_v2",
+        "cuMemHostGetFlags", "cuMemHostRegister_v2", "cuMemHostUnregister",
+        "cuMemcpy", "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
         "cuMemcpyHtoAAsync_v2", "cuMemcpyAtoHAsync_v2", "cuMemcpyDtoA_v2",
         "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2", "cuMemsetD16_v2",
         "cuMemsetD16Async", "cuMemsetD2D16_v2", "cuMemsetD2D16Async",
@@ -6864,7 +6874,6 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemcpyDtoD_v2") && Name.compare("cuMemAdvise") &&
         Name.compare("cuMemPrefetchAsync") &&
         Name.compare("cuMemcpyHtoDAsync_v2") &&
-        Name.compare("cuMemcpyDtoD_v2") &&
         Name.compare("cuMemHostUnregister") &&
         Name.compare("cuMemHostRegister_v2") &&
         Name.compare("cudaHostGetFlags") && Name.compare("cuMemHostGetFlags") &&
@@ -6964,6 +6973,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
            &MemoryMigrationRule::memcpySymbolMigration},
           {"cudaMemcpy2D", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpy2D_v2", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpy2DUnaligned_v2", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpy2DAsync_v2", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3D", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3DPeer", &MemoryMigrationRule::memcpyMigration},
@@ -8340,11 +8350,11 @@ void DriverModuleAPIRule::runRule(
 void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   auto DriverDeviceAPI = [&]() {
-    return hasAnyName("cuDeviceGet", "cuDeviceComputeCapability",
-                      "cuDriverGetVersion", "cuDeviceGetCount",
-                      "cuDeviceGetAttribute", "cuDeviceGetName",
-                      "cuDeviceGetUuid", "cuDeviceGetUuid_v2",
-                      "cuGetErrorString", "cuGetErrorName");
+    return hasAnyName(
+        "cuDeviceGet", "cuDeviceComputeCapability", "cuDriverGetVersion",
+        "cuDeviceGetCount", "cuDeviceGetAttribute", "cuDeviceGetName",
+        "cuDeviceGetUuid", "cuDeviceGetUuid_v2", "cuGetErrorString",
+        "cuGetErrorName", "cuDeviceGetP2PAttribute");
   };
 
   MF.addMatcher(
@@ -8520,6 +8530,22 @@ void DriverDeviceAPIRule::runRule(
             false);
       return;
     }
+  } else if (APIName == "cuDeviceGetP2PAttribute") {
+    if (!DpctGlobalInfo::usePeerAccess()) {
+      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, APIName);
+      return;
+    }
+    auto SecArg = CE->getArg(1);
+    if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
+      auto AttributeName = DRE->getNameInfo().getAsString();
+      auto Search = MapNames::EnumNamesMap.find(AttributeName);
+      if (Search == MapNames::EnumNamesMap.end()) {
+        report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,
+               APIName,
+               "parameter " + getStmtSpelling(SecArg) + " is unsupported");
+        return;
+      }
+    }
   }
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
@@ -8539,7 +8565,9 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
         "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
         "cuCtxGetDevice", "cuCtxGetApiVersion", "cuCtxGetLimit",
-        "cuCtxPushCurrent_v2", "cuCtxPopCurrent_v2");
+        "cuCtxPushCurrent_v2", "cuCtxPopCurrent_v2",
+        "cuDevicePrimaryCtxSetFlags", "cuDevicePrimaryCtxSetFlags_v2",
+        "cuDevicePrimaryCtxGetState");
   };
 
   MF.addMatcher(
@@ -8600,7 +8628,10 @@ void DriverContextAPIRule::runRule(
     return;
   } else if (APIName == "cuCtxDestroy_v2" ||
              APIName == "cuDevicePrimaryCtxRelease_v2" ||
-             APIName == "cuDevicePrimaryCtxRelease") {
+             APIName == "cuDevicePrimaryCtxRelease" ||
+             APIName == "cuDevicePrimaryCtxSetFlags_v2" ||
+             APIName == "cuDevicePrimaryCtxSetFlags" ||
+             APIName == "cuDevicePrimaryCtxGetState") {
     SourceLocation CallBegin(CE->getBeginLoc());
     SourceLocation CallEnd(CE->getEndLoc());
 
@@ -8623,6 +8654,10 @@ void DriverContextAPIRule::runRule(
     CallEnd = CallEnd.getLocWithOffset(1);
 
     std::string Msg = "this functionality is redundant in SYCL.";
+    if (auto WarnMsg = MapNames::RemovedAPIWarningMessage.find(APIName);
+        WarnMsg != MapNames::RemovedAPIWarningMessage.end()) {
+      Msg = WarnMsg->second;
+    }
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              APIName, Msg);

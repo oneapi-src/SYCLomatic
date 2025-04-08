@@ -1567,11 +1567,11 @@ ENTRY(cuDeviceComputeCapability, cuDeviceComputeCapability, true, NO_FLAG, P4, "
 ENTRY(cuDeviceGetProperties, cuDeviceGetProperties, false, NO_FLAG, P4, "comment")
 
 // Primary Context Management
-ENTRY(cuDevicePrimaryCtxGetState, cuDevicePrimaryCtxGetState, false, NO_FLAG, P4, "comment")
+ENTRY(cuDevicePrimaryCtxGetState, cuDevicePrimaryCtxGetState, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 ENTRY(cuDevicePrimaryCtxRelease, cuDevicePrimaryCtxRelease_v2, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 ENTRY(cuDevicePrimaryCtxReset, cuDevicePrimaryCtxReset_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cuDevicePrimaryCtxRetain, cuDevicePrimaryCtxRetain, true, NO_FLAG, P4, "comment")
-ENTRY(cuDevicePrimaryCtxSetFlags, cuDevicePrimaryCtxSetFlags_v2, false, NO_FLAG, P4, "comment")
+ENTRY(cuDevicePrimaryCtxSetFlags, cuDevicePrimaryCtxSetFlags_v2, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 
 // Context Management
 ENTRY(cuCtxCreate, cuCtxCreate, true, NO_FLAG, P4, "comment")
@@ -1679,7 +1679,7 @@ ENTRY(cuMemHostUnregister, cuMemHostUnregister, true, NO_FLAG, P4, "DPCT1026/DPC
 ENTRY(cuMemcpy, cuMemcpy, true, NO_FLAG, P4, "Successful")
 ENTRY(cuMemcpy2D, cuMemcpy2D_v2, true, NO_FLAG, P4, "Successful")
 ENTRY(cuMemcpy2DAsync, cuMemcpy2DAsync_v2, true, NO_FLAG, P4, "Successful")
-ENTRY(cuMemcpy2DUnaligned, cuMemcpy2DUnaligned_v2, false, NO_FLAG, P4, "comment")
+ENTRY(cuMemcpy2DUnaligned, cuMemcpy2DUnaligned_v2, true, NO_FLAG, P4, "Successful")
 ENTRY(cuMemcpy3D, cuMemcpy3D_v2, true, NO_FLAG, P4, "Successful")
 ENTRY(cuMemcpy3DAsync, cuMemcpy3DAsync_v2, true, NO_FLAG, P4, "comment")
 ENTRY(cuMemcpy3DPeer, cuMemcpy3DPeer, true, NO_FLAG, P4, "Successful")
@@ -2005,7 +2005,7 @@ ENTRY(cuTensorMapReplaceAddress, cuTensorMapReplaceAddress, false, NO_FLAG, P4, 
 ENTRY(cuCtxDisablePeerAccess, cuCtxDisablePeerAccess, false, NO_FLAG, P4, "comment")
 ENTRY(cuCtxEnablePeerAccess, cuCtxEnablePeerAccess, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
 ENTRY(cuDeviceCanAccessPeer, cuDeviceCanAccessPeer, true, NO_FLAG, P4, "DPCT1031")
-ENTRY(cuDeviceGetP2PAttribute, cuDeviceGetP2PAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuDeviceGetP2PAttribute, cuDeviceGetP2PAttribute, true, NO_FLAG, P4, "Partial: all the attr types except perf rank, DPCT1007")
 
 // Graphics Interoperability
 ENTRY(cuGraphicsMapResources, cuGraphicsMapResources, true, NO_FLAG, P4, "successful/DPCT1119")
