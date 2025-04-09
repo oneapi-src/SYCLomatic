@@ -44,7 +44,10 @@ int main() {
   cudaGraphNode_t *node2;
   cudaGraphNode_t **node3;
 
-
+  // CHECK: dpct::experimental::node_ptr node4[10];
+  // CHECK-NEXT: dpct::experimental::node_ptr node5[10];
+  cudaGraphNode_t node4[10];
+  cudaGraphNode_t node5[10];
 
   // CHECK: dpct::experimental::node_ptr node6, *node7, **node8;
   cudaGraphNode_t node6, *node7, **node8;
@@ -67,32 +70,23 @@ int main() {
   // CHECK: dpct::experimental::add_empty_node(&node, graph, node10, 1);
   cudaGraphAddEmptyNode(&node, graph, node10, 1);
 
-  // CHECK: dpct::experimental::node_ptr node4[10];
-  // CHECK-NEXT: dpct::experimental::node_ptr node5[10];
-  
-
   size_t numNodes;
-  cudaGraphGetNodes(graph, nullptr, &numNodes); // numNodes = graph->get_nodes().size()
-  cudaGraphNode_t node4[numNodes]; // dpct::experimental::node_ptr node4[numNodes];
-  cudaGraphGetNodes(graph, node4, &numNodes); // dpct::experimental::get_nodes(graph, node4, numNodes);
 
-
-
-  // CHECK: dpct::experimental::get_nodes(graph, node4, numNodes);
-  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_nodes(graph, node4, numNodes)));
+  // CHECK: dpct::experimental::get_nodes(graph, node4, &numNodes);
+  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_nodes(graph, node4, &numNodes)));
   cudaGraphGetNodes(graph, node4, &numNodes);
-  CUDA_CHECK_THROW(cudaGraphGetNodes(graph, node4, numNodes));
+  CUDA_CHECK_THROW(cudaGraphGetNodes(graph, node4, &numNodes));
 
-  // CHECK: dpct::experimental::get_nodes(*graph2, node5, numNodes);
-  cudaGraphGetNodes(*graph2, node5, numNodes);
+  // CHECK: dpct::experimental::get_nodes(*graph2, node5, &numNodes);
+  cudaGraphGetNodes(*graph2, node5, &numNodes);
 
-  // CHECK: dpct::experimental::get_root_nodes(graph, node4, numNodes);
-  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_root_nodes(graph, node4, numNodes)));
-  cudaGraphGetRootNodes(graph, node4, numNodes);
-  CUDA_CHECK_THROW(cudaGraphGetRootNodes(graph, node4, numNodes));
+  // CHECK: dpct::experimental::get_root_nodes(graph, node4, &numNodes);
+  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_root_nodes(graph, node4, &numNodes)));
+  cudaGraphGetRootNodes(graph, node4, &numNodes);
+  CUDA_CHECK_THROW(cudaGraphGetRootNodes(graph, node4, &numNodes));
 
-  // CHECK: dpct::experimental::get_root_nodes(*graph2, node5, numNodes);
-  cudaGraphGetRootNodes(*graph2, node5, numNodes);
+  // CHECK: dpct::experimental::get_root_nodes(*graph2, node5, &numNodes);
+  cudaGraphGetRootNodes(*graph2, node5, &numNodes);
 
   // CHECK: dpct::experimental::add_dependencies(graph, node4, node5, 10);
   // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::add_dependencies(graph, node4, node5, 10)));
