@@ -165,7 +165,7 @@
   Kind: HelperFunction
   Priority: Takeover
   In: get_in_order_queue
-  Out: c10::xpu::getCurrentXPUStream()
+  Out: c10::xpu::getCurrentXPUStream().queue()
   Includes: [<c10/xpu/XPUStream.h>]
 
 - Rule: rule_THC_THCAtomics_cuh
