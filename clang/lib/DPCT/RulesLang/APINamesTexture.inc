@@ -471,7 +471,8 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     CALL_FACTORY_ENTRY("cuSurfRefSetArray",
-                       CALL(MapNames::getDpctNamespace() + "set_img_mem",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::set_img_mem",
                             ARG(0), ARG(1))),
     UNSUPPORT_FACTORY_ENTRY("cuSurfRefSetArray",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,

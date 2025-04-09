@@ -1736,6 +1736,7 @@ public:
 
   inline image_mem_wrapper *&get_img_mem() {
     return detail::get_img_mem_map(_img);
+  }
   /// Set mipmap sample filtering mode for bindless image handle
   /// \param [in] filtering_mode The mipmap filtering mode
   inline void set_mip_filtering_mode(sycl::filtering_mode mode) {
