@@ -20,7 +20,7 @@ using namespace clang::ast_matchers;
 void SpBLASTypeLocRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
     return hasAnyName("csrsv2Info_t", "cusparseSolvePolicy_t",
-                      "cusparseAction_t", "csrgemm2Info_t");
+                      "cusparseAction_t", "csrgemm2Info_t", "csrsm2Info_t");
   };
 
   MF.addMatcher(
@@ -41,8 +41,6 @@ void SpBLASTypeLocRule::runRule(
 
 // Rule for spBLAS function calls.
 void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
-
-
   auto functionName = [&]() {
     return hasAnyName(
         /*management*/
@@ -80,6 +78,13 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseScsrgemm", "cusparseDcsrgemm", "cusparseCcsrgemm",
         "cusparseZcsrgemm", "cusparseXcsrgemmNnz", "cusparseScsrmm2",
         "cusparseDcsrmm2", "cusparseCcsrmm2", "cusparseZcsrmm2",
+        "cusparseCreateCsrsm2Info", "cusparseDestroyCsrsm2Info",
+        "cusparseScsrsm2_bufferSizeExt", "cusparseDcsrsm2_bufferSizeExt",
+        "cusparseCcsrsm2_bufferSizeExt", "cusparseZcsrsm2_bufferSizeExt",
+        "cusparseScsrsm2_analysis", "cusparseDcsrsm2_analysis",
+        "cusparseCcsrsm2_analysis", "cusparseZcsrsm2_analysis",
+        "cusparseScsrsm2_solve", "cusparseDcsrsm2_solve",
+        "cusparseCcsrsm2_solve", "cusparseZcsrsm2_solve",
         "cusparseScsrgemm2_bufferSizeExt", "cusparseDcsrgemm2_bufferSizeExt",
         "cusparseCcsrgemm2_bufferSizeExt", "cusparseZcsrgemm2_bufferSizeExt",
         "cusparseXcsrgemm2Nnz", "cusparseScsrgemm2", "cusparseDcsrgemm2",

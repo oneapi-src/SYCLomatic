@@ -262,12 +262,8 @@ float test_j0(float a) { return j0(a); }
 // CHECK: float test_j1(float a) { return j1(a); }
 float test_j1(float a) { return j1(a); }
 
-#ifndef NO_BUILD_TEST
-// CHECK: /*
-// CHECK: DPCT1007:{{[0-9]+}}: Migration of jn is not supported.
-// CHECK: */
+// CHECK: float test_jn(int n, float a) { return jn(n, a); }
 float test_jn(int n, float a) { return jn(n, a); }
-#endif
 
 // CHECK: float test_y0(float a) { return y0(a); }
 float test_y0(float a) { return y0(a); }
@@ -275,12 +271,10 @@ float test_y0(float a) { return y0(a); }
 // CHECK: float test_y1(float a) { return y1(a); }
 float test_y1(float a) { return y1(a); }
 
-#ifndef NO_BUILD_TEST
-// CHECK: /*
-// CHECK: DPCT1007:{{[0-9]+}}: Migration of yn is not supported.
-// CHECK: */
+// CHECK: float test_yn(int n, float a) { return yn(n, a); }
 float test_yn(int n, float a) { return yn(n, a); }
 
+#ifndef NO_BUILD_TEST
 // CHECK: /*
 // CHECK: DPCT1007:{{[0-9]+}}: Migration of erfinv is not supported.
 // CHECK: */
