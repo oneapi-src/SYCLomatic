@@ -54,4 +54,14 @@ __global__ void mul() {
   asm("mul.wide.u64 %0, %1, %2;" : "=r"(u64) : "r"(x), "r"(y));
 }
 
+// CHECK: inline uint32_t mul_f16x2(uint32_t a, uint32_t b) {
+// CHECK-NEXT:    uint32_t c;
+// CHECK-NEXT:    c = ((sycl::vec<int, 1>(a)).as<sycl::vec<sycl::half, 2>>() * (sycl::vec<int, 1>(b)).as<sycl::vec<sycl::half, 2>>()).as<sycl::vec<int, 1>>().x();
+// CHECK-NEXT:    return c;
+// CHECK-NEXT: }
+inline __device__ uint32_t mul_f16x2(uint32_t a, uint32_t b) {
+    uint32_t c;
+    asm volatile("mul.f16x2 %0, %1, %2;\n" : "=r"(c) : "r"(a), "r"(b));
+    return c;
+}
 // clang-format on

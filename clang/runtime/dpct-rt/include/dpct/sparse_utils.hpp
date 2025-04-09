@@ -50,6 +50,7 @@ enum class conversion_scope : int { index = 0, index_and_value };
 // Forward declaration
 namespace detail {
 template <typename T> struct optimize_csrsv_impl;
+template <typename T> struct optimize_csrsm_impl;
 }
 
 /// Saving the optimization information for solving a system of linear
@@ -74,6 +75,7 @@ public:
   }
 #ifdef DPCT_USM_LEVEL_NONE
   template <typename T> friend struct detail::optimize_csrsv_impl;
+  template <typename T> friend struct detail::optimize_csrsm_impl;
 #endif
 
 private:
@@ -828,6 +830,62 @@ inline void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
   detail::spblas_shim<detail::csrsv_impl>(val_type, queue, trans, row_col,
                                           alpha, info, val, row_ptr, col_ind,
                                           optimize_info, x, y);
+}
+
+/// Performs internal optimizations for dpct::sparse::csrsm by analyzing
+/// the provided matrix structure and operation parameters. The matrix A must be
+/// a triangular sparse matrix with the CSR format.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] transa The operation applied to A.
+/// \param [in] transb The operation applied to B and X.
+/// \param [in] row_col Number of rows and columns of A.
+/// \param [in] nrhs Number of columns op_b(B).
+/// \param [in] info Matrix info of A.
+/// \param [in] val An array containing the non-zero elements of A.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [out] optimize_info The result of the optimizations.
+template <typename T>
+void optimize_csrsm(sycl::queue &queue, oneapi::mkl::transpose transa,
+                    oneapi::mkl::transpose transb, int row_col, int nrhs,
+                    const std::shared_ptr<matrix_info> info, const T *val,
+                    const int *row_ptr, const int *col_ind,
+                    std::shared_ptr<optimize_info> optimize_info) {
+  detail::optimize_csrsm_impl<T>()(queue, transa, transb, row_col, nrhs, info,
+                                   val, row_ptr, col_ind, optimize_info);
+}
+
+/// Solves the sparse triangular system op_a(A) * op_b(X) = alpha * op_b(B).
+/// A is a sparse triangular matrix with the CSR format of size \p row_col
+/// by \p row_col .
+/// B is a dense matrix of size \p row_col by \p nrhs ( \p transb is nontrans)
+/// or \p nrhs by \p row_col ( \p transb isn't nontrans).
+/// X is the solution dense matrix.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] transa The operation applied to A.
+/// \param [in] transb The operation applied to B and X.
+/// \param [in] row_col Number of rows and columns of A.
+/// \param [in] nrhs Number of columns op_b(B).
+/// \param [in] alpha Specifies the scalar.
+/// \param [in] info Matrix info of A.
+/// \param [in] val An array containing the non-zero elements of A.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [in, out] b The RHS matrix. It will be overwritten by the X.
+/// \param [in] ldb The leading dimension of B and X.
+/// \param [in] optimize_info The result of the optimizations.
+template <typename T>
+void csrsm(sycl::queue &queue, oneapi::mkl::transpose transa,
+           oneapi::mkl::transpose transb, int row_col, int nrhs, const T *alpha,
+           const std::shared_ptr<matrix_info> info, const T *val,
+           const int *row_ptr, const int *col_ind, T *b, int ldb,
+           std::shared_ptr<optimize_info> optimize_info) {
+  detail::csrsm_impl<T>()(queue, transa, transb, row_col, nrhs, alpha, info,
+                          val, row_ptr, col_ind, b, ldb, optimize_info);
 }
 
 /// Computes a sparse matrix-dense vector product: y = alpha * op(a) * x + beta * y.
