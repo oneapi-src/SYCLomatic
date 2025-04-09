@@ -8167,7 +8167,8 @@ void VirtualMemRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "CU_MEM_ACCESS_FLAGS_PROT_NONE", "CU_MEM_ACCESS_FLAGS_PROT_READ",
         "CU_MEM_ACCESS_FLAGS_PROT_READWRITE",
         "CU_MEM_ALLOC_GRANULARITY_RECOMMENDED",
-        "CU_MEM_ALLOC_GRANULARITY_MINIMUM");
+        "CU_MEM_ALLOC_GRANULARITY_MINIMUM", "CU_MEM_ALLOCATION_COMP_NONE",
+        "CU_MEM_ALLOCATION_COMP_GENERIC");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(virtualmemoryAPI()))).bind("vmCall"), this);
@@ -8178,11 +8179,47 @@ void VirtualMemRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(virtualmemoryEnum()))).bind("vmEnum"),
       this);
+  MF.addMatcher(
+      memberExpr(
+          hasObjectExpression(hasType(qualType(
+              hasCanonicalType(asString("struct CUmemAllocationProp_st"))))),
+          member(hasName("allocFlags")),
+          hasParent(memberExpr(anyOf(
+              hasParent(implicitCastExpr(
+                            hasCastKind(CK_LValueToRValue),
+                            hasParent(binaryOperator(isAssignmentOperator())))
+                            .bind("replaceWithZero")),
+              hasParent(
+                  binaryOperator(isAssignmentOperator()).bind("removeBO")))))),
+      this);
 }
 
 void VirtualMemRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   auto &SM = DpctGlobalInfo::getSourceManager();
+
+  const Expr *ICE = getNodeAsType<ImplicitCastExpr>(Result, "replaceWithZero");
+  const Expr *BO = getNodeAsType<BinaryOperator>(Result, "removeBO");
+  const Expr *E = ICE ? ICE : BO;
+  if (E) {
+    // Process pattern like:
+    // prop.allocFlags.compressionType = CU_MEM_ALLOCATION_COMP_NONE;
+    // uc = prop.allocFlags.compressionType;
+    auto Range = getDefinitionRange(E->getBeginLoc(), E->getEndLoc());
+    auto Begin = Range.getBegin();
+    auto End = Range.getEnd();
+    auto Length = Lexer::MeasureTokenLength(
+        End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+    Length +=
+        SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
+    if (ICE) {
+      emplaceTransformation(new ReplaceText(Begin, Length, std::move("0")));
+    } else {
+      emplaceTransformation(
+          new ReplaceText(Begin, Length, std::move("(void)0")));
+    }
+    return;
+  }
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "vmCall")) {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());

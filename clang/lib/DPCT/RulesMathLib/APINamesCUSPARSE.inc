@@ -518,6 +518,63 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCreateCsrsv2Info", DEREF(0),
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroyCsrsv2Info",
                                              ARG(0), false, "reset"))
 
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cusparseCreateCsrsm2Info", DEREF(0),
+    CALL("std::make_shared<" + MapNames::getLibraryHelperNamespace() +
+         "sparse::optimize_info>")))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroyCsrsm2Info",
+                                             ARG(0), false, "reset"))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseScsrsm2_bufferSizeExt",
+                                        DEREF(16), LITERAL("0")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseDcsrsm2_bufferSizeExt",
+                                        DEREF(16), LITERAL("0")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCcsrsm2_bufferSizeExt",
+                                        DEREF(16), LITERAL("0")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseZcsrsm2_bufferSizeExt",
+                                        DEREF(16), LITERAL("0")))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseScsrsm2_analysis",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsm",
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
+         ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseDcsrsm2_analysis",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsm",
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
+         ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseCcsrsm2_analysis",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsm",
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
+         ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseZcsrsm2_analysis",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsm",
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
+         ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseScsrsm2_solve",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrsm",
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
+         ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseDcsrsm2_solve",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrsm",
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
+         ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseCcsrsm2_solve",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrsm",
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
+         ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseZcsrsm2_solve",
+    CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrsm",
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
+         ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
+
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSpSM_bufferSize", DEREF(10),
                                         LITERAL("0")))
 REMOVE_API_FACTORY_ENTRY("cusparseSpSM_createDescr")
