@@ -1244,20 +1244,28 @@ void MapNames::setExplicitNamespaceMap(
       {"CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED",
        std::make_shared<EnumNameRule>(
            DpctGlobalInfo::usePeerAccess()
-               ? getClNamespace() +
-                     "ext::oneapi::experimental::peer_access::access_supported"
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
                : "CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED")},
       {"CU_DEVICE_P2P_ATTRIBUTE_CUDA_ARRAY_ACCESS_SUPPORTED",
        std::make_shared<EnumNameRule>(
            DpctGlobalInfo::usePeerAccess()
-               ? getClNamespace() +
-                     "ext::oneapi::experimental::peer_access::access_supported"
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
                : "CU_DEVICE_P2P_ATTRIBUTE_CUDA_ARRAY_ACCESS_SUPPORTED")},
+      {"CU_DEVICE_P2P_ATTRIBUTE_ACCESS_ACCESS_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_ACCESS_ACCESS_SUPPORTED")},
+      {"CU_DEVICE_P2P_ATTRIBUTE_ARRAY_ACCESS_ACCESS_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_ARRAY_ACCESS_ACCESS_SUPPORTED")},
       {"CU_DEVICE_P2P_ATTRIBUTE_NATIVE_ATOMIC_SUPPORTED",
        std::make_shared<EnumNameRule>(
            DpctGlobalInfo::usePeerAccess()
                ? getClNamespace() +
-                     "ext::oneapi::experimental::peer_access::atomics_supported"
+                     "ext::oneapi::peer_access::atomics_supported"
                : "CU_DEVICE_P2P_ATTRIBUTE_NATIVE_ATOMIC_SUPPORTED")},
       {"CU_CTX_BLOCKING_SYNC", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_COREDUMP_ENABLE", std::make_shared<EnumNameRule>("0")},
