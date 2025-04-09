@@ -183,8 +183,11 @@ void registerTypeRule(MetaRuleObject &R) {
 
 void registerClassRule(MetaRuleObject &R) {
   // register class name migration rule
-  if (validateOutFieldAndWarn(R))
+  if (R.Out.has_value())
     registerTypeRule(R);
+  if (R.Fields.empty() && R.Methods.empty()) {
+    (void)validateOutFieldAndWarn(R);
+  }
   // register all field rules
   for (auto ItField = R.Fields.begin(); ItField != R.Fields.end(); ItField++) {
     std::string BaseAndFieldName = R.In + "." + (*ItField)->In;
@@ -565,10 +568,6 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
 bool validateOutFieldAndWarn(const MetaRuleObject &R) {
   if (R.Out.has_value())
     return true;
-  if (R.Kind == RuleKind::Class) {
-    if (!R.Fields.empty() || !R.Methods.empty())
-      return false;
-  }
   llvm::errs() << "warning: The \"Out\" field of rule " << R.RuleId << " (in "
                << R.RuleFile << ") is not specified. This rule is ignored.\n";
   return false;
