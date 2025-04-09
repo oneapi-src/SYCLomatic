@@ -437,10 +437,18 @@ TYPE_REWRITE_ENTRY("csrsv2Info_t",
                    TYPE_FACTORY(STR("std::shared_ptr<" +
                                     MapNames::getLibraryHelperNamespace() +
                                     "sparse::optimize_info>")))
+TYPE_REWRITE_ENTRY("csrsm2Info_t",
+                   TYPE_FACTORY(STR("std::shared_ptr<" +
+                                    MapNames::getLibraryHelperNamespace() +
+                                    "sparse::optimize_info>")))
 TYPE_REWRITE_ENTRY("cusparseSolvePolicy_t", TYPE_FACTORY(STR("int")))
 TYPE_REWRITE_ENTRY("cusparseAction_t",
                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
                                     "sparse::conversion_scope")))
+TYPE_REWRITE_ENTRY("csrgemm2Info_t",
+                   TYPE_FACTORY(STR("std::shared_ptr<" +
+                                    MapNames::getLibraryHelperNamespace() +
+                                    "sparse::csrgemm2_info>")))
 
 TYPE_REWRITE_ENTRY(
     "cooperative_groups::__v1::coalesced_group",
