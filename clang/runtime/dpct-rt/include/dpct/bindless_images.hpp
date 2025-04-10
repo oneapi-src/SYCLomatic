@@ -1992,7 +1992,7 @@ DataT fetch_image_by_byte(
   }
 }
 
-static inline image_mem_wrapper *&get_img_mem(
+static inline image_mem_wrapper *get_img_mem(
     const sycl::ext::oneapi::experimental::unsampled_image_handle handle) {
   return dpct::experimental::detail::get_img_mem_map(handle);
 }
