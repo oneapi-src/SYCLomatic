@@ -148,10 +148,16 @@ public:
     const Expr *InputArg = SubExpr->IgnoreUnlessSpelledInSource();
     clang::QualType ArgType = InputArg->getType().getCanonicalType();
     ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
+    bool NeedParen = false;
     if (ArgType.getAsString() != TypeInfo) {
+      NeedParen = needExtraParens(SubExpr);
       Stream << "(" << TypeInfo << ")";
     }
+    if (NeedParen)
+      Stream << "(";
     dpct::print(Stream, SubExpr);
+    if (NeedParen)
+      Stream << ")";
   }
 };
 

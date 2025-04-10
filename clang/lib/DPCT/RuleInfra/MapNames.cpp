@@ -1145,6 +1145,8 @@ void MapNames::setExplicitNamespaceMap(
       {"CU_MEM_ADVISE_UNSET_ACCESSED_BY", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ALLOCATION_TYPE_PINNED", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ALLOCATION_TYPE_INVALID", std::make_shared<EnumNameRule>("1")},
+      {"CU_MEM_ALLOCATION_COMP_NONE", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ALLOCATION_COMP_GENERIC", std::make_shared<EnumNameRule>("1")},
       {"CU_MEM_ALLOCATION_TYPE_MAX",
        std::make_shared<EnumNameRule>("0xFFFFFFFF")},
       {"CU_MEM_LOCATION_TYPE_DEVICE", std::make_shared<EnumNameRule>("1")},

@@ -34,5 +34,26 @@ RewriterMap dpct::createSTDFunctionsRewriterMap() {
                   CALL_FACTORY_ENTRY(
                       "std::abs",
                       CALL(MapNames::getClNamespace(false, true) + "fabs",
-                           ARG(0))))))};
+                           ARG(0))))))
+      // std::fabs
+      MATH_API_REWRITERS_V2(
+          "std::fabs",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::host_normal,
+              CALL_FACTORY_ENTRY("std::fabs", CALL("std::fabs", ARG(0)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::device_normal,
+              CALL_FACTORY_ENTRY(
+                  "std::fabs",
+                  CALL(MapNames::getClNamespace(false, true) + "fabs",
+                       ARG(0)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::host_device,
+              CALL_FACTORY_ENTRY(
+                  "std::fabs",
+                  CALL(MapNames::getClNamespace(false, true) + "fabs",
+                       ARG(0)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::device_std,
+              CALL_FACTORY_ENTRY("std::fabs", CALL("std::fabs", ARG(0)))))};
 }

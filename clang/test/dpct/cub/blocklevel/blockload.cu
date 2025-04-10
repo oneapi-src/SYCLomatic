@@ -125,5 +125,32 @@ int main() {
   // CHECK-NEXT:   });
   StripedKernel<<<1, 128>>>(d_data, 128);
   cudaStreamSynchronize(0);
+
+// CHECK:  q_ct1.submit(
+// CHECK:    [&](sycl::handler &cgh) {
+// CHECK:      sycl::stream stream_ct1(64 * 1024, 80, cgh);
+// CHECK:      sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_load<int, 4, dpct::group::group_load_algorithm::transpose>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+// CHECK:      cgh.parallel_for(
+// CHECK:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+// CHECK:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK:          TransposeKernel(d_data, 128, item_ct1, stream_ct1, &temp_storage_acc[0]);
+// CHECK:        });
+// CHECK:    });
+  TransposeKernel<<<1, 128>>>(d_data, 128);
+  cudaStreamSynchronize(0);
+
+// CHECK:  q_ct1.submit(
+// CHECK:    [&](sycl::handler &cgh) {
+// CHECK:      sycl::stream stream_ct1(64 * 1024, 80, cgh);
+// CHECK:      sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_load<int, 4, dpct::group::group_load_algorithm::sub_group_transpose>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+// CHECK:      cgh.parallel_for(
+// CHECK:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+// CHECK:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK:          SubGroupTransposeKernel(d_data, 128, item_ct1, stream_ct1, &temp_storage_acc[0]);
+// CHECK:        });
+// CHECK:    });
+  SubGroupTransposeKernel<<<1, 128>>>(d_data, 128);
+  cudaStreamSynchronize(0);
+
   return 0;
 }

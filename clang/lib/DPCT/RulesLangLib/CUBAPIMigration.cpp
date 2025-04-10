@@ -258,8 +258,9 @@ void CubMemberCallRule::runRule(
         Name == "BlockedToWarpStriped";
     bool isBlockShuffle =
         Name == "Offset" || Name == "Rotate" || Name == "Up" || Name == "Down";
+    bool isBlockLoadStore = Name == "Load" || Name == "Store";
     if (isBlockRadixSort || isBlockExchange || isBlockShuffle ||
-        Name == "Load" || Name == "Store") {
+        isBlockLoadStore) {
       std::string HelpFuncName;
       if (isBlockRadixSort)
         HelpFuncName = "group_radix_sort";
@@ -299,6 +300,32 @@ void CubMemberCallRule::runRule(
       } else {
         const auto &ItemsPreThreadArg = ClassSpecDecl->getTemplateArgs()[2];
         OS << ", " << ItemsPreThreadArg.getAsIntegral();
+      }
+      if (isBlockLoadStore &&
+          !ClassSpecDecl->getTemplateArgs()[3].getIsDefaulted()) {
+        int AlgoType =
+            ClassSpecDecl->getTemplateArgs()[3].getAsIntegral().getExtValue();
+        if (Name == "Load") {
+          if (AlgoType == 3) {
+            OS << ", "
+               << MapNames::getDpctNamespace() +
+                      "group::group_load_algorithm::transpose";
+          } else if (AlgoType == 4) {
+            OS << ", "
+               << MapNames::getDpctNamespace() +
+                      "group::group_load_algorithm::sub_group_transpose";
+          }
+        } else {
+          if (AlgoType == 3) {
+            OS << ", "
+               << MapNames::getDpctNamespace() +
+                      "group::group_store_algorithm::transpose";
+          } else if (AlgoType == 4) {
+            OS << ", "
+               << MapNames::getDpctNamespace() +
+                      "group::group_store_algorithm::sub_group_transpose";
+          }
+        }
       }
       OS << ">::get_local_memory_size";
       if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
