@@ -34,14 +34,48 @@ void GraphRule::registerMatcher(MatchFinder &MF) {
                       "cudaGraphExecDestroy", "cudaGraphAddEmptyNode",
                       "cudaGraphAddDependencies", "cudaGraphExecUpdate",
                       "cudaGraphNodeGetType", "cudaGraphGetNodes",
-                      "cudaGraphGetRootNodes", "cudaGraphDestroy");
+                      "cudaGraphGetRootNodes", "cudaGraphDestroy", "cudaGraphKernelNodeGetParams",
+                      "cudaGraphKernelNodeSetParams");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
       this);
+
+  auto typeName = [&]() { return hasAnyName("cudaKernelNodeParams"); };
+  MF.addMatcher(
+      memberExpr(hasObjectExpression(hasType(type(hasUnqualifiedDesugaredType(
+                     recordType(hasDeclaration(recordDecl(typeName()))))))))
+          .bind("Type"),
+      this);
 }
 
 void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "Type")) {
+    auto BaseTy = DpctGlobalInfo::getUnqualifiedTypeName(
+        ME->getBase()->getType().getDesugaredType(*Result.Context),
+        *Result.Context);
+    auto MemberName = ME->getMemberNameInfo().getAsString();
+    if (BaseTy == "cudaKernelNodeParams") {
+
+      auto FieldName = KernelNodeParamNames[MemberName];
+      if (FieldName.empty()) {
+        report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
+                   "::" + ME->getMemberDecl()->getName().str());
+        return;
+      }
+      requestFeature(HelperFeatureEnum::device_ext);
+      if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
+        StringRef ReplacedArg = "";
+        emplaceTransformation(
+            ReplaceMemberAssignAsSetMethod(BO, ME, FieldName, ReplacedArg));
+      } else {
+        emplaceTransformation(new RenameFieldInMemberExpr(
+            ME, buildString("get_", FieldName, "()")));
+      }
+    }
+    return;
+  }
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
     return;
@@ -49,6 +83,48 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
   ExprAnalysis EA(CE);
   emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();
+}
+
+const Expr *GraphRule::getParentAsAssignedBO(const Expr *E,
+                                             ASTContext &Context) {
+  auto Parents = Context.getParents(*E);
+  if (Parents.size() > 0)
+    return getAssignedBO(Parents[0].get<Expr>(), Context);
+  return nullptr;
+}
+
+// Return the binary operator if E is the lhs of an assign expression, otherwise
+// nullptr.
+const Expr *GraphRule::getAssignedBO(const Expr *E, ASTContext &Context) {
+  if (dyn_cast<MemberExpr>(E)) {
+    // Continue finding parents when E is MemberExpr.
+    return getParentAsAssignedBO(E, Context);
+  } else if (auto ICE = dyn_cast<ImplicitCastExpr>(E)) {
+    // Stop finding parents and return nullptr when E is ImplicitCastExpr,
+    // except for ArrayToPointerDecay cast.
+    if (ICE->getCastKind() == CK_ArrayToPointerDecay) {
+      return getParentAsAssignedBO(E, Context);
+    }
+  } else if (auto ASE = dyn_cast<ArraySubscriptExpr>(E)) {
+    // Continue finding parents when E is ArraySubscriptExpr, and remove
+    // subscript operator anyway for texture object's member.
+    emplaceTransformation(new ReplaceToken(
+        Lexer::getLocForEndOfToken(ASE->getLHS()->getEndLoc(), 0,
+                                   Context.getSourceManager(),
+                                   Context.getLangOpts()),
+        ASE->getRBracketLoc(), ""));
+    return getParentAsAssignedBO(E, Context);
+  } else if (auto BO = dyn_cast<BinaryOperator>(E)) {
+    // If E is BinaryOperator, return E only when it is assign expression,
+    // otherwise return nullptr.
+    if (BO->getOpcode() == BO_Assign)
+      return BO;
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COCE->getOperator() == OO_Equal) {
+      return COCE;
+    }
+  }
+  return nullptr;
 }
 
 } // namespace dpct

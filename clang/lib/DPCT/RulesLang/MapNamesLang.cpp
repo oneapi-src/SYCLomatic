@@ -362,5 +362,13 @@ const std::unordered_map<std::string, HelperFeatureEnum>
         {"sampler", HelperFeatureEnum::device_ext},
 };
 
+// Graph kernel node params mapping
+MapNamesLang::MapTy GraphRule::KernelNodeParamNames{
+    {"gridDim", "grid_dim"},
+    {"blockDim", "block_dim"},
+    {"kernelParams", "kernel_params"},
+    {"sharedMemBytes", "shared_mem_bytes"},
+    {"func", "func"}};
+
 } // namespace dpct
 } // namespace clang

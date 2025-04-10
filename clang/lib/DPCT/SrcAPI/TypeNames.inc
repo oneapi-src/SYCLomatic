@@ -41,7 +41,7 @@ ENTRY_TYPE(CUgraphNode, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUgraphicsResource, true, NO_FLAG, P4, "successful")
 
 // CUDA Runtime Library
-ENTRY_TYPE(cudaKernelNodeParams, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(cudaKernelNodeParams, true, NO_FLAG, P4, "Successful/DPCT1119")
 
 // cuDNN Library
 ENTRY_TYPE(cudnnReduceTensorIndices_t, false, NO_FLAG, P4, "comment")

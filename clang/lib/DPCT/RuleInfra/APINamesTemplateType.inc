@@ -507,6 +507,15 @@ TYPE_REWRITE_ENTRY(
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=graph"))))
 
+TYPE_REWRITE_ENTRY(
+    "cudaKernelNodeParams",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableGraphForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::kernel_node_params")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=graph"))))
+
 // Graphics Interop Handle
 TYPE_REWRITE_ENTRY(
     "cudaGraphicsResource",

@@ -353,18 +353,19 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       this);
 
   MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-                  "cooperative_groups::__v1::coalesced_group",
-                  "cooperative_groups::__v1::grid_group",
-                  "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
-                  "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
-                  "cudaGraphicsResource_t", "CUgraphicsResource",
-                  "cudaExternalMemory_t", "cudaExternalMemoryHandleDesc",
-                  "cudaExternalMemoryMipmappedArrayDesc",
-                  "cudaExternalMemoryBufferDesc", "cudaExternalSemaphore_t",
-                  "cudaExternalSemaphoreHandleDesc",
-                  "cudaExternalSemaphoreSignalParams",
-                  "cudaExternalSemaphoreWaitParams"))))))
+      typeLoc(
+          loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+              "cooperative_groups::__v1::coalesced_group",
+              "cooperative_groups::__v1::grid_group",
+              "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
+              "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
+              "cudaGraphicsResource_t", "CUgraphicsResource",
+              "cudaExternalMemory_t", "cudaExternalMemoryHandleDesc",
+              "cudaExternalMemoryMipmappedArrayDesc",
+              "cudaExternalMemoryBufferDesc", "cudaExternalSemaphore_t",
+              "cudaExternalSemaphoreHandleDesc",
+              "cudaExternalSemaphoreSignalParams",
+              "cudaExternalSemaphoreWaitParams", "cudaKernelNodeParams"))))))
           .bind("cudaTypeDefEA"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
