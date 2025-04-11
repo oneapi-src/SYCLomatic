@@ -46,15 +46,32 @@ int main(){
   // CHECK: unsigned int flags = 0;
   // CHECK-NEXT: flags = 0;
   // CHECK-NEXT: flags = 0;
-  // CHECK-NEXT: flags = 0;
-  // CHECK-NEXT: flags = 0;
-  // CHECK-NEXT: flags = 0;
   unsigned int flags = CU_CTX_BLOCKING_SYNC;
-  flags = CU_CTX_COREDUMP_ENABLE;
   flags = CU_CTX_SCHED_AUTO;
   flags = CU_CTX_SCHED_YIELD;
-  flags = CU_CTX_SYNC_MEMOPS;
+
+#ifndef NO_BUILD_TEST
+  // CHECK: flags = 0;
+#if (CUDA_VERSION >= 12010)
+  flags = CU_CTX_COREDUMP_ENABLE;
+#else
+  flags = CU_CTX_BLOCKING_SYNC;
+#endif
+
+  // CHECK: flags = 0;
+#if (CUDA_VERSION >= 12010)
   flags = CU_CTX_USER_COREDUMP_ENABLE;
+#else
+  flags = CU_CTX_SCHED_AUTO;
+#endif
+
+  // CHECK: flags = 0;
+#if (CUDA_VERSION >= 12030)
+  flags = CU_CTX_SYNC_MEMOPS;
+#else
+  flags = CU_CTX_SCHED_YIELD;
+#endif
+#endif
   int active;
 
   // CHECK: /*

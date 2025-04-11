@@ -8536,14 +8536,31 @@ void DriverDeviceAPIRule::runRule(
       return;
     }
     auto SecArg = CE->getArg(1);
-    if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
-      auto AttributeName = DRE->getNameInfo().getAsString();
-      auto Search = MapNames::EnumNamesMap.find(AttributeName);
-      if (Search == MapNames::EnumNamesMap.end()) {
-        report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,
-               APIName,
-               "parameter " + getStmtSpelling(SecArg) + " is unsupported");
-        return;
+    if (auto DRE = dyn_cast<DeclRefExpr>(SecArg->IgnoreImpCasts())) {
+      std::string warningMessage = "";
+      std::string AttributeName = "";
+
+      if (const VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+        if (VD->hasInit()) {
+          // get the attribute name from definition
+          if (auto Init = dyn_cast<DeclRefExpr>(VD->getInit())) {
+            AttributeName = Init->getNameInfo().getName().getAsString();
+            warningMessage = "initialized value of ";
+          }
+        }
+      } else {
+        AttributeName = DRE->getNameInfo().getAsString();
+        warningMessage = "parameter ";
+      }
+
+      if (!AttributeName.empty()) {
+        auto Search = MapNames::EnumNamesMap.find(AttributeName);
+        if (Search == MapNames::EnumNamesMap.end()) {
+          report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,
+                 APIName,
+                 warningMessage + getStmtSpelling(SecArg) + " is unsupported");
+          return;
+        }
       }
     }
   }

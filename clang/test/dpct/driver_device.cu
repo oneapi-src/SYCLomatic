@@ -65,13 +65,40 @@ void test() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: p2p_attr = CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK;
-  p2p_attr = CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK;
+  // CHECK-NEXT: sycl::ext::oneapi::peer_access p2p_perf_rank_attr = CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK;
+  CUdevice_P2PAttribute p2p_perf_rank_attr = CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1028:{{[0-9]+}}: The cuDeviceGetP2PAttribute was not migrated because initialized value of p2p_perf_rank_attr is unsupported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuDeviceGetP2PAttribute(&result8, p2p_perf_rank_attr, device, peerDevice);
+  cuDeviceGetP2PAttribute(&result8, p2p_perf_rank_attr, device, peerDevice);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1028:{{[0-9]+}}: The cuDeviceGetP2PAttribute was not migrated because parameter CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK is unsupported.
+  // CHECK-NEXT: */
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuDeviceGetP2PAttribute(&result8, CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK, device, peerDevice);
+  cuDeviceGetP2PAttribute(&result8, CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK, device, peerDevice);
 #endif // NO_BUILD_TEST
+
   // CHECK: p2p_attr = sycl::ext::oneapi::peer_access::access_supported;
   // CHECK-NEXT: p2p_attr = sycl::ext::oneapi::peer_access::atomics_supported;
   p2p_attr = CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED;
   p2p_attr = CU_DEVICE_P2P_ATTRIBUTE_NATIVE_ATOMIC_SUPPORTED;
+
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result8 = dpct::get_device(device).ext_oneapi_can_access_peer(dpct::get_device(peerDevice), p2p_attr)));
+  // CHECK-NEXT: result8 = dpct::get_device(device).ext_oneapi_can_access_peer(dpct::get_device(peerDevice), p2p_attr);
+  MY_SAFE_CALL(cuDeviceGetP2PAttribute(&result8, p2p_attr, device, peerDevice));
+  cuDeviceGetP2PAttribute(&result8, p2p_attr, device, peerDevice);
+
+  // CHECK: result8 = dpct::get_device(device).ext_oneapi_can_access_peer(dpct::get_device(peerDevice), sycl::ext::oneapi::peer_access::access_supported);
+  // CHECK-NEXT: result8 = dpct::get_device(device).ext_oneapi_can_access_peer(dpct::get_device(peerDevice), sycl::ext::oneapi::peer_access::atomics_supported);
+  cuDeviceGetP2PAttribute(&result8, CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED, device, peerDevice);
+  cuDeviceGetP2PAttribute(&result8, CU_DEVICE_P2P_ATTRIBUTE_NATIVE_ATOMIC_SUPPORTED, device, peerDevice);
+
   // CHECK: p2p_attr = sycl::ext::oneapi::peer_access::access_supported;
 #if (CUDA_VERSION <= 10000)
   p2p_attr = CU_DEVICE_P2P_ATTRIBUTE_ARRAY_ACCESS_ACCESS_SUPPORTED;
@@ -85,25 +112,6 @@ void test() {
   p2p_attr = CU_DEVICE_P2P_ATTRIBUTE_CUDA_ARRAY_ACCESS_SUPPORTED;
 #endif
 
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result8 = dpct::get_device(device).ext_oneapi_can_access_peer(dpct::get_device(peerDevice), p2p_attr)));
-  // CHECK-NEXT: result8 = dpct::get_device(device).ext_oneapi_can_access_peer(dpct::get_device(peerDevice), p2p_attr);
-  MY_SAFE_CALL(cuDeviceGetP2PAttribute(&result8, p2p_attr, device, peerDevice));
-  cuDeviceGetP2PAttribute(&result8, p2p_attr, device, peerDevice);
-
-#ifndef NO_BUILD_TEST
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1028:{{[0-9]+}}: The cuDeviceGetP2PAttribute was not migrated because parameter CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK is unsupported.
-  // CHECK-NEXT: */
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK is not supported.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: cuDeviceGetP2PAttribute(&result8, CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK, device, peerDevice);
-  cuDeviceGetP2PAttribute(&result8, CU_DEVICE_P2P_ATTRIBUTE_PERFORMANCE_RANK, device, peerDevice);
-#endif // NO_BUILD_TEST
-  // CHECK: result8 = dpct::get_device(device).ext_oneapi_can_access_peer(dpct::get_device(peerDevice), sycl::ext::oneapi::peer_access::access_supported);
-  // CHECK-NEXT: result8 = dpct::get_device(device).ext_oneapi_can_access_peer(dpct::get_device(peerDevice), sycl::ext::oneapi::peer_access::atomics_supported);
-  cuDeviceGetP2PAttribute(&result8, CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED, device, peerDevice);
-  cuDeviceGetP2PAttribute(&result8, CU_DEVICE_P2P_ATTRIBUTE_NATIVE_ATOMIC_SUPPORTED, device, peerDevice);
   // CHECK: result8 = dpct::get_device(device).ext_oneapi_can_access_peer(dpct::get_device(peerDevice), sycl::ext::oneapi::peer_access::access_supported);
 #if (CUDA_VERSION <= 10000)
   cuDeviceGetP2PAttribute(&result8, CU_DEVICE_P2P_ATTRIBUTE_ARRAY_ACCESS_ACCESS_SUPPORTED, device, peerDevice);
