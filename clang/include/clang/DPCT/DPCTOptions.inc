@@ -658,6 +658,12 @@ DPCT_ENUM_OPTION(
             int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
             "Disable the enqueued barriers extension.", false),
         DPCT_OPTION_ENUM_VALUE(
+            "free-function-queries", int(DPCPPExtensionsDefaultEnabled::ExtDE_FreeQueries),
+            " allows getting 'id', "
+            "'item', 'nd_item', 'group', and\n"
+            "'sub_group' instances globally.",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
             "peer_access", int(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess),
             "Disable the peer access extension.", false),
         DPCT_OPTION_ENUM_VALUE("assert",
