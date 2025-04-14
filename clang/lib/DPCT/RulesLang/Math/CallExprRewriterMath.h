@@ -399,18 +399,16 @@ public:
           return Rewriter.value();
       }
     }
-
-    // Host and device
-    if (HostDeviceRewriter && HostDeviceRewriter.value().first(C))
-      return HostDeviceRewriter.value().second.second->create(C);
-
-    if (EmulationRewriter && EmulationRewriter.value().first(C))
-      return EmulationRewriter.value().second.second->create(C);
-
-    if (UnsupportedWarningRewriter &&
-        UnsupportedWarningRewriter.value().first(C))
-      return UnsupportedWarningRewriter.value().second.second->create(C);
-
+    if (!math::IsDefinedInAnalysisScope()(C)) {
+      // Host and device
+      if (HostDeviceRewriter && HostDeviceRewriter.value().first(C))
+        return HostDeviceRewriter.value().second.second->create(C);
+      if (EmulationRewriter && EmulationRewriter.value().first(C))
+        return EmulationRewriter.value().second.second->create(C);
+      if (UnsupportedWarningRewriter &&
+          UnsupportedWarningRewriter.value().first(C))
+        return UnsupportedWarningRewriter.value().second.second->create(C);
+    }
     return NoRewriteRewriter.value().second.second->create(C);
   }
 };

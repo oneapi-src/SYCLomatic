@@ -3550,3 +3550,15 @@ __global__ void foo9(float aa) {
   ::cospif(aa);
 }
 
+inline __host__ __device__ float4 operator-(float b, float4 a) {
+  return make_float4(b - a.x, b - a.y, b - a.z, b - a.w);
+}
+
+inline __host__ __device__ float4 fabs(float4 v) {
+  return make_float4(fabs(v.x), fabs(v.y), fabs(v.z), fabs(v.w));
+}
+
+__device__ void foo10(float4 a, float b) {
+  // CHECK: sycl::float4 c = fabs(dpct_operator_overloading::operator-(b , a));
+  float4 c = fabs(b - a);
+}
