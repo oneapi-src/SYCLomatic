@@ -1,0 +1,1 @@
+// CHECK-NOT: warning: The "Out" field of rule rule_Tensor (in {{.*}}rule2.yaml) is not specified. This rule is ignored.

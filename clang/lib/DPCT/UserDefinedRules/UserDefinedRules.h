@@ -236,6 +236,8 @@ private:
 
 void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles);
 
+bool validateOutFieldAndWarn(const MetaRuleObject &R);
+
 } // namespace dpct
 } // namespace clang
 

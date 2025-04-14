@@ -611,6 +611,11 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       }
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+    DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
+    auto Info = Global.findMemVarInfo(VD);
+    if (Info && Info->isUseDeviceGlobal()) {
+      addReplacement(DRE, getStmtSpelling(DRE) + ".get()");
+    }
     if (RefString == "warpSize" &&
         !DpctGlobalInfo::isInAnalysisScope(VD->getLocation())) {
       addReplacement(DRE, DpctGlobalInfo::getSubGroup(DRE) +

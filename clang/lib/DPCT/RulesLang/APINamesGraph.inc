@@ -76,3 +76,24 @@ CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphNodeGetType"),
                             ARG("--use-experimental-features=graph")))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY("cudaGraphGetNodes", CALL(MapNames::getDpctNamespace() +
+                                                     "experimental::get_nodes",
+                                                 ARG(0), ARG(1), ARG(2))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphGetNodes",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphGetNodes"),
+                            ARG("--use-experimental-features=graph"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY("cudaGraphGetRootNodes",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::get_root_nodes",
+                            ARG(0), ARG(1), ARG(2))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphGetRootNodes",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphGetRootNodes"),
+                            ARG("--use-experimental-features=graph"))))

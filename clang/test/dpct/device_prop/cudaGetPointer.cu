@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
-// RUN: dpct --format-range=none --usm-level=restricted -out-root %T/device_prop %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
-// RUN: FileCheck --match-full-lines --input-file %T/device_prop/cudaGetPointer.dp.cpp %s
+// RUN: dpct --format-range=none --usm-level=restricted -out-root %T/usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
+// RUN: FileCheck --match-full-lines --input-file %T/usm/cudaGetPointer.dp.cpp %s
 
 
 #include <cuda.h>

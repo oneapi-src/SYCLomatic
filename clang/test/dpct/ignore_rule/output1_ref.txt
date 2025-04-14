@@ -1,0 +1,1 @@
+// CHECK: warning: The "Out" field of rule rule_MACRO_A (in {{.*}}rule1.yaml) is not specified. This rule is ignored.

@@ -746,7 +746,7 @@ int foo14(){
   ALL2(const, ALL3(int2), *) lll;
 }
 
-//CHECK: #define FABS(a) (sycl::fabs((float)((a).x())) + sycl::fabs((float)((a).y())))
+//CHECK: #define FABS(a) (sycl::fabs((a).x()) + sycl::fabs((a).y()))
 //CHECK-NEXT: static inline double foo16(const sycl::float2 &x) { return FABS(x); }
 #define FABS(a)       (fabs((a).x) + fabs((a).y))
 __host__ __device__ static inline double foo16(const float2 &x) { return FABS(x); }
