@@ -63,11 +63,12 @@ int main() {
   cuArray3DCreate(a3d_ptr, &p3DDesc);
   cuArrayDestroy(*a3d_ptr);
   delete a3d_ptr;
+#ifndef  NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cuArray3DGetDescriptor is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   cuArray3DGetDescriptor(&p3DDesc, *a3d_ptr);
-
+#endif
   // CHECK: dpct::image_matrix **a_ptr = new dpct::image_matrix_p;
   // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: *a_ptr = new dpct::image_matrix(&halfDesc);
@@ -82,10 +83,12 @@ int main() {
   cuArrayDestroy(*a_ptr);
   cuArrayDestroy(a42);
   delete a_ptr;
+#ifndef  NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cuArrayGetDescriptor is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   cuArrayGetDescriptor(&halfDesc, *a_ptr);
+#endif
   // Test IsAssigned
   {
     int errorCode;
@@ -239,6 +242,7 @@ void test_texref() {
   cuTexRefSetAddress2D(tex, &desc, dptr, b);
 }
 void test_surf_ref() {
+#ifndef NO_BUILD_TEST
  CUarray arr;
  CUsurfref ref;
  //CHECK: /*
@@ -249,6 +253,7 @@ void test_surf_ref() {
  //CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cuSurfRefSetArray is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
  //CHECK-NEXT: */
  cuSurfRefSetArray(ref, arr, 0);
+#endif
 }
 // CHECK: sycl::addressing_mode AddrMode[] =
 // CHECK-NEXT: {
