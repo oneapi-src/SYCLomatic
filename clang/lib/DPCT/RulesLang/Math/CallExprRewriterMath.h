@@ -399,7 +399,7 @@ public:
           return Rewriter.value();
       }
     }
-    if (!math::IsDefinedInAnalysisScope()(C)) {
+    if (!math::IsDefinedInInRoot()(C)) {
       // Host and device
       if (HostDeviceRewriter && HostDeviceRewriter.value().first(C))
         return HostDeviceRewriter.value().second.second->create(C);

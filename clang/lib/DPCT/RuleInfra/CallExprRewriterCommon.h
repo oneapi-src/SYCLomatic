@@ -2132,14 +2132,14 @@ public:
     return isFromCUDA(FD);
   }
 };
-class IsDefinedInAnalysisScope {
+class IsDefinedInInRoot {
 public:
-  IsDefinedInAnalysisScope() {}
+  IsDefinedInInRoot() {}
   bool operator()(const CallExpr *C) {
     auto FD = C->getDirectCallee();
     if (!FD)
       return false;
-    return DpctGlobalInfo::isInAnalysisScope(FD->getLocation());
+    return DpctGlobalInfo::isInRoot(FD->getLocation());
   }
 };
 } // namespace math
