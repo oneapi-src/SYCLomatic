@@ -907,6 +907,11 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaExternalSemaphoreHandleType",
        std::make_shared<TypeNameRule>(getExpNamespace() +
                                       "external_semaphore_handle_type")},
+      {"nvshmem_team_t", std::make_shared<TypeNameRule>("ishmem_team_t")},
+      {"nvshmem_team_config_t",
+       std::make_shared<TypeNameRule>("ishmem_team_config_t")},
+      {"nvshmemx_init_attr_t",
+       std::make_shared<TypeNameRule>("ishmemx_attr_t")},
       // ...
   };
   // SYCLcompat unsupport types
@@ -1596,6 +1601,16 @@ void MapNames::setExplicitNamespaceMap(
                ? getExpNamespace() +
                      "external_semaphore_handle_type::win32_nt_dx12_fence"
                : "cudaExternalSemaphoreHandleTypeD3D12Fence")},
+      {"NVSHMEM_TEAM_WORLD",
+       std::make_shared<EnumNameRule>("ISHMEM_TEAM_WORLD")},
+      {"NVSHMEM_TEAM_SHARED",
+       std::make_shared<EnumNameRule>("ISHMEM_TEAM_SHARED")},
+      {"NVSHMEM_TEAM_INVALID",
+       std::make_shared<EnumNameRule>("ISHMEM_TEAM_INVALID")},
+      {"NVSHMEMX_INIT_WITH_MPI_COMM",
+       std::make_shared<EnumNameRule>("ISHMEMX_RUNTIME_MPI")},
+      {"NVSHMEMX_INIT_WITH_SHMEM",
+       std::make_shared<EnumNameRule>("ISHMEMX_RUNTIME_OPENSHMEM")},
       // ...
   };
 

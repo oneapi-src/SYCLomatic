@@ -1,3 +1,4 @@
+// UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --enable-codepin -out-root %T/debug_test/vector_add_int3 %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/vector_add_int3_codepin_sycl/test.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/vector_add_int3_codepin_sycl/test.dp.cpp -o %T/debug_test/vector_add_int3_codepin_sycl/test.dp.o %}
