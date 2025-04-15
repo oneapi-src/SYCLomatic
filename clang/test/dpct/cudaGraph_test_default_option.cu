@@ -51,7 +51,6 @@ int main() {
   // CHECK-NEXT: */
   captureStatus = cudaStreamCaptureStatusInvalidated;
 
-
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaStreamIsCapturing is not supported, please try to remigrate with option: --use-experimental-features=graph.
   // CHECK-NEXT: */
@@ -71,6 +70,16 @@ int main() {
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphAddDependencies is not supported, please try to remigrate with option: --use-experimental-features=graph.
   // CHECK-NEXT: */
   cudaGraphAddDependencies(graph, NULL, NULL, 0);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphGetNodes is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphGetNodes(graph, NULL, nullptr);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphGetRootNodes is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphGetRootNodes(graph, NULL, nullptr);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphInstantiate is not supported, please try to remigrate with option: --use-experimental-features=graph.

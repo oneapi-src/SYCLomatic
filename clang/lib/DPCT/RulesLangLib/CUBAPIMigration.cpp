@@ -247,6 +247,9 @@ void CubMemberCallRule::runRule(
   if (const auto *BlockMC =
           getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
     EA.analyze(BlockMC);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+
     StringRef Name = BlockMC->getMethodDecl()->getName();
     bool isBlockRadixSort = Name == "Sort" || Name == "SortDescending" ||
                             Name == "SortBlockedToStriped" ||
@@ -343,9 +346,9 @@ void CubMemberCallRule::runRule(
     }
   } else if (const auto *E2 = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
     EA.analyze(E2);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
-  emplaceTransformation(EA.getReplacement());
-  EA.applyAllSubExprRepl();
 }
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {

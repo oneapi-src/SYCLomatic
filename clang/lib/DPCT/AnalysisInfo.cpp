@@ -6113,9 +6113,14 @@ void KernelCallExpr::addAccessorDecl() {
     Tex.second->addDecl(OuterStmts.InitList, SubmitStmts.TextureList,
                         SubmitStmts.SamplerList, getQueueStr());
   }
-  for (auto &Tmp : VM.getTempStorageMap()) {
-    Tmp.second->addAccessorDecl(SubmitStmts.AccessorList,
-                                ExecutionConfig.LocalSize);
+  if (!VM.getTempStorageMap().empty()) {
+    DpctGlobalInfo::getInstance()
+        .insertFile(getFilePath())
+        ->insertHeader(HT_DPCT_GROUP_Utils, RT_ForSYCLMigration);
+    for (auto &Tmp : VM.getTempStorageMap()) {
+      Tmp.second->addAccessorDecl(SubmitStmts.AccessorList,
+                                  ExecutionConfig.LocalSize);
+    }
   }
 }
 void KernelCallExpr::buildInfo() {

@@ -55,7 +55,7 @@ void test_CUDAStream_as_arg() {
 }
 
 int main() {
-  // CHECK: dpct::queue_ptr st = &static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream());
+  // CHECK: dpct::queue_ptr st = &c10::xpu::getCurrentXPUStream().queue();
   cudaStream_t st = 0;
 
   // stream APIs
@@ -66,9 +66,9 @@ int main() {
   // CHECK: auto deviceStream = c10::xpu::getCurrentXPUStream(devInd);
   auto deviceStream = at::cuda::getCurrentCUDAStream(devInd);
 
-  // CHECK: dpct::queue_ptr curr_cuda_st = &static_cast<sycl::queue &>(c10::xpu::getCurrentXPUStream(). queue());
+  // CHECK: dpct::queue_ptr curr_cuda_st = &(c10::xpu::getCurrentXPUStream(). queue());
   cudaStream_t curr_cuda_st = at::cuda::getCurrentCUDAStream().stream();
-  // CHECK: dpct::queue_ptr dev_cuda_st = &static_cast<sycl::queue &>(c10::xpu::getCurrentXPUStream(devInd). queue());
+  // CHECK: dpct::queue_ptr dev_cuda_st = &(c10::xpu::getCurrentXPUStream(devInd). queue());
   cudaStream_t dev_cuda_st = at::cuda::getCurrentCUDAStream(devInd).stream();
 
   test_CUDAStream_as_arg();
@@ -77,7 +77,7 @@ int main() {
 }
 
 // CHECK: void foo2(c10::DeviceGuard device_guard, float *f)  try {
-// CHECK-NEXT: (DPCT_CHECK_ERROR(f = (float *)sycl::malloc_device(4, static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()))));
+// CHECK-NEXT: (DPCT_CHECK_ERROR(f = (float *)sycl::malloc_device(4, c10::xpu::getCurrentXPUStream().queue())));
 void foo2(at::cuda::CUDAGuard device_guard, float *f) {
   C10_CUDA_CHECK(cudaMalloc(&f, 4));
 }

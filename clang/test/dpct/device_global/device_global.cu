@@ -86,7 +86,7 @@ TABLE_END()
 // CHECK:   var_a.get() = 0;
 // CHECK:   var_e.get().data = 1;
 // CHECK:   *ptr = var_a.get() + var_b.get() + var_c.get() + var_d.get() + var_e.get().data + var_f.get().data + device_func();
-// CHECK:   sycl::fmax(var_h.get(), (double)0);
+// CHECK:   sycl::fmax(var_h.get(), (float)0);
 // CHECK: }
 __device__ int device_func() {
   float *p = arr_a;

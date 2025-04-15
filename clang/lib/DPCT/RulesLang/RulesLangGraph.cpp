@@ -33,7 +33,8 @@ void GraphRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName("cudaGraphInstantiate", "cudaGraphLaunch",
                       "cudaGraphExecDestroy", "cudaGraphAddEmptyNode",
                       "cudaGraphAddDependencies", "cudaGraphExecUpdate",
-                      "cudaGraphNodeGetType");
+                      "cudaGraphNodeGetType", "cudaGraphGetNodes",
+                      "cudaGraphGetRootNodes");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
