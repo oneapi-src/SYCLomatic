@@ -34,20 +34,20 @@
 // clang-format off
 
 // Library Setup, Exit and Query Routines
-ENTRY(nvshmem_init, nvshmem_init, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmemx_init_attr, nvshmemx_init_attr, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_init, nvshmem_init, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmemx_init_attr, nvshmemx_init_attr, true, NO_FLAG, P4, "Partial")
 ENTRY(nvshmemx_hostlib_init_attr, nvshmemx_hostlib_init_attr, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get_uniqueid, nvshmemx_get_uniqueid, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_set_attr_uniqueid_args, nvshmemx_set_attr_uniqueid_args, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_cumodule_init, nvshmemx_cumodule_init, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_init_status, nvshmemx_init_status, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_my_pe, nvshmem_my_pe, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_n_pes, nvshmem_n_pes, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_finalize, nvshmem_finalize, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_my_pe, nvshmem_my_pe, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_n_pes, nvshmem_n_pes, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_finalize, nvshmem_finalize, true, NO_FLAG, P4, "Succeessful")
 ENTRY(nvshmem_global_exit, nvshmem_global_exit, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ptr, nvshmem_ptr, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_info_get_version, nvshmem_info_get_version, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_info_get_name, nvshmem_info_get_name, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_ptr, nvshmem_ptr, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_info_get_version, nvshmem_info_get_version, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_info_get_name, nvshmem_info_get_name, true, NO_FLAG, P4, "Succeessful")
 ENTRY(nvshmemx_vendor_get_version_info, nvshmemx_vendor_get_version_info, false, NO_FLAG, P4, "comment")
 
 ENTRY(nvshmem_init_thread, nvshmem_init_thread, false, NO_FLAG, P4, "comment")
@@ -58,10 +58,10 @@ ENTRY(nvshmemx_collective_launch_query_gridsize, nvshmemx_collective_launch_quer
 
 
 // Memory Management
-ENTRY(nvshmem_malloc, nvshmem_malloc, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_free, nvshmem_free, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_align, nvshmem_align, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_calloc, nvshmem_calloc, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_malloc, nvshmem_malloc, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_free, nvshmem_free, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_align, nvshmem_align, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_calloc, nvshmem_calloc, true, NO_FLAG, P4, "Succeessful")
 
 ENTRY(nvshmemx_buffer_register, nvshmemx_buffer_register, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_buffer_unregister, nvshmemx_buffer_unregister, false, NO_FLAG, P4, "comment")
@@ -69,13 +69,13 @@ ENTRY(nvshmemx_buffer_unregister_all, nvshmemx_buffer_unregister_all, false, NO_
 
 
 // Team Management Routines
-ENTRY(nvshmem_team_my_pe, nvshmem_team_my_pe, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_team_n_pes, nvshmem_team_n_pes, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_team_get_config, nvshmem_team_get_config, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_team_translate_pe, nvshmem_team_translate_pe, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_team_split_strided, nvshmem_team_split_strided, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_team_split_2d, nvshmem_team_split_2d, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_team_destroy, nvshmem_team_destroy, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_team_my_pe, nvshmem_team_my_pe, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_team_n_pes, nvshmem_team_n_pes, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_team_get_config, nvshmem_team_get_config, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_team_translate_pe, nvshmem_team_translate_pe, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_team_split_strided, nvshmem_team_split_strided, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_team_split_2d, nvshmem_team_split_2d, true, NO_FLAG, P4, "Succeessful")
+ENTRY(nvshmem_team_destroy, nvshmem_team_destroy, true, NO_FLAG, P4, "Succeessful")
 
 
 // Remote Memory Access (RMA)

@@ -319,8 +319,13 @@ static void get_device_info(device_info &out, const sycl::device &dev) {
   prop.set_max_clock_frequency(
       dev.get_info<sycl::info::device::max_clock_frequency>() * 1000);
 
+#ifdef SYCL_EXT_ONEAPI_NUM_COMPUTE_UNITS
+  prop.set_max_compute_units(
+      dev.get_info<sycl::ext::oneapi::info::device::num_compute_units>());
+#else
   prop.set_max_compute_units(
       dev.get_info<sycl::info::device::max_compute_units>());
+#endif
   prop.set_max_work_group_size(
       dev.get_info<sycl::info::device::max_work_group_size>());
   prop.set_global_mem_size(dev.get_info<sycl::info::device::global_mem_size>());

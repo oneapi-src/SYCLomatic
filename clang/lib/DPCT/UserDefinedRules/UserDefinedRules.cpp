@@ -48,7 +48,7 @@ void registerMigrationRule(const std::string &Name, Functor &&F) {
 }
 
 void registerMacroRule(MetaRuleObject &R) {
-  if (!R.Out.has_value())
+  if (!validateOutFieldAndWarn(R))
     return;
   auto It = MapNames::MacroRuleMap.find(R.In);
   if (It != MapNames::MacroRuleMap.end()) {
@@ -70,7 +70,7 @@ void registerMacroRule(MetaRuleObject &R) {
 }
 
 void registerAPIRule(MetaRuleObject &R) {
-  if (!R.Out.has_value())
+  if (!validateOutFieldAndWarn(R))
     return;
   using namespace clang::dpct;
   // register rule
@@ -122,7 +122,7 @@ void registerAPIRule(MetaRuleObject &R) {
 }
 
 void registerHeaderRule(MetaRuleObject &R) {
-  if (!R.Out.has_value())
+  if (!validateOutFieldAndWarn(R))
     return;
   auto It = MapNames::HeaderRuleMap.find(R.In);
   if (It != MapNames::HeaderRuleMap.end()) {
@@ -135,7 +135,7 @@ void registerHeaderRule(MetaRuleObject &R) {
 }
 
 void registerTypeRule(MetaRuleObject &R) {
-  if (!R.Out.has_value())
+  if (!validateOutFieldAndWarn(R))
     return;
   std::shared_ptr TOB = std::make_shared<TypeOutputBuilder>();
   TOB->Kind = TypeOutputBuilder::Kind::Top;
@@ -185,6 +185,9 @@ void registerClassRule(MetaRuleObject &R) {
   // register class name migration rule
   if (R.Out.has_value())
     registerTypeRule(R);
+  if (R.Fields.empty() && R.Methods.empty()) {
+    (void)validateOutFieldAndWarn(R);
+  }
   // register all field rules
   for (auto ItField = R.Fields.begin(); ItField != R.Fields.end(); ItField++) {
     std::string BaseAndFieldName = R.In + "." + (*ItField)->In;
@@ -258,7 +261,7 @@ void registerClassRule(MetaRuleObject &R) {
 }
 
 void registerEnumRule(MetaRuleObject &R) {
-  if (!R.Out.has_value())
+  if (!validateOutFieldAndWarn(R))
     return;
   auto It = MapNames::EnumNamesMap.find(R.In);
   if (It != MapNames::EnumNamesMap.end()) {
@@ -287,14 +290,14 @@ void registerEnumRule(MetaRuleObject &R) {
 }
 
 void deregisterAPIRule(MetaRuleObject &R) {
-  if (!R.Out.has_value())
+  if (!validateOutFieldAndWarn(R))
     return;
   using namespace clang::dpct;
   CallExprRewriterFactoryBase::RewriterMap->erase(R.In);
 }
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
-  if (!R.Out.has_value())
+  if (!validateOutFieldAndWarn(R))
     return;
   MapNames::PatternRewriters.emplace_back(MetaRuleObject::PatternRewriter(
       R.In, R.Out.value(), R.Subrules, R.MatchMode, R.Warning, R.RuleId,
@@ -302,7 +305,7 @@ void registerPatternRewriterRule(MetaRuleObject &R) {
 }
 
 void registerHelperFunctionRule(MetaRuleObject &R) {
-  if (!R.Out.has_value())
+  if (!validateOutFieldAndWarn(R))
     return;
   static const std::unordered_map<std::string, dpct::HelperFuncCatalog>
       String2HelperFuncCatalogMap{
@@ -560,6 +563,14 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
       }
     }
   }
+}
+
+bool validateOutFieldAndWarn(const MetaRuleObject &R) {
+  if (R.Out.has_value())
+    return true;
+  llvm::errs() << "warning: The \"Out\" field of rule " << R.RuleId << " (in "
+               << R.RuleFile << ") is not specified. This rule is ignored.\n";
+  return false;
 }
 
 // /RuleOutputString is the string specified in rule's "Out" session

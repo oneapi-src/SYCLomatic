@@ -1,0 +1,4 @@
+- Rule: rule_MACRO_A
+  Kind: Macro
+  Priority: Takeover
+  In: MACRO_A

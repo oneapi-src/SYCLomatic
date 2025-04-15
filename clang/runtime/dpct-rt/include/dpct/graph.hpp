@@ -10,6 +10,7 @@
 
 #include <sycl/ext/oneapi/experimental/graph.hpp>
 #include <sycl/sycl.hpp>
+#include <unordered_map>
 
 namespace dpct {
 namespace experimental {
@@ -65,8 +66,42 @@ public:
     (*graph)->end_recording();
   }
 
+  void get_nodes(dpct::experimental::command_graph_ptr graph,
+                 dpct::experimental::node_ptr *nodesArray,
+                 std::size_t *numberOfNodes) {
+    auto nodes = graph->get_nodes();
+    nodes_map[graph] = nodes;
+    *numberOfNodes = nodes.size();
+    if (!nodesArray) {
+      return;
+    }
+    for (std::size_t i = 0; i < *numberOfNodes; i++) {
+      nodesArray[i] = &nodes_map[graph][i];
+    }
+  }
+
+  void get_root_nodes(dpct::experimental::command_graph_ptr graph,
+                      dpct::experimental::node_ptr *nodesArray,
+                      std::size_t *numberOfNodes) {
+    auto root_nodes = graph->get_root_nodes();
+    root_nodes_map[graph] = root_nodes;
+    *numberOfNodes = root_nodes.size();
+    if (!nodesArray) {
+      return;
+    }
+    for (std::size_t i = 0; i < *numberOfNodes; i++) {
+      nodesArray[i] = &root_nodes_map[graph][i];
+    }
+  }
+
 private:
   std::unordered_map<sycl::queue *, command_graph_ptr> queue_graph_map;
+  std::unordered_map<dpct::experimental::command_graph_ptr,
+                     std::vector<sycl::ext::oneapi::experimental::node>>
+      nodes_map;
+  std::unordered_map<dpct::experimental::command_graph_ptr,
+                     std::vector<sycl::ext::oneapi::experimental::node>>
+      root_nodes_map;
 };
 } // namespace detail
 
@@ -131,6 +166,29 @@ static void add_dependencies(dpct::experimental::command_graph_ptr graph,
   for (std::size_t i = 0; i < numberOfDependencies; i++) {
     graph->make_edge(*fromNodes[i], *toNodes[i]);
   }
+}
+
+/// Gets the nodes in the command graph.
+/// \param [in] graph A pointer to the command graph.
+/// \param [out] nodesArray An array of node pointers where the
+/// nodes will be assigned.
+/// \param [out] numberOfNodes The number of nodes in the graph.
+static void get_nodes(dpct::experimental::command_graph_ptr graph,
+                      dpct::experimental::node_ptr *nodesArray,
+                      std::size_t *numberOfNodes) {
+  detail::graph_mgr::instance().get_nodes(graph, nodesArray, numberOfNodes);
+}
+
+/// Gets the root nodes in the command graph.
+/// \param [in] graph A pointer to the command graph.
+/// \param [out] nodesArray An array of node pointers where the
+/// root nodes will be assigned.
+/// \param [out] numberOfNodes The number of root nodes in the graph.
+static void get_root_nodes(dpct::experimental::command_graph_ptr graph,
+                           dpct::experimental::node_ptr *nodesArray,
+                           std::size_t *numberOfNodes) {
+  detail::graph_mgr::instance().get_root_nodes(graph, nodesArray,
+                                               numberOfNodes);
 }
 
 } // namespace experimental

@@ -107,3 +107,8 @@ REGIST_INCLUSION("cuda_rutime.h", FullMatch, Libcu, Remove, true)
 
 REGIST_INCLUSION("cublasLt.h", FullMatch, BLas, Replace, false,
                  HeaderType::HT_DPCT_BLAS_GEMM_Utils)
+
+REGIST_INCLUSION("nvshmem.h", FullMatch, NVSHMEM, Replace, false,
+                 HeaderType::HT_SHMEM)
+REGIST_INCLUSION("nvshmemx.h", FullMatch, NVSHMEM, Replace, false,
+                 HeaderType::HT_SHMEMX)

@@ -34,10 +34,9 @@ std::string GenCodePinHeaderRule::getCodePinTypeHashKey(QualType T) {
       if (const ClassTemplateSpecializationDecl *Spec =
               dyn_cast<ClassTemplateSpecializationDecl>(RD)) {
         auto P = Spec->getInstantiatedFrom();
-        if (!P.isNull() &&
-            Spec->getInstantiatedFrom().is<ClassTemplateDecl *>()) {
+        if (!P.isNull() && isa<ClassTemplateDecl *>(P)) {
           const ClassTemplateDecl *OriginalTemplate =
-              Spec->getInstantiatedFrom().get<ClassTemplateDecl *>();
+              dyn_cast<ClassTemplateDecl *>(P);
           const CXXRecordDecl *CRD = OriginalTemplate->getTemplatedDecl();
           return getStrFromLoc(CRD->getBeginLoc());
         }
@@ -56,9 +55,9 @@ void GenCodePinHeaderRule::processTemplateTypeForCodePin(
     VI.TemplateFlag = true;
   }
   auto P = Spec->getInstantiatedFrom();
-  if (!P.isNull() && Spec->getInstantiatedFrom().is<ClassTemplateDecl *>()) {
+  if (!P.isNull() && isa<ClassTemplateDecl *>(P)) {
     const ClassTemplateDecl *OriginalTemplate =
-        Spec->getInstantiatedFrom().get<ClassTemplateDecl *>();
+        dyn_cast<ClassTemplateDecl *>(P);
 
     const CXXRecordDecl *CRD = OriginalTemplate->getTemplatedDecl();
     std::string HashKey = getStrFromLoc(CRD->getBeginLoc());
