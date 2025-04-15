@@ -6,7 +6,7 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/blocklevel/blockload/blockload.dp.cpp -o %T/blocklevel/blockload/blockload.dp.o %}
 
 #include <cub/cub.cuh>
-
+// CHECK: #include <dpct/group_utils.hpp>
 __global__ void DirectKernel(int *d_data, int valid_items, int default_value) {
   int thread_data[4] = {0};
 // CHECK:  dpct::group::load_direct_blocked(item_ct1, d_data, thread_data);
