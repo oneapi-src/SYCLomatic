@@ -77,6 +77,7 @@ public:
   }
   inline size_t getOffset() const { return Offset; }
   inline size_t getLength() const { return Length; }
+  inline unsigned getTemplateIndex() const { return TemplateIndex; }
   const TemplateArgumentInfo &
   getTargetArgument(const std::vector<TemplateArgumentInfo> &TemplateList);
   void replace(const std::vector<TemplateArgumentInfo> &TemplateList);
@@ -136,6 +137,20 @@ public:
         std::make_pair(Offset, std::make_shared<TemplateDependentReplacement>(
                                    SourceStr, Offset, Length, TemplateIndex)));
   }
+
+  inline void addTemplateDependentReplacementInConstExprExpansion(
+      size_t Offset, size_t Length, unsigned TemplateIndex) {
+    TDRsInConstExprExpansion.insert(
+        std::make_pair(Offset, std::make_shared<TemplateDependentReplacement>(
+                                   SourceStr, Offset, Length, TemplateIndex)));
+  }
+
+  inline void addConstExprExpansionInfo(std::string VDStr,
+                                        std::string VDInitStr) {
+    ConstExprExpansionInfoVDStr = VDStr;
+    ConstExprExpansionInfoVDInitStr = VDInitStr;
+  }
+
   // Add a string replacement
   void addStringReplacement(size_t Offset, size_t Length, std::string Text) {
     auto Result = ReplMap.insert(std::make_pair(
@@ -155,6 +170,11 @@ public:
   // Generate replacement text info which dependent on template args.
   std::shared_ptr<TemplateDependentStringInfo>
   getTemplateDependentStringInfo() {
+    if (!ConstExprExpansionInfoVDStr.empty() &&
+        !ConstExprExpansionInfoVDInitStr.empty() &&
+        !TDRsInConstExprExpansion.empty()) {
+      adjustSourceStrAndTDRs();
+    }
     replaceString();
     return std::make_shared<TemplateDependentStringInfo>(SourceStr, TDRs);
   }
@@ -170,11 +190,16 @@ private:
   StringReplacements &operator=(StringReplacements) = delete;
 
   void replaceString();
+  void adjustSourceStrAndTDRs();
 
   unsigned ShiftLength;
   std::string SourceStr;
   std::map<size_t, std::shared_ptr<StringReplacement>> ReplMap;
   std::map<size_t, std::shared_ptr<TemplateDependentReplacement>> TDRs;
+  std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
+      TDRsInConstExprExpansion;
+  std::string ConstExprExpansionInfoVDStr;
+  std::string ConstExprExpansionInfoVDInitStr;
 };
 
 /// Analyze expression and generate its migrated string
@@ -583,7 +608,11 @@ protected:
 
   inline void addReplacement(size_t Offset, size_t Length,
                              unsigned TemplateIndex) {
-    ReplSet.addTemplateDependentReplacement(Offset, Length, TemplateIndex);
+    if (ConstExprExpansion)
+      ReplSet.addTemplateDependentReplacementInConstExprExpansion(
+          Offset, Length, TemplateIndex);
+    else
+      ReplSet.addTemplateDependentReplacement(Offset, Length, TemplateIndex);
   }
 
   // Analyze the expression, jump to corresponding analysis function according
@@ -691,6 +720,7 @@ private:
   std::string RewritePrefix;
   std::string RewritePostfix;
   std::set<HelperFeatureEnum> HelperFeatureSet;
+  bool ConstExprExpansion = false;
 };
 
 // Analyze pointer allocated by cudaMallocManaged.
