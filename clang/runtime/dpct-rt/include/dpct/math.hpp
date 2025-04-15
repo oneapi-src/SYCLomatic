@@ -2058,6 +2058,7 @@ public:
 
 /// Multiplies 2 16x16 & 16x8 matrices and accumulates the result to a 16x8 b32
 /// matrix
+/// Requires the sub-group size of kernel calling this function to be 32
 /// \tparam [in] MulType The type of the multiplication result
 /// \tparam [in] ABType The type of the input matrices
 /// \tparam [in] CDType The type of the output matrix
@@ -2078,48 +2079,51 @@ public:
 /// \param [in] c3 The 4th element from C matrix to be added with d3
 /// \param [in] item The sycl::nd_item index space class
 template <typename MulType, typename ABType, typename CDType, typename ItemT>
-__attribute__((optnone)) void
-mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
-    ABType a2, ABType a3, ABType b0, ABType b1, CDType c0, CDType c1, CDType c2,
-    CDType c3, const ItemT &item) {
+void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
+         ABType a2, ABType a3, ABType b0, ABType b1, CDType c0, CDType c1,
+         CDType c2, CDType c3, const ItemT &item) {
   int lane = item.get_sub_group().get_local_linear_id();
 
   short ROW_LOAD_OFFSET = 4 * (lane / 4);
   short COL_LOAD_OFFSET = 8 * (lane % 4);
 
-  ABType recv_a[4 * 4], recv_b[4 * 4];
   for (int i = 0; i < 4; i++) {
-    recv_a[0 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), a0,
-                                                    ROW_LOAD_OFFSET + i);
-    recv_a[1 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), a2,
-                                                    ROW_LOAD_OFFSET + i);
-    recv_a[2 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), a1,
-                                                    ROW_LOAD_OFFSET + i);
-    recv_a[3 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), a3,
-                                                    ROW_LOAD_OFFSET + i);
+    ABType recv_a[4], recv_b[4];
 
-    recv_b[0 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), b0,
-                                                    COL_LOAD_OFFSET + i);
-    recv_b[1 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), b1,
-                                                    COL_LOAD_OFFSET + i);
-    recv_b[2 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), b0,
-                                                    COL_LOAD_OFFSET + 4 + i);
-    recv_b[3 * 4 + i] = dpct::select_from_sub_group(item.get_sub_group(), b1,
-                                                    COL_LOAD_OFFSET + 4 + i);
-  }
+    recv_a[0] = dpct::select_from_sub_group(item.get_sub_group(), a0,
+                                            ROW_LOAD_OFFSET + i);
+    recv_a[1] = dpct::select_from_sub_group(item.get_sub_group(), a2,
+                                            ROW_LOAD_OFFSET + i);
+    recv_a[2] = dpct::select_from_sub_group(item.get_sub_group(), a1,
+                                            ROW_LOAD_OFFSET + i);
+    recv_a[3] = dpct::select_from_sub_group(item.get_sub_group(), a3,
+                                            ROW_LOAD_OFFSET + i);
 
-  auto *a = reinterpret_cast<MulType *>(recv_a);
-  auto *b = reinterpret_cast<MulType *>(recv_b);
-  for (int i = 0; i < 16; i++) {
-    auto a0 = static_cast<CDType>(a[i]);
-    auto a1 = static_cast<CDType>(a[i + 16]);
-    auto b0 = static_cast<CDType>(b[i]);
-    auto b1 = static_cast<CDType>(b[i + 16]);
+    recv_b[0] = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                            COL_LOAD_OFFSET + i);
+    recv_b[1] = dpct::select_from_sub_group(item.get_sub_group(), b1,
+                                            COL_LOAD_OFFSET + i);
+    recv_b[2] = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                            COL_LOAD_OFFSET + 4 + i);
+    recv_b[3] = dpct::select_from_sub_group(item.get_sub_group(), b1,
+                                            COL_LOAD_OFFSET + 4 + i);
 
-    c0 += a0 * b0;
-    c1 += a0 * b1;
-    c2 += a1 * b0;
-    c3 += a1 * b1;
+    auto *ra0 = reinterpret_cast<MulType *>(recv_a);
+    auto *ra1 = reinterpret_cast<MulType *>(recv_a + 2);
+    auto *rb0 = reinterpret_cast<MulType *>(recv_b);
+    auto *rb1 = reinterpret_cast<MulType *>(recv_b + 2);
+
+    for (int j = 0; j < 2 * 2; j++) {
+      auto a0 = static_cast<CDType>(ra0[j]);
+      auto a1 = static_cast<CDType>(ra1[j]);
+      auto b0 = static_cast<CDType>(rb0[j]);
+      auto b1 = static_cast<CDType>(rb1[j]);
+
+      c0 += a0 * b0;
+      c1 += a0 * b1;
+      c2 += a1 * b0;
+      c3 += a1 * b1;
+    }
   }
 
   *d0 = c0;
