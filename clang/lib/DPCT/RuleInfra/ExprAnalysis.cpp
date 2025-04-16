@@ -625,11 +625,13 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
            VD && VD->isConstexpr()) {
     if (VD->getInit() && VD->getInit()->getBeginLoc().isValid() &&
         !ConstExprExpansion) {
-      std::string VDInitStr = ExprAnalysis::ref(VD->getInit());
+      ConstExprExpansion = true;
+      ExprAnalysis EA(VD->getInit());
+      std::string VDInitStr = EA.getReplacedString();
       std::string VDStr = VD->getNameAsString();
       ReplSet.addConstExprExpansionInfo(VDStr, VDInitStr);
-      ConstExprExpansion = true;
-      dispatch(VD->getInit());
+      ReplSet.addTemplateDependentReplacementInConstExprExpansion(
+          EA.getReplSetTDRs());
       ConstExprExpansion = false;
     }
   } else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {

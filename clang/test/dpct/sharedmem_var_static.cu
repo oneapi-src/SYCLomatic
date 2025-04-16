@@ -236,6 +236,6 @@ template <int ThreadsPerBlock, int NumWarpQ> __global__ void kerfunc() {
 }
 
 void foo2() {
-  // CHECK: sycl::local_accessor<int, 1> smem_acc_ct1(sycl::range<1>(ThreadsPerBlock / kWarpSize * 8), cgh);
+  // CHECK: sycl::local_accessor<int, 1> smem_acc_ct1(sycl::range<1>(128 / kWarpSize * 8), cgh);
   kerfunc<128, 8><<<32, 32>>>();
 }

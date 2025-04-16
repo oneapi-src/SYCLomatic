@@ -139,10 +139,9 @@ public:
   }
 
   inline void addTemplateDependentReplacementInConstExprExpansion(
-      size_t Offset, size_t Length, unsigned TemplateIndex) {
-    TDRsInConstExprExpansion.insert(
-        std::make_pair(Offset, std::make_shared<TemplateDependentReplacement>(
-                                   SourceStr, Offset, Length, TemplateIndex)));
+      const std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
+          &InTDRs) {
+    TDRsInConstExprExpansion.insert(InTDRs.begin(), InTDRs.end());
   }
 
   inline void addConstExprExpansionInfo(std::string VDStr,
@@ -182,6 +181,10 @@ public:
   inline const std::string &getReplacedString() {
     replaceString();
     return SourceStr;
+  }
+  inline std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
+  getTDRs() {
+    return TDRs;
   }
 
 private:
@@ -254,6 +257,10 @@ public:
   inline bool hasReplacement() { return ReplSet.hasReplacements(); }
   inline const std::string &getReplacedString() {
     return ReplSet.getReplacedString();
+  }
+  inline std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
+  getReplSetTDRs() {
+    return ReplSet.getTDRs();
   }
   inline std::shared_ptr<TemplateDependentStringInfo>
   getTemplateDependentStringInfo() {
@@ -608,11 +615,7 @@ protected:
 
   inline void addReplacement(size_t Offset, size_t Length,
                              unsigned TemplateIndex) {
-    if (ConstExprExpansion)
-      ReplSet.addTemplateDependentReplacementInConstExprExpansion(
-          Offset, Length, TemplateIndex);
-    else
-      ReplSet.addTemplateDependentReplacement(Offset, Length, TemplateIndex);
+    ReplSet.addTemplateDependentReplacement(Offset, Length, TemplateIndex);
   }
 
   // Analyze the expression, jump to corresponding analysis function according
