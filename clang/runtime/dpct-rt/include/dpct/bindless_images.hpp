@@ -1177,7 +1177,7 @@ inline bool check_duplicate_entries(int count, T **entries) {
 inline image_mem_wrapper *&get_img_mem(
     const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
   static std::map<sycl::ext::oneapi::experimental::sampled_image_handle,
-                  image_mem_wrapper *, sampled_image_handle_compare>
+                  image_mem_wrapper *, detail::sampled_image_handle_compare>
       img_mem_map;
   return img_mem_map[handle];
 }
@@ -1188,7 +1188,7 @@ inline image_mem_wrapper *&get_img_mem(
 inline image_mem_wrapper *&get_img_mem(
     const sycl::ext::oneapi::experimental::unsampled_image_handle handle) {
   static std::map<sycl::ext::oneapi::experimental::unsampled_image_handle,
-                  image_mem_wrapper *, sampled_image_handle_compare>
+                  image_mem_wrapper *, detail::sampled_image_handle_compare>
       img_mem_map;
   return img_mem_map[handle];
 }
