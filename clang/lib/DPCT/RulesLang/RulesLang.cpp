@@ -4517,8 +4517,8 @@ void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           hasDescendant(
               declRefExpr(allOf(to(functionDecl(hasAttr(attr::CUDAGlobal))),
                                 unless(hasAncestor(cudaKernelCallExpr()))))
-                  .bind("kernelRef")),
-          unless(ast_matchers::isTemplateInstantiation())),
+                  .bind("kernelRef")))
+          .bind("outerFunc"),
       this);
   MF.addMatcher(unresolvedLookupExpr(unless(hasAncestor(cudaKernelCallExpr())))
                     .bind("unresolvedRef"),
@@ -4595,6 +4595,11 @@ void KernelCallRefRule::insertWrapperPostfix(const T *Node,
 void KernelCallRefRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto DRE = getAssistNodeAsType<DeclRefExpr>(Result, "kernelRef")) {
+    const FunctionDecl *OuterFD =
+        getAssistNodeAsType<FunctionDecl>(Result, "outerFunc");
+    if (!OuterFD) {
+      return;
+    }
     if (auto ParentCE = DpctGlobalInfo::findAncestor<CallExpr>(DRE)) {
       if (auto Callee = ParentCE->getDirectCallee()) {
         if (dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc())) {
@@ -4618,17 +4623,22 @@ void KernelCallRefRule::runRule(
         DFI->collectInfoForWrapper(FD);
       }
     }
-    std::string TypeRepl;
-    if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
-      if ((IsTemplateRelated &&
-           (!DRE->hasExplicitTemplateArgs() ||
-            (DRE->getNumTemplateArgs() <= TemplateParamNum))) ||
-          DRE->hadMultipleCandidates()) {
-        TypeRepl = getTypeRepl(DRE);
+    if ((OuterFD->getTemplatedKind() ==
+         FunctionDecl::TemplatedKind::TK_NonTemplate) ||
+        (OuterFD->getTemplatedKind() ==
+         FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
+      std::string TypeRepl;
+      if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
+        if ((IsTemplateRelated &&
+             (!DRE->hasExplicitTemplateArgs() ||
+              (DRE->getNumTemplateArgs() <= TemplateParamNum))) ||
+            DRE->hadMultipleCandidates()) {
+          TypeRepl = getTypeRepl(DRE);
+        }
       }
+      insertWrapperPostfix<DeclRefExpr>(
+          DRE, std::move(TypeRepl), DpctGlobalInfo::isCVersionCUDALaunchUsed());
     }
-    insertWrapperPostfix<DeclRefExpr>(
-        DRE, std::move(TypeRepl), DpctGlobalInfo::isCVersionCUDALaunchUsed());
   }
   if (auto ULE =
           getAssistNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedRef")) {
