@@ -1174,7 +1174,7 @@ inline bool check_duplicate_entries(int count, T **entries) {
 /// Get image_mem_wrapper according to sampled image handle.
 /// \param [in] handle The bindless image handle.
 /// \returns The image_mem_wrapper of sampled image.
-inline image_mem_wrapper *&get_img_mem_map(
+inline image_mem_wrapper *&get_img_mem(
     const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
   static std::map<sycl::ext::oneapi::experimental::sampled_image_handle,
                   image_mem_wrapper *, sampled_image_handle_compare>
@@ -1185,7 +1185,7 @@ inline image_mem_wrapper *&get_img_mem_map(
 /// Get image_mem_wrapper according to unsampled image handle.
 /// \param [in] handle The unsampled bindless image handle.
 /// \returns The image_mem_wrapper of unsampled image.
-inline image_mem_wrapper *&get_img_mem_map(
+inline image_mem_wrapper *&get_img_mem(
     const sycl::ext::oneapi::experimental::unsampled_image_handle handle) {
   static std::map<sycl::ext::oneapi::experimental::unsampled_image_handle,
                   image_mem_wrapper *, sampled_image_handle_compare>
@@ -1205,7 +1205,7 @@ inline image_mem_wrapper *&get_img_mem_map(
 static inline void set_img_mem(
     const sycl::ext::oneapi::experimental::unsampled_image_handle handle,
     image_mem_wrapper *img_mem) {
-  dpct::experimental::get_img_mem_map(handle) = img_mem;
+  dpct::experimental::get_img_mem(handle) = img_mem;
 }
 
 #ifdef _WIN32
@@ -1528,7 +1528,7 @@ create_bindless_image(image_data data, sycl::queue q = get_default_queue()) {
 template <class T>
 static inline void destroy_bindless_image(T handle,
                                           sycl::queue q = get_default_queue()) {
-  auto &mem = get_img_mem_map(handle);
+  auto &mem = get_img_mem(handle);
   if (mem) {
     delete mem;
     mem = nullptr;
@@ -1783,7 +1783,7 @@ public:
   /// Get mipmap memory wrapper attached the bindless image
   /// \return The mipmap memory wrapper
   inline image_mem_wrapper *get_attached_mipmap_data(void) {
-    auto mem = get_img_mem_map(_img);
+    auto mem = get_img_mem(_img);
 
     if (mem->get_image_type() !=
         sycl::ext::oneapi::experimental::image_type::mipmap)
