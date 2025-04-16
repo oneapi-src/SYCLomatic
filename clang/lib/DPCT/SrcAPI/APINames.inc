@@ -2136,7 +2136,7 @@ ENTRY(cuGraphicsResourceGetMappedEglFrame, cuGraphicsResourceGetMappedEglFrame, 
 // Coopeartive_group migration.
 ENTRY(cooperative_groups::coalesced_threads, cooperative_groups::__v1::coalesced_threads, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY(cooperative_groups::thread_rank, cooperative_groups::__v1::thread_rank, true, NO_FLAG, P4, "Successful")
-ENTRY(cooperative_groups::this_thread, cooperative_groups::__v1::this_thread, false, NO_FLAG, P4, "comment")
+ENTRY(cooperative_groups::this_thread, cooperative_groups::__v1::this_thread, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY(cooperative_groups::this_grid, cooperative_groups::__v1::this_grid, true, NO_FLAG, P4, "Successful")
 ENTRY(cooperative_groups::this_multi_grid, cooperative_groups::__v1::this_multi_grid, false, NO_FLAG, P4, "comment")
 ENTRY(cooperative_groups::this_thread_block, cooperative_groups::__v1::this_thread_block, true, NO_FLAG, P4, "Successful")
