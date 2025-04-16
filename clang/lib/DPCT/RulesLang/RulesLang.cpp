@@ -4514,7 +4514,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
 void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       functionDecl(
-          hasDescendant(
+          forEachDescendant(
               declRefExpr(allOf(to(functionDecl(hasAttr(attr::CUDAGlobal))),
                                 unless(hasAncestor(cudaKernelCallExpr()))))
                   .bind("kernelRef")))
