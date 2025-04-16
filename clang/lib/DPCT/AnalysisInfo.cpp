@@ -872,8 +872,14 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
   if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_SYCL) {
     if (auto MF = DpctGlobalInfo::getInstance().getMainFile())
       if (this != MF.get() && FirstIncludeOffset.count(MF)) {
-        DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            Type, FirstIncludeOffset.at(MF));
+        // If <bits/stdc++.h> is included before <sycl/sycl.hpp>, the
+        // compilation will fail.
+        auto Iter =
+            DpctGlobalInfo::getAfterBitsStdcxxFilesMap().find(MF->FilePath);
+        if (Iter != DpctGlobalInfo::getAfterBitsStdcxxFilesMap().end()) {
+          if (Iter->second.count(this->FilePath))
+            MF->insertHeader(Type, FirstIncludeOffset.at(MF));
+        }
       }
   }
   if (DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][Type])
@@ -2537,6 +2543,10 @@ std::unordered_set<std::string>
     DpctGlobalInfo::CustomHelperFunctionAddtionalIncludes = {};
 std::unordered_map<clang::tooling::UnifiedPath, std::bitset<32>>
     DpctGlobalInfo::HeaderInsertedBitMap = {};
+bool DpctGlobalInfo::IsAfterBitsStdcxx = false;
+std::map<clang::tooling::UnifiedPath /*MainFile*/,
+         std::set<clang::tooling::UnifiedPath>>
+    DpctGlobalInfo::AfterBitsStdcxxFiles;
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
                                   llvm::raw_ostream &OS) {

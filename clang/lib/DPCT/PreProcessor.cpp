@@ -825,6 +825,11 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     }
 
     clang::tooling::UnifiedPath InFile = SM.getFilename(Loc).str();
+    if (DpctGlobalInfo::getIsAfterBitsStdcxxStatus()) {
+      DpctGlobalInfo::getAfterBitsStdcxxFilesMap()
+          [DpctGlobalInfo::getInstance().getMainFile()->getFilePath()]
+              .insert(InFile);
+    }
     if (IsFileInCmd || ProcessAll ||
         GetSourceFileType(InFile.getCanonicalPath()) & SPT_CudaSource) {
       IncludeFileMap[DpctGlobalInfo::removeSymlinks(

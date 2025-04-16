@@ -1392,6 +1392,12 @@ public:
   getHeaderInsertedBitMap() {
     return HeaderInsertedBitMap;
   }
+  static bool &getIsAfterBitsStdcxxStatus() { return IsAfterBitsStdcxx; }
+  static std::map<clang::tooling::UnifiedPath,
+                  std::set<clang::tooling::UnifiedPath>> &
+  getAfterBitsStdcxxFilesMap() {
+    return AfterBitsStdcxxFiles;
+  }
   std::shared_ptr<DpctFileInfo>
   insertFile(const clang::tooling::UnifiedPath &FilePath) {
     return insertObject(FileMap, FilePath);
@@ -1401,7 +1407,10 @@ public:
     return findObject(FileMap, FilePath);
   }
   std::shared_ptr<DpctFileInfo> getMainFile() const { return MainFile; }
-  void setMainFile(std::shared_ptr<DpctFileInfo> Main) { MainFile = Main; }
+  void setMainFile(std::shared_ptr<DpctFileInfo> Main) {
+    getIsAfterBitsStdcxxStatus() = false;
+    MainFile = Main;
+  }
   void recordIncludingRelationship(
       const clang::tooling::UnifiedPath &CurrentFileName,
       const clang::tooling::UnifiedPath &IncludedFileName);
@@ -1719,6 +1728,10 @@ private:
   static std::unordered_set<std::string> CustomHelperFunctionAddtionalIncludes;
   static std::unordered_map<clang::tooling::UnifiedPath, std::bitset<32>>
       HeaderInsertedBitMap;
+  static bool IsAfterBitsStdcxx;
+  static std::map<clang::tooling::UnifiedPath /*MainFile*/,
+                  std::set<clang::tooling::UnifiedPath>>
+      AfterBitsStdcxxFiles;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
