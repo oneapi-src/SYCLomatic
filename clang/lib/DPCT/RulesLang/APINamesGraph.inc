@@ -97,3 +97,10 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphGetRootNodes"),
                             ARG("--use-experimental-features=graph"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph, DELETE_FACTORY_ENTRY("cudaGraphDestroy", ARG(0)),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphDestroy",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphDestroy"),
+                            ARG("--use-experimental-features=graph"))))
