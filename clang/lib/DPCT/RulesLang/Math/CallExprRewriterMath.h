@@ -388,15 +388,17 @@ public:
             return Rewriter.value();
         }
       }
-      if (math::IsUnresolvedLookupExpr(C)) {
-        if (math::IsDirectCallerPureDevice(C)) {
-          if (Rewriter = getDeviceRewriter(C))
-            return Rewriter.value();
-        }
-      }
       if (math::IsDefinedInCUDA()(C)) {
         if (Rewriter = getDeviceRewriter(C))
           return Rewriter.value();
+      }
+    }
+    if (math::IsUnresolvedLookupExpr(C)) {
+      if (math::IsDirectCallerPureDevice(C)) {
+        if (auto Rewriter = getDeviceRewriter(C))
+          return Rewriter.value();
+      } else if (math::IsDirectCallerPureHost(C)) {
+        return NoRewriteRewriter.value().second.second->create(C);
       }
     }
     if (!math::IsDefinedInInRoot()(C)) {
