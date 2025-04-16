@@ -1200,10 +1200,23 @@ inline image_mem_wrapper *&get_img_mem(
 /// specified bindless unsampled image handle as the key and the provided image
 /// memory wrapper as the mapped value.
 /// \param [in] handle The unsampled bindless image handle.
-/// \param [in] img_mem The unsampled bindless image handle.
-/// \returns The image_mem_wrapper of unsampled image.
+/// \param [in] img_mem The image_mem_wrapper associated with the unsampled handle.
 static inline void set_img_mem(
     const sycl::ext::oneapi::experimental::unsampled_image_handle handle,
+    image_mem_wrapper *img_mem) {
+  dpct::experimental::get_img_mem(handle) = img_mem;
+}
+
+/// Associate an image memory wrapper with a bindless sampled image handle in
+/// the global registry.
+///
+/// Inserts or updates an entry in the internal image memory map, using the
+/// specified bindless unsampled image handle as the key and the provided image
+/// memory wrapper as the mapped value.
+/// \param [in] handle The sampled bindless image handle.
+/// \param [in] img_mem The image_mem_wrapper associated with the sampled handle.
+static inline void set_img_mem(
+    const sycl::ext::oneapi::experimental::sampled_image_handle handle,
     image_mem_wrapper *img_mem) {
   dpct::experimental::get_img_mem(handle) = img_mem;
 }
