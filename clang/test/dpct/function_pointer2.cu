@@ -25,6 +25,19 @@ void foo() {
     fp<<<1, 10>>>(d_A, d_B, d_C, 10);
 }
 
+static __global__ void setup_kernel(int p){}
+
+template<typename T>
+void goo();
+
+template<typename T>
+void goo() {
+  // CHECK: auto a = (void *)setup_kernel_wrapper;
+  auto a = (void *)setup_kernel;
+}
+
+template void goo<int>();
+
 int main() {
   foo<int>();
   std::cout << "test success" << std::endl;
