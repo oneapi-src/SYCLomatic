@@ -1646,10 +1646,10 @@ ENTRY(cuLibraryUnload, cuLibraryUnload, false, NO_FLAG, P4, "comment")
 
 // Memory Management
 ENTRY(cuArray3DCreate, cuArray3DCreate_v2, true, NO_FLAG, P4, "Successful")
-ENTRY(cuArray3DGetDescriptor, cuArray3DGetDescriptor_v2, false, NO_FLAG, P4, "comment")
+ENTRY(cuArray3DGetDescriptor, cuArray3DGetDescriptor_v2, true, NO_FLAG, P4, "comment")
 ENTRY(cuArrayCreate, cuArrayCreate_v2, true, NO_FLAG, P4, "Successful")
 ENTRY(cuArrayDestroy, cuArrayDestroy, true, NO_FLAG, P4, "Successful")
-ENTRY(cuArrayGetDescriptor, cuArrayGetDescriptor_v2, false, NO_FLAG, P4, "comment")
+ENTRY(cuArrayGetDescriptor, cuArrayGetDescriptor_v2, true, NO_FLAG, P4, "comment")
 ENTRY(cuArrayGetMemoryRequirements, cuArrayGetMemoryRequirements, false, NO_FLAG, P4, "comment")
 ENTRY(cuArrayGetPlane, cuArrayGetPlane, false, NO_FLAG, P7, "comment")
 ENTRY(cuArrayGetSparseProperties, cuArrayGetSparseProperties, false, NO_FLAG, P7, "comment")
@@ -1952,11 +1952,11 @@ ENTRY(cuOccupancyMaxPotentialBlockSizeWithFlags, cuOccupancyMaxPotentialBlockSiz
 ENTRY(cuOccupancyMaxPotentialClusterSize, cuOccupancyMaxPotentialClusterSize, false, NO_FLAG, P4, "comment")
 
 // Texture Reference Management(Deprecated)
-ENTRY(cuTexRefCreate, cuTexRefCreate, false, NO_FLAG, P4, "comment")
-ENTRY(cuTexRefDestroy, cuTexRefDestroy, false, NO_FLAG, P4, "comment")
+ENTRY(cuTexRefCreate, cuTexRefCreate, true, NO_FLAG, P4, "comment")
+ENTRY(cuTexRefDestroy, cuTexRefDestroy, true, NO_FLAG, P4, "comment")
 ENTRY(cuTexRefGetAddress, cuTexRefGetAddress, false, NO_FLAG, P4, "comment")
 ENTRY(cuTexRefGetAddressMode, cuTexRefGetAddressMode, true, NO_FLAG, P4, "Successful")
-ENTRY(cuTexRefGetArray, cuTexRefGetArray, false, NO_FLAG, P4, "comment")
+ENTRY(cuTexRefGetArray, cuTexRefGetArray, true, NO_FLAG, P4, "comment")
 ENTRY(cuTexRefGetBorderColor, cuTexRefGetBorderColor, false, NO_FLAG, P4, "comment")
 ENTRY(cuTexRefGetFilterMode, cuTexRefGetFilterMode, true, NO_FLAG, P4, "Successful")
 ENTRY(cuTexRefGetFlags, cuTexRefGetFlags, true, NO_FLAG, P4, "Successful")
@@ -1981,8 +1981,8 @@ ENTRY(cuTexRefSetMipmapLevelClamp, cuTexRefSetMipmapLevelClamp, false, NO_FLAG, 
 ENTRY(cuTexRefSetMipmappedArray, cuTexRefSetMipmappedArray, true, NO_FLAG, P4, "Successful")
 
 // Surface Reference Management(Deprecated)
-ENTRY(cuSurfRefGetArray, cuSurfRefGetArray, false, NO_FLAG, P4, "comment")
-ENTRY(cuSurfRefSetArray, cuSurfRefSetArray, false, NO_FLAG, P4, "comment")
+ENTRY(cuSurfRefGetArray, cuSurfRefGetArray, true, NO_FLAG, P4, "comment")
+ENTRY(cuSurfRefSetArray, cuSurfRefSetArray, true, NO_FLAG, P4, "comment")
 
 // Texture Object Management
 ENTRY(cuTexObjectCreate, cuTexObjectCreate, true, NO_FLAG, P4, "Successful")

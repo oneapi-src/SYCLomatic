@@ -1,3 +1,4 @@
+// UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --enable-codepin -out-root %T/debug_test/struct_kernel_call_in_same_namespace %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
 // RUN: FileCheck %S/codepin_autogen_util.hpp.ref --match-full-lines --input-file %T/debug_test/struct_kernel_call_in_same_namespace_codepin_sycl/codepin_autogen_util.hpp
 // RUN: FileCheck %S/codepin_autogen_util.hpp.cuda.ref --match-full-lines --input-file %T/debug_test/struct_kernel_call_in_same_namespace_codepin_cuda/codepin_autogen_util.hpp

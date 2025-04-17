@@ -913,21 +913,7 @@ inline std::pair<image_data, sampling_info> &get_img_info_map(
       img_info_map;
   return img_info_map[handle];
 }
-inline image_mem_wrapper *&get_img_mem_map(
-    const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
-  static std::map<sycl::ext::oneapi::experimental::sampled_image_handle,
-                  image_mem_wrapper *, sampled_image_handle_compare>
-      img_mem_map;
-  return img_mem_map[handle];
-}
 
-inline image_mem_wrapper *&get_img_mem_map(
-    const sycl::ext::oneapi::experimental::unsampled_image_handle handle) {
-  static std::map<sycl::ext::oneapi::experimental::unsampled_image_handle,
-                  image_mem_wrapper *, sampled_image_handle_compare>
-      img_mem_map;
-  return img_mem_map[handle];
-}
 static inline size_t
 get_ele_size(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
   size_t channel_size;
@@ -1185,6 +1171,56 @@ inline bool check_duplicate_entries(int count, T **entries) {
 }
 } // namespace detail
 
+/// Get image_mem_wrapper according to sampled image handle.
+/// \param [in] handle The bindless image handle.
+/// \returns The image_mem_wrapper of sampled image.
+inline image_mem_wrapper *&get_img_mem(
+    const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
+  static std::map<sycl::ext::oneapi::experimental::sampled_image_handle,
+                  image_mem_wrapper *, detail::sampled_image_handle_compare>
+      img_mem_map;
+  return img_mem_map[handle];
+}
+
+/// Get image_mem_wrapper according to unsampled image handle.
+/// \param [in] handle The unsampled bindless image handle.
+/// \returns The image_mem_wrapper of unsampled image.
+inline image_mem_wrapper *&get_img_mem(
+    const sycl::ext::oneapi::experimental::unsampled_image_handle handle) {
+  static std::map<sycl::ext::oneapi::experimental::unsampled_image_handle,
+                  image_mem_wrapper *, detail::sampled_image_handle_compare>
+      img_mem_map;
+  return img_mem_map[handle];
+}
+
+/// Associate an image memory wrapper with a bindless unsampled image handle in
+/// the global registry.
+///
+/// Inserts or updates an entry in the internal image memory map, using the
+/// specified bindless unsampled image handle as the key and the provided image
+/// memory wrapper as the mapped value.
+/// \param [in] handle The unsampled bindless image handle.
+/// \param [in] img_mem The image_mem_wrapper associated with the unsampled handle.
+static inline void set_img_mem(
+    const sycl::ext::oneapi::experimental::unsampled_image_handle handle,
+    image_mem_wrapper *img_mem) {
+  dpct::experimental::get_img_mem(handle) = img_mem;
+}
+
+/// Associate an image memory wrapper with a bindless sampled image handle in
+/// the global registry.
+///
+/// Inserts or updates an entry in the internal image memory map, using the
+/// specified bindless unsampled image handle as the key and the provided image
+/// memory wrapper as the mapped value.
+/// \param [in] handle The sampled bindless image handle.
+/// \param [in] img_mem The image_mem_wrapper associated with the sampled handle.
+static inline void set_img_mem(
+    const sycl::ext::oneapi::experimental::sampled_image_handle handle,
+    image_mem_wrapper *img_mem) {
+  dpct::experimental::get_img_mem(handle) = img_mem;
+}
+
 #ifdef _WIN32
 /// Map the resource memories to mem handles
 /// \param [in] count The count of resources to map.
@@ -1393,7 +1429,7 @@ create_bindless_image(image_data data, sampling_info info,
         data.get_channel(), data.get_x() / data.get_channel().get_total_size());
     auto img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
-    detail::get_img_mem_map(img) = mem;
+    set_img_mem(img, mem);
     auto ptr = data.get_data_ptr();
 #ifdef DPCT_USM_LEVEL_NONE
     q.ext_oneapi_copy(get_buffer(ptr).get_host_access().get_pointer(),
@@ -1411,7 +1447,7 @@ create_bindless_image(image_data data, sampling_info info,
         new image_mem_wrapper(data.get_channel(), data.get_x(), data.get_y());
     auto img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
-    detail::get_img_mem_map(img) = mem;
+    set_img_mem(img, mem);
     q.ext_oneapi_copy(
          get_buffer(data.get_data_ptr()).get_host_access().get_pointer(),
          mem->get_handle(), mem->get_desc())
@@ -1455,7 +1491,7 @@ create_bindless_image(image_data data, sycl::queue q = get_default_queue()) {
         data.get_channel(), data.get_x() / data.get_channel().get_total_size());
     auto img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), mem->get_desc(), q);
-    detail::get_img_mem_map(img) = mem;
+    set_img_mem(img, mem);
     auto ptr = data.get_data_ptr();
 #ifdef DPCT_USM_LEVEL_NONE
     q.ext_oneapi_copy(get_buffer(ptr).get_host_access().get_pointer(),
@@ -1471,7 +1507,7 @@ create_bindless_image(image_data data, sycl::queue q = get_default_queue()) {
         new image_mem_wrapper(data.get_channel(), data.get_x(), data.get_y());
     auto img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), mem->get_desc(), q);
-    detail::get_img_mem_map(img) = mem;
+    set_img_mem(img, mem);
 #ifdef DPCT_USM_LEVEL_NONE
     q.ext_oneapi_copy(
          get_buffer(data.get_data_ptr()).get_host_access().get_pointer(),
@@ -1505,7 +1541,7 @@ create_bindless_image(image_data data, sycl::queue q = get_default_queue()) {
 template <class T>
 static inline void destroy_bindless_image(T handle,
                                           sycl::queue q = get_default_queue()) {
-  auto &mem = detail::get_img_mem_map(handle);
+  auto &mem = get_img_mem(handle);
   if (mem) {
     delete mem;
     mem = nullptr;
@@ -1556,7 +1592,7 @@ public:
     auto mem = new image_mem_wrapper(channel, size);
     _img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
-    detail::get_img_mem_map(_img) = mem;
+    set_img_mem(_img, mem);
     auto ptr = data;
 #ifdef DPCT_USM_LEVEL_NONE
     q.ext_oneapi_copy(get_buffer(data).get_host_access().get_pointer(),
@@ -1590,7 +1626,7 @@ public:
     auto mem = new image_mem_wrapper(desc);
     _img = sycl::ext::oneapi::experimental::create_image(mem->get_handle(),
                                                          samp, *desc, q);
-    detail::get_img_mem_map(_img) = mem;
+    set_img_mem(_img, mem);
     q.ext_oneapi_copy(get_buffer(ptr).get_host_access().get_pointer(),
                       mem->get_handle(), mem->get_desc())
         .wait();
@@ -1760,7 +1796,7 @@ public:
   /// Get mipmap memory wrapper attached the bindless image
   /// \return The mipmap memory wrapper
   inline image_mem_wrapper *get_attached_mipmap_data(void) {
-    auto mem = detail::get_img_mem_map(_img);
+    auto mem = get_img_mem(_img);
 
     if (mem->get_image_type() !=
         sycl::ext::oneapi::experimental::image_type::mipmap)
