@@ -47,6 +47,10 @@ void driverTextureReferenceManagement() {
   CUarray a;
   // CHECK: sycl::image_channel_type f;
   CUarray_format f;
+  // CHECK: r = new dpct::experimental::bindless_image_wrapper_base();
+  cuTexRefCreate(&r);
+  // CHECK: delete r;
+  cuTexRefDestroy(r);
   // CHECK: am = r->get_addressing_mode();
   cuTexRefGetAddressMode(&am, r, i);
   // CHECK: fm = r->get_filtering_mode();
@@ -72,7 +76,16 @@ void driverTextureReferenceManagement() {
   // CHECK-NEXT: r->set_channel_num(i);
   cuTexRefSetFormat(r, f, i);
 }
-
+void test_surf_ref() {
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr arr;
+ CUarray arr;
+ // CHECK: sycl::ext::oneapi::experimental::unsampled_image_handle ref;
+ CUsurfref ref;
+ // CHECK: arr = dpct::experimental::get_img_mem(ref);
+ cuSurfRefGetArray(&arr, ref);
+ // CHECK: dpct::experimental::set_img_mem(ref, arr);
+ cuSurfRefSetArray(ref, arr, 0);
+}
 int main() {
   int i;
   // CHECK: tex2.set(sycl::addressing_mode::repeat);
