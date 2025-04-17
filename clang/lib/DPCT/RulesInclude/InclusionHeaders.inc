@@ -112,3 +112,6 @@ REGIST_INCLUSION("nvshmem.h", FullMatch, NVSHMEM, Replace, false,
                  HeaderType::HT_SHMEM)
 REGIST_INCLUSION("nvshmemx.h", FullMatch, NVSHMEM, Replace, false,
                  HeaderType::HT_SHMEMX)
+
+REGIST_INCLUSION("cutensor.h", FullMatch, CUTENSOR, Remove, true)
+REGIST_INCLUSION("cutensorMg.h", FullMatch, CUTENSOR, Remove, true)
