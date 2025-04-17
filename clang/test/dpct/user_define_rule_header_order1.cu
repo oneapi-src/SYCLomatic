@@ -10,7 +10,7 @@
 // RUN: FileCheck --input-file %T/user_define_rule_header_order1_output/user_define_rule_header_order1.dp.cpp --match-full-lines user_define_rule_header_order1.cu
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/user_define_rule_header_order1_output/user_define_rule_header_order1.dp.cpp -o %T/user_define_rule_header_order1_output/user_define_rule_header_orde1r.dp.o %}
 
-// CHECK: #include <oneapi/dpl/execution>
-// CHECK: #include <oneapi/dpl/algorithm>
+// CHECK: #include <stddef.h>
+// CHECK-NEXT: #include "user_define_rule_header_order1.h"
 #include <stddef.h>
 #include "user_define_rule_header_order1.h"
