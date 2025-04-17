@@ -419,6 +419,7 @@ MODIFIER(ecl, ".ecl")
 MODIFIER(ecr, ".ecr")
 MODIFIER(rc16, ".rc16")
 MODIFIER(cs, ".cs")
+MODIFIER(to, ".to")
 
 #undef LINKAGE
 #undef TARGET
