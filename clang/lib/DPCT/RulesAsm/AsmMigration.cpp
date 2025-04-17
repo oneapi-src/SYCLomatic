@@ -2607,6 +2607,34 @@ protected:
     return SYCLGenSuccess();
   }
 
+  bool handle_cvta(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+
+    std::string Op;
+    if (tryEmitStmt(Op, Inst->getInputOperand(0)))
+      return SYCLGenError();
+
+    const auto *Dst = Inst->getOutputOperand();
+    if (!Dst)
+      return SYCLGenError();
+
+    std::string Type;
+    if (tryEmitType(Type, Inst->getType(0)))
+      return SYCLGenError();
+
+    if (emitStmt(Dst))
+      return SYCLGenError();
+    OS() << " = ";
+
+    std::string FormatTemp = "({0})({1})";
+    OS() << llvm::formatv(FormatTemp.c_str(), Type, Op);
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
   // Handle fma instruction.
   // .sat/.ftz/.oob/.relu attributes was ignored.
   bool handle_fma(const InlineAsmInstruction *Inst) override {
