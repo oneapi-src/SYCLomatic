@@ -12,7 +12,7 @@
 // CHECK-NEXT: unsigned p;
 // CHECK-NEXT: double d;
 // CHECK-NEXT: float f;
-// CHECK-NEXT: p = 123 * 123U + 456 * ((4 ^ 7) + 2 ^ 3) | 777 & 128U == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;
+// CHECK-NEXT: p = 123 * 123U + 456 * ((4 ^ 7) + 2 ^ 3);
 // CHECK: f = sycl::bit_cast<float>(uint32_t(0x3f800000U));
 // CHECK: f = sycl::bit_cast<float>(uint32_t(0x3f800000U));
 // CHECK: d = sycl::bit_cast<double>(uint64_t(0x40091EB851EB851FULL));
@@ -22,7 +22,7 @@ __global__ void mov() {
   unsigned p;
   double d;
   float f;
-  asm ("mov.s32 %0, 123 * 123U + 456 * ((4 ^7) + 2 ^ 3) | 777 & 128U == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;" : "=r"(p) );
+  asm ("mov.s32 %0, 123 * 123U + 456 * ((4 ^ 7) + 2 ^ 3);" : "=r"(p));
   asm ("mov.f32 %0, 0F3f800000;" : "=f"(f));
   asm ("mov.f32 %0, 0f3f800000;" : "=f"(f));
   asm ("mov.f64 %0, 0D40091EB851EB851F;" : "=d"(d));

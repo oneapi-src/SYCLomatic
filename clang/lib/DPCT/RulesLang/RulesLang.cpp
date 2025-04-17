@@ -7514,11 +7514,20 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-   const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "math");
-   if (!CE)
-     CE = getNodeAsType<CallExpr>(Result, "unresolved");
-   if (!CE)
-     return;
+  const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "math");
+  bool IsUnresolved = false;
+  if (!CE) {
+    CE = getNodeAsType<CallExpr>(Result, "unresolved");
+    IsUnresolved = true;
+  }
+  if (!CE)
+    return;
+  if (IsUnresolved) {
+    const auto *FTD = DpctGlobalInfo::findAncestor<FunctionTemplateDecl>(CE);
+    if (FTD && (FTD->spec_begin() != FTD->spec_end())) {
+      return;
+    }
+  }
 
   ExprAnalysis EA(CE);
   emplaceTransformation(EA.getReplacement());
