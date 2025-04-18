@@ -1,3 +1,4 @@
+// UNSUPPORTED: system-windows
 // RUN: dpct --out-root %T/ %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/a.cpp.dp.cpp --match-full-lines %s
 
