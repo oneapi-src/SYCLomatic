@@ -24,6 +24,8 @@ Advanced DPCT options
     =bfloat16                             -   Disable the SYCL extensions for bfloat16.
     =device_info                          -   Disable the Intel extensions for device information, if supported by the compiler and the backend.
     =enqueued_barriers                    -   Disable the enqueued barriers extension.
+    =free-function-queries                -    allows getting 'id', 'item', 'nd_item', 'group', and
+                                              'sub_group' instances globally.
     =peer_access                          -   Disable the peer access extension.
     =assert                               -   Disable the assert extension.
     =queue_empty                          -   Disable the queue empty extension.

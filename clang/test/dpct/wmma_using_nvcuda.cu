@@ -72,7 +72,7 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   int ldc = n_ld;
 
   // Tile using a 2D grid
-  // CHECK: int warpM = (item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2)) / sycl::ext::oneapi::this_work_item::get_sub_group().get_local_range().get(0);
+  // CHECK: int warpM = (item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2)) / item_ct1.get_sub_group().get_local_range().get(0);
   int warpM = (blockIdx.x * blockDim.x + threadIdx.x) / warpSize;
   int warpN = (blockIdx.y * blockDim.y + threadIdx.y);
 
