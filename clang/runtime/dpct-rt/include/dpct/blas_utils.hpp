@@ -418,7 +418,7 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
   std::int64_t *m_int64 = new std::int64_t;
   std::int64_t *n_int64 = new std::int64_t;
   std::int64_t *lda_int64 = new std::int64_t;
-  std::int64_t *group_sizes = banew std::int64_ttch_size;
+  std::int64_t *group_sizes = new std::int64_t;
   *m_int64 = n;
   *n_int64 = n;
   *lda_int64 = lda;
