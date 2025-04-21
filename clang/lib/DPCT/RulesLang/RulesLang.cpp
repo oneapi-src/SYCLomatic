@@ -7733,6 +7733,38 @@ void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
+bool SyncThreadsMigrationRule::noCorrespondingCEInInstantiatedTemplates(
+    const FunctionTemplateDecl *FTD, const CallExpr *CE) {
+  const auto &SM = DpctGlobalInfo::getSourceManager();
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  auto CEMatcher = ast_matchers::findAll(
+      ast_matchers::callExpr(callee(functionDecl(hasName(FuncName))))
+          .bind("call"));
+  SourceLocation CELocation = SM.getSpellingLoc(CE->getBeginLoc());
+  auto DecomposedCELocation = SM.getDecomposedLoc(CELocation);
+  for (const auto &Spec : FTD->specializations()) {
+    if (!(Spec->hasBody()))
+      continue;
+    auto MatchedResults = ast_matchers::match(CEMatcher, *(Spec->getBody()),
+                                              DpctGlobalInfo::getContext());
+    for (auto &Node : MatchedResults) {
+      if (const auto *MatchedCE = Node.getNodeAs<CallExpr>("call")) {
+        SourceLocation MatchedCELocation =
+            SM.getSpellingLoc(MatchedCE->getBeginLoc());
+        auto DecomposedMatchedCELocation =
+            SM.getDecomposedLoc(MatchedCELocation);
+        if ((DecomposedCELocation.first == DecomposedMatchedCELocation.first) &&
+            (DecomposedCELocation.second ==
+             DecomposedMatchedCELocation.second)) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
   static std::map<std::string, bool> LocationResultMapForTemplate;
   auto emplaceReplacement = [&](BarrierFenceSpaceAnalyzerResult Res,
@@ -7775,6 +7807,9 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
     if (FTD) {
       if (FTD->specializations().empty()) {
+        emplaceReplacement(A.analyze(CE), CE);
+      } else if (noCorrespondingCEInInstantiatedTemplates(FTD, CE)) {
+        std::cout << "22222" << std::endl;
         emplaceReplacement(A.analyze(CE), CE);
       }
     } else {

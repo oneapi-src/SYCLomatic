@@ -461,3 +461,20 @@ __global__ void test21(float *ptr1, float *ptr2, int step1, int step2) {
     idx2 += step2;
   }
 }
+
+template <typename T, const bool B> __device__ void test_22_d() {
+  // CHECK: if constexpr (B) {
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   item_ct1.barrier();
+  // CHECK-NEXT: }
+  if constexpr (B) {
+    __syncthreads();
+  }
+}
+
+__global__ void test_22() {
+  test_22_d<int, false>();
+  test_22_d<float, false>();
+}
