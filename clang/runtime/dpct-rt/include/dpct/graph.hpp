@@ -10,6 +10,7 @@
 
 #include "dpct/util.hpp"
 #include "sycl/handler.hpp"
+#include <cstddef>
 #include <sycl/ext/oneapi/experimental/graph.hpp>
 #include <sycl/sycl.hpp>
 #include <unordered_map>
@@ -31,21 +32,21 @@ typedef sycl::ext::oneapi::experimental::node *node_ptr;
 struct kernel_node_params {
   dpct::dim3 block_dim;
   dpct::dim3 grid_dim;
-  void *kernel_params;
+  void **kernel_params;
   void* func;
   unsigned int shared_mem_bytes;
 
 public:
   void set_block_dim(dpct::dim3 block_dim) { block_dim = block_dim; }
   void set_grid_dim(dpct::dim3 grid_dim) { grid_dim = grid_dim; }
-  void set_kernel_params(void *kernel_params) { kernel_params = kernel_params; }
+  void set_kernel_params(void **kernel_params) { kernel_params = kernel_params; }
   void set_func(void *func) { func = func; }
   void set_shared_mem_bytes(unsigned int shared_mem_bytes) {
     shared_mem_bytes = shared_mem_bytes;
   }
   dpct::dim3 get_block_dim() { return block_dim; }
   dpct::dim3 get_grid_dim() { return grid_dim; }
-  void *get_kernel_params() { return kernel_params; }
+  void **get_kernel_params() { return kernel_params; }
   void *get_func() { return func; }
   unsigned int get_shared_mem_bytes() { return shared_mem_bytes; }
 };
@@ -121,18 +122,6 @@ public:
     for (std::size_t i = 0; i < *numberOfNodes; i++) {
       nodesArray[i] = &root_nodes_map[graph][i];
     }
-  }
-
-  void kernel_node_set_params(
-      dpct::experimental::node_ptr node,
-      dpct::experimental::kernel_node_params *kernel_node_params) {
-    kernel_node_params_map[node] = kernel_node_params;
-  }
-
-  void get_kernel_node_get_params(
-      dpct::experimental::node_ptr node,
-      dpct::experimental::kernel_node_params *kernel_node_params) {
-    kernel_node_params = kernel_node_params_map[node];
   }
 
 private:
@@ -232,21 +221,8 @@ detail::graph_mgr::instance().get_root_nodes(graph, nodesArray,
                            numberOfNodes);
 }
 
-static void
-kernel_node_set_params(dpct::experimental::node_ptr node,
-                       dpct::experimental::kernel_node_params *params) {
-  detail::graph_mgr::instance().kernel_node_set_params(node, params);
-}
+static void add_kernel_node(dpct::experimental::node_ptr* node, dpct::experimental::node_ptr* dependencies, std::size_t &numberOfDependencies, dpct::experimental::kernel_node_params* params){
 
-static void
-kernel_node_get_params(dpct::experimental::node_ptr node,
-                       dpct::experimental::kernel_node_params *params) {
-  detail::graph_mgr::instance().kernel_node_set_params(node, params);
-}
-
-
-static void add_kernel_node(dpct::experimental::node_ptr node, dpct::experimental::command_graph_ptr graph, dpct::experimental::node_ptr *dependencies, std::size_t numberOfDependencies, dpct::experimental::kernel_node_params &kernelNodeParams){
-  
 }
 
 } // namespace experimental

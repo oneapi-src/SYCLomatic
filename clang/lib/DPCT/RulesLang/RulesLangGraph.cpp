@@ -34,8 +34,7 @@ void GraphRule::registerMatcher(MatchFinder &MF) {
                       "cudaGraphExecDestroy", "cudaGraphAddEmptyNode",
                       "cudaGraphAddDependencies", "cudaGraphExecUpdate",
                       "cudaGraphNodeGetType", "cudaGraphGetNodes",
-                      "cudaGraphGetRootNodes", "cudaGraphDestroy", "cudaGraphKernelNodeGetParams",
-                      "cudaGraphKernelNodeSetParams");
+                      "cudaGraphGetRootNodes", "cudaGraphDestroy");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
@@ -56,7 +55,6 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
         *Result.Context);
     auto MemberName = ME->getMemberNameInfo().getAsString();
     if (BaseTy == "cudaKernelNodeParams") {
-
       auto FieldName = KernelNodeParamNames[MemberName];
       if (FieldName.empty()) {
         report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
@@ -64,7 +62,29 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
                    "::" + ME->getMemberDecl()->getName().str());
         return;
       }
-      requestFeature(HelperFeatureEnum::device_ext);
+      // if(FieldName == "func"){
+      //   if(auto BO = dyn_cast<BinaryOperator>(getParentAsAssignedBO(ME, *Result.Context))){
+      //     const Expr *RHS = BO->getRHS();
+      //     const Expr *StrippedRHS = RHS->IgnoreParenCasts();
+      //     std::string RHSStr;
+      //     llvm::raw_string_ostream OS(RHSStr);
+      //     std::cout <<"RHSSTR: " <<RHSStr << "\n";
+      //     StrippedRHS->printPretty(OS, nullptr, Result.Context->getPrintingPolicy());
+
+
+      //     // Create the replacement string using dpct::wrapper_register
+      //     auto ReplacementStr = "set_func.dpct::wrapper_register(&" + RHSStr + "_wrapper).get()";
+      //     std::cout<< "ReplacementSTR:" << ReplacementStr << "\n";
+
+      //     // Replace the assignment with the set_func method call
+      //     // emplaceTransformation(ReplaceMemberAssignAsSetMethod(
+      //     //     BO, ME, FieldName, ReplacementStr));
+      //     emplaceTransformation(new ReplaceText(getStmtExpansionSourceRange(RHS).getBegin(),
+      //     ReplacementStr.length(),
+      //                                         std::move(ReplacementStr)));
+      //     return;
+      //   }
+      // }
       if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
         StringRef ReplacedArg = "";
         emplaceTransformation(
