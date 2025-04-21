@@ -437,9 +437,9 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
   for (std::int64_t i = 0; i < batch_size; ++i)
     ipiv_int64_ptr[i] = ipiv_int64 + n * i;
 
-  oneapi::mkl::lapack::getrf_batch(
-      exec_queue, m_int64, n_int64, (Ty **)a_shared, lda_int64,
-      ipiv_int64_ptr, 1, group_sizes, scratchpad, scratchpad_size);
+  oneapi::mkl::lapack::getrf_batch(exec_queue, m_int64, n_int64,
+                                   (Ty **)a_shared, lda_int64, ipiv_int64_ptr,
+                                   1, group_sizes, scratchpad, scratchpad_size);
 
   sycl::event e = exec_queue.submit([&](sycl::handler &cgh) {
     cgh.parallel_for<
