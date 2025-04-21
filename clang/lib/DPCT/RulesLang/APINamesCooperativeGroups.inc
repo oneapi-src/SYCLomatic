@@ -193,6 +193,19 @@ CONDITIONAL_FACTORY_ENTRY(
                             ARG("tiled_partition")))
 
 CONDITIONAL_FACTORY_ENTRY(
+    UseLogicalGroup,
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY("this_thread",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::logical_group",
+                                NDITEM, GROUP, ARG("1")))),
+    UNSUPPORT_FACTORY_ENTRY("this_thread",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("this_thread"),
+                            ARG("--use-experimental-features=logical-group")))
+
+CONDITIONAL_FACTORY_ENTRY(
     UseNonUniformGroups,
     CALL_FACTORY_ENTRY(
         "coalesced_threads",

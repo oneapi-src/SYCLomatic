@@ -663,17 +663,32 @@ __device__ A min(A a, A b) { return a; }
 __device__ A max(A a, A b) { return a; }
 
 template <class T> __device__ T clamp(T x, T a, T b) {
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated min call is used in a macro/template definition and may not be valid for all macro/template uses. Adjust the code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated max call is used in a macro/template definition and may not be valid for all macro/template uses. Adjust the code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: return dpct::min(dpct::max(x, a), b);
+  // CHECK: return min(max(x, a), b);
   return min(max(x, a), b);
 }
 
 __global__ void kernel_2() {
   A a;
   clamp(a, a, a);
+}
+
+template <class T> struct InternalType;
+template <> struct InternalType<float> {
+  typedef float scalar_t;
+  typedef float2 vec2_t;
+  typedef float4 vec4_t;
+  __device__ __forceinline__ static vec4_t zero_vec4(void) {
+    return make_float4(0, 0, 0, 0);
+  }
+};
+
+template <class T> __global__ void foo5() {
+  typedef typename InternalType<T>::vec4_t vec4_t;
+  vec4_t v = InternalType<T>::zero_vec4();
+  // CHECK: sycl::fabs(v.x());
+  fabsf(v.x);
+}
+
+void foo6() {
+  foo5<float><<<1, 1>>>();
 }

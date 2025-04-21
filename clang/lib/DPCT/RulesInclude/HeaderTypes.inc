@@ -50,6 +50,8 @@ STD_HEADER(DL, "<libloaderapi.h>")
 #else
 STD_HEADER(DL, "<dlfcn.h>")
 #endif
+STD_HEADER(SHMEM, "<ishmem.h>")
+STD_HEADER(SHMEMX, "<ishmemx.h>")
 
 ONEDPL_HEADER(Algorithm, "<oneapi/dpl/algorithm>")
 ONEDPL_HEADER(Execution, "<oneapi/dpl/execution>")

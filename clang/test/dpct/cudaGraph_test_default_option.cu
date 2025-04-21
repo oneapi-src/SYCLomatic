@@ -121,6 +121,11 @@ int main() {
   // CHECK-NEXT: */
   nodeType = cudaGraphNodeTypeKernel;
 
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphDestroy is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphDestroy(graph);
+
   return 0;
 }
 

@@ -202,6 +202,7 @@ add_clang_library(DPCT
   RulesLang/CallExprRewriterEvent.cpp
   RulesLang/CallExprRewriterCG.cpp
   RulesLang/CallExprRewriterWmma.cpp
+  RulesSHMEM/CallExprRewriterNvshmem.cpp
   ErrorHandle/CrashRecovery.cpp
   Diagnostics/Diagnostics.cpp
   ErrorHandle/Error.cpp
@@ -240,6 +241,7 @@ add_clang_library(DPCT
   RulesDNN/DNNAPIMigration.cpp
   RulesCCL/NCCLAPIMigration.cpp
   RuleInfra/TypeLocRewriters.cpp
+  RulesSHMEM/NVSHMEMAPIMigration.cpp
   Linux/AutoComplete.cpp
   RulesAsm/AsmMigration.cpp
   QueryAPIMapping/QueryAPIMapping.cpp
