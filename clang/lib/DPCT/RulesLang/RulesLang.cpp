@@ -7806,10 +7806,8 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     BarrierFenceSpaceAnalyzer A;
     const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
     if (FTD) {
-      if (FTD->specializations().empty()) {
-        emplaceReplacement(A.analyze(CE), CE);
-      } else if (noCorrespondingCEInInstantiatedTemplates(FTD, CE)) {
-        std::cout << "22222" << std::endl;
+      if (FTD->specializations().empty() ||
+          noCorrespondingCEInInstantiatedTemplates(FTD, CE)) {
         emplaceReplacement(A.analyze(CE), CE);
       }
     } else {
