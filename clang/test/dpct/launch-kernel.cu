@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -usm-level=none -out-root %T/launch-kernel %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -usm-level=none -out-root %T/launch-kernel %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel/launch-kernel.dp.cpp
 
 // CHECK: void template_device(T *d, T *s) {

@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/function_pointer %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --no-dpcpp-extensions=free-function-queries  --format-range=none -out-root %T/function_pointer %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/function_pointer/function_pointer.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/function_pointer/function_pointer.dp.cpp -o %T/function_pointer/function_pointer.dp.o %}
 

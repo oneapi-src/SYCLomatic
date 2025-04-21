@@ -1,6 +1,6 @@
 // FIXME
 // UNSUPPORTED: system-windows
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --input-file %T/template-kernel-call/template-kernel-call.dp.cpp --match-full-lines %s
 
 #include <vector>

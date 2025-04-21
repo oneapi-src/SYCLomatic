@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --assume-nd-range-dim=1  -out-root %T/kernel_1d_range %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --assume-nd-range-dim=1  -out-root %T/kernel_1d_range %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_1d_range/kernel_1d_range.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/kernel_1d_range/kernel_1d_range.dp.cpp -o %T/kernel_1d_range/kernel_1d_range.dp.o %}
 

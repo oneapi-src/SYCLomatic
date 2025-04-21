@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none --usm-level=none --in-root=%S --out-root=%T/out --analysis-scope-path=%S/.. %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none --in-root=%S --out-root=%T/out --analysis-scope-path=%S/.. %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/out/kernel_warp.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/out/kernel_warp.dp.cpp -o %T/out/kernel_warp.dp.o %}
 // out/

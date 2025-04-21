@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T/mf-test %S/mf-kernel.cu %S/mf-func-included.cu %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none -in-root %S -out-root %T/mf-test %S/mf-kernel.cu %S/mf-func-included.cu %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/mf-test/mf-test.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/mf-test/mf-test.dp.cpp -o %T/mf-test/mf-test.dp.o %}
 // RUN: FileCheck %S/mf-kernel.cu --match-full-lines --input-file %T/mf-test/mf-kernel.dp.cpp

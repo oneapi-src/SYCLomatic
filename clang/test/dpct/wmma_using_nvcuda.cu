@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-// RUN: dpct --format-range=none --use-experimental-features=matrix -out-root %T/wmma_using_nvcuda %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --use-experimental-features=matrix -out-root %T/wmma_using_nvcuda %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/wmma_using_nvcuda/wmma_using_nvcuda.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/wmma_using_nvcuda/wmma_using_nvcuda.dp.cpp -o %T/wmma_using_nvcuda/wmma_using_nvcuda.dp.o %}
 

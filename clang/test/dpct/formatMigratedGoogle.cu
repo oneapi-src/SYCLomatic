@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/formatMigratedGoogle.cu
 // RUN: cd %T
-// RUN: dpct --out-root %T/formatMigratedGoogle formatMigratedGoogle.cu --cuda-include-path="%cuda-path/include" --format-style=google -- -std=c++14  -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries  --out-root %T/formatMigratedGoogle formatMigratedGoogle.cu --cuda-include-path="%cuda-path/include" --format-style=google -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace formatMigratedGoogle.cu --match-full-lines --input-file %T/formatMigratedGoogle/formatMigratedGoogle.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/formatMigratedGoogle/formatMigratedGoogle.dp.cpp -o %T/formatMigratedGoogle/formatMigratedGoogle.dp.o %}
 

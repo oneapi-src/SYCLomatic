@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/pass-filter %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root %T/pass-filter %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/pass-filter/pass-filter.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/pass-filter/pass-filter.dp.cpp -o %T/pass-filter/pass-filter.dp.o %}
 

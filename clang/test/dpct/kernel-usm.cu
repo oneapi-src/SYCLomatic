@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/kernel-usm %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root %T/kernel-usm %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel-usm/kernel-usm.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/kernel-usm/kernel-usm.dp.cpp -o %T/kernel-usm/kernel-usm.dp.o %}
 

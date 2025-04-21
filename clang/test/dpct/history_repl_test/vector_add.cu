@@ -1,6 +1,6 @@
-// RUN: dpct --format-range=none -out-root=%T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: dpct --format-range=none -out-root=%T %S/vector_add3.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: dpct --format-range=none -out-root=%T -extra-arg="-D_FOO_" %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root=%T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root=%T %S/vector_add3.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root=%T -extra-arg="-D_FOO_" %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: FileCheck --input-file %T/vector_add.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/vector_add.dp.cpp -o %T/vector_add.dp.o %}

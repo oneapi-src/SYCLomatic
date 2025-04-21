@@ -1,7 +1,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.2
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.2
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnDropoutBackward | FileCheck %s -check-prefix=cudnnDropoutBackward
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnDropoutBackward | FileCheck %s -check-prefix=cudnnDropoutBackward
 // cudnnDropoutBackward: CUDA API:
 // cudnnDropoutBackward-NEXT:   cudnnHandle_t h;
 // cudnnDropoutBackward-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -15,7 +15,7 @@
 // cudnnDropoutBackward-NEXT:   h.create_engine();
 // cudnnDropoutBackward-NEXT:   h.async_dropout_backward(d, diff_dst_d, diff_dst, diff_src_d, diff_src, reservespace, reservespace_size);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnDropoutForward | FileCheck %s -check-prefix=cudnnDropoutForward
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnDropoutForward | FileCheck %s -check-prefix=cudnnDropoutForward
 // cudnnDropoutForward: CUDA API:
 // cudnnDropoutForward-NEXT:   cudnnHandle_t h;
 // cudnnDropoutForward-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -28,14 +28,14 @@
 // cudnnDropoutForward-NEXT:   h.create_engine();
 // cudnnDropoutForward-NEXT:   h.async_dropout_forward(d, src_d, src, dst_d, dst, reservespace, reservespace_size);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnDropoutGetReserveSpaceSize | FileCheck %s -check-prefix=cudnnDropoutGetReserveSpaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnDropoutGetReserveSpaceSize | FileCheck %s -check-prefix=cudnnDropoutGetReserveSpaceSize
 // cudnnDropoutGetReserveSpaceSize: CUDA API:
 // cudnnDropoutGetReserveSpaceSize-NEXT:   cudnnDropoutGetReserveSpaceSize(src_d /*cudnnTensorDescriptor_t*/,
 // cudnnDropoutGetReserveSpaceSize-NEXT:                                   size /*size_t **/);
 // cudnnDropoutGetReserveSpaceSize-NEXT: Is migrated to:
 // cudnnDropoutGetReserveSpaceSize-NEXT:   *size = dpct::dnnl::engine_ext::get_dropout_workspace_size(src_d);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnDropoutGetStatesSize | FileCheck %s -check-prefix=cudnnDropoutGetStatesSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnDropoutGetStatesSize | FileCheck %s -check-prefix=cudnnDropoutGetStatesSize
 // cudnnDropoutGetStatesSize: CUDA API:
 // cudnnDropoutGetStatesSize-NEXT:   cudnnHandle_t h;
 // cudnnDropoutGetStatesSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -45,7 +45,7 @@
 // cudnnDropoutGetStatesSize-NEXT:   h.create_engine();
 // cudnnDropoutGetStatesSize-NEXT:   *size = h.get_dropout_state_size();
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnFindConvolutionForwardAlgorithm | FileCheck %s -check-prefix=cudnnFindConvolutionForwardAlgorithm
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnFindConvolutionForwardAlgorithm | FileCheck %s -check-prefix=cudnnFindConvolutionForwardAlgorithm
 // cudnnFindConvolutionForwardAlgorithm: CUDA API:
 // cudnnFindConvolutionForwardAlgorithm-NEXT:   cudnnHandle_t h;
 // cudnnFindConvolutionForwardAlgorithm-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -62,7 +62,7 @@
 // cudnnFindConvolutionForwardAlgorithm-NEXT:   r.algo = dnnl::algorithm::convolution_auto;
 // cudnnFindConvolutionForwardAlgorithm-NEXT:   *realc = 1;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetActivationDescriptor | FileCheck %s -check-prefix=cudnnGetActivationDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetActivationDescriptor | FileCheck %s -check-prefix=cudnnGetActivationDescriptor
 // cudnnGetActivationDescriptor: CUDA API:
 // cudnnGetActivationDescriptor-NEXT:   cudnnActivationDescriptor_t d;
 // cudnnGetActivationDescriptor-NEXT:   cudnnGetActivationDescriptor(d /*cudnnActivationDescriptor_t*/,
@@ -72,7 +72,7 @@
 // cudnnGetActivationDescriptor-NEXT:   dpct::dnnl::activation_desc d;
 // cudnnGetActivationDescriptor-NEXT:   d.get(m, c);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetActivationDescriptorSwishBeta | FileCheck %s -check-prefix=cudnnGetActivationDescriptorSwishBeta
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetActivationDescriptorSwishBeta | FileCheck %s -check-prefix=cudnnGetActivationDescriptorSwishBeta
 // cudnnGetActivationDescriptorSwishBeta: CUDA API:
 // cudnnGetActivationDescriptorSwishBeta-NEXT:   cudnnActivationDescriptor_t d;
 // cudnnGetActivationDescriptorSwishBeta-NEXT:   cudnnGetActivationDescriptorSwishBeta(d /*cudnnActivationDescriptor_t*/,
@@ -81,7 +81,7 @@
 // cudnnGetActivationDescriptorSwishBeta-NEXT:   dpct::dnnl::activation_desc d;
 // cudnnGetActivationDescriptorSwishBeta-NEXT:   *s = d.get_beta();
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetBatchNormalizationBackwardExWorkspaceSize | FileCheck %s -check-prefix=cudnnGetBatchNormalizationBackwardExWorkspaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetBatchNormalizationBackwardExWorkspaceSize | FileCheck %s -check-prefix=cudnnGetBatchNormalizationBackwardExWorkspaceSize
 // cudnnGetBatchNormalizationBackwardExWorkspaceSize: CUDA API:
 // cudnnGetBatchNormalizationBackwardExWorkspaceSize-NEXT:   cudnnHandle_t h;
 // cudnnGetBatchNormalizationBackwardExWorkspaceSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -97,7 +97,7 @@
 // cudnnGetBatchNormalizationBackwardExWorkspaceSize-NEXT:   h.create_engine();
 // cudnnGetBatchNormalizationBackwardExWorkspaceSize-NEXT:   *size = 0;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize | FileCheck %s -check-prefix=cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize | FileCheck %s -check-prefix=cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize
 // cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize: CUDA API:
 // cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize-NEXT:   cudnnHandle_t h;
 // cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -112,7 +112,7 @@
 // cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize-NEXT:   h.create_engine();
 // cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize-NEXT:   *size = 0;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetBatchNormalizationTrainingExReserveSpaceSize | FileCheck %s -check-prefix=cudnnGetBatchNormalizationTrainingExReserveSpaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetBatchNormalizationTrainingExReserveSpaceSize | FileCheck %s -check-prefix=cudnnGetBatchNormalizationTrainingExReserveSpaceSize
 // cudnnGetBatchNormalizationTrainingExReserveSpaceSize: CUDA API:
 // cudnnGetBatchNormalizationTrainingExReserveSpaceSize-NEXT:   cudnnHandle_t h;
 // cudnnGetBatchNormalizationTrainingExReserveSpaceSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -125,7 +125,7 @@
 // cudnnGetBatchNormalizationTrainingExReserveSpaceSize-NEXT:   h.create_engine();
 // cudnnGetBatchNormalizationTrainingExReserveSpaceSize-NEXT:   *size = h.get_batch_normalization_workspace_size(op, src_d);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolution2dDescriptor | FileCheck %s -check-prefix=cudnnGetConvolution2dDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolution2dDescriptor | FileCheck %s -check-prefix=cudnnGetConvolution2dDescriptor
 // cudnnGetConvolution2dDescriptor: CUDA API:
 // cudnnGetConvolution2dDescriptor-NEXT:   cudnnConvolutionDescriptor_t d;
 // cudnnGetConvolution2dDescriptor-NEXT:   cudnnGetConvolution2dDescriptor(
@@ -137,7 +137,7 @@
 // cudnnGetConvolution2dDescriptor-NEXT:   dpct::dnnl::convolution_desc d;
 // cudnnGetConvolution2dDescriptor-NEXT:   d.get(padding_h, padding_h, stride_h, stride_w, dilation_h, dilation_w);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolution2dForwardOutputDim | FileCheck %s -check-prefix=cudnnGetConvolution2dForwardOutputDim
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolution2dForwardOutputDim | FileCheck %s -check-prefix=cudnnGetConvolution2dForwardOutputDim
 // cudnnGetConvolution2dForwardOutputDim: CUDA API:
 // cudnnGetConvolution2dForwardOutputDim-NEXT:   cudnnConvolutionDescriptor_t d;
 // cudnnGetConvolution2dForwardOutputDim-NEXT:   cudnnGetConvolution2dForwardOutputDim(
@@ -148,7 +148,7 @@
 // cudnnGetConvolution2dForwardOutputDim-NEXT:   dpct::dnnl::convolution_desc d;
 // cudnnGetConvolution2dForwardOutputDim-NEXT:   d.get_forward_output_dim(src_d, f_d, n, c, h, w);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionBackwardDataWorkspaceSize | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardDataWorkspaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionBackwardDataWorkspaceSize | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardDataWorkspaceSize
 // cudnnGetConvolutionBackwardDataWorkspaceSize: CUDA API:
 // cudnnGetConvolutionBackwardDataWorkspaceSize-NEXT:   cudnnHandle_t h;
 // cudnnGetConvolutionBackwardDataWorkspaceSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -163,7 +163,7 @@
 // cudnnGetConvolutionBackwardDataWorkspaceSize-NEXT:   h.create_engine();
 // cudnnGetConvolutionBackwardDataWorkspaceSize-NEXT:   *size = 0;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionBackwardFilterWorkspaceSize | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardFilterWorkspaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionBackwardFilterWorkspaceSize | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardFilterWorkspaceSize
 // cudnnGetConvolutionBackwardFilterWorkspaceSize: CUDA API:
 // cudnnGetConvolutionBackwardFilterWorkspaceSize-NEXT:   cudnnHandle_t h;
 // cudnnGetConvolutionBackwardFilterWorkspaceSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -178,7 +178,7 @@
 // cudnnGetConvolutionBackwardFilterWorkspaceSize-NEXT:   h.create_engine();
 // cudnnGetConvolutionBackwardFilterWorkspaceSize-NEXT:   *size = 0;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionForwardWorkspaceSize | FileCheck %s -check-prefix=cudnnGetConvolutionForwardWorkspaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionForwardWorkspaceSize | FileCheck %s -check-prefix=cudnnGetConvolutionForwardWorkspaceSize
 // cudnnGetConvolutionForwardWorkspaceSize: CUDA API:
 // cudnnGetConvolutionForwardWorkspaceSize-NEXT:   cudnnHandle_t h;
 // cudnnGetConvolutionForwardWorkspaceSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -192,7 +192,7 @@
 // cudnnGetConvolutionForwardWorkspaceSize-NEXT:   h.create_engine();
 // cudnnGetConvolutionForwardWorkspaceSize-NEXT:   *size = 0;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionGroupCount | FileCheck %s -check-prefix=cudnnGetConvolutionGroupCount
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionGroupCount | FileCheck %s -check-prefix=cudnnGetConvolutionGroupCount
 // cudnnGetConvolutionGroupCount: CUDA API:
 // cudnnGetConvolutionGroupCount-NEXT:   cudnnConvolutionDescriptor_t d;
 // cudnnGetConvolutionGroupCount-NEXT:   cudnnGetConvolutionGroupCount(d /*cudnnActivationDescriptor_t*/,
@@ -201,7 +201,7 @@
 // cudnnGetConvolutionGroupCount-NEXT:   dpct::dnnl::convolution_desc d;
 // cudnnGetConvolutionGroupCount-NEXT:   *group_count = d.get_group_count();
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionNdDescriptor | FileCheck %s -check-prefix=cudnnGetConvolutionNdDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionNdDescriptor | FileCheck %s -check-prefix=cudnnGetConvolutionNdDescriptor
 // cudnnGetConvolutionNdDescriptor: CUDA API:
 // cudnnGetConvolutionNdDescriptor-NEXT:   cudnnConvolutionDescriptor_t d;
 // cudnnGetConvolutionNdDescriptor-NEXT:   cudnnGetConvolutionNdDescriptor(
@@ -212,7 +212,7 @@
 // cudnnGetConvolutionNdDescriptor-NEXT:   dpct::dnnl::convolution_desc d;
 // cudnnGetConvolutionNdDescriptor-NEXT:   d.get(rn, n, pada, stridea, dilationa);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionNdForwardOutputDim | FileCheck %s -check-prefix=cudnnGetConvolutionNdForwardOutputDim
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionNdForwardOutputDim | FileCheck %s -check-prefix=cudnnGetConvolutionNdForwardOutputDim
 // cudnnGetConvolutionNdForwardOutputDim: CUDA API:
 // cudnnGetConvolutionNdForwardOutputDim-NEXT:   cudnnConvolutionDescriptor_t d;
 // cudnnGetConvolutionNdForwardOutputDim-NEXT:   cudnnGetConvolutionNdForwardOutputDim(
@@ -222,7 +222,7 @@
 // cudnnGetConvolutionNdForwardOutputDim-NEXT:   dpct::dnnl::convolution_desc d;
 // cudnnGetConvolutionNdForwardOutputDim-NEXT:   d.get_forward_output_dim(src_d, f_d, n, da);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetDropoutDescriptor | FileCheck %s -check-prefix=cudnnGetDropoutDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetDropoutDescriptor | FileCheck %s -check-prefix=cudnnGetDropoutDescriptor
 // cudnnGetDropoutDescriptor: CUDA API:
 // cudnnGetDropoutDescriptor-NEXT:   cudnnDropoutDescriptor_t d;
 // cudnnGetDropoutDescriptor-NEXT:   cudnnGetDropoutDescriptor(d /*cudnnDropoutDescriptor_t*/, h /*cudnnHandle_t*/,
@@ -232,7 +232,7 @@
 // cudnnGetDropoutDescriptor-NEXT:   dpct::dnnl::dropout_desc d;
 // cudnnGetDropoutDescriptor-NEXT:   d.get(dropout, states, seed);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetErrorString | FileCheck %s -check-prefix=cudnnGetErrorString
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetErrorString | FileCheck %s -check-prefix=cudnnGetErrorString
 // cudnnGetErrorString: CUDA API:
 // cudnnGetErrorString-NEXT:   r = cudnnGetErrorString(s /*cudnnStatus_t*/);
 // cudnnGetErrorString-NEXT: Is migrated to:
@@ -241,7 +241,7 @@
 // cudnnGetErrorString-NEXT:   */
 // cudnnGetErrorString-NEXT:   r = dpct::get_error_string_dummy(s);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetFilter4dDescriptor | FileCheck %s -check-prefix=cudnnGetFilter4dDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetFilter4dDescriptor | FileCheck %s -check-prefix=cudnnGetFilter4dDescriptor
 // cudnnGetFilter4dDescriptor: CUDA API:
 // cudnnGetFilter4dDescriptor-NEXT:   cudnnFilterDescriptor_t d;
 // cudnnGetFilter4dDescriptor-NEXT:   cudnnGetFilter4dDescriptor(d /*cudnnFilterDescriptor_t*/,
@@ -252,7 +252,7 @@
 // cudnnGetFilter4dDescriptor-NEXT:   dpct::dnnl::memory_desc_ext d;
 // cudnnGetFilter4dDescriptor-NEXT:   d.get(t, f, k, c, h, w);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetFilterNdDescriptor | FileCheck %s -check-prefix=cudnnGetFilterNdDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetFilterNdDescriptor | FileCheck %s -check-prefix=cudnnGetFilterNdDescriptor
 // cudnnGetFilterNdDescriptor: CUDA API:
 // cudnnGetFilterNdDescriptor-NEXT:   cudnnFilterDescriptor_t d;
 // cudnnGetFilterNdDescriptor-NEXT:   cudnnGetFilterNdDescriptor(d /*cudnnFilterDescriptor_t*/, rn /*int*/,
@@ -262,7 +262,7 @@
 // cudnnGetFilterNdDescriptor-NEXT:   dpct::dnnl::memory_desc_ext d;
 // cudnnGetFilterNdDescriptor-NEXT:   d.get(rn, t, f, n, da);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetFilterSizeInBytes | FileCheck %s -check-prefix=cudnnGetFilterSizeInBytes
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetFilterSizeInBytes | FileCheck %s -check-prefix=cudnnGetFilterSizeInBytes
 // cudnnGetFilterSizeInBytes: CUDA API:
 // cudnnGetFilterSizeInBytes-NEXT:   cudnnFilterDescriptor_t d;
 // cudnnGetFilterSizeInBytes-NEXT:   cudnnGetFilterSizeInBytes(d /*cudnnFilterDescriptor_t*/, size /*size_t **/);
@@ -270,7 +270,7 @@
 // cudnnGetFilterSizeInBytes-NEXT:   dpct::dnnl::memory_desc_ext d;
 // cudnnGetFilterSizeInBytes-NEXT:   *size = d.get_size();
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetLRNDescriptor | FileCheck %s -check-prefix=cudnnGetLRNDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetLRNDescriptor | FileCheck %s -check-prefix=cudnnGetLRNDescriptor
 // cudnnGetLRNDescriptor: CUDA API:
 // cudnnGetLRNDescriptor-NEXT:   cudnnLRNDescriptor_t d;
 // cudnnGetLRNDescriptor-NEXT:   cudnnGetLRNDescriptor(d /*cudnnLRNDescriptor_t*/, n /*unsigned**/,
@@ -279,7 +279,7 @@
 // cudnnGetLRNDescriptor-NEXT:   dpct::dnnl::lrn_desc d;
 // cudnnGetLRNDescriptor-NEXT:   d.get(n, alpha, beta, k);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetNormalizationBackwardWorkspaceSize | FileCheck %s -check-prefix=cudnnGetNormalizationBackwardWorkspaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetNormalizationBackwardWorkspaceSize | FileCheck %s -check-prefix=cudnnGetNormalizationBackwardWorkspaceSize
 // cudnnGetNormalizationBackwardWorkspaceSize: CUDA API:
 // cudnnGetNormalizationBackwardWorkspaceSize-NEXT:   cudnnHandle_t h;
 // cudnnGetNormalizationBackwardWorkspaceSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -297,7 +297,7 @@
 // cudnnGetNormalizationBackwardWorkspaceSize-NEXT:   h.create_engine();
 // cudnnGetNormalizationBackwardWorkspaceSize-NEXT:   *size = 0;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetNormalizationForwardTrainingWorkspaceSize | FileCheck %s -check-prefix=cudnnGetNormalizationForwardTrainingWorkspaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetNormalizationForwardTrainingWorkspaceSize | FileCheck %s -check-prefix=cudnnGetNormalizationForwardTrainingWorkspaceSize
 // cudnnGetNormalizationForwardTrainingWorkspaceSize: CUDA API:
 // cudnnGetNormalizationForwardTrainingWorkspaceSize-NEXT:   cudnnHandle_t h;
 // cudnnGetNormalizationForwardTrainingWorkspaceSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -312,7 +312,7 @@
 // cudnnGetNormalizationForwardTrainingWorkspaceSize-NEXT:   h.create_engine();
 // cudnnGetNormalizationForwardTrainingWorkspaceSize-NEXT:   *size = 0;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetNormalizationTrainingReserveSpaceSize | FileCheck %s -check-prefix=cudnnGetNormalizationTrainingReserveSpaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetNormalizationTrainingReserveSpaceSize | FileCheck %s -check-prefix=cudnnGetNormalizationTrainingReserveSpaceSize
 // cudnnGetNormalizationTrainingReserveSpaceSize: CUDA API:
 // cudnnGetNormalizationTrainingReserveSpaceSize-NEXT:   cudnnHandle_t h;
 // cudnnGetNormalizationTrainingReserveSpaceSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -326,7 +326,7 @@
 // cudnnGetNormalizationTrainingReserveSpaceSize-NEXT:   h.create_engine();
 // cudnnGetNormalizationTrainingReserveSpaceSize-NEXT:   *size = h.get_batch_normalization_workspace_size(op, src_d);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetOpTensorDescriptor | FileCheck %s -check-prefix=cudnnGetOpTensorDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetOpTensorDescriptor | FileCheck %s -check-prefix=cudnnGetOpTensorDescriptor
 // cudnnGetOpTensorDescriptor: CUDA API:
 // cudnnGetOpTensorDescriptor-NEXT:   cudnnOpTensorDescriptor_t d;
 // cudnnGetOpTensorDescriptor-NEXT:   cudnnGetOpTensorDescriptor(d /*cudnnOpTensorDescriptor_t*/,
@@ -336,7 +336,7 @@
 // cudnnGetOpTensorDescriptor-NEXT:   dpct::dnnl::binary_op d;
 // cudnnGetOpTensorDescriptor-NEXT:   *op = d;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPooling2dDescriptor | FileCheck %s -check-prefix=cudnnGetPooling2dDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPooling2dDescriptor | FileCheck %s -check-prefix=cudnnGetPooling2dDescriptor
 // cudnnGetPooling2dDescriptor: CUDA API:
 // cudnnGetPooling2dDescriptor-NEXT:   cudnnPoolingDescriptor_t d;
 // cudnnGetPooling2dDescriptor-NEXT:   cudnnGetPooling2dDescriptor(
@@ -347,7 +347,7 @@
 // cudnnGetPooling2dDescriptor-NEXT:   dpct::dnnl::pooling_desc d;
 // cudnnGetPooling2dDescriptor-NEXT:   d.get(m, h, w, vp, hp, vs, hs);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPooling2dForwardOutputDim | FileCheck %s -check-prefix=cudnnGetPooling2dForwardOutputDim
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPooling2dForwardOutputDim | FileCheck %s -check-prefix=cudnnGetPooling2dForwardOutputDim
 // cudnnGetPooling2dForwardOutputDim: CUDA API:
 // cudnnGetPooling2dForwardOutputDim-NEXT:   cudnnPoolingDescriptor_t d;
 // cudnnGetPooling2dForwardOutputDim-NEXT:   cudnnGetPooling2dForwardOutputDim(
@@ -357,7 +357,7 @@
 // cudnnGetPooling2dForwardOutputDim-NEXT:   dpct::dnnl::pooling_desc d;
 // cudnnGetPooling2dForwardOutputDim-NEXT:   d.get_forward_output_dim(src_d, n, c, h, w);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPoolingNdDescriptor | FileCheck %s -check-prefix=cudnnGetPoolingNdDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPoolingNdDescriptor | FileCheck %s -check-prefix=cudnnGetPoolingNdDescriptor
 // cudnnGetPoolingNdDescriptor: CUDA API:
 // cudnnGetPoolingNdDescriptor-NEXT:   cudnnPoolingDescriptor_t d;
 // cudnnGetPoolingNdDescriptor-NEXT:   cudnnGetPoolingNdDescriptor(d /*cudnnPoolingDescriptor_t*/, rn /*int*/,
@@ -368,7 +368,7 @@
 // cudnnGetPoolingNdDescriptor-NEXT:   dpct::dnnl::pooling_desc d;
 // cudnnGetPoolingNdDescriptor-NEXT:   d.get(rn, m, nd, da, pa, sa);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPoolingNdForwardOutputDim | FileCheck %s -check-prefix=cudnnGetPoolingNdForwardOutputDim
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetPoolingNdForwardOutputDim | FileCheck %s -check-prefix=cudnnGetPoolingNdForwardOutputDim
 // cudnnGetPoolingNdForwardOutputDim: CUDA API:
 // cudnnGetPoolingNdForwardOutputDim-NEXT:   cudnnPoolingDescriptor_t d;
 // cudnnGetPoolingNdForwardOutputDim-NEXT:   cudnnGetPoolingNdForwardOutputDim(d /*cudnnPoolingDescriptor_t*/,
@@ -378,7 +378,7 @@
 // cudnnGetPoolingNdForwardOutputDim-NEXT:   dpct::dnnl::pooling_desc d;
 // cudnnGetPoolingNdForwardOutputDim-NEXT:   d.get_forward_output_dim(src_d, n, da);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetReduceTensorDescriptor | FileCheck %s -check-prefix=cudnnGetReduceTensorDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetReduceTensorDescriptor | FileCheck %s -check-prefix=cudnnGetReduceTensorDescriptor
 // cudnnGetReduceTensorDescriptor: CUDA API:
 // cudnnGetReduceTensorDescriptor-NEXT:   cudnnReduceTensorDescriptor_t d;
 // cudnnGetReduceTensorDescriptor-NEXT:   cudnnGetReduceTensorDescriptor(
@@ -389,7 +389,7 @@
 // cudnnGetReduceTensorDescriptor-NEXT:   dpct::dnnl::reduction_op d;
 // cudnnGetReduceTensorDescriptor-NEXT:   *o = d;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetReductionWorkspaceSize | FileCheck %s -check-prefix=cudnnGetReductionWorkspaceSize
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetReductionWorkspaceSize | FileCheck %s -check-prefix=cudnnGetReductionWorkspaceSize
 // cudnnGetReductionWorkspaceSize: CUDA API:
 // cudnnGetReductionWorkspaceSize-NEXT:   cudnnHandle_t h;
 // cudnnGetReductionWorkspaceSize-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
@@ -402,7 +402,7 @@
 // cudnnGetReductionWorkspaceSize-NEXT:   h.create_engine();
 // cudnnGetReductionWorkspaceSize-NEXT:   *size = 0;
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetRNNDataDescriptor | FileCheck %s -check-prefix=cudnnGetRNNDataDescriptor
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetRNNDataDescriptor | FileCheck %s -check-prefix=cudnnGetRNNDataDescriptor
 // cudnnGetRNNDataDescriptor: CUDA API:
 // cudnnGetRNNDataDescriptor-NEXT:   cudnnRNNDataDescriptor_t d;
 // cudnnGetRNNDataDescriptor-NEXT:   cudnnGetRNNDataDescriptor(
@@ -413,7 +413,7 @@
 // cudnnGetRNNDataDescriptor-NEXT:   dpct::dnnl::memory_desc_ext d;
 // cudnnGetRNNDataDescriptor-NEXT:   d.get(t, l, len, b, v);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetRNNDescriptor_v8 | FileCheck %s -check-prefix=cudnnGetRNNDescriptor_v8
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetRNNDescriptor_v8 | FileCheck %s -check-prefix=cudnnGetRNNDescriptor_v8
 // cudnnGetRNNDescriptor_v8: CUDA API:
 // cudnnGetRNNDescriptor_v8-NEXT:   cudnnRNNDescriptor_t d;
 // cudnnGetRNNDescriptor_v8-NEXT:   cudnnGetRNNDescriptor_v8(

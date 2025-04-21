@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/sync_api_nd_range_barrier %s --cuda-include-path="%cuda-path/include" --use-experimental-features=nd_range_barrier,logical-group -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root %T/sync_api_nd_range_barrier %s --cuda-include-path="%cuda-path/include" --use-experimental-features=nd_range_barrier,logical-group -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/sync_api_nd_range_barrier/sync_api_nd_range_barrier.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/sync_api_nd_range_barrier/sync_api_nd_range_barrier.dp.cpp -o %T/sync_api_nd_range_barrier/sync_api_nd_range_barrier.dp.o %}
 

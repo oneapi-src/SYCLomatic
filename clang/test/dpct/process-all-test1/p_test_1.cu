@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none  -in-root=%S -out-root=%T --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none  -in-root=%S -out-root=%T --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: FileCheck --input-file %T/p_test_1.dp.cpp --match-full-lines %S/p_test_1.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/p_test_1.dp.cpp -o %T/p_test_1.dp.o %}

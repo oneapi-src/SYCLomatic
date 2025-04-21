@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/iteration-space %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root %T/iteration-space %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/iteration-space/iteration-space.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/iteration-space/iteration-space.dp.cpp -o %T/iteration-space/iteration-space.dp.o %}
 

@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/insert_extra_args %s --cuda-include-path="%cuda-path/include" --format-range=none -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries -out-root %T/insert_extra_args %s --cuda-include-path="%cuda-path/include" --format-range=none -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/insert_extra_args/insert_extra_args.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/insert_extra_args/insert_extra_args.dp.cpp -o %T/insert_extra_args/insert_extra_args.dp.o %}
 

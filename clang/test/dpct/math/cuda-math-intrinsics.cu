@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/math/cuda-math-intrinsics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root %T/math/cuda-math-intrinsics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp -o %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.o %}
 

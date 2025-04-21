@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel-call_same_args %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none -out-root %T/kernel-call_same_args %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel-call_same_args/kernel-call_same_args.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/kernel-call_same_args/kernel-call_same_args.dp.cpp -o %T/kernel-call_same_args/kernel-call_same_args.dp.o %}
 

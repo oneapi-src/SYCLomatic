@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root=%T/abc -in-root=%S %S/*.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none -out-root=%T/abc -in-root=%S %S/*.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/abc/abc.dp.cpp --match-full-lines %S/abc.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/abc/abc.dp.cpp -o %T/abc/abc.dp.o %}
 // RUN: FileCheck --input-file %T/abc/abd.dp.cpp --match-full-lines %S/abd.cu
