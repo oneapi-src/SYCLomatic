@@ -556,6 +556,9 @@ bool SYCLGenBase::emitVectorType(const InlineAsmVectorType *T) {
     return SYCLGenError();
   OS() << ", ";
   switch (T->getKind()) {
+  case InlineAsmVectorType::v1:
+    OS() << 1;
+    break;
   case InlineAsmVectorType::v2:
     OS() << 2;
     break;
@@ -1309,45 +1312,109 @@ protected:
     if (Inst->getNumInputOperands() != 3)
       return SYCLGenError();
 
-    if (!Inst->hasAttr(InstAttr::m16n8k16))
+    const InlineAsmVectorExpr *DMatVE =
+        dyn_cast<InlineAsmVectorExpr>(Inst->getOutputOperand());
+    if (!DMatVE)
       return SYCLGenError();
 
     // Only row Layout is supported for of A matrix and
     // only col Layout is supported for of B matrix
-    if (Inst->getAttr(3) != InstAttr::row ||
-        Inst->getAttr(4) != InstAttr::col) {
+    if (Inst->getAttr(3) != InstAttr::row || Inst->getAttr(4) != InstAttr::col)
       return SYCLGenError();
-    }
 
     // Only f16 type is supported for A and B matrix data
+    const auto *DType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
     const auto *AType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(1));
     const auto *BType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(2));
+    const auto *CType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(3));
 
-    std::string TypeStr;
-    if (!AType || !BType ||
-        (AType->getKind() != InlineAsmBuiltinType::f16 ||
-         BType->getKind() != InlineAsmBuiltinType::f16)) {
+    if (!(AType && BType && CType && DType))
       return SYCLGenError();
-    } else {
-      if (tryEmitType(TypeStr, AType))
+
+    // Data types of matrix elements for A&B and C&D matrices should be same
+    if ((AType->getKind() != BType->getKind()) ||
+        (CType->getKind() != DType->getKind()))
+      return SYCLGenError();
+
+    // Check the validity of AB & CD types
+    std::string ABType, CDType;
+    if (tryEmitType(ABType, AType))
+      return SYCLGenError();
+
+    if (tryEmitType(CDType, CType))
+      return SYCLGenError();
+
+    // Register sizes for vector elements of A, B, C & D matrices
+    unsigned NumVecElements[4] = {0};
+
+    // Data type used to multiply A & B matrices
+    std::string MulType;
+    if (Inst->hasAttr(InstAttr::m16n8k16)) {
+      // Only f16 type is supported for A and B matrix data for m16n8k16
+      if (AType->getKind() == InlineAsmBuiltinType::f16) {
+        // If A matrix type is f16, then C&D matrix types can only be f16
+        if (CType->getKind() == AType->getKind()) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 4; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m8n8k4)) {
+      // f16 & f64 types are supported for A and B matrix data for m8n8k4
+      if (AType->getKind() == InlineAsmBuiltinType::f16) {
+        // If A matrix type is f16, then C&D matrix types can only be f16/f32
+        if (CType->getKind() == AType->getKind()) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else if (CType->getKind() == InlineAsmBuiltinType::f32) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 8; // C
+          NumVecElements[3] = 8; // D
+        } else
+          return SYCLGenError();
+      } else if (AType->getKind() == InlineAsmBuiltinType::f64) {
+        // If A matrix type is f64, then C&D matrix types can only be f64
+        if (CType->getKind() == AType->getKind()) {
+          NumVecElements[0] = 1; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 2; // C
+          NumVecElements[3] = 2; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else
+      return SYCLGenError();
+
+    // Check the register sizes for vector elements of A, B, C & D matrices
+    for (unsigned InputOp = 0; InputOp < Inst->getNumInputOperands();
+         InputOp++) {
+      if (auto VE =
+              dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(InputOp))) {
+        if (VE->getNumElements() != NumVecElements[InputOp])
+          return SYCLGenError();
+      } else
         return SYCLGenError();
     }
-
-    const InlineAsmVectorExpr *VE =
-        dyn_cast<InlineAsmVectorExpr>(Inst->getOutputOperand());
-    if (VE && VE->getNumElements() != 4) {
+    if (DMatVE->getNumElements() != NumVecElements[3])
       return SYCLGenError();
-    }
 
+    MulType = ABType;
     OS() << MapNames::getDpctNamespace() << "experimental::matrix::mma";
-    OS() << "<" << TypeStr << ">(";
+    OS() << "<" << MulType << ">(";
 
     // Add D matrix address values to store the MAD result
-    for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
-      if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
+    for (unsigned Inst = 0; Inst != DMatVE->getNumElements(); ++Inst) {
+      if (isa<InlineAsmDiscardExpr>(DMatVE->getElement(Inst)))
         continue;
       OS() << "&";
-      if (emitStmt(VE->getElement(Inst)))
+      if (emitStmt(DMatVE->getElement(Inst)))
         return SYCLGenError();
       OS() << ", ";
     }
@@ -1355,7 +1422,8 @@ protected:
     // Add A, B & C matrix values to compute MAD
     for (unsigned InputOp = 0; InputOp < Inst->getNumInputOperands();
          InputOp++) {
-      if (VE = dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(InputOp))) {
+      if (auto VE =
+              dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(InputOp))) {
         for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
           if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
             continue;
@@ -2607,11 +2675,10 @@ protected:
       Op = std::move(NewOp);
     }
 
-    bool HasHalfOrBfloat16 =
-        SrcType->getKind() == InlineAsmBuiltinType::f16 ||
-        DesType->getKind() == InlineAsmBuiltinType::f16 ||
-        SrcType->getKind() == InlineAsmBuiltinType::bf16 ||
-        DesType->getKind() == InlineAsmBuiltinType::bf16;
+    bool HasHalfOrBfloat16 = SrcType->getKind() == InlineAsmBuiltinType::f16 ||
+                             DesType->getKind() == InlineAsmBuiltinType::f16 ||
+                             SrcType->getKind() == InlineAsmBuiltinType::bf16 ||
+                             DesType->getKind() == InlineAsmBuiltinType::bf16;
     if (DpctGlobalInfo::useIntelDeviceMath() && HasHalfOrBfloat16) {
       insertHeader(HeaderType::HT_SYCL_Math);
       if (SrcNeedBitCast)

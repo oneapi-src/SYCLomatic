@@ -9,8 +9,8 @@
 #ifndef __DPCT_MATH_HPP__
 #define __DPCT_MATH_HPP__
 
-#include <limits>
 #include <climits>
+#include <limits>
 #include <sycl/sycl.hpp>
 #include <type_traits>
 
@@ -1636,7 +1636,8 @@ inline constexpr unsigned extend_vcompare2_add(AT a, BT b, unsigned c,
 /// \returns The extend vectorized average of the two values
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vavrg2(AT a, BT b, RetT c) {
-  return detail::extend_vbinary2<RetT, false, false>(a, b, c, detail::average());
+  return detail::extend_vbinary2<RetT, false, false>(a, b, c,
+                                                     detail::average());
 }
 
 /// Compute vectorized average of \p a and \p b, with each value treated as a 2
@@ -1933,7 +1934,8 @@ inline constexpr unsigned extend_vcompare4_add(AT a, BT b, unsigned c,
 /// \returns The extend vectorized average of the two values
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vavrg4(AT a, BT b, RetT c) {
-  return detail::extend_vbinary4<RetT, false, false>(a, b, c, detail::average());
+  return detail::extend_vbinary4<RetT, false, false>(a, b, c,
+                                                     detail::average());
 }
 
 /// Compute vectorized average of \p a and \p b, with each value treated as a 4
@@ -2056,6 +2058,199 @@ public:
   const size_t num_elements;
 };
 
+/// Multiplies 2 8x4 & 4x8 matrices and accumulates the result to a 8x8 b16
+/// matrix
+/// Requires the sub-group size of kernel calling this function to be 32
+/// \tparam [in] MulType The type of the multiplication result
+/// \tparam [in] ABType The type of the input matrices
+/// \tparam [in] CDType The type of the output matrix
+/// \tparam [in] ItemT The type of the sycl::nd_item index space class
+/// \param [in] d0 The 1st element to be written to the output D matrix
+/// \param [in] d1 The 2nd element to be written to the output D matrix
+/// \param [in] d2 The 3rd element to be written to the output D matrix
+/// \param [in] d3 The 4th element to be written to the output D matrix
+/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
+/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
+/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
+/// \param [in] b1 The 2nd element from B matrix to be multiplied with A matrix
+/// \param [in] c0 The 1st element from C matrix to be added with d0
+/// \param [in] c1 The 2nd element from C matrix to be added with d1
+/// \param [in] c2 The 3rd element from C matrix to be added with d2
+/// \param [in] c3 The 4th element from C matrix to be added with d3
+/// \param [in] item The sycl::nd_item index space class
+template <typename MulType, typename ABType, typename CDType, typename ItemT>
+void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
+         ABType b0, ABType b1, CDType c0, CDType c1, CDType c2, CDType c3,
+         const ItemT &item) {
+  int lane = item.get_sub_group().get_local_linear_id();
+
+  short COL_LOAD_OFFSET = 4 * ((lane % 16) / 4);
+
+  ABType recv_a[2];
+  recv_a[0] = a0;
+  recv_a[1] = a1;
+
+  MulType *ra = reinterpret_cast<MulType *>(recv_a);
+  MulType *c_h[4];
+  c_h[0] = reinterpret_cast<MulType *>(&c0);
+  c_h[1] = reinterpret_cast<MulType *>(&c1);
+  c_h[2] = reinterpret_cast<MulType *>(&c2);
+  c_h[3] = reinterpret_cast<MulType *>(&c3);
+  for (int i = 0; i < 4; i++) {
+    ABType recv_b[4];
+
+    recv_b[0] = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                            COL_LOAD_OFFSET + i);
+    recv_b[1] = dpct::select_from_sub_group(item.get_sub_group(), b1,
+                                            COL_LOAD_OFFSET + i);
+    recv_b[2] = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                            COL_LOAD_OFFSET + 16 + i);
+    recv_b[3] = dpct::select_from_sub_group(item.get_sub_group(), b1,
+                                            COL_LOAD_OFFSET + 16 + i);
+
+    MulType *rb = reinterpret_cast<MulType *>(recv_b);
+    // Iterate for k times
+    for (int j = 0; j < 4; j++) {
+      c_h[(i >> 1)][i % 2] +=
+          static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[j]);
+      c_h[2 + (i >> 1)][i % 2] +=
+          static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[4 + j]);
+    }
+  }
+
+  *d0 = c0;
+  *d1 = c1;
+  *d2 = c2;
+  *d3 = c3;
+}
+
+/// Multiplies 2 8x4 & 4x8 matrices and accumulates the result to a 8x8 b32
+/// matrix
+/// Requires the sub-group size of kernel calling this function to be 32
+/// \tparam [in] MulType The type of the multiplication result
+/// \tparam [in] ABType The type of the input matrices
+/// \tparam [in] CDType The type of the output matrix
+/// \tparam [in] ItemT The type of the sycl::nd_item index space class
+/// \param [in] d0 The 1st element to be written to the output D matrix
+/// \param [in] d1 The 2nd element to be written to the output D matrix
+/// \param [in] d2 The 3rd element to be written to the output D matrix
+/// \param [in] d3 The 4th element to be written to the output D matrix
+/// \param [in] d4 The 5th element to be written to the output D matrix
+/// \param [in] d5 The 6th element to be written to the output D matrix
+/// \param [in] d6 The 7th element to be written to the output D matrix
+/// \param [in] d7 The 8th element to be written to the output D matrix
+/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
+/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
+/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
+/// \param [in] b1 The 2nd element from B matrix to be multiplied with A matrix
+/// \param [in] c0 The 1st element from C matrix to be added with d0
+/// \param [in] c1 The 2nd element from C matrix to be added with d1
+/// \param [in] c2 The 3rd element from C matrix to be added with d2
+/// \param [in] c3 The 4th element from C matrix to be added with d3
+/// \param [in] c4 The 5th element from C matrix to be added with d4
+/// \param [in] c5 The 6th element from C matrix to be added with d5
+/// \param [in] c6 The 7th element from C matrix to be added with d6
+/// \param [in] c7 The 8th element from C matrix to be added with d7
+/// \param [in] item The sycl::nd_item index space class
+template <typename MulType, typename ABType, typename CDType, typename ItemT>
+void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, CDType *d4, CDType *d5,
+         CDType *d6, CDType *d7, ABType a0, ABType a1, ABType b0, ABType b1,
+         CDType c0, CDType c1, CDType c2, CDType c3, CDType c4, CDType c5,
+         CDType c6, CDType c7, const ItemT &item) {
+  int lane = item.get_sub_group().get_local_linear_id();
+
+  short ROW_LOAD_OFFSET = 4 * (lane / 4) + (lane % 2);
+  short COL_LOAD_OFFSET = 4 * ((lane % 16) / 4) + 2 * ((lane / 2) % 2);
+
+  ABType recv_a[2 * 2], recv_b[4 * 2];
+
+  recv_a[0] =
+      dpct::select_from_sub_group(item.get_sub_group(), a0, ROW_LOAD_OFFSET);
+  recv_a[1] =
+      dpct::select_from_sub_group(item.get_sub_group(), a1, ROW_LOAD_OFFSET);
+  recv_a[2] = dpct::select_from_sub_group(item.get_sub_group(), a0,
+                                          ROW_LOAD_OFFSET + 2);
+  recv_a[3] = dpct::select_from_sub_group(item.get_sub_group(), a1,
+                                          ROW_LOAD_OFFSET + 2);
+
+  recv_b[0] =
+      dpct::select_from_sub_group(item.get_sub_group(), b0, COL_LOAD_OFFSET);
+  recv_b[1] =
+      dpct::select_from_sub_group(item.get_sub_group(), b1, COL_LOAD_OFFSET);
+  recv_b[2] = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                          COL_LOAD_OFFSET + 1);
+  recv_b[3] = dpct::select_from_sub_group(item.get_sub_group(), b1,
+                                          COL_LOAD_OFFSET + 1);
+  recv_b[4] = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                          COL_LOAD_OFFSET + 16);
+  recv_b[5] = dpct::select_from_sub_group(item.get_sub_group(), b1,
+                                          COL_LOAD_OFFSET + 16);
+  recv_b[6] = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                          COL_LOAD_OFFSET + 17);
+  recv_b[7] = dpct::select_from_sub_group(item.get_sub_group(), b1,
+                                          COL_LOAD_OFFSET + 17);
+
+  MulType *ra = reinterpret_cast<MulType *>(recv_a);
+  MulType *rb = reinterpret_cast<MulType *>(recv_b);
+  for (int i = 0; i < 4 /*k*/; i++) {
+    c0 += static_cast<CDType>(ra[i]) * static_cast<CDType>(rb[i]);
+    c1 += static_cast<CDType>(ra[i]) * static_cast<CDType>(rb[i + 4]);
+    c2 += static_cast<CDType>(ra[i + 4]) * static_cast<CDType>(rb[i]);
+    c3 += static_cast<CDType>(ra[i + 4]) * static_cast<CDType>(rb[i + 4]);
+    c4 += static_cast<CDType>(ra[i]) * static_cast<CDType>(rb[i + 8]);
+    c5 += static_cast<CDType>(ra[i]) * static_cast<CDType>(rb[i + 12]);
+    c6 += static_cast<CDType>(ra[i + 4]) * static_cast<CDType>(rb[i + 8]);
+    c7 += static_cast<CDType>(ra[i + 4]) * static_cast<CDType>(rb[i + 12]);
+  }
+
+  *d0 = c0;
+  *d1 = c1;
+  *d2 = c2;
+  *d3 = c3;
+  *d4 = c4;
+  *d5 = c5;
+  *d6 = c6;
+  *d7 = c7;
+}
+
+/// Multiplies 2 8x4 & 4x8 matrices and accumulates the result to a 8x8 b32
+/// matrix
+/// Requires the sub-group size of kernel calling this function to be 32
+/// \tparam [in] MulType The type of the multiplication result
+/// \tparam [in] ABType The type of the input matrices
+/// \tparam [in] CDType The type of the output matrix
+/// \tparam [in] ItemT The type of the sycl::nd_item index space class
+/// \param [in] d0 The 1st element to be written to the output D matrix
+/// \param [in] d1 The 2nd element to be written to the output D matrix
+/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
+/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
+/// \param [in] c0 The 1st element from C matrix to be added with d0
+/// \param [in] c1 The 2nd element from C matrix to be added with d1
+/// \param [in] item The sycl::nd_item index space class
+template <typename MulType, typename ABType, typename CDType, typename ItemT>
+void mma(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0, CDType c1,
+         const ItemT &item) {
+  int lane = item.get_sub_group().get_local_linear_id();
+
+  short ROW_LOAD_OFFSET = 4 * (lane / 4);
+  short COL_LOAD_OFFSET = 8 * (lane % 4);
+
+  for (int i = 0; i < 4; i++) {
+    ABType recv_a = dpct::select_from_sub_group(item.get_sub_group(), a0,
+                                                ROW_LOAD_OFFSET + i);
+    ABType recv_b = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                                COL_LOAD_OFFSET + i);
+    c0 += recv_a * recv_b;
+
+    recv_b = dpct::select_from_sub_group(item.get_sub_group(), b0,
+                                         COL_LOAD_OFFSET + i + 4);
+    c1 += recv_a * recv_b;
+  }
+
+  *d0 = c0;
+  *d1 = c1;
+}
+
 /// Multiplies 2 16x16 & 16x8 matrices and accumulates the result to a 16x8 b32
 /// matrix
 /// Requires the sub-group size of kernel calling this function to be 32
@@ -2084,7 +2279,7 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
          CDType c2, CDType c3, const ItemT &item) {
   int lane = item.get_sub_group().get_local_linear_id();
 
-  short ROW_LOAD_OFFSET = 4 * (lane / 4);
+  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
   short COL_LOAD_OFFSET = 8 * (lane % 4);
 
   for (int i = 0; i < 4; i++) {
@@ -2113,7 +2308,8 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
     auto *rb0 = reinterpret_cast<MulType *>(recv_b);
     auto *rb1 = reinterpret_cast<MulType *>(recv_b + 2);
 
-    for (int j = 0; j < 2 * 2; j++) {
+    // Iterate for k (i * j) times
+    for (int j = 0; j < 4; j++) {
       auto a0 = static_cast<CDType>(ra0[j]);
       auto a1 = static_cast<CDType>(ra1[j]);
       auto b0 = static_cast<CDType>(rb0[j]);

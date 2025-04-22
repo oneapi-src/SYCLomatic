@@ -270,6 +270,7 @@ BUILTIN_TYPE(s16x2,       ".s16x2")
 BUILTIN_TYPE(u16x2,       ".u16x2")
 
 // Vector modifiers
+MODIFIER(v1, ".v1")
 MODIFIER(v2, ".v2")
 MODIFIER(v4, ".v4")
 MODIFIER(v8, ".v8")
@@ -280,6 +281,7 @@ MODIFIER(col, ".col")
 
 // Matrix shape
 MODIFIER(m16n8k16, ".m16n8k16")
+MODIFIER(m8n8k4, ".m8n8k4")
 
 STATE_SPACE(reg,    ".reg")
 STATE_SPACE(sreg,   ".sreg")
