@@ -9,15 +9,15 @@
 #ifndef __DPCT_UTIL_HPP__
 #define __DPCT_UTIL_HPP__
 
+#include <optional>
 #include <sycl/sycl.hpp>
 #include <complex>
 #include <type_traits>
 #include <cassert>
 #include <cstdint>
-#ifdef DPCT_EXT_LEVEL_ZERO
+
 #include "level_zero/ze_api.h"
 #include "sycl/ext/oneapi/backend/level_zero.hpp"
-#endif
 // TODO: Remove these function definitions once they exist in the DPC++ compiler
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 template <typename T>
@@ -188,48 +188,6 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
       (((((std::uint64_t)b << 32 | a) >> ((s >> 8) & 0x7) * 8) & 0xff) << 16) |
       (((((std::uint64_t)b << 32 | a) >> ((s >> 12) & 0x7) * 8) & 0xff) << 24);
   return ret;
-}
-
-/// \param [in] low32 The 4 bytes to construct the 8 bytes value as low 32 bits.
-/// \param [in] high32 The 4 bytes to construct the 8 bytes value as high 32
-/// bits.
-/// \param [in] sel The selector value. It is used to generate selectors which are
-/// used to fetch byte value from \p low32 and \p high32 to construct result
-/// value.
-/// \param [in] mode The mode of permutation, together with \p sel, it
-/// further defines the behavior of data selection. \p mode and \p sel define 4
-/// selectors (s[i], i=0, 1, 2, 3), which are used as index to fetch 4 bytes from
-/// the 8 bytes value constructed by \p low32 and \p high32; the byte selected by s[i]
-/// is used to fill the i-th byte of the result.
-/// The available mode values are:
-/// mode value 0: s[i] = sel[i * 4 + 3 : i * 4]
-/// mode value 1: s[i] = sel[1 : 0] + i
-/// mode value 2: s[i] = (sel[1 : 0] + 7) % 8
-/// mode value 3: s[i] = sel[1 : 0]
-/// mode value 4: s[i] = max(sel[1 : 0], i)
-/// mode value 5: s[i] = min(sel[1 : 0], i)
-/// mode value 6: s[0] = sel[0 : 0] * 2
-///               s[1] = sel[0 : 0] * 2 + 1
-///               s[2] = s[0]
-///               s[3] = s[1]
-/// other value: illegal, undefined behavior, return 0.
-inline uint32_t byte_level_permute_custom(uint32_t low32, uint32_t high32,
-                                          uint32_t sel, int mode = 0) {
-  constexpr uint16_t lookup[6][4] = {
-      {0x3210, 0x4321, 0x5432, 0x6543}, // Forward 4-byte extract
-      {0x5670, 0x6701, 0x7012, 0x0123}, // Backward 4-byte extract
-      {0x0000, 0x1111, 0x2222, 0x3333}, // Replicate 8-bit values
-      {0x3210, 0x3211, 0x3222, 0x3333}, // Edge clamp left
-      {0x0000, 0x1110, 0x2210, 0x3210}, // Edge clamp right
-      {0x1010, 0x3232, 0x1010, 0x3232}  // Replicate 16-bit values
-  };
-
-  if (mode >= 1 && mode <= 6) {
-    return byte_level_permute(low32, high32, lookup[mode - 1][sel & 0x3]);
-  } else if (!mode) {
-    return byte_level_permute(low32, high32, sel);
-  }
-  return 0;
 }
 
 /// Find position of first least significant set bit in an integer.
@@ -1372,9 +1330,20 @@ ze_event_handle_t  get_ze_event(sycl::event event) {
 #endif
 
 
-result_t get_mem_ipc_handle(const void *ptr, ipc_mem_handle_t *phipc) {
+struct dpct_ipc_mem_handle_t {
+  pid_t pid;
+  ipc_mem_handle_t handle;
+};
+
+struct dpct_ipc_event_pool_handle_t {
+  pid_t pid;
+  ipc_event_pool_handle_t handle;
+};
+
+result_t get_mem_ipc_handle(const void *ptr, dpct_ipc_mem_handle_t *phipc) {
 #ifdef  DPCT_EXT_LEVEL_ZERO
-    return zeMemGetIpcHandle(get_ze_context(dpct::get_current_device().get_context()), ptr, phipc);
+    phipc->pid = getpid();
+    return zeMemGetIpcHandle(get_ze_context(dpct::get_current_device().get_context()), ptr, &phipc->handle);
 #endif
 }
 
@@ -1384,15 +1353,33 @@ result_t close_mem_ipc_handle(const void *ptr) {
 #endif
 }
 
-result_t open_mem_ipc_handle(void **ptr, ipc_mem_handle_t hipc) {
+#ifndef SYS_pidfd_open
+#define SYS_pidfd_open 434
+#endif
+
+#ifndef SYS_pidfd_getfd
+#define SYS_pidfd_getfd 438
+#endif
+template <class T>
+int get_cur_pid(T phipc) {
+  int pidfd = syscall(SYS_pidfd_open, phipc.pid, 0);
+  int fd;
+  memcpy(&fd, (void*)&phipc.handle.data, sizeof(int));
+  int newfd = syscall(SYS_pidfd_getfd, pidfd, fd, 0);
+  return newfd;
+}
+
+result_t open_mem_ipc_handle(void **ptr, dpct_ipc_mem_handle_t hipc) {
 #ifdef  DPCT_EXT_LEVEL_ZERO
-    return zeMemOpenIpcHandle(get_ze_context(dpct::get_current_device().get_context()), get_ze_device(dpct::get_current_device()), hipc, 0u, ptr);
+  int newfd = get_cur_pid(hipc);
+  memcpy(&hipc.handle.data, &newfd, sizeof(int));
+    return zeMemOpenIpcHandle(get_ze_context(dpct::get_current_device().get_context()), get_ze_device(dpct::get_current_device()), hipc.handle, 0u, ptr);
 #endif
 }
 
-result_t get_event_pool_ipc_handle(sycl::event *event, ipc_event_pool_handle_t  *phipc) {
-#ifdef  DPCT_EXT_LEVEL_ZERO
+result_t get_event_pool_ipc_handle(sycl::event *event, dpct_ipc_event_pool_handle_t *phipc) {
     ze_event_pool_handle_t event_pool = {};
+    phipc->pid = getpid();
     ze_event_pool_desc_t event_pool_desc = {ZE_STRUCTURE_TYPE_EVENT_POOL_DESC};
     event_pool_desc.count = 1;
     event_pool_desc.flags =  {ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE};
@@ -1400,27 +1387,93 @@ result_t get_event_pool_ipc_handle(sycl::event *event, ipc_event_pool_handle_t  
     ze_device_handle_t device = get_ze_device(dpct::get_current_device());
     ze_event_handle_t ze_event = get_ze_event(*event);
     zeEventPoolCreate(context, &event_pool_desc, 1, &device, &event_pool);
+
     ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
     event_desc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
     event_desc.wait = ZE_EVENT_SCOPE_FLAG_HOST;
     zeEventCreate(event_pool, &event_desc, &ze_event);
-    return zeEventPoolGetIpcHandle(event_pool, phipc);
-#endif
+    return zeEventPoolGetIpcHandle(event_pool, phipc->handle);
 }
 
-result_t open_event_pool_ipc_handle(sycl::event *event, ipc_event_pool_handle_t phipc) {
-#ifdef  DPCT_EXT_LEVEL_ZERO
-  ze_context_handle_t ze_context = get_ze_context(dpct::get_current_device().get_context());
-  ze_event_handle_t ze_event ={};
-  ze_event_pool_handle_t event_pool = {};
+static ze_event_pool_handle_t h_event_pool;
+static std::vector<ze_event_handle_t> ze_events;
+result_t create_event_in_pool(sycl::event *event) {
+  static int i = 0;
+  ze_context_handle_t ze_context =
+      get_ze_context(dpct::get_current_device().get_context());
+
+  if (h_event_pool == nullptr) {
+    ze_event_pool_desc_t event_pool_desc = {
+        ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr,
+        ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE,
+        32 // count
+    };
+    ze_device_handle_t device = get_ze_device(dpct::get_current_device());
+    zeEventPoolCreate(ze_context, &event_pool_desc, 1, &device, &h_event_pool);
+  }
+
+  ze_event_handle_t ze_event = {};
+
   ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
   event_desc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
   event_desc.wait = ZE_EVENT_SCOPE_FLAG_HOST;
-  auto ret = zeEventPoolOpenIpcHandle(ze_context, phipc, &event_pool);
-  zeEventCreate(event_pool, &event_desc, &ze_event);
-  *event = make_event<sycl::backend::ext_oneapi_level_zero>({ze_event, sycl::ext::oneapi::level_zero::ownership::keep}, dpct::get_current_device().get_context());
+  event_desc.index = i++;
+
+  zeEventCreate(h_event_pool, &event_desc, &ze_event);
+  zeEventHostReset(ze_event);
+
+  ze_result_t event_status = zeEventQueryStatus(ze_event);
+  if (event_status != ZE_RESULT_NOT_READY) {
+    std::cerr << "Event status in server before starting not correct\n";
+    std::terminate();
+  }
+  auto Context = dpct::get_current_device().get_context();
+
+ 
+  ze_context_handle_t ZeContext;
+  ze_context_desc_t ZeContextDesc = {ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr,
+                                     0};
+  // dpct::platform Platform =
+  //     dpct::get_current_device().get_platform();
+  // auto Platform = dpct::get_current_device().get_info<sycl::info::device::platform>();
+  // auto ZePlatform = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(Platform);
+  // zeContextCreate(ZePlatform, &ZeContextDesc, &ZeContext);
+  // backend_input_t<sycl::backend::ext_oneapi_level_zero, context> ContextInteropInput =
+  // {ZeContext,  dpct::get_current_device().get_context().get_devices()};
+  // auto ContextInterop =
+  // make_context<sycl::backend::ext_oneapi_level_zero>(ContextInteropInput)
+
+  // *event = make_event<sycl::backend::ext_oneapi_level_zero>(
+  //     {ze_event, sycl::ext::oneapi::level_zero::ownership::keep},
+  //     ContextInterop);
+}
+
+void zeEventPoolDestroy() {
+  // if (h_event_pool != nullptr) {
+  //   zeEventPoolDestroy(*h_event_pool);
+  //   h_event_pool = nullptr; 
+  // }
+}
+
+result_t open_event_pool_ipc_handle(sycl::event *event,
+                                    dpct_ipc_event_pool_handle_t hipc) {
+  ze_context_handle_t ze_context =
+      get_ze_context(dpct::get_current_device().get_context());
+  int newfd = get_cur_pid(hipc);
+  memcpy(&hipc.handle.data, &newfd, sizeof(int));
+
+  ze_event_handle_t ze_event = {};
+  ze_event_pool_handle_t h_event_pool;
+  auto ret = zeEventPoolOpenIpcHandle(ze_context, hipc.handle, &h_event_pool);
+  if (ret != ZE_RESULT_SUCCESS) {
+    std::cerr << "zeEventPoolOpenIpcHandle failed\n";
+    return ret;
+  }
+  // zeEventCreate(event_pool, &event_desc, &ze_event);
+  // *event = make_event<sycl::backend::ext_oneapi_level_zero>({ze_event,
+  // sycl::ext::oneapi::level_zero::ownership::keep},
+  // dpct::get_current_device().get_context());
   return ret;
-#endif
 }
 } // namespace experimental
 #ifdef _WIN32
