@@ -1349,7 +1349,7 @@ result_t get_mem_ipc_handle(const void *ptr, dpct_ipc_mem_handle_t *phipc) {
 
 result_t close_mem_ipc_handle(const void *ptr) {
 #ifdef  DPCT_EXT_LEVEL_ZERO
-    return zeMemCloseIpcHandle(get_ze_context(dpct::get_current_device().get_context()), ptr);
+    return zeMemCloseIpcHandle(get_ze_context(dpct::get_current_device().get_context()), (char *)ptr);
 #endif
 }
 
@@ -1366,6 +1366,7 @@ int get_cur_pid(T phipc) {
   int fd;
   memcpy(&fd, (void*)&phipc.handle.data, sizeof(int));
   int newfd = syscall(SYS_pidfd_getfd, pidfd, fd, 0);
+  std::cout << "Old fd  " << fd << " newfd " << newfd << "\n";
   return newfd;
 }
 
@@ -1373,54 +1374,57 @@ result_t open_mem_ipc_handle(void **ptr, dpct_ipc_mem_handle_t hipc) {
 #ifdef  DPCT_EXT_LEVEL_ZERO
   int newfd = get_cur_pid(hipc);
   memcpy(&hipc.handle.data, &newfd, sizeof(int));
-    return zeMemOpenIpcHandle(get_ze_context(dpct::get_current_device().get_context()), get_ze_device(dpct::get_current_device()), hipc.handle, 0u, ptr);
+  return zeMemOpenIpcHandle(get_ze_context(dpct::get_current_device().get_context()), get_ze_device(dpct::get_current_device()), hipc.handle, 0u, ptr);
 #endif
 }
 
-result_t get_event_pool_ipc_handle(sycl::event *event, dpct_ipc_event_pool_handle_t *phipc) {
-    ze_event_pool_handle_t event_pool = {};
-    phipc->pid = getpid();
-    ze_event_pool_desc_t event_pool_desc = {ZE_STRUCTURE_TYPE_EVENT_POOL_DESC};
-    event_pool_desc.count = 1;
-    event_pool_desc.flags =  {ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE};
-    ze_context_handle_t context = get_ze_context(dpct::get_current_device().get_context());
-    ze_device_handle_t device = get_ze_device(dpct::get_current_device());
-    ze_event_handle_t ze_event = get_ze_event(*event);
-    zeEventPoolCreate(context, &event_pool_desc, 1, &device, &event_pool);
 
-    ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
-    event_desc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
-    event_desc.wait = ZE_EVENT_SCOPE_FLAG_HOST;
-    zeEventCreate(event_pool, &event_desc, &ze_event);
-    return zeEventPoolGetIpcHandle(event_pool, phipc->handle);
-}
+constexpr ze_event_desc_t default_event_desc = { .stype = ZE_STRUCTURE_TYPE_EVENT_DESC,
+  .pNext = nullptr,
+  .index = 0,
+  .signal = 0,
+  .wait = 0 };
+  constexpr ze_event_pool_desc_t default_event_pool_desc = { .stype =
+    ZE_STRUCTURE_TYPE_EVENT_POOL_DESC,
+.pNext = nullptr,
+.flags = ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE,
+.count = 1 };
 
 static ze_event_pool_handle_t h_event_pool;
 static std::vector<ze_event_handle_t> ze_events;
+
 result_t create_event_in_pool(sycl::event *event) {
   static int i = 0;
   ze_context_handle_t ze_context =
       get_ze_context(dpct::get_current_device().get_context());
 
   if (h_event_pool == nullptr) {
-    ze_event_pool_desc_t event_pool_desc = {
-        ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr,
-        ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE,
-        32 // count
-    };
+    // ze_event_pool_desc_t event_pool_desc = {
+    //     ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr,
+    //     ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE,
+    //     32 // count
+    // };
     ze_device_handle_t device = get_ze_device(dpct::get_current_device());
-    zeEventPoolCreate(ze_context, &event_pool_desc, 1, &device, &h_event_pool);
+    auto ret = zeEventPoolCreate(ze_context, &default_event_pool_desc, 1, &device, &h_event_pool);
+
+    if (ret != ZE_RESULT_SUCCESS) {
+      std::cerr << "zeEventPoolCreate failed\n";
+      return ret;
+     }
   }
 
   ze_event_handle_t ze_event = {};
 
-  ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
-  event_desc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
-  event_desc.wait = ZE_EVENT_SCOPE_FLAG_HOST;
-  event_desc.index = i++;
+  // ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
+  // event_desc.signal = 0;
+  // event_desc.wait = 0;
+  // event_desc.index = 0;
+  std::cout << "Create event \n";
+  zeEventCreate(h_event_pool, &default_event_desc, &ze_event);
+  std::cout << "Create event \n";
 
-  zeEventCreate(h_event_pool, &event_desc, &ze_event);
   zeEventHostReset(ze_event);
+  std::cout << "Create event \n";
 
   ze_result_t event_status = zeEventQueryStatus(ze_event);
   if (event_status != ZE_RESULT_NOT_READY) {
@@ -1435,41 +1439,121 @@ result_t create_event_in_pool(sycl::event *event) {
                                      0};
   // dpct::platform Platform =
   //     dpct::get_current_device().get_platform();
-  // auto Platform = dpct::get_current_device().get_info<sycl::info::device::platform>();
   // auto ZePlatform = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(Platform);
   // zeContextCreate(ZePlatform, &ZeContextDesc, &ZeContext);
   // backend_input_t<sycl::backend::ext_oneapi_level_zero, context> ContextInteropInput =
   // {ZeContext,  dpct::get_current_device().get_context().get_devices()};
   // auto ContextInterop =
   // make_context<sycl::backend::ext_oneapi_level_zero>(ContextInteropInput)
+  std::cout << "Create eventccc \n";
+  //   backend_input_t<backend::ext_oneapi_level_zero, context>
+  //   ContextInteropInput = {ZeContextInterop, Context.get_devices()};
+  // auto ContextInterop =
+  //   make_context<backend::ext_oneapi_level_zero>(ContextInteropInput);
+  std::cout << "e address " << event << std::endl;
+  *event = sycl::make_event<sycl::backend::ext_oneapi_level_zero>(
+      {ze_event, sycl::ext::oneapi::level_zero::ownership::transfer},
+      dpct::get_current_device().get_context());
+  auto status = event->get_info<sycl::info::event::command_execution_status>();
 
-  // *event = make_event<sycl::backend::ext_oneapi_level_zero>(
-  //     {ze_event, sycl::ext::oneapi::level_zero::ownership::keep},
-  //     ContextInterop);
+  if (status != sycl::info::event_command_status::complete) {
+    std::cout << "PPPP Event not completeaaa " << std::endl;
+  }
+  std::cout << "Create eventeeee \n";
 }
 
-void zeEventPoolDestroy() {
-  // if (h_event_pool != nullptr) {
-  //   zeEventPoolDestroy(*h_event_pool);
-  //   h_event_pool = nullptr; 
-  // }
+void set_event_into_pool(sycl::event *event) {
+  ze_event_handle_t ze_event = get_ze_event(*event);
+  ze_context_handle_t ze_context =
+  get_ze_context(dpct::get_current_device().get_context());
+  if (h_event_pool == nullptr) {
+    ze_event_pool_desc_t event_pool_desc = {
+        ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr,
+        ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE,
+        32 // count
+    };
+    ze_device_handle_t device = get_ze_device(dpct::get_current_device());
+    zeEventPoolCreate(ze_context, &event_pool_desc, 1, &device, &h_event_pool);
+  }
+
+
+  ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
+  event_desc.signal = 0;
+  event_desc.wait = 0;
+  // event_desc.index = i++;
+
+}
+
+result_t get_event_pool_ipc_handle(sycl::event *event,
+                                   dpct_ipc_event_pool_handle_t *phipc) {
+  phipc->pid = getpid();
+//   ze_event_pool_handle_t h_event_pool_t;
+//   std::cout << "gggggg \n";
+//   auto status = event->get_info<sycl::info::event::command_execution_status>();
+
+//   if (status != sycl::info::event_command_status::complete) {
+//     std::cout << "PPPP Event not complete " << std::endl;
+//   }
+
+//   ze_result_t ret = zeEventGetEventPool(get_ze_event(*event), &h_event_pool_t);
+//   if (ret != ZE_RESULT_SUCCESS) {
+//     std::cerr << "zeEventGetEventPool failed\n";
+//    }
+//    status =
+//   event->get_info<sycl::info::event::command_execution_status>();
+// if (status != sycl::info::event_command_status::complete) {
+// std::cout << "PPPP Event not complete " << std::endl;
+// }
+
+//   std::cout << "event correct " << &h_event_pool_t << std::endl;
+create_event_in_pool(event);
+  auto status = event->get_info<sycl::info::event::command_execution_status>();
+
+  if (status != sycl::info::event_command_status::complete) {
+    std::cout << "PPPP Event not complete111 " << std::endl;
+  }
+  auto ret = zeEventPoolGetIpcHandle(h_event_pool, &phipc->handle);
+   if (ret != ZE_RESULT_SUCCESS) {
+    std::cerr << "zeEventPoolGetIpcHandle failed\n";
+    return ret;
+   }
+   int fd;
+   memcpy(&fd, (void*)&phipc->handle.data, sizeof(int));
+   std::cout << "fdaaa: " << fd << std::endl;
 }
 
 result_t open_event_pool_ipc_handle(sycl::event *event,
                                     dpct_ipc_event_pool_handle_t hipc) {
+  // event = new sycl::event();
   ze_context_handle_t ze_context =
       get_ze_context(dpct::get_current_device().get_context());
   int newfd = get_cur_pid(hipc);
+  std::cout << "newfd: " << newfd << std::endl;
   memcpy(&hipc.handle.data, &newfd, sizeof(int));
 
   ze_event_handle_t ze_event = {};
-  ze_event_pool_handle_t h_event_pool;
-  auto ret = zeEventPoolOpenIpcHandle(ze_context, hipc.handle, &h_event_pool);
+  ze_event_pool_handle_t h_event_pool_t;
+  auto ret = zeEventPoolOpenIpcHandle(ze_context, hipc.handle, &h_event_pool_t);
   if (ret != ZE_RESULT_SUCCESS) {
     std::cerr << "zeEventPoolOpenIpcHandle failed\n";
     return ret;
   }
-  // zeEventCreate(event_pool, &event_desc, &ze_event);
+  std::cout << "event add " << event << std::endl;
+  // create_event_in_pool(event);
+
+  ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
+  event_desc.signal = 0;
+  event_desc.wait = 0;
+  event_desc.index = 0;
+
+  zeEventCreate(h_event_pool_t, &event_desc, &ze_event);
+  *event = sycl::make_event<sycl::backend::ext_oneapi_level_zero>(
+    {ze_event, sycl::ext::oneapi::level_zero::ownership::keep}, dpct::get_current_device().get_context());
+    auto status = event->get_info<sycl::info::event::command_execution_status>();
+    // event->wait();
+    if (status != sycl::info::event_command_status::complete) {
+      std::cout << "PPPP Event not open complate " << std::endl;
+    }
   // *event = make_event<sycl::backend::ext_oneapi_level_zero>({ze_event,
   // sycl::ext::oneapi::level_zero::ownership::keep},
   // dpct::get_current_device().get_context());
