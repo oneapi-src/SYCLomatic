@@ -79,8 +79,8 @@ All DPCT options
                                             The values are:
     =bfloat16                             -   Disable the SYCL extensions for bfloat16.
     =device_info                          -   Disable the Intel extensions for device information, if supported by the compiler and the backend.
-    =free-function-queries                -   Disable the free query extension.
     =enqueued_barriers                    -   Disable the enqueued barriers extension.
+    =free-function-queries                -   Disable the free query extension.
     =peer_access                          -   Disable the peer access extension.
     =assert                               -   Disable the assert extension.
     =queue_empty                          -   Disable the queue empty extension.
