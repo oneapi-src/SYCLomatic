@@ -285,11 +285,10 @@ void CubMemberCallRule::runRule(
           CanTy->getAs<RecordType>()->getDecl());
       const auto &ValueTyArg = ClassSpecDecl->getTemplateArgs()[0];
 
-      ValueTyArg.getAsType().getAsString();
       std::string Fn;
       llvm::raw_string_ostream OS(Fn);
       OS << MapNames::getDpctNamespace() << "group::" << HelpFuncName << "<"
-         << ValueTyArg.getAsType().getAsString();
+         << DpctGlobalInfo::getReplacedTypeName(ValueTyArg.getAsType());
       if (isBlockShuffle) {
         if (!ClassSpecDecl->getTemplateArgs()[1].getIsDefaulted()) {
           OS << ", " << ClassSpecDecl->getTemplateArgs()[1].getAsIntegral();

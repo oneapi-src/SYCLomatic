@@ -360,14 +360,18 @@ public:
   }
 
 private:
+  template <typename KT>
+  using key_type =
+      typename std::conditional<std::is_same<KT, sycl::half>::value, uint16_t,
+                                uint32_t>::type;
   template <typename Item, bool DESCENDING>
   __dpct_inline__ void
   helper_sort(const Item &item, T (&keys)[ElementsPerWorkItem],
               int begin_bit = 0, int end_bit = 8 * sizeof(T),
               bool is_striped = false) {
-
-    uint32_t(&unsigned_keys)[ElementsPerWorkItem] =
-        reinterpret_cast<uint32_t(&)[ElementsPerWorkItem]>(keys);
+    using UnsignedT = key_type<T>;
+    UnsignedT(&unsigned_keys)[ElementsPerWorkItem] =
+        reinterpret_cast<UnsignedT(&)[ElementsPerWorkItem]>(keys);
 
 #pragma unroll
     for (int i = 0; i < ElementsPerWorkItem; ++i) {
@@ -379,8 +383,8 @@ private:
 
       int ranks[ElementsPerWorkItem];
       detail::radix_rank<RADIX_BITS, DESCENDING>(_local_memory)
-          .template rank_keys<Item, ElementsPerWorkItem>(item, unsigned_keys,
-                                                         ranks, i, pass_bits);
+          .template rank_keys<Item, UnsignedT, ElementsPerWorkItem>(
+              item, unsigned_keys, ranks, i, pass_bits);
 
       sycl::group_barrier(item.get_group());
 
