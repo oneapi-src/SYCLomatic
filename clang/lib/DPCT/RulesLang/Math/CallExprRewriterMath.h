@@ -401,7 +401,7 @@ public:
         return NoRewriteRewriter.value().second.second->create(C);
       }
     }
-    if (!math::IsDefinedInInRoot()(C)) {
+    if (!math::IsDefinedByUser()(C)) {
       // Host and device
       if (HostDeviceRewriter && HostDeviceRewriter.value().first(C))
         return HostDeviceRewriter.value().second.second->create(C);

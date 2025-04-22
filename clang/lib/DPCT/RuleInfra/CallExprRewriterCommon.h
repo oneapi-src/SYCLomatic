@@ -2132,9 +2132,9 @@ public:
     return isFromCUDA(FD);
   }
 };
-class IsDefinedInInRoot {
+class IsDefinedByUser {
 public:
-  IsDefinedInInRoot() {}
+  IsDefinedByUser() {}
   bool operator()(const CallExpr *C) {
     auto FD = C->getDirectCallee();
     if (!FD)
