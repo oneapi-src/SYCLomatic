@@ -803,11 +803,12 @@ DPCT_ENUM_OPTION(
             "be accessed within a kernel using syntax similar to C++ global "
             "variables.\n",
             false),
-        DPCT_OPTION_ENUM_VALUE(
-            "virtual_mem", int(ExperimentalFeatures::Exp_VirtualMemory),
-            "Experimental extension that allows for mapping of an address range onto "
-            "multiple allocations of physical memory.",
-            false),
+        DPCT_OPTION_ENUM_VALUE("virtual_mem",
+                               int(ExperimentalFeatures::Exp_VirtualMemory),
+                               "Experimental extension that allows for mapping "
+                               "of an address range onto "
+                               "multiple allocations of physical memory.",
+                               false),
         DPCT_OPTION_ENUM_VALUE(
             "in_order_queue_events",
             int(ExperimentalFeatures::Exp_InOrderQueueEvents),
@@ -825,6 +826,12 @@ DPCT_ENUM_OPTION(
         DPCT_OPTION_ENUM_VALUE(
             "prefetch", int(ExperimentalFeatures::Exp_Prefetch),
             "Experimental extension that allows use of SYCL prefetch APIs.\n",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
+            "l0-ipc", int(ExperimentalFeatures::Exp_IPC),
+            "An experimental extension that allows the use of Level Zero APIs "
+            "to migrate IPC code, with the DPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO "
+            "macro defined to enable these APIs.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "all", int(ExperimentalFeatures::Exp_All),

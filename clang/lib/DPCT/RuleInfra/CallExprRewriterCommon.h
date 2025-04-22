@@ -1823,6 +1823,10 @@ inline auto UseExtBindlessImages = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExtBindlessImages();
 };
 
+inline auto UseExtL0IPC = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExtIPC();
+};
+
 inline auto UseExtGraph = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExtGraph();
 };

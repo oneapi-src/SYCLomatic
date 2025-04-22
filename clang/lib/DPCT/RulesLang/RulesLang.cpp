@@ -348,7 +348,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
               "cudaExternalSemaphoreHandleType", "CUstreamCallback",
               "cudaHostFn_t", "__nv_half2", "__nv_half", "cudaGraphNodeType",
-              "cudaIpcMemHandle_t", "cudaIpcEventHandle_t"))))))
+              "cudaIpcMemHandle_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -926,6 +926,13 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       if (!DpctGlobalInfo::useExtGraph()) {
         report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
                "cudaGraphNodeType", "--use-experimental-features=graph");
+      }
+    }
+    if (CanonicalTypeStr == "cudaIpcMemHandle_st") {
+      if (!DpctGlobalInfo::useExtIPC()) {
+        report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               "cudaIpcMemHandle_t", "--use-experimental-features=l0-ipc");
+        return;
       }
     }
 
@@ -2641,15 +2648,6 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Msg);
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
-  } else if (FuncName == "cudaIpcGetEventHandle" ||
-             FuncName == "cudaIpcOpenEventHandle" ||
-             FuncName == "cudaIpcGetMemHandle" ||
-             FuncName == "cudaIpcOpenMemHandle" ||
-             FuncName == "cudaIpcCloseMemHandle") {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
   } else if (FuncName == "__trap") {
     if (DpctGlobalInfo::useAssert()) {
       emplaceTransformation(new ReplaceStmt(CE, "assert(0)"));

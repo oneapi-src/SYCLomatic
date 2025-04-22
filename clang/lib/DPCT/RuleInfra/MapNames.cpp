@@ -363,8 +363,9 @@ void MapNames::setExplicitNamespaceMap(
       {"CUstreamCallback",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_callback",
                                       HelperFeatureEnum::device_ext)},
-      {"cudaIpcMemHandle_t", std::make_shared<TypeNameRule>(getDpctNamespace() + "experimental::dpct_ipc_mem_handle_t")},
-      {"cudaIpcEventHandle_t", std::make_shared<TypeNameRule>(getDpctNamespace() + "experimental::dpct_ipc_event_pool_handle_t")},
+      {"cudaIpcMemHandle_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::dpct_ipc_mem_handle_t")},
       {"char1", std::make_shared<TypeNameRule>("int8_t")},
       {"char2", std::make_shared<TypeNameRule>(getClNamespace() + "char2")},
       {"char3", std::make_shared<TypeNameRule>(getClNamespace() + "char3")},

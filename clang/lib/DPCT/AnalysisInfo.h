@@ -1347,6 +1347,9 @@ public:
     return getUsingExperimental<
         ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();
   }
+  static bool useExtIPC() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_IPC>();
+  }
   static bool useExtPrefetch() {
     return getUsingExperimental<ExperimentalFeatures::Exp_Prefetch>();
   }

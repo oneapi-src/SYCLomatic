@@ -9,15 +9,15 @@
 #ifndef __DPCT_UTIL_HPP__
 #define __DPCT_UTIL_HPP__
 
-#include <optional>
 #include <sycl/sycl.hpp>
 #include <complex>
 #include <type_traits>
 #include <cassert>
 #include <cstdint>
-
+#if DPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO
 #include "level_zero/ze_api.h"
 #include "sycl/ext/oneapi/backend/level_zero.hpp"
+#endif
 // TODO: Remove these function definitions once they exist in the DPC++ compiler
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 template <typename T>
@@ -188,6 +188,48 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
       (((((std::uint64_t)b << 32 | a) >> ((s >> 8) & 0x7) * 8) & 0xff) << 16) |
       (((((std::uint64_t)b << 32 | a) >> ((s >> 12) & 0x7) * 8) & 0xff) << 24);
   return ret;
+}
+
+/// \param [in] low32 The 4 bytes to construct the 8 bytes value as low 32 bits.
+/// \param [in] high32 The 4 bytes to construct the 8 bytes value as high 32
+/// bits.
+/// \param [in] sel The selector value. It is used to generate selectors which are
+/// used to fetch byte value from \p low32 and \p high32 to construct result
+/// value.
+/// \param [in] mode The mode of permutation, together with \p sel, it
+/// further defines the behavior of data selection. \p mode and \p sel define 4
+/// selectors (s[i], i=0, 1, 2, 3), which are used as index to fetch 4 bytes from
+/// the 8 bytes value constructed by \p low32 and \p high32; the byte selected by s[i]
+/// is used to fill the i-th byte of the result.
+/// The available mode values are:
+/// mode value 0: s[i] = sel[i * 4 + 3 : i * 4]
+/// mode value 1: s[i] = sel[1 : 0] + i
+/// mode value 2: s[i] = (sel[1 : 0] + 7) % 8
+/// mode value 3: s[i] = sel[1 : 0]
+/// mode value 4: s[i] = max(sel[1 : 0], i)
+/// mode value 5: s[i] = min(sel[1 : 0], i)
+/// mode value 6: s[0] = sel[0 : 0] * 2
+///               s[1] = sel[0 : 0] * 2 + 1
+///               s[2] = s[0]
+///               s[3] = s[1]
+/// other value: illegal, undefined behavior, return 0.
+inline uint32_t byte_level_permute_custom(uint32_t low32, uint32_t high32,
+  uint32_t sel, int mode = 0) {
+constexpr uint16_t lookup[6][4] = {
+{0x3210, 0x4321, 0x5432, 0x6543}, // Forward 4-byte extract
+{0x5670, 0x6701, 0x7012, 0x0123}, // Backward 4-byte extract
+{0x0000, 0x1111, 0x2222, 0x3333}, // Replicate 8-bit values
+{0x3210, 0x3211, 0x3222, 0x3333}, // Edge clamp left
+{0x0000, 0x1110, 0x2210, 0x3210}, // Edge clamp right
+{0x1010, 0x3232, 0x1010, 0x3232}  // Replicate 16-bit values
+};
+
+if (mode >= 1 && mode <= 6) {
+return byte_level_permute(low32, high32, lookup[mode - 1][sel & 0x3]);
+} else if (!mode) {
+return byte_level_permute(low32, high32, sel);
+}
+return 0;
 }
 
 /// Find position of first least significant set bit in an integer.
@@ -1307,52 +1349,15 @@ inline uint32_t ternary_logic_op(uint32_t a, uint32_t b, uint32_t c,
 
   return result;
 }
+
+#ifdef DPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO
+#if defined(__linux__)
 namespace experimental {
-ze_context_handle_t get_ze_context(sycl::context context) {
-  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(context);
-}
 
-ze_device_handle_t get_ze_device(sycl::device device) {
-  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(device);
-}
-ze_event_handle_t  get_ze_event(sycl::event event) {
-  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(event);
-}
-
-#if DPCT_EXT_LEVEL_ZERO
-  using ipc_mem_handle_t = ze_ipc_mem_handle_t;
-  using ipc_event_pool_handle_t = ze_ipc_event_pool_handle_t;
-  using result_t = ze_result_t;
-#else
-  using ipc_mem_handle_t = unsigned int;
-  using ipc_event_pool_handle_t = unsigned int;
-  using result_t = void;
-#endif
-
-
-struct dpct_ipc_mem_handle_t {
-  pid_t pid;
-  ipc_mem_handle_t handle;
-};
-
-struct dpct_ipc_event_pool_handle_t {
-  pid_t pid;
-  ipc_event_pool_handle_t handle;
-};
-
-result_t get_mem_ipc_handle(const void *ptr, dpct_ipc_mem_handle_t *phipc) {
-#ifdef  DPCT_EXT_LEVEL_ZERO
-    phipc->pid = getpid();
-    return zeMemGetIpcHandle(get_ze_context(dpct::get_current_device().get_context()), ptr, &phipc->handle);
-#endif
-}
-
-result_t close_mem_ipc_handle(const void *ptr) {
-#ifdef  DPCT_EXT_LEVEL_ZERO
-    return zeMemCloseIpcHandle(get_ze_context(dpct::get_current_device().get_context()), (char *)ptr);
-#endif
-}
-
+/* System call number definitions for kernel compatibility
+ * Ensures backward compatibility with older Linux kernels
+ * SYS_pidfd_open: Process file descriptor opener (requires kernel 5.6+)
+ * SYS_pidfd_getfd: Cross-process FD fetcher system call */
 #ifndef SYS_pidfd_open
 #define SYS_pidfd_open 434
 #endif
@@ -1360,206 +1365,78 @@ result_t close_mem_ipc_handle(const void *ptr) {
 #ifndef SYS_pidfd_getfd
 #define SYS_pidfd_getfd 438
 #endif
-template <class T>
-int get_cur_pid(T phipc) {
+
+/* IPC memory handle structure for cross-process sharing
+ * pid: Source process identifier
+ * handle: Opaque memory handle containing OS-specific metadata */
+struct dpct_ipc_mem_handle_t {
+  pid_t pid;
+  ze_ipc_mem_handle_t handle;
+};
+
+/// Extracts native Level Zero context handle from SYCL context
+/// \param [in] context SYCL context object
+/// \returns Native Level Zero context handle
+ze_context_handle_t get_ze_context(sycl::context context) {
+  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(context);
+}
+
+/// Retrieves native Level Zero device handle from SYCL device
+/// \param [in] device SYCL device object
+/// \returns Native Level Zero device handle
+ze_device_handle_t get_ze_device(sycl::device device) {
+  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(device);
+}
+/// Acquires native Level Zero event handle from SYCL event
+/// \param [in] event SYCL event object
+/// \returns Native Level Zero event handle
+ze_event_handle_t get_ze_event(sycl::event event) {
+  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(event);
+}
+
+/// Acquires IPC handle for shared memory region
+/// \param [in] ptr Pointer to shared memory region
+/// \param [out] phipc Output IPC handle structure
+/// \returns Level Zero operation status code
+ze_result_t get_mem_ipc_handle(const void *ptr, dpct_ipc_mem_handle_t *phipc) {
+  phipc->pid = getpid();
+  return zeMemGetIpcHandle(
+      get_ze_context(dpct::get_current_device().get_context()), ptr,
+      &phipc->handle);
+}
+/// Releases resources associated with IPC handle
+/// \param [in] ptr Pointer to shared memory region
+/// \returns Level Zero operation status code
+ze_result_t close_mem_ipc_handle(const void *ptr) {
+  return zeMemCloseIpcHandle(
+      get_ze_context(dpct::get_current_device().get_context()), (char *)ptr);
+}
+/// Cross-process file descriptor translator
+/// \param [in] phipc Source IPC handle structure
+/// \returns Local process file descriptor
+template <class T> int get_cur_pid(T phipc) {
   int pidfd = syscall(SYS_pidfd_open, phipc.pid, 0);
   int fd;
-  memcpy(&fd, (void*)&phipc.handle.data, sizeof(int));
+  memcpy(&fd, (void *)&phipc.handle.data, sizeof(int));
   int newfd = syscall(SYS_pidfd_getfd, pidfd, fd, 0);
-  std::cout << "Old fd  " << fd << " newfd " << newfd << "\n";
   return newfd;
 }
-
-result_t open_mem_ipc_handle(void **ptr, dpct_ipc_mem_handle_t hipc) {
-#ifdef  DPCT_EXT_LEVEL_ZERO
+/// Maps remote IPC memory to local address space
+/// \param [in] hipc Source IPC handle structure
+/// \param [out] ptr Mapped memory pointer in local process
+/// \returns Level Zero operation status code
+ze_result_t open_mem_ipc_handle(dpct_ipc_mem_handle_t hipc, void **ptr) {
   int newfd = get_cur_pid(hipc);
-  memcpy(&hipc.handle.data, &newfd, sizeof(int));
-  return zeMemOpenIpcHandle(get_ze_context(dpct::get_current_device().get_context()), get_ze_device(dpct::get_current_device()), hipc.handle, 0u, ptr);
-#endif
+  memcpy(&hipc.handle.data, &newfd, sizeof(newfd));
+  return zeMemOpenIpcHandle(
+      get_ze_context(dpct::get_current_device().get_context()),
+      get_ze_device(dpct::get_current_device()), hipc.handle, 0u, ptr);
 }
 
-
-constexpr ze_event_desc_t default_event_desc = { .stype = ZE_STRUCTURE_TYPE_EVENT_DESC,
-  .pNext = nullptr,
-  .index = 0,
-  .signal = 0,
-  .wait = 0 };
-  constexpr ze_event_pool_desc_t default_event_pool_desc = { .stype =
-    ZE_STRUCTURE_TYPE_EVENT_POOL_DESC,
-.pNext = nullptr,
-.flags = ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE,
-.count = 1 };
-
-static ze_event_pool_handle_t h_event_pool;
-static std::vector<ze_event_handle_t> ze_events;
-
-result_t create_event_in_pool(sycl::event *event) {
-  static int i = 0;
-  ze_context_handle_t ze_context =
-      get_ze_context(dpct::get_current_device().get_context());
-
-  if (h_event_pool == nullptr) {
-    // ze_event_pool_desc_t event_pool_desc = {
-    //     ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr,
-    //     ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE,
-    //     32 // count
-    // };
-    ze_device_handle_t device = get_ze_device(dpct::get_current_device());
-    auto ret = zeEventPoolCreate(ze_context, &default_event_pool_desc, 1, &device, &h_event_pool);
-
-    if (ret != ZE_RESULT_SUCCESS) {
-      std::cerr << "zeEventPoolCreate failed\n";
-      return ret;
-     }
-  }
-
-  ze_event_handle_t ze_event = {};
-
-  // ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
-  // event_desc.signal = 0;
-  // event_desc.wait = 0;
-  // event_desc.index = 0;
-  std::cout << "Create event \n";
-  zeEventCreate(h_event_pool, &default_event_desc, &ze_event);
-  std::cout << "Create event \n";
-
-  zeEventHostReset(ze_event);
-  std::cout << "Create event \n";
-
-  ze_result_t event_status = zeEventQueryStatus(ze_event);
-  if (event_status != ZE_RESULT_NOT_READY) {
-    std::cerr << "Event status in server before starting not correct\n";
-    std::terminate();
-  }
-  auto Context = dpct::get_current_device().get_context();
-
- 
-  ze_context_handle_t ZeContext;
-  ze_context_desc_t ZeContextDesc = {ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr,
-                                     0};
-  // dpct::platform Platform =
-  //     dpct::get_current_device().get_platform();
-  // auto ZePlatform = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(Platform);
-  // zeContextCreate(ZePlatform, &ZeContextDesc, &ZeContext);
-  // backend_input_t<sycl::backend::ext_oneapi_level_zero, context> ContextInteropInput =
-  // {ZeContext,  dpct::get_current_device().get_context().get_devices()};
-  // auto ContextInterop =
-  // make_context<sycl::backend::ext_oneapi_level_zero>(ContextInteropInput)
-  std::cout << "Create eventccc \n";
-  //   backend_input_t<backend::ext_oneapi_level_zero, context>
-  //   ContextInteropInput = {ZeContextInterop, Context.get_devices()};
-  // auto ContextInterop =
-  //   make_context<backend::ext_oneapi_level_zero>(ContextInteropInput);
-  std::cout << "e address " << event << std::endl;
-  *event = sycl::make_event<sycl::backend::ext_oneapi_level_zero>(
-      {ze_event, sycl::ext::oneapi::level_zero::ownership::transfer},
-      dpct::get_current_device().get_context());
-  auto status = event->get_info<sycl::info::event::command_execution_status>();
-
-  if (status != sycl::info::event_command_status::complete) {
-    std::cout << "PPPP Event not completeaaa " << std::endl;
-  }
-  std::cout << "Create eventeeee \n";
-}
-
-void set_event_into_pool(sycl::event *event) {
-  ze_event_handle_t ze_event = get_ze_event(*event);
-  ze_context_handle_t ze_context =
-  get_ze_context(dpct::get_current_device().get_context());
-  if (h_event_pool == nullptr) {
-    ze_event_pool_desc_t event_pool_desc = {
-        ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr,
-        ZE_EVENT_POOL_FLAG_IPC | ZE_EVENT_POOL_FLAG_HOST_VISIBLE,
-        32 // count
-    };
-    ze_device_handle_t device = get_ze_device(dpct::get_current_device());
-    zeEventPoolCreate(ze_context, &event_pool_desc, 1, &device, &h_event_pool);
-  }
-
-
-  ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
-  event_desc.signal = 0;
-  event_desc.wait = 0;
-  // event_desc.index = i++;
-
-}
-
-result_t get_event_pool_ipc_handle(sycl::event *event,
-                                   dpct_ipc_event_pool_handle_t *phipc) {
-  phipc->pid = getpid();
-//   ze_event_pool_handle_t h_event_pool_t;
-//   std::cout << "gggggg \n";
-//   auto status = event->get_info<sycl::info::event::command_execution_status>();
-
-//   if (status != sycl::info::event_command_status::complete) {
-//     std::cout << "PPPP Event not complete " << std::endl;
-//   }
-
-//   ze_result_t ret = zeEventGetEventPool(get_ze_event(*event), &h_event_pool_t);
-//   if (ret != ZE_RESULT_SUCCESS) {
-//     std::cerr << "zeEventGetEventPool failed\n";
-//    }
-//    status =
-//   event->get_info<sycl::info::event::command_execution_status>();
-// if (status != sycl::info::event_command_status::complete) {
-// std::cout << "PPPP Event not complete " << std::endl;
-// }
-
-//   std::cout << "event correct " << &h_event_pool_t << std::endl;
-create_event_in_pool(event);
-  auto status = event->get_info<sycl::info::event::command_execution_status>();
-
-  if (status != sycl::info::event_command_status::complete) {
-    std::cout << "PPPP Event not complete111 " << std::endl;
-  }
-  auto ret = zeEventPoolGetIpcHandle(h_event_pool, &phipc->handle);
-   if (ret != ZE_RESULT_SUCCESS) {
-    std::cerr << "zeEventPoolGetIpcHandle failed\n";
-    return ret;
-   }
-   int fd;
-   memcpy(&fd, (void*)&phipc->handle.data, sizeof(int));
-   std::cout << "fdaaa: " << fd << std::endl;
-}
-
-result_t open_event_pool_ipc_handle(sycl::event *event,
-                                    dpct_ipc_event_pool_handle_t hipc) {
-  // event = new sycl::event();
-  ze_context_handle_t ze_context =
-      get_ze_context(dpct::get_current_device().get_context());
-  int newfd = get_cur_pid(hipc);
-  std::cout << "newfd: " << newfd << std::endl;
-  memcpy(&hipc.handle.data, &newfd, sizeof(int));
-
-  ze_event_handle_t ze_event = {};
-  ze_event_pool_handle_t h_event_pool_t;
-  auto ret = zeEventPoolOpenIpcHandle(ze_context, hipc.handle, &h_event_pool_t);
-  if (ret != ZE_RESULT_SUCCESS) {
-    std::cerr << "zeEventPoolOpenIpcHandle failed\n";
-    return ret;
-  }
-  std::cout << "event add " << event << std::endl;
-  // create_event_in_pool(event);
-
-  ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC};
-  event_desc.signal = 0;
-  event_desc.wait = 0;
-  event_desc.index = 0;
-
-  zeEventCreate(h_event_pool_t, &event_desc, &ze_event);
-  *event = sycl::make_event<sycl::backend::ext_oneapi_level_zero>(
-    {ze_event, sycl::ext::oneapi::level_zero::ownership::keep}, dpct::get_current_device().get_context());
-    auto status = event->get_info<sycl::info::event::command_execution_status>();
-    // event->wait();
-    if (status != sycl::info::event_command_status::complete) {
-      std::cout << "PPPP Event not open complate " << std::endl;
-    }
-  // *event = make_event<sycl::backend::ext_oneapi_level_zero>({ze_event,
-  // sycl::ext::oneapi::level_zero::ownership::keep},
-  // dpct::get_current_device().get_context());
-  return ret;
-}
 } // namespace experimental
+#endif // __linux__
+#endif // DPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO
+
 #ifdef _WIN32
 #define DPCT_EXPORT __declspec(dllexport)
 #else
