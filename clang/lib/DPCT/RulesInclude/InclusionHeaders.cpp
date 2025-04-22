@@ -55,7 +55,7 @@ getUserDefinedHeader(const std::string &FileName) {
     for (auto &Header : Rule.Includes) {
       PrintHeader(Header);
     }
-    if (Rule.Out.has_value() && !Rule.Out.value().empty())
+    if (validateOutFieldAndWarn(Rule) && !Rule.Out.value().empty())
       PrintHeader(Rule.Out.value());
     OS << Rule.Postfix;
     return std::make_pair(ReplHeaderStr, Rule.Priority);

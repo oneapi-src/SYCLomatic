@@ -15,4 +15,7 @@ LIBRARY(DNN, "oneAPI Deep Neural Network Library (oneDNN)",
 LIBRARY(CCL, "oneAPI Collective Communications Library (oneCCL)",
         RuleGroupKind::RK_NCCL)
 
+LIBRARY(SHMEM, "Intel Shared Memory Library (iSHMEM)",
+        RuleGroupKind::RK_NVSHMEM)
+
 #undef LIBRARY

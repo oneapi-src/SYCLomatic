@@ -1669,16 +1669,16 @@ void csrgemm2_get_buffer_size(
 /// \param [out] nnz_ptr Non-zero elements number of matrix C.
 /// \param [in] info The information of csrgemm2 operation.
 /// \param [in] buffer Workspace memory.
-void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
-                  const std::shared_ptr<matrix_info> info_a, int nnz_a,
-                  const int *row_ptr_a, const int *col_ind_a,
-                  const std::shared_ptr<matrix_info> info_b, int nnz_b,
-                  const int *row_ptr_b, const int *col_ind_b,
-                  const std::shared_ptr<matrix_info> info_d, int nnz_d,
-                  const int *row_ptr_d, const int *col_ind_d,
-                  const std::shared_ptr<matrix_info> info_c, int *row_ptr_c,
-                  int *nnz_ptr, std::shared_ptr<csrgemm2_info> info,
-                  void *buffer) {
+inline void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
+                         const std::shared_ptr<matrix_info> info_a, int nnz_a,
+                         const int *row_ptr_a, const int *col_ind_a,
+                         const std::shared_ptr<matrix_info> info_b, int nnz_b,
+                         const int *row_ptr_b, const int *col_ind_b,
+                         const std::shared_ptr<matrix_info> info_d, int nnz_d,
+                         const int *row_ptr_d, const int *col_ind_d,
+                         const std::shared_ptr<matrix_info> info_c,
+                         int *row_ptr_c, int *nnz_ptr,
+                         std::shared_ptr<csrgemm2_info> info, void *buffer) {
   sycl::queue &queue = desc->get_queue();
   if (info->matrix_c_datatype ==
       csrgemm2_info::matrix_c_datatype_t::mcd_float) {

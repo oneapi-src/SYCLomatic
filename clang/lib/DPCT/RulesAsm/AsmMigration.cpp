@@ -1575,6 +1575,7 @@ protected:
 
     if (Type->getKind() != InlineAsmBuiltinType::s16 &&
         Type->getKind() != InlineAsmBuiltinType::s32 &&
+        Type->getKind() != InlineAsmBuiltinType::f16x2 &&
         Type->getKind() != InlineAsmBuiltinType::s64) {
       return SYCLGenError();
     }
@@ -1594,7 +1595,14 @@ protected:
 
     if (Inst->is(asmtok::op_abs))
       OS() << MapNames::getClNamespace() << "abs(" << Op << ")";
-    else
+    else if (Inst->is(asmtok::op_neg) &&
+             Type->getKind() == InlineAsmBuiltinType::f16x2) {
+      std::string FormatTemp =
+          "(-sycl::vec<int, 1>({0}).as<sycl::vec<sycl::half, "
+          "2>>()).as<sycl::vec<int, 1>>().x()";
+
+      OS() << llvm::formatv(FormatTemp.c_str(), Op);
+    } else
       OS() << "-" << Op;
 
     endstmt();
@@ -2595,6 +2603,34 @@ protected:
       }
     }
 
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_cvta(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+
+    std::string Op;
+    if (tryEmitStmt(Op, Inst->getInputOperand(0)))
+      return SYCLGenError();
+
+    const auto *Dst = Inst->getOutputOperand();
+    if (!Dst)
+      return SYCLGenError();
+
+    std::string Type;
+    if (tryEmitType(Type, Inst->getType(0)))
+      return SYCLGenError();
+
+    if (emitStmt(Dst))
+      return SYCLGenError();
+    OS() << " = ";
+
+    std::string FormatTemp = "({0})({1})";
+    OS() << llvm::formatv(FormatTemp.c_str(), Type, Op);
     endstmt();
     return SYCLGenSuccess();
   }

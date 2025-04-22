@@ -599,7 +599,7 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 }
 
 void registerCmakeMigrationRule(MetaRuleObject &R) {
-  if (!R.Out.has_value())
+  if (!validateOutFieldAndWarn(R))
     return;
   auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out.value(), R.Subrules,
                                             R.MatchMode, R.Warning, R.RuleId,

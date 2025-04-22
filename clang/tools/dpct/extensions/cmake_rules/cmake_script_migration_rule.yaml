@@ -22,8 +22,7 @@
   Priority: Fallback
   CmakeSyntax: project_remove_cuda
   In: project${empty}(${arg0} ${argN})
-  Out: |
-   project(${arg0} ${argN})
+  Out: project(${arg0} ${argN})
   Subrules:
     argN:
       In: CUDA
@@ -282,8 +281,7 @@
     value:
       MatchMode: Full
       In: \${CUDA_CUFFT_LIBRARIES}
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_CUDA_CUFFT_LIBRARIES_with_MKL"
 
 - Rule: rule_CUDA_CUBLAS_LIBRARIES
@@ -297,8 +295,7 @@
     value:
       MatchMode: Full
       In: \${CUDA_CUBLAS_LIBRARIES}
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_CUDA_CUBLAS_LIBRARIES_with_MKL"
 
 - Rule: rule_CUDA_curand_LIBRARY
@@ -312,8 +309,7 @@
     value:
       MatchMode: Full
       In: \${CUDA_curand_LIBRARY}
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_CUDA_curand_LIBRARY_with_MKL"
 
 - Rule: rule_CUDA_cusolver_LIBRARY
@@ -327,8 +323,7 @@
     value:
       MatchMode: Full
       In: \${CUDA_cusolver_LIBRARY}
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_CUDA_cusolver_LIBRARY_with_MKL"
 
 - Rule: rule_CUDA_cusparse_LIBRARY
@@ -342,8 +337,7 @@
     value:
       MatchMode: Full
       In: \${CUDA_cusparse_LIBRARY}
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_CUDA_cusparse_LIBRARY_with_MKL"
 
 - Rule: rule_CUDA_cupti_LIBRARY_removed
@@ -798,8 +792,7 @@
   Subrules:
     libs:
       In: cublas
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       MatchMode: Full
       RuleId: "replace_cublas_with_MKL_target"
 
@@ -812,8 +805,7 @@
   Subrules:
     libs:
       In: -lcublas
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       MatchMode: Full
       RuleId: "replace_libcublas_with_qmkl"
 
@@ -826,8 +818,7 @@
   Subrules:
     libs:
       In: cudnn
-      Out: |
-        \${DNN_LIB}
+      Out: \${DNN_LIB}
       MatchMode: Full
       RuleId: "replace_cudnn_with_libdnn"
 
@@ -892,8 +883,7 @@
   Subrules:
     libs:
       In: cublas
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       MatchMode: Full
       RuleId: "replace_cublas_with_MKL_target"
 
@@ -906,8 +896,7 @@
   Subrules:
     libs:
       In: -lcublas
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       MatchMode: Full
       RuleId: "replace_libcublas_with_qmkl"
 
@@ -920,8 +909,7 @@
   Subrules:
     libs:
       In: cudnn
-      Out: |
-        \${DNN_LIB}
+      Out: \${DNN_LIB}
       MatchMode: Full
       RuleId: "replace_cudnn_with_libdnn"
 
@@ -974,8 +962,7 @@
   Subrules:
     libs:
       In: cuda
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_cuda"
 
@@ -988,8 +975,7 @@
   Subrules:
     libs:
       In: cublas
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       MatchMode: Full
       RuleId: "replace_find_library_cublas_with_MKL_target"
 
@@ -1002,8 +988,7 @@
   Subrules:
     libs:
       In: cudnn
-      Out: |
-        \${DNN_LIB}
+      Out: \${DNN_LIB}
       MatchMode: Full
       RuleId: "replace_find_library_cudnn_with_libdnn"
 
@@ -1017,8 +1002,7 @@
     libs:
       MatchMode: Full
       In: nvToolsExt
-      Out: |
-        ""
+      Out: '""'
       RuleId: "remove_find_library_nvToolsExt"
 
 - Rule: rule_find_library_cufftMp
@@ -1030,8 +1014,7 @@
   Subrules:
     libs:
       In: cufftMp
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_cufftMp"
 
@@ -1044,8 +1027,7 @@
   Subrules:
     libs:
       In: nvshmem
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_nvshmem"
 
@@ -1059,8 +1041,7 @@
   Subrules:
     libs:
       In: cudart_static
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_cudart_static"
 
@@ -1074,8 +1055,7 @@
   Subrules:
     libs:
       In: cufft_static
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       MatchMode: Full
       RuleId: "replace_find_library_cufft_static_with_MKL"
 
@@ -1089,8 +1069,7 @@
   Subrules:
     libs:
       In: nppc_static
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_nppc_static"
 
@@ -1104,8 +1083,7 @@
   Subrules:
     libs:
       In: nppicc_static
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_nppicc_static"
 
@@ -1119,8 +1097,7 @@
   Subrules:
     libs:
       In: nppig_static
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_nppig_static"
 
@@ -1134,8 +1111,7 @@
   Subrules:
     libs:
       In: culibos
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_culibos"
 
@@ -1149,8 +1125,7 @@
   Subrules:
     libs:
       In: nvjpeg2k_static
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_nvjpeg2k_static"
 
@@ -1164,8 +1139,7 @@
   Subrules:
     libs:
       In: libnvjpeg_static.a
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_libnvjpeg_static"
 
@@ -1179,8 +1153,7 @@
   Subrules:
     libs:
       In: nvjpeg
-      Out: |
-        ""
+      Out: '""'
       MatchMode: Full
       RuleId: "remove_find_library_nvjpeg"
 
@@ -1210,8 +1183,7 @@
     value:
       MatchMode: Full
       In: CUDA_INCLUDE_DIRS
-      Out: |
-        SYCL_INCLUDE_DIR
+      Out: SYCL_INCLUDE_DIR
       RuleId: "replace_CUDA_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
 
 - Rule: rule_CUDA_NVCC_INCLUDE_DIRS
@@ -1225,8 +1197,7 @@
     value:
       MatchMode: Full
       In: \${CUDA_NVCC_INCLUDE_DIRS}
-      Out: |
-        \${SYCL_INCLUDE_DIR}
+      Out: \${SYCL_INCLUDE_DIR}
       RuleId: "replace_CUDA_NVCC_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
 
 - Rule: rule_cuda_add_cufft_to_target
@@ -1256,16 +1227,14 @@
   Priority: Fallback
   CmakeSyntax: set_cuda_64_bit_device_code_on
   In: set(CUDA_64_BIT_DEVICE_CODE ON)
-  Out: |
-    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m64")
+  Out: set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m64")
 
 - Rule: rule_set_cuda_64_bit_device_code_off
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_cuda_64_bit_device_code_off
   In: set(CUDA_64_BIT_DEVICE_CODE OFF)
-  Out: |
-    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m32")
+  Out: set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m32")
 
 - Rule: rule_if_cuda_64_bit_device_code
   Kind: CMakeRule
@@ -1390,8 +1359,7 @@
   Subrules:
     value:
       In: CUDA::cublas
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       MatchMode: Full
 
 - Rule: rule_cublas_static
@@ -1405,8 +1373,7 @@
     value:
       MatchMode: Full
       In: CUDA::cublas_static
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
 
 - Rule: rule_cublasLt
   Kind: CMakeRule
@@ -1419,8 +1386,7 @@
     value:
       MatchMode: Full
       In: CUDA::cublasLt
-      Out: |
-        \${DNN_LIB}
+      Out: \${DNN_LIB}
 
 - Rule: rule_cublasLt_static
   Kind: CMakeRule
@@ -1433,8 +1399,7 @@
     value:
       MatchMode: Full
       In: CUDA::cublasLt_static
-      Out: |
-        \${DNN_LIB}
+      Out: \${DNN_LIB}
 
 - Rule: rule_cufft
   Kind: CMakeRule
@@ -1447,8 +1412,7 @@
     value:
       MatchMode: Full
       In: CUDA::cufft
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_cufft_with_MKL"
 
 - Rule: rule_cufft_without_cuda_prefix
@@ -1462,8 +1426,7 @@
     libs:
       MatchMode: Full
       In: cufft
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
 
 - Rule: rule_cusparse_without_cuda_prefix
   Kind: CMakeRule
@@ -1476,8 +1439,7 @@
     libs:
       MatchMode: Full
       In: cusparse
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
 
 - Rule: rule_curand_without_cuda_prefix
   Kind: CMakeRule
@@ -1490,8 +1452,7 @@
     libs:
       MatchMode: Full
       In: curand
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
 
 - Rule: rule_cudadevrt_without_cuda_prefix
   Kind: CMakeRule
@@ -1556,8 +1517,7 @@
     value:
       MatchMode: Full
       In: CUDA::cufftw
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_cufftw_with_MKL"
 
 - Rule: rule_cufft_static
@@ -1571,8 +1531,7 @@
     value:
       MatchMode: Full
       In: CUDA::cufft_static
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_cufft_static_with_MKL"
 
 - Rule: rule_cufft_static_nocallback
@@ -1586,8 +1545,7 @@
     value:
       MatchMode: Full
       In: CUDA::cufft_static_nocallback
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_cufft_static_nocallback_with_MKL"
 
 - Rule: rule_cufftw_static
@@ -1601,8 +1559,7 @@
     value:
       MatchMode: Full
       In: CUDA::cufftw_static
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_cufftw_static_with_MKL"
 
 - Rule: rule_curand
@@ -1616,8 +1573,7 @@
     value:
       MatchMode: Full
       In: CUDA::curand
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_curand_with_MKL"
 
 - Rule: rule_curand_static
@@ -1631,8 +1587,7 @@
     value:
       MatchMode: Full
       In: CUDA::curand_static
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_curand_static_with_MKL"
 
 - Rule: rule_cusolver
@@ -1646,8 +1601,7 @@
     value:
       MatchMode: Full
       In: CUDA::cusolver
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_cusolver_with_MKL"
 
 - Rule: rule_cusolver_static
@@ -1661,8 +1615,7 @@
     value:
       MatchMode: Full
       In: CUDA::cusolver_static
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_cusolver_static_with_MKL"
 
 - Rule: rule_cusparse
@@ -1676,8 +1629,7 @@
     value:
       MatchMode: Full
       In: CUDA::cusparse
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_cusparse_with_MKL"
 
 - Rule: rule_cusparse_static
@@ -1691,8 +1643,7 @@
     value:
       MatchMode: Full
       In: CUDA::cusparse_static
-      Out: |
-        \${MKL_LIB}
+      Out: \${MKL_LIB}
       RuleId: "replace_cusparse_static_with_MKL"
 
 - Rule: rule_cudla_removed
@@ -3125,8 +3076,7 @@
     value:
       MatchMode: StrictFull
       In: nvcc
-      Out: |
-        \${CMAKE_CXX_COMPILER}
+      Out: \${CMAKE_CXX_COMPILER}
 
 - Rule: rule_find_program_nvcc_exe
   Kind: CMakeRule
@@ -3138,8 +3088,7 @@
     value:
       MatchMode: StrictFull
       In: nvcc.exe
-      Out: |
-        \${CMAKE_CXX_COMPILER}.exe
+      Out: \${CMAKE_CXX_COMPILER}.exe
 
 - Rule: rule_CUDAToolkit_BIN_DIR
   Kind: CMakeRule
@@ -3182,4 +3131,4 @@
   Priority: Fallback
   CmakeSyntax: target_precompile_headers
   In: target_precompile_headers${empty}(${args})
-  Out: |
+  Out: ""

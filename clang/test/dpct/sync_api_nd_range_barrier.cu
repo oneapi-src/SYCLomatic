@@ -205,3 +205,8 @@ int foo3() {
 // CHECK-NEXT:           const sycl::group<3> *cptb);
 __device__ void foo4(const cg::thread_block &crtb,
                      const cg::thread_block *cptb);
+
+__device__ void foo5() {
+  // CHECK:  auto thread = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1);
+  auto thread = cg::this_thread();
+}

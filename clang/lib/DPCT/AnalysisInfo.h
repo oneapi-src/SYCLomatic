@@ -1802,6 +1802,8 @@ public:
   }
   bool containsTemplateDependentMacro() const { return TemplateDependentMacro; }
   bool isConstantQualified() const { return IsConstantQualified; }
+  bool isAutoSpecified() { return IsAutoSpecified; }
+  std::string getDeducedTypeStr() { return DeducedTypeStr; }
 
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
@@ -1861,6 +1863,8 @@ private:
   std::vector<std::string> ArraySizeOriginExprs{};
   std::set<HelperFeatureEnum> HelperFeatureSet;
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
+  bool IsAutoSpecified = false;
+  std::string DeducedTypeStr;
 };
 
 // variable info includes name, type and location.
