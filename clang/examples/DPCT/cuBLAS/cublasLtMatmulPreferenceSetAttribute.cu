@@ -6,7 +6,7 @@ void test(cublasLtMatmulPreference_t pref,
   // Start
   cublasLtMatmulPreferenceSetAttribute(
       pref /*cublasLtMatmulPreference_t*/,
-      attr /*cublasLtMatmulPreferenceAttributes_t*/, buf /*void **/,
+      attr /*cublasLtMatmulPreferenceAttributes_t*/, buf /*const void **/,
       size_in_bytes /*size_t*/);
   // End
 }

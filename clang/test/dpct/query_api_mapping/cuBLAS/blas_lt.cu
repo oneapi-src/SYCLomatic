@@ -68,9 +68,9 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasLtMatmulDescSetAttribute | FileCheck %s -check-prefix=cublasLtMatmulDescSetAttribute
 // cublasLtMatmulDescSetAttribute: CUDA API:
-// cublasLtMatmulDescSetAttribute-NEXT:   cublasLtMatmulDescSetAttribute(mm_esc /*cublasLtMatmulDesc_t*/,
-// cublasLtMatmulDescSetAttribute-NEXT:                                  attr /*cublasLtMatmulDescAttributes_t*/,
-// cublasLtMatmulDescSetAttribute-NEXT:                                  buf /*void **/, size_in_bytes /*size_t*/);
+// cublasLtMatmulDescSetAttribute-NEXT:   cublasLtMatmulDescSetAttribute(
+// cublasLtMatmulDescSetAttribute-NEXT:       mm_esc /*cublasLtMatmulDesc_t*/, attr /*cublasLtMatmulDescAttributes_t*/,
+// cublasLtMatmulDescSetAttribute-NEXT:       buf /*const void **/, size_in_bytes /*size_t*/);
 // cublasLtMatmulDescSetAttribute-NEXT: Is migrated to:
 // cublasLtMatmulDescSetAttribute-NEXT:   mm_esc->set_attribute(attr, buf);
 
@@ -96,7 +96,7 @@
 // cublasLtMatmulPreferenceSetAttribute: CUDA API:
 // cublasLtMatmulPreferenceSetAttribute-NEXT:   cublasLtMatmulPreferenceSetAttribute(
 // cublasLtMatmulPreferenceSetAttribute-NEXT:       pref /*cublasLtMatmulPreference_t*/,
-// cublasLtMatmulPreferenceSetAttribute-NEXT:       attr /*cublasLtMatmulPreferenceAttributes_t*/, buf /*void **/,
+// cublasLtMatmulPreferenceSetAttribute-NEXT:       attr /*cublasLtMatmulPreferenceAttributes_t*/, buf /*const void **/,
 // cublasLtMatmulPreferenceSetAttribute-NEXT:       size_in_bytes /*size_t*/);
 // cublasLtMatmulPreferenceSetAttribute-NEXT: The API is Removed.
 
@@ -127,7 +127,8 @@
 // cublasLtMatrixLayoutSetAttribute: CUDA API:
 // cublasLtMatrixLayoutSetAttribute-NEXT:   cublasLtMatrixLayoutSetAttribute(layout /*cublasLtMatrixLayout_t*/,
 // cublasLtMatrixLayoutSetAttribute-NEXT:                                    attr /*cublasLtMatrixLayoutAttribute_t*/,
-// cublasLtMatrixLayoutSetAttribute-NEXT:                                    buf /*void **/, size_in_bytes /*size_t*/);
+// cublasLtMatrixLayoutSetAttribute-NEXT:                                    buf /*const void **/,
+// cublasLtMatrixLayoutSetAttribute-NEXT:                                    size_in_bytes /*size_t*/);
 // cublasLtMatrixLayoutSetAttribute-NEXT: Is migrated to:
 // cublasLtMatrixLayoutSetAttribute-NEXT:   layout->set_attribute(attr, buf);
 
@@ -171,7 +172,7 @@
 // cublasLtMatrixTransformDescSetAttribute: CUDA API:
 // cublasLtMatrixTransformDescSetAttribute-NEXT:   cublasLtMatrixTransformDescSetAttribute(
 // cublasLtMatrixTransformDescSetAttribute-NEXT:       transformDesc /*cublasLtMatrixTransformDesc_t*/,
-// cublasLtMatrixTransformDescSetAttribute-NEXT:       attr /*cublasLtMatrixTransformDescAttributes_t*/, buf /*void **/,
+// cublasLtMatrixTransformDescSetAttribute-NEXT:       attr /*cublasLtMatrixTransformDescAttributes_t*/, buf /*const void **/,
 // cublasLtMatrixTransformDescSetAttribute-NEXT:       sizeInBytes /*size_t*/);
 // cublasLtMatrixTransformDescSetAttribute-NEXT: Is migrated to:
 // cublasLtMatrixTransformDescSetAttribute-NEXT:   transformDesc->set_attribute(attr, buf);
