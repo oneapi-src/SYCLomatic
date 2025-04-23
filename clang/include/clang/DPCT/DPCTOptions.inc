@@ -829,7 +829,7 @@ DPCT_ENUM_OPTION(
             false),
         DPCT_OPTION_ENUM_VALUE(
             "l0-ipc", int(ExperimentalFeatures::Exp_IPC),
-            "An experimental extension that allows the use of Level Zero APIs "
+            "Experimental extension that allows the use of Level Zero APIs "
             "to migrate IPC code, with the DPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO "
             "macro defined to enable these APIs.\n",
             false),
