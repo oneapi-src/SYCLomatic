@@ -55,35 +55,28 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
         *Result.Context);
     auto MemberName = ME->getMemberNameInfo().getAsString();
     if (BaseTy == "cudaKernelNodeParams") {
+      std::cout <<"NODE PARAMS FOUND\n";
+      DpctGlobalInfo::setCVersionCUDALaunchUsed();
       auto FieldName = KernelNodeParamNames[MemberName];
       if (FieldName.empty()) {
         report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
                DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
                    "::" + ME->getMemberDecl()->getName().str());
         return;
+        
       }
       // if(FieldName == "func"){
-      //   if(auto BO = dyn_cast<BinaryOperator>(getParentAsAssignedBO(ME, *Result.Context))){
-      //     const Expr *RHS = BO->getRHS();
-      //     const Expr *StrippedRHS = RHS->IgnoreParenCasts();
-      //     std::string RHSStr;
-      //     llvm::raw_string_ostream OS(RHSStr);
-      //     std::cout <<"RHSSTR: " <<RHSStr << "\n";
-      //     StrippedRHS->printPretty(OS, nullptr, Result.Context->getPrintingPolicy());
-
-
-      //     // Create the replacement string using dpct::wrapper_register
-      //     auto ReplacementStr = "set_func.dpct::wrapper_register(&" + RHSStr + "_wrapper).get()";
-      //     std::cout<< "ReplacementSTR:" << ReplacementStr << "\n";
-
-      //     // Replace the assignment with the set_func method call
-      //     // emplaceTransformation(ReplaceMemberAssignAsSetMethod(
-      //     //     BO, ME, FieldName, ReplacementStr));
-      //     emplaceTransformation(new ReplaceText(getStmtExpansionSourceRange(RHS).getBegin(),
-      //     ReplacementStr.length(),
-      //                                         std::move(ReplacementStr)));
-      //     return;
-      //   }
+        // Check for the binary operator and fetch the RHS
+        // Strip the explicit typecast if it exists
+        // Check for VarDecl on the StrippedRHS
+        // If not a VarDecl, then insert user warning
+        // Check for VarDecl Type to be a FunctionDecl
+        // If FunctionDecl, then 
+        // VarDecl, get var name, Get kernel_node_params variable name
+        // Create the expression, hardcoded strting
+        // Create new replace object and emplace transformation (nodeParams.set_func((void*)dpct::wrapper_register(&incrementKernel_wrapper).get());)
+        // If VarDecl and not a FunctionDecl and if type of VarDecl is function pointer
+        // Create a hardcoded string (nodeParams.set_func(a.get()));
       // }
       if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
         StringRef ReplacedArg = "";

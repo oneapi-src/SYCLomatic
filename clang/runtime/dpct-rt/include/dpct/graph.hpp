@@ -8,12 +8,13 @@
 
 #pragma once
 
+#include "dpct/kernel.hpp"
 #include "dpct/util.hpp"
 #include "sycl/handler.hpp"
+#include "sycl/queue.hpp"
 #include <cstddef>
 #include <sycl/ext/oneapi/experimental/graph.hpp>
 #include <sycl/sycl.hpp>
-#include <unordered_map>
 #include <unordered_map>
 
 namespace dpct {
@@ -33,16 +34,18 @@ struct kernel_node_params {
   dpct::dim3 block_dim;
   dpct::dim3 grid_dim;
   void **kernel_params;
-  void* func;
+  void *func;
   unsigned int shared_mem_bytes;
 
 public:
-  void set_block_dim(dpct::dim3 block_dim) { block_dim = block_dim; }
-  void set_grid_dim(dpct::dim3 grid_dim) { grid_dim = grid_dim; }
-  void set_kernel_params(void **kernel_params) { kernel_params = kernel_params; }
-  void set_func(void *func) { func = func; }
+  void set_block_dim(dpct::dim3 block_dim) { this->block_dim = block_dim; }
+  void set_grid_dim(dpct::dim3 grid_dim) { this->grid_dim = grid_dim; }
+  void set_kernel_params(void **kernel_params) {
+    this->kernel_params = kernel_params;
+  }
+  void set_func(void *func) { this->func = func; }
   void set_shared_mem_bytes(unsigned int shared_mem_bytes) {
-    shared_mem_bytes = shared_mem_bytes;
+    this->shared_mem_bytes = shared_mem_bytes;
   }
   dpct::dim3 get_block_dim() { return block_dim; }
   dpct::dim3 get_grid_dim() { return grid_dim; }
@@ -64,10 +67,6 @@ public:
     static graph_mgr instance;
     return instance;
   }
-
-  std::unordered_map<dpct::experimental::node_ptr,
-                     dpct::experimental::kernel_node_params>
-      kernel_node_params_map;
 
   void begin_recording(sycl::queue *queue_ptr) {
     // Calling begin_recording on an already recording queue is a no-op in SYCL
@@ -124,6 +123,36 @@ public:
     }
   }
 
+  void add_kernel_node(dpct::experimental::node_ptr *node,
+                       dpct::experimental::command_graph_ptr graph,
+                       dpct::experimental::node_ptr *dependencies,
+                       std::size_t numberOfDependencies,
+                       dpct::experimental::kernel_node_params *params) {
+    kernel_node_params_map[graph].push_back(params);
+  }
+  void launch(dpct::experimental::command_graph_exec_ptr execGraph,
+              sycl::queue *queue) {
+    auto graph = exec_graph_map[execGraph];
+    for (auto kernel_params : kernel_node_params_map[graph]) {
+      graph->add([&](sycl::handler &cgh) {
+        cgh.host_task([=]() {
+          dpct::kernel_launcher::launch(
+              kernel_params->get_func(), kernel_params->get_grid_dim(),
+              kernel_params->get_block_dim(),
+              kernel_params->get_kernel_params(),
+              kernel_params->get_shared_mem_bytes(), queue);
+        });
+      });
+    }
+    auto final_graph = graph->finalize();
+    queue->submit([&](sycl::handler &cgh) { cgh.ext_oneapi_graph(final_graph); });
+  }
+
+  void instantiate(dpct::experimental::command_graph_exec_ptr *execGraph,
+                   dpct::experimental::command_graph_ptr graph) {
+    exec_graph_map[*execGraph] = graph;
+  }
+
 private:
   std::unordered_map<sycl::queue *, command_graph_ptr> queue_graph_map;
   std::unordered_map<dpct::experimental::command_graph_ptr,
@@ -132,6 +161,12 @@ private:
   std::unordered_map<dpct::experimental::command_graph_ptr,
                      std::vector<sycl::ext::oneapi::experimental::node>>
       root_nodes_map;
+  std::unordered_map<dpct::experimental::command_graph_exec_ptr,
+                     dpct::experimental::command_graph_ptr>
+      exec_graph_map;
+  std::unordered_map<dpct::experimental::command_graph_ptr,
+                     std::vector<dpct::experimental::kernel_node_params *>>
+      kernel_node_params_map;
 };
 } // namespace detail
 
@@ -204,9 +239,9 @@ static void add_dependencies(dpct::experimental::command_graph_ptr graph,
 /// nodes will be assigned.
 /// \param [out] numberOfNodes The number of nodes in the graph.
 static void get_nodes(dpct::experimental::command_graph_ptr graph,
-  dpct::experimental::node_ptr *nodesArray,
-  std::size_t *numberOfNodes) {
-detail::graph_mgr::instance().get_nodes(graph, nodesArray, numberOfNodes);
+                      dpct::experimental::node_ptr *nodesArray,
+                      std::size_t *numberOfNodes) {
+  detail::graph_mgr::instance().get_nodes(graph, nodesArray, numberOfNodes);
 }
 
 /// Gets the root nodes in the command graph.
@@ -215,14 +250,29 @@ detail::graph_mgr::instance().get_nodes(graph, nodesArray, numberOfNodes);
 /// root nodes will be assigned.
 /// \param [out] numberOfNodes The number of root nodes in the graph.
 static void get_root_nodes(dpct::experimental::command_graph_ptr graph,
-       dpct::experimental::node_ptr *nodesArray,
-       std::size_t *numberOfNodes) {
-detail::graph_mgr::instance().get_root_nodes(graph, nodesArray,
-                           numberOfNodes);
+                           dpct::experimental::node_ptr *nodesArray,
+                           std::size_t *numberOfNodes) {
+  detail::graph_mgr::instance().get_root_nodes(graph, nodesArray,
+                                               numberOfNodes);
 }
 
-static void add_kernel_node(dpct::experimental::node_ptr* node, dpct::experimental::node_ptr* dependencies, std::size_t &numberOfDependencies, dpct::experimental::kernel_node_params* params){
+static void add_kernel_node(dpct::experimental::node_ptr *node,
+                            dpct::experimental::command_graph_ptr graph,
+                            dpct::experimental::node_ptr *dependencies,
+                            std::size_t numberOfDependencies,
+                            dpct::experimental::kernel_node_params *params) {
+  detail::graph_mgr::instance().add_kernel_node(node, graph, dependencies,
+                                                numberOfDependencies, params);
+}
 
+static void instantiate(dpct::experimental::command_graph_exec_ptr *execGraph,
+                        dpct::experimental::command_graph_ptr graph) {
+  detail::graph_mgr::instance().instantiate(execGraph, graph);
+}
+
+static void launch(dpct::experimental::command_graph_exec_ptr execGraph,
+                   sycl::queue *queue) {
+  detail::graph_mgr::instance().launch(execGraph, queue);
 }
 
 } // namespace experimental
