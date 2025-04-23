@@ -3,8 +3,8 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/BeforeHash.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/BeforeHash.dp.cpp -o %T/BeforeHash.dp.o %}
 
-#ifndef ABCDE
-#define ABCDE 0
+#ifndef ABCD
+#define ABCD 0
 #endif
 
 // CHECK: #define DPCT_PROFILING_ENABLED
