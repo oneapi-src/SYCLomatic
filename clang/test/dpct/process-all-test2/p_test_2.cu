@@ -1,6 +1,6 @@
 // RUN: cat %S/readme_2_ref.txt  >%T/readme_2.txt
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -output-file=output-file.txt -in-root=%S -out-root=%T %s --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -output-file=output-file.txt -in-root=%S -out-root=%T %s --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: cat %S/readme_2.txt > %T/check_output-file.txt
 // RUN: cat %T/output-file.txt >>%T/check_output-file.txt
@@ -16,11 +16,10 @@
 #include "cuda_runtime.h"
 #include <stdio.h>
 
-// CHECK: void addKernel(int *c, const int *a, const int *b,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1)
+// CHECK: void addKernel(int *c, const int *a, const int *b)
 __global__ void addKernel(int *c, const int *a, const int *b)
 {
-    // CHECK: int i = item_ct1.get_local_id(2);
+    // CHECK: int i = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
     int i = threadIdx.x;
     c[i] = a[i] + b[i];
 }

@@ -19,7 +19,7 @@ template <typename T> __global__ void template_test(T v) {};
 
 FUNC(int)
 
-// CHECK: SYCL_EXTERNAL void kernel_extern(const sycl::nd_item<3> &item_ct1, int *a) {
+// CHECK: SYCL_EXTERNAL void kernel_extern(int *a) {
 __global__ void kernel_extern() {
   __shared__ int a[360];
   a[0] = blockIdx.x;
@@ -59,7 +59,8 @@ __constant__ float A4, A5;
 __constant__ float A[3 * 3] = {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
                                0.1250f, 0.0625f, 0.125f,  0.0625f}, A3;
 
-// CHECK: void constAdd(float *C, const sycl::nd_item<3> &item_ct1, float const *A) {
+// CHECK: void constAdd(float *C, float const *A) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:  int i = item_ct1.get_group(2);
 // CHECK-NEXT:  int j = item_ct1.get_local_id(2);
 // CHECK-NEXT:  int k = 3 * i + j;
@@ -89,7 +90,7 @@ __global__ void constAdd(float *C) {
 // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class constAdd_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 3)),
 // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:            constAdd(d_C_acc_ct0.get_raw_pointer(), item_ct1, A_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:            constAdd(d_C_acc_ct0.get_raw_pointer(), A_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:          });
 // CHECK-NEXT:      });
 // CHECK-NEXT:  }

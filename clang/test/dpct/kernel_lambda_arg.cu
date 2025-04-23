@@ -1,5 +1,5 @@
 // UNSUPPORTED: v8.0
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root %T/kernel_lambda_arg %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda
+// RUN: dpct --format-range=none -out-root %T/kernel_lambda_arg %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel_lambda_arg/kernel_lambda_arg.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/kernel_lambda_arg/kernel_lambda_arg.dp.cpp -o %T/kernel_lambda_arg/kernel_lambda_arg.dp.o %}
 
@@ -30,8 +30,8 @@ void run_foo1() {
   my_kernel1<<<1, 1>>>([=] __device__(int idx) { idx++; });
 }
 
-//     CHECK:template <typename Foo> void my_kernel2(const Foo &foo,
-//CHECK-NEXT:                                        const sycl::nd_item<3> &item_ct1) {
+//     CHECK:template <typename Foo> void my_kernel2(const Foo &foo) {
+//CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 //CHECK-NEXT:  std::tuple<unsigned int, unsigned int> seeds = {1, 2};
 //CHECK-NEXT:  int idx = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 //CHECK-NEXT:  dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> state;
@@ -52,7 +52,7 @@ template <typename Foo> __global__ void my_kernel2(const Foo &foo) {
 //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:      my_kernel2([] (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> * state) {
 //CHECK-NEXT:    return state->generate<oneapi::mkl::rng::device::uniform<double>, 2>();
-//CHECK-NEXT:  }, item_ct1);
+//CHECK-NEXT:  });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
 inline void run_foo2() {

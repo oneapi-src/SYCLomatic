@@ -1,4 +1,4 @@
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root %T/noinline %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/noinline %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/noinline/noinline.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/noinline/noinline.dp.cpp -o %T/noinline/noinline.dp.o %}
 #include <cuda_runtime.h>
@@ -7,8 +7,9 @@
 
 __device__ float out[NUM_ELEMENTS];
 
-// CHECK: __dpct_noinline__ void kernel1(const sycl::nd_item<3> &[[ITEM:item_ct1]], float *out) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = [[ITEM]].get_local_id(2);
+// CHECK: __dpct_noinline__ void kernel1(float *out) {
+// CHECK:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK:   out[item_ct1.get_local_id(2)] = item_ct1.get_local_id(2);
 // CHECK: }
 __noinline__ __global__ void kernel1() {
   out[threadIdx.x] = threadIdx.x;

@@ -1,4 +1,4 @@
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none -out-root %T/kernel_call_no_arg %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel_call_no_arg %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel_call_no_arg/kernel_call_no_arg.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/kernel_call_no_arg/kernel_call_no_arg.dp.cpp -o %T/kernel_call_no_arg/kernel_call_no_arg.dp.o %}
 
@@ -10,8 +10,9 @@
 
 __device__ float out[NUM_ELEMENTS];
 
-// CHECK: void kernel1(const sycl::nd_item<3> &[[ITEM:item_ct1]], float *out) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = [[ITEM]].get_local_id(2);
+// CHECK: void kernel1(float *out) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK-NEXT:  out[item_ct1.get_local_id(2)] = item_ct1.get_local_id(2);
 // CHECK: }
 __global__ void kernel1() {
   out[threadIdx.x] = threadIdx.x;
@@ -38,7 +39,7 @@ int main() {
   // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK:         [=](sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           kernel1([[ITEM]], out_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+  // CHECK:           kernel1(out_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK:         });
   // CHECK:     });
   kernel1<<<1, threads_per_block>>>();

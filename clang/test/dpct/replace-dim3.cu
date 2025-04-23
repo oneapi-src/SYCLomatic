@@ -1,6 +1,6 @@
 // FIXME
 // UNSUPPORTED: system-windows
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none -out-root %T/replace-dim3 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/replace-dim3 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/replace-dim3/replace-dim3.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/replace-dim3/replace-dim3.dp.cpp -o %T/replace-dim3/replace-dim3.dp.o %}
 
@@ -247,8 +247,8 @@ struct wrap {
 };
 
 
-// CHECK: void kernel_foo(float *a, wrap *mt, unsigned int N,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
+// CHECK: void kernel_foo(float *a, wrap *mt, unsigned int N) {
+// CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:   const unsigned int i = item_ct1.get_group(2)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2);
 // CHECK-NEXT:   if (i<N) {
 // CHECK-NEXT:     dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&mt[i].f3.x(), a[i]);

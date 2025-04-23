@@ -1,12 +1,12 @@
 /// Communicator Creation and Management Functions
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetLastError | FileCheck %s -check-prefix=NCCLGETLASTERROR
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetLastError | FileCheck %s -check-prefix=NCCLGETLASTERROR
 // NCCLGETLASTERROR: CUDA API:
 // NCCLGETLASTERROR-NEXT:   ncclGetLastError(comm /*ncclComm_t*/);
 // NCCLGETLASTERROR-NEXT: The API is Removed.
 // NCCLGETLASTERROR-EMPTY:
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetErrorString | FileCheck %s -check-prefix=NCCLGETERRORSTRING
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetErrorString | FileCheck %s -check-prefix=NCCLGETERRORSTRING
 // NCCLGETERRORSTRING: CUDA API:
 // NCCLGETERRORSTRING-NEXT:   ncclGetErrorString(r /*ncclResult_t*/);
 // NCCLGETERRORSTRING-NEXT: Is migrated to:
@@ -15,50 +15,50 @@
 // NCCLGETERRORSTRING-NEXT:   */
 // NCCLGETERRORSTRING-NEXT:   dpct::get_error_string_dummy(r);
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetVersion | FileCheck %s -check-prefix=ncclGetVersion
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetVersion | FileCheck %s -check-prefix=ncclGetVersion
 // ncclGetVersion: CUDA API:
 // ncclGetVersion-NEXT:   ncclGetVersion(version /*int **/);
 // ncclGetVersion-NEXT: Is migrated to:
 // ncclGetVersion-NEXT:   *version = dpct::ccl::get_version();
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetUniqueId | FileCheck %s -check-prefix=ncclGetUniqueId
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetUniqueId | FileCheck %s -check-prefix=ncclGetUniqueId
 // ncclGetUniqueId: CUDA API:
 // ncclGetUniqueId-NEXT:   ncclGetUniqueId(uniqueId /*ncclUniqueId **/);
 // ncclGetUniqueId-NEXT: Is migrated to:
 // ncclGetUniqueId-NEXT:   *uniqueId = dpct::ccl::create_kvs_address();
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommInitRank | FileCheck %s -check-prefix=ncclCommInitRank
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommInitRank | FileCheck %s -check-prefix=ncclCommInitRank
 // ncclCommInitRank: CUDA API:
 // ncclCommInitRank-NEXT:   ncclCommInitRank(comm /*ncclComm_t **/, nranks /*int*/,
 // ncclCommInitRank-NEXT:                   commId /*ncclUniqueId*/, rank /*int*/);
 // ncclCommInitRank-NEXT: Is migrated to:
 // ncclCommInitRank-NEXT:   *comm = new dpct::ccl::communicator_wrapper(nranks, rank, commId);
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommDestroy | FileCheck %s -check-prefix=ncclCommDestroy
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommDestroy | FileCheck %s -check-prefix=ncclCommDestroy
 // ncclCommDestroy: CUDA API:
 // ncclCommDestroy-NEXT:   ncclCommDestroy(comm /*ncclComm_t*/);
 // ncclCommDestroy-NEXT: Is migrated to:
 // ncclCommDestroy-NEXT:   delete comm;
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommGetAsyncError | FileCheck %s -check-prefix=NCCLCOMMGETASYNCERROR
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommGetAsyncError | FileCheck %s -check-prefix=NCCLCOMMGETASYNCERROR
 // NCCLCOMMGETASYNCERROR: CUDA API:
 // NCCLCOMMGETASYNCERROR-NEXT:   ncclCommGetAsyncError(comm /*ncclComm_t*/, r /*ncclResult_t **/);
 // NCCLCOMMGETASYNCERROR-NEXT: The API is Removed.
 // NCCLCOMMGETASYNCERROR-EMPTY:
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommCount | FileCheck %s -check-prefix=ncclCommCount
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommCount | FileCheck %s -check-prefix=ncclCommCount
 // ncclCommCount: CUDA API:
 // ncclCommCount-NEXT:    ncclCommCount(comm /*ncclComm_t*/, count /*int **/);
 // ncclCommCount-NEXT: Is migrated to:
 // ncclCommCount-NEXT:   *count = comm->size();
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommCuDevice | FileCheck %s -check-prefix=ncclCommCuDevice
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommCuDevice | FileCheck %s -check-prefix=ncclCommCuDevice
 // ncclCommCuDevice: CUDA API:
 // ncclCommCuDevice-NEXT:   ncclCommCuDevice(comm /*ncclComm_t*/, device /*int **/);
 // ncclCommCuDevice-NEXT: Is migrated to:
 // ncclCommCuDevice-NEXT:   *device = dpct::get_device_id(comm->get_device());
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommUserRank | FileCheck %s -check-prefix=ncclCommUserRank
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommUserRank | FileCheck %s -check-prefix=ncclCommUserRank
 // ncclCommUserRank: CUDA API:
 // ncclCommUserRank-NEXT:   ncclCommUserRank(comm /*ncclComm_t*/, rank /*int **/);
 // ncclCommUserRank-NEXT: Is migrated to:
@@ -66,7 +66,7 @@
 
 /// Collective Communication Functions
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclAllReduce | FileCheck %s -check-prefix=ncclAllReduce
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclAllReduce | FileCheck %s -check-prefix=ncclAllReduce
 // ncclAllReduce: CUDA API:
 // ncclAllReduce-NEXT:   ncclAllReduce(sendbuff /*void **/, recvbuff /*void **/, count /*size_t*/,
 // ncclAllReduce-NEXT:                 datatype /*ncclDataType_t*/, op /*ncclRedOp_t*/,
@@ -74,7 +74,7 @@
 // ncclAllReduce-NEXT: Is migrated to:
 // ncclAllReduce-NEXT:   comm->allreduce(sendbuff, recvbuff, count, datatype, op, stream);
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclBroadcast | FileCheck %s -check-prefix=ncclBroadcast
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclBroadcast | FileCheck %s -check-prefix=ncclBroadcast
 // ncclBroadcast: CUDA API:
 // ncclBroadcast-NEXT:   ncclBroadcast(sendbuff /*void **/, recvbuff /*void **/, count /*size_t*/,
 // ncclBroadcast-NEXT:             datatype /*ncclDataType_t*/, root /*int*/, comm /*ncclComm_t*/,
@@ -82,14 +82,14 @@
 // ncclBroadcast-NEXT: Is migrated to:
 // ncclBroadcast-NEXT:   comm->broadcast(sendbuff, recvbuff, count, datatype, root, stream);
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclBcast | FileCheck %s -check-prefix=ncclBcast
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclBcast | FileCheck %s -check-prefix=ncclBcast
 // ncclBcast: CUDA API:
 // ncclBcast-NEXT:   ncclBcast(buff /*void **/, count /*size_t*/, datatype /*ncclDataType_t*/,
 // ncclBcast-NEXT:                 root /*int*/, comm /*ncclComm_t*/, stream /*cudaStream_t*/);
 // ncclBcast-NEXT: Is migrated to:
 // ncclBcast-NEXT:   comm->broadcast(buff, buff, count, datatype, root, stream);
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclReduce | FileCheck %s -check-prefix=ncclReduce
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclReduce | FileCheck %s -check-prefix=ncclReduce
 // ncclReduce: CUDA API:
 // ncclReduce-NEXT:   ncclReduce(sendbuff /*void **/, recvbuff /*void **/, count /*size_t*/,
 // ncclReduce-NEXT:             datatype /*ncclDataType_t*/, op /*ncclRedOp_t*/, root /*int*/,
@@ -97,7 +97,7 @@
 // ncclReduce-NEXT: Is migrated to:
 // ncclReduce-NEXT:   comm->reduce(sendbuff, recvbuff, count, datatype, op, root, stream);
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclReduceScatter | FileCheck %s -check-prefix=ncclReduceScatter
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclReduceScatter | FileCheck %s -check-prefix=ncclReduceScatter
 // ncclReduceScatter: CUDA API:
 // ncclReduceScatter-NEXT:   ncclReduceScatter(sendbuff /*void **/, recvbuff /*void **/,
 // ncclReduceScatter-NEXT:                     recvcount /*size_t*/, datatype /*ncclDataType_t*/,
@@ -108,7 +108,7 @@
 
 /// Point To Point Communication Functions
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclSend | FileCheck %s -check-prefix=NCCLSEND
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclSend | FileCheck %s -check-prefix=NCCLSEND
 // NCCLSEND: CUDA API:
 // NCCLSEND-NEXT:   ncclSend(sendbuff /*const void **/, count /*size_t*/,
 // NCCLSEND-NEXT:            datatype /*ncclDataType_t*/, peer /*int*/, comm /*ncclComm_t*/,
@@ -116,7 +116,7 @@
 // NCCLSEND-NEXT: Is migrated to:
 // NCCLSEND-NEXT:   comm->send(sendbuff, count, datatype, peer, stream);
 
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclRecv | FileCheck %s -check-prefix=NCCLRECV
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclRecv | FileCheck %s -check-prefix=NCCLRECV
 // NCCLRECV: CUDA API:
 // NCCLRECV-NEXT:   ncclRecv(sendbuff /*void **/, count /*size_t*/, datatype /*ncclDataType_t*/,
 // NCCLRECV-NEXT:            peer /*int*/, comm /*ncclComm_t*/, stream /*cudaStream_t*/);

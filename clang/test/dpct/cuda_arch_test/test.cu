@@ -1,4 +1,4 @@
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none -in-root %S -out-root %T/cuda_arch_test %S/test.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T/cuda_arch_test %S/test.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %S/test.cu --match-full-lines --input-file %T/cuda_arch_test/test.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/cuda_arch_test/test.dp.cpp -o %T/cuda_arch_test/test.dp.o %}
 // RUN: FileCheck %S/test.h --match-full-lines --input-file %T/cuda_arch_test/test.h
@@ -31,8 +31,7 @@ __host__ __device__ aa operator+(aa cc){
 }
 };
 
-// CHECK: static int Env_cuda_thread_in_threadblock(int axis,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1)
+// CHECK: static int Env_cuda_thread_in_threadblock(int axis)
 // CHECK-NEXT: {
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:

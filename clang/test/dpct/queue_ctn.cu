@@ -1,5 +1,5 @@
 // UNSUPPORTED: system-windows
-// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -out-root %T/queue_ctn %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/queue_ctn %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/queue_ctn/queue_ctn.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/queue_ctn/queue_ctn.dp.cpp -o %T/queue_ctn/queue_ctn.dp.o %}
 
@@ -110,7 +110,7 @@ void bar8(){
 // CHECK:  q_ct1.parallel_for(
 // CHECK:    sycl::nd_range<3>(sycl::range<3>(1, 1, 100), sycl::range<3>(1, 1, 100)),
 // CHECK:    [=](sycl::nd_item<3> item_ct1) {
-// CHECK:      kernel(A, B, C, item_ct1);
+// CHECK:      kernel(A, B, C);
 // CHECK:    });
 // CHECK:  free(h_temp);
     cudaMemcpy(A, h_temp, 100 * sizeof(float), cudaMemcpyDeviceToHost);
