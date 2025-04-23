@@ -1221,6 +1221,10 @@ void UnwrappedLineParser::parsePPDefine() {
         break;
       }
     }
+    if (Tokens->peekNextToken() &&
+        Tokens->peekNextToken(true)->isNot(tok::hash)) {
+      IncludeGuard = IG_Rejected;
+    }
   }
 
   // In the context of a define, even keywords should be treated as normal
