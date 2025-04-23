@@ -193,8 +193,9 @@ __global__ void test_unsupported(int *data) {
 
 template <typename T, int N>
 void print_array(T (&arr)[N]) {
-  for (int i = 0; i < N; ++i)
-    printf("%d%c", arr[i], (i == N - 1 ? '\n' : ','));
+  for (int i = 0; i < N; ++i) {
+    std::cout << arr[i] << (i == N - 1 ? '\n' : ',');
+  }
 }
 
 bool test_sort() {
@@ -262,7 +263,7 @@ bool test_sorthalf() {
   for (int i = 0; i < 512; ++i)
     if ((int)data[i] != i) {
       printf("test_sorthalf failed\n");
-      print_array((int)data);
+      print_array(data);
       return false;
     }
   printf("test_sorthalf pass\n");
