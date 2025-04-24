@@ -136,6 +136,9 @@ int parentProcess(char *app) {
     }
   }
   std::cout << "verified Pass.\n";
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcCloseMemHandle is not supported, please try to remigrate with option: --use-experimental-features=l0-ipc.
+  // CHECK-NEXT: */
   cudaIpcCloseMemHandle(ptr);
   return 0;
 }
