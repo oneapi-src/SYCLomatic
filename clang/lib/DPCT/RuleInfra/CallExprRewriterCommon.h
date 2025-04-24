@@ -2139,7 +2139,7 @@ public:
     auto FD = C->getDirectCallee();
     if (!FD)
       return false;
-    return DpctGlobalInfo::isInRoot(FD->getLocation());
+    return isUserDefinedDecl(FD);
   }
 };
 } // namespace math
