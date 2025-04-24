@@ -214,22 +214,22 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
 ///               s[3] = s[1]
 /// other value: illegal, undefined behavior, return 0.
 inline uint32_t byte_level_permute_custom(uint32_t low32, uint32_t high32,
-  uint32_t sel, int mode = 0) {
-constexpr uint16_t lookup[6][4] = {
-{0x3210, 0x4321, 0x5432, 0x6543}, // Forward 4-byte extract
-{0x5670, 0x6701, 0x7012, 0x0123}, // Backward 4-byte extract
-{0x0000, 0x1111, 0x2222, 0x3333}, // Replicate 8-bit values
-{0x3210, 0x3211, 0x3222, 0x3333}, // Edge clamp left
-{0x0000, 0x1110, 0x2210, 0x3210}, // Edge clamp right
-{0x1010, 0x3232, 0x1010, 0x3232}  // Replicate 16-bit values
-};
+                                          uint32_t sel, int mode = 0) {
+  constexpr uint16_t lookup[6][4] = {
+      {0x3210, 0x4321, 0x5432, 0x6543}, // Forward 4-byte extract
+      {0x5670, 0x6701, 0x7012, 0x0123}, // Backward 4-byte extract
+      {0x0000, 0x1111, 0x2222, 0x3333}, // Replicate 8-bit values
+      {0x3210, 0x3211, 0x3222, 0x3333}, // Edge clamp left
+      {0x0000, 0x1110, 0x2210, 0x3210}, // Edge clamp right
+      {0x1010, 0x3232, 0x1010, 0x3232}  // Replicate 16-bit values
+  };
 
-if (mode >= 1 && mode <= 6) {
-return byte_level_permute(low32, high32, lookup[mode - 1][sel & 0x3]);
-} else if (!mode) {
-return byte_level_permute(low32, high32, sel);
-}
-return 0;
+  if (mode >= 1 && mode <= 6) {
+    return byte_level_permute(low32, high32, lookup[mode - 1][sel & 0x3]);
+  } else if (!mode) {
+    return byte_level_permute(low32, high32, sel);
+  }
+  return 0;
 }
 
 /// Find position of first least significant set bit in an integer.
@@ -1354,10 +1354,9 @@ inline uint32_t ternary_logic_op(uint32_t a, uint32_t b, uint32_t c,
 #if defined(__linux__)
 namespace experimental {
 
-/* System call number definitions for kernel compatibility
- * Ensures backward compatibility with older Linux kernels
- * SYS_pidfd_open: Process file descriptor opener (requires kernel 5.6+)
- * SYS_pidfd_getfd: Cross-process FD fetcher system call */
+///  System call number definitions for kernel compatibility.
+///  SYS_pidfd_open: Process file descriptor opener (requires kernel 5.6+).
+///  SYS_pidfd_getfd: Cross-process FD fetcher system call.
 #ifndef SYS_pidfd_open
 #define SYS_pidfd_open 434
 #endif
@@ -1366,35 +1365,33 @@ namespace experimental {
 #define SYS_pidfd_getfd 438
 #endif
 
-/* IPC memory handle structure for cross-process sharing
- * pid: Source process identifier
- * handle: Opaque memory handle containing OS-specific metadata */
+/// Process id and IPC memory handle structure for cross-process sharing.
 struct dpct_ipc_mem_handle_t {
   pid_t pid;
   ze_ipc_mem_handle_t handle;
 };
 
-/// Extracts native Level Zero context handle from SYCL context
+/// Extracts native Level Zero context handle from SYCL context.
 /// \param [in] context SYCL context object
 /// \returns Native Level Zero context handle
 ze_context_handle_t get_ze_context(sycl::context context) {
   return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(context);
 }
 
-/// Retrieves native Level Zero device handle from SYCL device
+/// Retrieves native Level Zero device handle from SYCL device.
 /// \param [in] device SYCL device object
 /// \returns Native Level Zero device handle
 ze_device_handle_t get_ze_device(sycl::device device) {
   return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(device);
 }
-/// Acquires native Level Zero event handle from SYCL event
+/// Acquires native Level Zero event handle from SYCL event.
 /// \param [in] event SYCL event object
 /// \returns Native Level Zero event handle
 ze_event_handle_t get_ze_event(sycl::event event) {
   return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(event);
 }
 
-/// Acquires IPC handle for shared memory region
+/// Acquires IPC handle for shared memory region.
 /// \param [in] ptr Pointer to shared memory region
 /// \param [out] phipc Output IPC handle structure
 /// \returns Level Zero operation status code
@@ -1404,14 +1401,14 @@ ze_result_t get_mem_ipc_handle(const void *ptr, dpct_ipc_mem_handle_t *phipc) {
       get_ze_context(dpct::get_current_device().get_context()), ptr,
       &phipc->handle);
 }
-/// Releases resources associated with IPC handle
+/// Releases resources associated with IPC handle.
 /// \param [in] ptr Pointer to shared memory region
 /// \returns Level Zero operation status code
 ze_result_t close_mem_ipc_handle(const void *ptr) {
   return zeMemCloseIpcHandle(
       get_ze_context(dpct::get_current_device().get_context()), (char *)ptr);
 }
-/// Cross-process file descriptor translator
+/// Cross-process file descriptor translator.
 /// \param [in] phipc Source IPC handle structure
 /// \returns Local process file descriptor
 template <class T> int get_cur_pid(T phipc) {
@@ -1421,7 +1418,7 @@ template <class T> int get_cur_pid(T phipc) {
   int newfd = syscall(SYS_pidfd_getfd, pidfd, fd, 0);
   return newfd;
 }
-/// Maps remote IPC memory to local address space
+/// Maps remote IPC memory to local address space.
 /// \param [in] hipc Source IPC handle structure
 /// \param [out] ptr Mapped memory pointer in local process
 /// \returns Level Zero operation status code
