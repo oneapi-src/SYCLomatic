@@ -87,3 +87,16 @@ int main() {
 
     test3<<<32,32>>>();
 }
+
+struct TEST4 {
+  // CHECK: TEST4(int a) : thread_idx(sycl::ext::oneapi::this_work_item::get_nd_item<1>().get_local_id(0)) {}
+  __device__ TEST4(int a) : thread_idx(threadIdx.x) {}
+  int thread_idx;
+};
+
+// CHECK: int test5(const int ct, int numLane = 0) {
+// CHECK-NEXT:   if (!numLane) numLane = sycl::ext::oneapi::this_work_item::get_sub_group().get_local_range().get(0);
+__device__ int test5(const int ct, const int numLane = warpSize) {
+  int r = ct * numLane;
+  return r;
+}

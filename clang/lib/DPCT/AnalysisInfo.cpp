@@ -7512,11 +7512,32 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
       return Info->printImmediateText(OS, S->getBeginLoc(), K);
     }
 
-#ifdef DPCT_DEBUG_BUILD
-    llvm::errs() << "Can not get FreeQueriesInfo for this FunctionDecl\n";
-    assert(0);
-#endif // DPCT_DEBUG_BUILD
-
+    auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+    if (!DFI)
+      return;
+    auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+    DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+    switch (K) {
+    case FreeQueriesKind::NdItem: {
+      OS << MapNames::getClNamespace()
+         << "ext::oneapi::this_work_item::get_nd_item<{{NEEDREPLACEG" +
+                std::to_string(Index) + "}}>()";
+      break;
+    }
+    case FreeQueriesKind::Group: {
+      OS << MapNames::getClNamespace()
+         << "ext::oneapi::this_work_item::get_work_group<{{NEEDREPLACEG" +
+                std::to_string(Index) + "}}>()";
+      break;
+    }
+    case FreeQueriesKind::SubGroup: {
+      OS << MapNames::getClNamespace()
+         << "ext::oneapi::this_work_item::get_sub_group()";
+      break;
+    }
+    default:
+      llvm_unreachable("Unexpected FreeQueriesKind");
+    }
   } else {
     if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD))
       DFI->setItem();
