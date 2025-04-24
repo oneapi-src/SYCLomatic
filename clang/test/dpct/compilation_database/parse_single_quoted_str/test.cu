@@ -15,7 +15,6 @@
 // RUN: dpct --format-range=none -in-root=./  -out-root=%T/out -p ./ --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/out/test.dp.cpp
 
-
 // CHECK:  #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <iostream>
