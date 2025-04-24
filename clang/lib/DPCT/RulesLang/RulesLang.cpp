@@ -4517,14 +4517,24 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+
+  auto cudaKernelNodeParamsMatcher = memberExpr(hasObjectExpression(hasType(
+    type(hasUnqualifiedDesugaredType(recordType(hasDeclaration(recordDecl(hasAnyName("cudaKernelNodeParams")))))))));
   MF.addMatcher(
-      functionDecl(
-          forEachDescendant(
-              declRefExpr(allOf(to(functionDecl(hasAttr(attr::CUDAGlobal))),
-                                unless(hasAncestor(cudaKernelCallExpr()))))
-                  .bind("kernelRef")))
-          .bind("outerFunc"),
-      this);
+    functionDecl(
+        forEachDescendant(
+            declRefExpr(
+                allOf(
+                    to(functionDecl(hasAttr(attr::CUDAGlobal))),
+                    unless(hasAncestor(cudaKernelCallExpr()))
+                )
+            ).bind("kernelRef")
+        ),
+        unless(hasDescendant(cudaKernelNodeParamsMatcher))
+    ).bind("outerFunc"),
+    this);
+
+
   MF.addMatcher(unresolvedLookupExpr(unless(hasAncestor(cudaKernelCallExpr())))
                     .bind("unresolvedRef"),
                 this);
@@ -4572,14 +4582,13 @@ void KernelCallRefRule::insertWrapperPostfix(const T *Node,
                                              bool isInsertWrapperRegister) {
   auto NLoc = DpctGlobalInfo::getSourceManager().getSpellingLoc(
       Node->getNameInfo().getBeginLoc());
-
-  std::cout <<"WRAPPER APPENDED: " << "\n";
-  
+      std::cout << "Inserting _wrapper at location: " << NLoc.printToString(DpctGlobalInfo::getSourceManager()) << "\n";
   emplaceTransformation(new InsertText(
       NLoc.getLocWithOffset(Node->getNameInfo().getAsString().length()),
       "_wrapper"));
 
   if (!isInsertWrapperRegister) {
+    std::cout << "Not inserting wrapper_register\n";
     return;
   }
   const Expr *E = Node;
@@ -4595,6 +4604,7 @@ void KernelCallRefRule::insertWrapperPostfix(const T *Node,
       E = COC;
     }
   }
+  std::cout << "Inserting wrapper_register with TypeRepl: " << TypeRepl << "\n";
   emplaceTransformation(new InsertBeforeStmt(
       E, MapNames::getDpctNamespace() + "wrapper_register" + TypeRepl + "("));
   emplaceTransformation(new InsertAfterStmt(E, ").get()"));
@@ -4603,6 +4613,7 @@ void KernelCallRefRule::insertWrapperPostfix(const T *Node,
 void KernelCallRefRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto DRE = getAssistNodeAsType<DeclRefExpr>(Result, "kernelRef")) {
+    std::cout << "KernelRef matched\n";
     const FunctionDecl *OuterFD =
         getAssistNodeAsType<FunctionDecl>(Result, "outerFunc");
     if (!OuterFD) {
@@ -4636,7 +4647,7 @@ void KernelCallRefRule::runRule(
         (OuterFD->getTemplatedKind() ==
          FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
       std::string TypeRepl;
-      if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
+      if (DpctGlobalInfo::useWrapperRegisterFnPtr()) {
         if ((IsTemplateRelated &&
              (!DRE->hasExplicitTemplateArgs() ||
               (DRE->getNumTemplateArgs() <= TemplateParamNum))) ||
@@ -4645,7 +4656,7 @@ void KernelCallRefRule::runRule(
         }
       }
       insertWrapperPostfix<DeclRefExpr>(
-          DRE, std::move(TypeRepl), DpctGlobalInfo::isCVersionCUDALaunchUsed());
+          DRE, std::move(TypeRepl), DpctGlobalInfo::useWrapperRegisterFnPtr());
     }
   }
   if (auto ULE =
@@ -4682,7 +4693,7 @@ void KernelCallRefRule::runRule(
       }
     }
     insertWrapperPostfix<UnresolvedLookupExpr>(
-        ULE, getTypeRepl(ULE), DpctGlobalInfo::isCVersionCUDALaunchUsed());
+        ULE, getTypeRepl(ULE), DpctGlobalInfo::useWrapperRegisterFnPtr());
   }
 }
 
@@ -4955,7 +4966,7 @@ void KernelCallRule::runRule(
 
       if (!getAddressedRef(CalleeDRE)) {
         if (IsFuncTypeErased) {
-          DpctGlobalInfo::setCVersionCUDALaunchUsed();
+          DpctGlobalInfo::setUseWrapperRegisterFnPtr();
         }
         std::string ReplStr;
         llvm::raw_string_ostream OS(ReplStr);
@@ -7178,16 +7189,23 @@ TextModification *
 ReplaceMemberAssignAsSetMethod(const Expr *E, const MemberExpr *ME,
                                StringRef MethodName, StringRef ReplacedArg,
                                StringRef ExtraArg, StringRef ExtraFeild) {
+                                std::cout << "Entering ReplaceMemberAssignAsSetMethod (overloaded)\n";
+                                std::cout << "Expr: " << E->getStmtClassName() << "\n";
+                                std::cout << "MemberExpr: " << ME->getMemberNameInfo().getAsString() << "\n";
+                                std::cout << "MethodName: " << MethodName.str() << "\n";
+                                std::cout << "ReplacedArg: " << ReplacedArg.str() << "\n";
+                                std::cout << "ExtraArg: " << ExtraArg.str() << "\n";
+                                std::cout << "ExtraFeild: " << ExtraFeild.str() << "\n";
   if (ReplacedArg.empty()) {
     if (auto RHS = getRhs(E)) {
+      std::cout << "RHS found: " << ExprAnalysis::ref(RHS) << "\n";
       StringRef c = ExprAnalysis::ref(RHS);
-      std::cout <<"Replaced String: "<< c.str() <<"\n";
       return ReplaceMemberAssignAsSetMethod(
           getStmtExpansionSourceRange(E).getEnd(), ME, MethodName,
           ExprAnalysis::ref(RHS), ExtraArg, ExtraFeild);
     }
   }
-  std::cout << "Coming her!!!!!!!!!e\n";
+  std::cout << "ReplacedArg is not empty or RHS not found\n";
   return ReplaceMemberAssignAsSetMethod(getStmtExpansionSourceRange(E).getEnd(),
                                         ME, MethodName, ReplacedArg, ExtraArg);
 }

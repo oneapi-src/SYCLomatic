@@ -10,7 +10,9 @@
 
 #include "dpct/kernel.hpp"
 #include "dpct/util.hpp"
+#include "sycl/ext/oneapi/experimental/graph.hpp"
 #include "sycl/handler.hpp"
+#include "sycl/property_list.hpp"
 #include "sycl/queue.hpp"
 #include <cstddef>
 #include <sycl/ext/oneapi/experimental/graph.hpp>
@@ -30,12 +32,31 @@ typedef sycl::ext::oneapi::experimental::command_graph<
 
 typedef sycl::ext::oneapi::experimental::node *node_ptr;
 
+/// Adds dependencies between nodes in the command graph.
+/// \param [in] graph A pointer to the command graph.
+/// \param [in] fromNodes An array of node pointers representing
+/// the source nodes.
+/// \param [in] toNodes An array of node pointers representing
+/// the destination nodes.
+/// \param [in] numberOfDependencies The number of dependencies
+/// to be added.
+static void add_dependencies(dpct::experimental::command_graph_ptr graph,
+                             const dpct::experimental::node_ptr *fromNodes,
+                             const dpct::experimental::node_ptr *toNodes,
+                             std::size_t numberOfDependencies) {
+  for (std::size_t i = 0; i < numberOfDependencies; i++) {
+    graph->make_edge(*fromNodes[i], *toNodes[i]);
+  }
+}
+
 struct kernel_node_params {
   dpct::dim3 block_dim;
   dpct::dim3 grid_dim;
   void **kernel_params;
   void *func;
   unsigned int shared_mem_bytes;
+
+  std::vector<dpct::experimental::node_ptr> dependencies;
 
 public:
   void set_block_dim(dpct::dim3 block_dim) { this->block_dim = block_dim; }
@@ -52,6 +73,26 @@ public:
   void **get_kernel_params() { return kernel_params; }
   void *get_func() { return func; }
   unsigned int get_shared_mem_bytes() { return shared_mem_bytes; }
+
+  void add_depency(dpct::experimental::node_ptr dependency) {
+    dependencies.push_back(dependency);
+  }
+  std::vector<dpct::experimental::node_ptr> get_dependencies() const {
+    return dependencies;
+  }
+  void update_dependency(dpct::experimental::node_ptr oldDependency, dpct::experimental::node_ptr newDependency){
+    std::cout <<"Dependencies size in struct: "<<dependencies.size() <<"\n";
+    for(auto deps:dependencies){
+      std::cout << "Dependecy in struct: "<<deps << "\n";
+    }
+    
+    for(std::size_t i=0;i<dependencies.size();i++){
+      if(dependencies[i]==oldDependency){
+        std::cout <<"Dependecy Macthes\n";
+        dependencies[i] = newDependency;
+      }
+    }
+  }
 };
 
 namespace detail {
@@ -128,30 +169,80 @@ public:
                        dpct::experimental::node_ptr *dependencies,
                        std::size_t numberOfDependencies,
                        dpct::experimental::kernel_node_params *params) {
-    kernel_node_params_map[graph].push_back(params);
+                        std::cout<<"num of deps: " <<numberOfDependencies<<"\n";
+    if (numberOfDependencies > 0) {
+      for (std::size_t i = 0; i < numberOfDependencies; i++) {
+        params->add_depency(dependencies[i]);
+      }
+    }
+    kernel_node_params_map[graph].emplace_back(*node, params);
+    std::cout << "second count for num of deps: " << params->get_dependencies().size() << "\n";
   }
   void launch(dpct::experimental::command_graph_exec_ptr execGraph,
               sycl::queue *queue) {
     auto graph = exec_graph_map[execGraph];
-    for (auto kernel_params : kernel_node_params_map[graph]) {
-      graph->add([&](sycl::handler &cgh) {
-        cgh.host_task([=]() {
-          dpct::kernel_launcher::launch(
-              kernel_params->get_func(), kernel_params->get_grid_dim(),
-              kernel_params->get_block_dim(),
-              kernel_params->get_kernel_params(),
-              kernel_params->get_shared_mem_bytes(), queue);
-        });
-      });
+    for (std::size_t i = 0; i < kernel_node_params_map[graph].size(); i++) {
+      std::cout<<"Num of nodes in graph: " << kernel_node_params_map[graph].size() << "\n";
+      // for (auto &node_kernel_params_pair : kernel_node_params_map[graph]) {
+      auto node_kernel_params_pair = kernel_node_params_map[graph][i];
+      auto node_params = node_kernel_params_pair.second;
+      auto dependency_ptrs = node_params->get_dependencies();
+      std::cout <<"i right now: " << i <<"\n";
+      std::cout << "Dependecnies size: " << dependency_ptrs.size() << "\n";
+      if(i==1){
+        std::cout <<"The dependency is: " << dependency_ptrs[0] <<"\n";
+      }
+      std::vector<sycl::ext::oneapi::experimental::node> dependencies;
+     
+      for (auto dep_ptr : dependency_ptrs) {
+        dependencies.push_back(*dep_ptr);
+        std::cout << "Dependecy deref & pushed\n";
+      }
+      auto new_node = new sycl::ext::oneapi::experimental::node(
+          graph->add([&](sycl::handler &cgh) {
+            cgh.host_task([=]() {
+              dpct::kernel_launcher::launch(
+                  node_params->get_func(), node_params->get_grid_dim(),
+                  node_params->get_block_dim(),
+                  node_params->get_kernel_params(),
+                  node_params->get_shared_mem_bytes(), queue);
+            });
+          }, sycl::ext::oneapi::experimental::property::node::depends_on(dependencies)));
+      std::cout << "new node is added to graph and dep\n";
+      std::cout <<"Current i:" << i <<"\n";
+      std::cout << "Size: " << kernel_node_params_map[graph].size() << "\n";
+      if(i< kernel_node_params_map[graph].size()-1){
+      std::cout <<"The -1 of i dependency address is: "<< kernel_node_params_map[graph][i+1].second->get_dependencies()[i] << "\n";
+      kernel_node_params_map[graph][i+1].second->update_dependency(kernel_node_params_map[graph][i+1].second->get_dependencies()[i], new_node);
+      }
+      std::cout <<"new node addr: " << new_node << "\n";
+      std::cout <<"old node addr:" << kernel_node_params_map[graph][i].first << "\n";
+      kernel_node_params_map[graph][i].first = new_node;
+      std::cout <<"set node addr:" << kernel_node_params_map[graph][i].first << "\n";
+      // if (i == 1) {
+      //   dpct::experimental::node_ptr toNode[1] = {new_node};
+      //   dpct::experimental::node_ptr fromNode[1] = {dependency_ptrs[0]};
+      //   std::cout<<"i is 1 wokring\n";
+      //   for(dpct::experimental::node_ptr ptr: dependency_ptrs){
+      //     std::cout <<"Dep ptr: " <<ptr <<"\n";
+      //   }
+      //   dpct::experimental::add_dependencies(graph, fromNode,
+      //                                        toNode, 1);
+      // }
     }
+
     auto final_graph = graph->finalize();
-    queue->submit([&](sycl::handler &cgh) { cgh.ext_oneapi_graph(final_graph); });
+    queue->submit(
+        [&](sycl::handler &cgh) { cgh.ext_oneapi_graph(final_graph); });
   }
 
   void instantiate(dpct::experimental::command_graph_exec_ptr *execGraph,
                    dpct::experimental::command_graph_ptr graph) {
     exec_graph_map[*execGraph] = graph;
   }
+
+  void kernel_node_get_params(dpct::experimental::node_ptr node,
+                              dpct::experimental::kernel_node_params *params) {}
 
 private:
   std::unordered_map<sycl::queue *, command_graph_ptr> queue_graph_map;
@@ -164,8 +255,10 @@ private:
   std::unordered_map<dpct::experimental::command_graph_exec_ptr,
                      dpct::experimental::command_graph_ptr>
       exec_graph_map;
-  std::unordered_map<dpct::experimental::command_graph_ptr,
-                     std::vector<dpct::experimental::kernel_node_params *>>
+  std::unordered_map<
+      dpct::experimental::command_graph_ptr,
+      std::vector<std::pair<dpct::experimental::node_ptr,
+                            dpct::experimental::kernel_node_params *>>>
       kernel_node_params_map;
 };
 } // namespace detail
@@ -216,23 +309,6 @@ add_empty_node(dpct::experimental::node_ptr *newNode,
               dependencies)}));
 }
 
-/// Adds dependencies between nodes in the command graph.
-/// \param [in] graph A pointer to the command graph.
-/// \param [in] fromNodes An array of node pointers representing
-/// the source nodes.
-/// \param [in] toNodes An array of node pointers representing
-/// the destination nodes.
-/// \param [in] numberOfDependencies The number of dependencies
-/// to be added.
-static void add_dependencies(dpct::experimental::command_graph_ptr graph,
-                             const dpct::experimental::node_ptr *fromNodes,
-                             const dpct::experimental::node_ptr *toNodes,
-                             std::size_t numberOfDependencies) {
-  for (std::size_t i = 0; i < numberOfDependencies; i++) {
-    graph->make_edge(*fromNodes[i], *toNodes[i]);
-  }
-}
-
 /// Gets the nodes in the command graph.
 /// \param [in] graph A pointer to the command graph.
 /// \param [out] nodesArray An array of node pointers where the
@@ -274,6 +350,10 @@ static void launch(dpct::experimental::command_graph_exec_ptr execGraph,
                    sycl::queue *queue) {
   detail::graph_mgr::instance().launch(execGraph, queue);
 }
+
+static void
+kernel_node_get_params(dpct::experimental::node_ptr node,
+                       dpct::experimental::kernel_node_params *params) {}
 
 } // namespace experimental
 } // namespace dpct

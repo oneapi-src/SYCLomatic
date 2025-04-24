@@ -158,6 +158,7 @@ REGISTER_RULE(TypeRemoveRule, PassKind::PK_Analysis)
 REGISTER_RULE(CompatWithClangRule, PassKind::PK_Migration)
 REGISTER_RULE(AssertRule, PassKind::PK_Migration)
 REGISTER_RULE(GraphRule, PassKind::PK_Migration)
+REGISTER_RULE(GraphAnalysisRule, PassKind::PK_Analysis)
 REGISTER_RULE(GraphicsInteropRule, PassKind::PK_Migration)
 REGISTER_RULE(RulesLangAddrSpaceConvRule, PassKind::PK_Migration)
 

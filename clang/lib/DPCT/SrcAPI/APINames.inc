@@ -404,7 +404,7 @@ ENTRY(cudaGraphAddEventWaitNode, cudaGraphAddEventWaitNode, false, NO_FLAG, P4, 
 ENTRY(cudaGraphAddExternalSemaphoresSignalNode, cudaGraphAddExternalSemaphoresSignalNode, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphAddExternalSemaphoresWaitNode, cudaGraphAddExternalSemaphoresWaitNode, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphAddHostNode, cudaGraphAddHostNode, false, NO_FLAG, P4, "comment")
-ENTRY(cudaGraphAddKernelNode, cudaGraphAddKernelNode, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphAddKernelNode, cudaGraphAddKernelNode, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY(cudaGraphAddMemAllocNode, cudaGraphAddMemAllocNode, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphAddMemFreeNode, cudaGraphAddMemFreeNode, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphAddMemcpyNode, cudaGraphAddMemcpyNode, false, NO_FLAG, P4, "comment")

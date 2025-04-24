@@ -28,13 +28,37 @@ extern DpctOption<opt, bool> AsyncHandler;
 namespace clang {
 namespace dpct {
 
+void GraphAnalysisRule::registerMatcher(MatchFinder &MF) {
+  auto kernelNodeTypeName = [&]() {
+    return hasAnyName("cudaKernelNodeParams");
+  };
+  MF.addMatcher(
+      memberExpr(
+          hasObjectExpression(hasType(type(hasUnqualifiedDesugaredType(
+              recordType(hasDeclaration(recordDecl(kernelNodeTypeName()))))))))
+          .bind("KernelNodeType"),
+      this);
+}
+
+void GraphAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "KernelNodeType")) {
+    auto BaseTy = DpctGlobalInfo::getUnqualifiedTypeName(
+        ME->getBase()->getType().getDesugaredType(*Result.Context),
+        *Result.Context);
+    auto MemberName = ME->getMemberNameInfo().getAsString();
+    if (BaseTy == "cudaKernelNodeParams") {
+      DpctGlobalInfo::setUseWrapperRegisterFnPtr();
+    }
+  }
+}
+
 void GraphRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
-    return hasAnyName("cudaGraphInstantiate", "cudaGraphLaunch",
-                      "cudaGraphExecDestroy", "cudaGraphAddEmptyNode",
-                      "cudaGraphAddDependencies", "cudaGraphExecUpdate",
-                      "cudaGraphNodeGetType", "cudaGraphGetNodes",
-                      "cudaGraphGetRootNodes", "cudaGraphDestroy");
+    return hasAnyName(
+        "cudaGraphInstantiate", "cudaGraphLaunch", "cudaGraphExecDestroy",
+        "cudaGraphAddEmptyNode", "cudaGraphAddDependencies",
+        "cudaGraphExecUpdate", "cudaGraphNodeGetType", "cudaGraphGetNodes",
+        "cudaGraphGetRootNodes", "cudaGraphDestroy", "cudaGraphAddKernelNode");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
@@ -55,29 +79,67 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
         *Result.Context);
     auto MemberName = ME->getMemberNameInfo().getAsString();
     if (BaseTy == "cudaKernelNodeParams") {
-      std::cout <<"NODE PARAMS FOUND\n";
-      DpctGlobalInfo::setCVersionCUDALaunchUsed();
       auto FieldName = KernelNodeParamNames[MemberName];
       if (FieldName.empty()) {
         report(ME->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
                DpctGlobalInfo::getOriginalTypeName(ME->getBase()->getType()) +
                    "::" + ME->getMemberDecl()->getName().str());
         return;
-        
       }
-      // if(FieldName == "func"){
-        // Check for the binary operator and fetch the RHS
-        // Strip the explicit typecast if it exists
-        // Check for VarDecl on the StrippedRHS
-        // If not a VarDecl, then insert user warning
-        // Check for VarDecl Type to be a FunctionDecl
-        // If FunctionDecl, then 
-        // VarDecl, get var name, Get kernel_node_params variable name
-        // Create the expression, hardcoded strting
-        // Create new replace object and emplace transformation (nodeParams.set_func((void*)dpct::wrapper_register(&incrementKernel_wrapper).get());)
-        // If VarDecl and not a FunctionDecl and if type of VarDecl is function pointer
-        // Create a hardcoded string (nodeParams.set_func(a.get()));
-      // }
+      if (FieldName == "func") {
+        if (auto BO = dyn_cast<BinaryOperator>(
+                getParentAsAssignedBO(ME, *Result.Context))) {
+          auto *LHS = BO->getLHS()->IgnoreCasts();
+          if (auto *ME = dyn_cast<MemberExpr>(LHS)) {
+            std::cout << "Member Expr\n";
+            // Get the base expression of the MemberExpr
+            auto *Base = ME->getBase()->IgnoreImpCasts();
+
+            // Check if the base is a DeclRefExpr
+            if (auto *DRE = dyn_cast<DeclRefExpr>(Base)) {
+              std::cout << "DeclRef Expr\n";
+              // Get the variable declaration
+              if (auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+                std::cout << "Base VarDecl Expr\n";
+                // Get the variable name
+                std::string varName = VD->getNameAsString();
+
+                // Get the RHS of the assignment
+                clang::Expr *RHS = BO->getRHS()->IgnoreCasts();
+
+                // Check if RHS is a DeclRefExpr referring to a function
+                if (auto *RHS_DRE = dyn_cast<DeclRefExpr>(RHS)) {
+                  std::cout << "RHS DRE Expr\n";
+                  if (auto *FD = dyn_cast<FunctionDecl>(RHS_DRE->getDecl())) {
+                    std::cout << "RHS FunctionDecl Expr\n";
+                    // Get the function name
+                    std::string funcName = FD->getNameAsString();
+                    std::string wrapperName = funcName + "_wrapper";
+
+                    // Construct the replacement expression
+                    std::string ReplacementExpr =
+                        varName + ".set_func((void*) dpct::wrapper_register(&" +
+                        wrapperName + ").get());";
+                    std::cout << "Replacement String: " << ReplacementExpr
+                              << "\n";
+                    std::string rp = "(void*) dpct::wrapper_register(&" +
+                                     wrapperName + ").get()";
+                    StringRef ReplacedArg = rp;
+                    emplaceTransformation(ReplaceMemberAssignAsSetMethod(
+                        BO, ME, FieldName, ReplacedArg));
+                    // Replace the original assignment with the new expression
+                    // emplaceTransformation(
+                    //     new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(),
+                    //                      std ::move(ReplacementExpr)));
+                    return;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      std::cout << "Coming here\n";
       if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
         StringRef ReplacedArg = "";
         emplaceTransformation(
@@ -106,8 +168,8 @@ const Expr *GraphRule::getParentAsAssignedBO(const Expr *E,
   return nullptr;
 }
 
-// Return the binary operator if E is the lhs of an assign expression, otherwise
-// nullptr.
+// Return the binary operator if E is the lhs of an assign expression,
+// otherwise nullptr.
 const Expr *GraphRule::getAssignedBO(const Expr *E, ASTContext &Context) {
   if (dyn_cast<MemberExpr>(E)) {
     // Continue finding parents when E is MemberExpr.
