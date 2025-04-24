@@ -221,7 +221,7 @@ The following table lists main member functions of memory classes:
 
    * - Function
      - Description
-   * - ``get_prt()``
+   * - ``get_ptr()``
      - Returns memory pointer of the memory object. It is a virtual pointer when
        buffer-based memory model is used, and it is a device pointer when a USM
        memory model is used.

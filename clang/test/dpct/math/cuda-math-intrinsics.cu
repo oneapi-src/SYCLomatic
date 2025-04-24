@@ -3550,3 +3550,36 @@ __global__ void foo9(float aa) {
   ::cospif(aa);
 }
 
+inline __host__ __device__ float4 operator-(float b, float4 a) {
+  return make_float4(b - a.x, b - a.y, b - a.z, b - a.w);
+}
+
+inline __host__ __device__ float4 fabs(float4 v) {
+  return make_float4(fabs(v.x), fabs(v.y), fabs(v.z), fabs(v.w));
+}
+
+__device__ void foo10(float4 a, float b) {
+  // CHECK: sycl::float4 c = fabs(dpct_operator_overloading::operator-(b , a));
+  float4 c = fabs(b - a);
+}
+
+// CHECK: template <typename T> class AAA_st {
+// CHECK-NEXT:   struct BBB_st {
+// CHECK-NEXT:     float f;
+// CHECK-NEXT:   };
+// CHECK-NEXT:   int foo() {
+// CHECK-NEXT:     BBB_st *ptr = new BBB_st;
+// CHECK-NEXT:     fabs(ptr->f);
+// CHECK-NEXT:     return 0;
+// CHECK-NEXT:   }
+// CHECK-NEXT: };
+template <typename T> class AAA_st {
+  struct BBB_st {
+    float f;
+  };
+  int foo() {
+    BBB_st *ptr = new BBB_st;
+    fabs(ptr->f);
+    return 0;
+  }
+};

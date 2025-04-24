@@ -2132,6 +2132,16 @@ public:
     return isFromCUDA(FD);
   }
 };
+class IsDefinedByUser {
+public:
+  IsDefinedByUser() {}
+  bool operator()(const CallExpr *C) {
+    auto FD = C->getDirectCallee();
+    if (!FD)
+      return false;
+    return DpctGlobalInfo::isInRoot(FD->getLocation());
+  }
+};
 } // namespace math
 } // namespace dpct
 

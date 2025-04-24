@@ -1,3 +1,4 @@
+// UNSUPPORTED: system-windows
 // RUN: echo "test"
 // SYCL: #include <sycl/sycl.hpp>
 // SYCL-NEXT: #include <dpct/dpct.hpp>

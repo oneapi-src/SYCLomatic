@@ -348,7 +348,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
               "cudaExternalSemaphoreHandleType", "CUstreamCallback",
               "cudaHostFn_t", "__nv_half2", "__nv_half", "cudaGraphNodeType",
-              "CUdevice_P2PAttribute"))))))
+              "CUsurfref", "CUdevice_P2PAttribute"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -4521,10 +4521,14 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(allOf(to(functionDecl(hasAttr(attr::CUDAGlobal))),
-                                  unless(hasAncestor(cudaKernelCallExpr()))))
-                    .bind("kernelRef"),
-                this);
+  MF.addMatcher(
+      functionDecl(
+          forEachDescendant(
+              declRefExpr(allOf(to(functionDecl(hasAttr(attr::CUDAGlobal))),
+                                unless(hasAncestor(cudaKernelCallExpr()))))
+                  .bind("kernelRef")))
+          .bind("outerFunc"),
+      this);
   MF.addMatcher(unresolvedLookupExpr(unless(hasAncestor(cudaKernelCallExpr())))
                     .bind("unresolvedRef"),
                 this);
@@ -4600,6 +4604,11 @@ void KernelCallRefRule::insertWrapperPostfix(const T *Node,
 void KernelCallRefRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto DRE = getAssistNodeAsType<DeclRefExpr>(Result, "kernelRef")) {
+    const FunctionDecl *OuterFD =
+        getAssistNodeAsType<FunctionDecl>(Result, "outerFunc");
+    if (!OuterFD) {
+      return;
+    }
     if (auto ParentCE = DpctGlobalInfo::findAncestor<CallExpr>(DRE)) {
       if (auto Callee = ParentCE->getDirectCallee()) {
         if (dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc())) {
@@ -4623,31 +4632,25 @@ void KernelCallRefRule::runRule(
         DFI->collectInfoForWrapper(FD);
       }
     }
-    if (auto *OuterFD = DpctGlobalInfo::findAncestor<FunctionDecl>(DRE)) {
-      if ((OuterFD->getTemplatedKind() ==
-           FunctionDecl::TemplatedKind::TK_NonTemplate) ||
-          (OuterFD->getTemplatedKind() ==
-           FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
-        std::string TypeRepl;
-        if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
-          if ((IsTemplateRelated &&
-               (!DRE->hasExplicitTemplateArgs() ||
-                (DRE->getNumTemplateArgs() <= TemplateParamNum))) ||
-              DRE->hadMultipleCandidates()) {
-            TypeRepl = getTypeRepl(DRE);
-          }
+    if ((OuterFD->getTemplatedKind() ==
+         FunctionDecl::TemplatedKind::TK_NonTemplate) ||
+        (OuterFD->getTemplatedKind() ==
+         FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
+      std::string TypeRepl;
+      if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
+        if ((IsTemplateRelated &&
+             (!DRE->hasExplicitTemplateArgs() ||
+              (DRE->getNumTemplateArgs() <= TemplateParamNum))) ||
+            DRE->hadMultipleCandidates()) {
+          TypeRepl = getTypeRepl(DRE);
         }
-        insertWrapperPostfix<DeclRefExpr>(
-            DRE, std::move(TypeRepl),
-            DpctGlobalInfo::isCVersionCUDALaunchUsed());
       }
+      insertWrapperPostfix<DeclRefExpr>(
+          DRE, std::move(TypeRepl), DpctGlobalInfo::isCVersionCUDALaunchUsed());
     }
   }
   if (auto ULE =
           getAssistNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedRef")) {
-    if (!DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
-      return;
-    }
     bool KernelRefFound = false;
     for (auto *D : ULE->decls()) {
       const FunctionDecl *FD = dyn_cast<FunctionDecl>(D);
@@ -4679,7 +4682,8 @@ void KernelCallRefRule::runRule(
         }
       }
     }
-    insertWrapperPostfix<UnresolvedLookupExpr>(ULE, getTypeRepl(ULE), true);
+    insertWrapperPostfix<UnresolvedLookupExpr>(
+        ULE, getTypeRepl(ULE), DpctGlobalInfo::isCVersionCUDALaunchUsed());
   }
 }
 

@@ -293,7 +293,7 @@ template <typename T> struct kernel_type_t {
 // CHECK-NEXT:                  int b,
 // CHECK-NEXT:                  Tk *mem) {
 // CHECK-NEXT:   using Tk = typename kernel_type_t<T>::Type;
-template <typename T> __global__ 
+template <typename T> __device__ 
 void foo_device7(int a,
                  int b) {
   using Tk = typename kernel_type_t<T>::Type;

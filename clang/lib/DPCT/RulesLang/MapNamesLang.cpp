@@ -308,6 +308,7 @@ const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
 const std::unordered_set<std::string> MapNamesLang::CooperativeGroupsAPISet{
     "this_thread_block",
     "this_grid",
+    "this_thread",
     "sync",
     "tiled_partition",
     "thread_rank",
