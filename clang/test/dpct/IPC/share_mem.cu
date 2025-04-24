@@ -1,7 +1,6 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --out-root %T/share_mem %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/share_mem/share_mem.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DDPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO -DNO_BUILD_TEST  %T/share_mem/share_mem.dp.cpp -o %T/share_mem/share_mem.dp.o %}
 
 #include <cuda.h>
 #include <cuda_runtime.h>

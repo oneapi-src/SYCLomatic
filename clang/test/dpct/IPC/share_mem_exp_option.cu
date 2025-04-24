@@ -1,7 +1,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --use-experimental-features=l0-ipc --format-range=none  -out-root %T/share_mem_exp_option %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/share_mem_exp_option/share_mem_exp_option.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/share_mem_exp_option/share_mem_exp_option.dp.cpp -o %T/share_mem_exp_option/share_mem_exp_option.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DDPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO -DNO_BUILD_TEST  %T/share_mem_exp_option/share_mem_exp_option.dp.cpp -o %T/share_mem_exp_option/share_mem_exp_option.dp.o %}
 
 
 #include <cuda.h>
