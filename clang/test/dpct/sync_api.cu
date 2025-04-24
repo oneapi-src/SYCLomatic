@@ -196,7 +196,7 @@ int foo3() {
   // CHECK-NEXT:  dpct::get_in_order_queue().parallel_for(
   // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:  exp_props,     [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:       foo2(item_ct1);
+  // CHECK-NEXT:       foo2();
   // CHECK-NEXT:     });
   //  CHECK-NEXT: }
   foo2<<<1,1>>>();
