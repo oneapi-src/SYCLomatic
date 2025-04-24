@@ -1,6 +1,6 @@
 // FIXME
 // UNSUPPORTED: system-windows
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --input-file %T/template-kernel-call/template-kernel-call.dp.cpp --match-full-lines %s
 
 #include <vector>
@@ -50,16 +50,17 @@ public:
 template<class T> void runTest();
 
 template <class TName, unsigned N, class TData>
-// CHECK: void testKernelPtr(const TData *L, const TData *M) {
+// CHECK: void testKernelPtr(const TData *L, const TData *M,
+// CHECK-NEXT: const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const TData *L, const TData *M) {
-  // CHECK: int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
+  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
 template<class TData>
-// CHECK: void testKernel(TData L, TData M, int N) {
+// CHECK: void testKernel(TData L, TData M, int N, const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void testKernel(TData L, TData M, int N) {
-  // CHECK: int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
+  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
   L = M;
 }
@@ -103,7 +104,7 @@ void runTest() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, TestName, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         testKernelPtr<TestName, ktarg, T>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer());
+  // CHECK-NEXT:          testKernelPtr<TestName, ktarg, T>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   testKernelPtr<TestName, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg2);
@@ -119,7 +120,7 @@ void runTest() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         testKernelPtr<class TestTemplate<T>, ktarg, T>(karg1_acc_ct0.get_raw_pointer(), karg3_acc_ct1.get_raw_pointer());
+  // CHECK-NEXT:         testKernelPtr<class TestTemplate<T>, ktarg, T>(karg1_acc_ct0.get_raw_pointer(), karg3_acc_ct1.get_raw_pointer(), item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   testKernelPtr<class TestTemplate<T>, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg3);
@@ -135,7 +136,7 @@ void runTest() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, dpct_kernel_scalar<ktarg>, TestTemplate<T>>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         testKernelPtr<T, ktarg, TestTemplate<T>>(karg4_acc_ct0.get_raw_pointer(), karg5_acc_ct1.get_raw_pointer());
+  // CHECK-NEXT:         testKernelPtr<T, ktarg, TestTemplate<T>>(karg4_acc_ct0.get_raw_pointer(), karg5_acc_ct1.get_raw_pointer(), item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   testKernelPtr<T, ktarg, TestTemplate<T> ><<<griddim, threaddim>>>(karg4, karg5);
@@ -151,7 +152,7 @@ void runTest() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel<T>(karg1T, karg2T, ktarg_ct2);
+  // CHECK-NEXT:           testKernel<T>(karg1T, karg2T, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   testKernel<T><<<griddim, threaddim>>>(karg1T, karg2T, ktarg);
@@ -172,7 +173,7 @@ void runTest() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TestTemplate<T>>>(
   // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel<TestTemplate<T>>(karg3TT, karg4TT, ktarg_ct2);
+  // CHECK-NEXT:           testKernel<TestTemplate<T>>(karg3TT, karg4TT, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   testKernel<TestTemplate<T> ><<<griddim, threaddim>>>(karg3TT, karg4TT, ktarg);
@@ -190,7 +191,7 @@ void runTest() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TT>>(
   // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel<TT>(karg3TT, karg4TT, ktarg_ct2);
+  // CHECK-NEXT:           testKernel<TT>(karg3TT, karg4TT, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   testKernel<TT><<<griddim, threaddim>>>(karg3TT, karg4TT, ktarg);
@@ -215,7 +216,7 @@ int main() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, TestName, dpct_kernel_scalar<ktarg>, LA>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         testKernelPtr<TestName, ktarg, LA>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer());
+  // CHECK-NEXT:         testKernelPtr<TestName, ktarg, LA>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   testKernelPtr<TestName, ktarg, LA><<<griddim, threaddim>>>((const LA *)karg1, karg2);
@@ -232,7 +233,7 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel<LA>(karg1LA, karg2LA, ktarg_ct2);
+  // CHECK-NEXT:           testKernel<LA>(karg1LA, karg2LA, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   testKernel<LA><<<10, intvar>>>(karg1LA, karg2LA, ktarg);
@@ -240,7 +241,8 @@ int main() {
 
 
 // CHECK:template<typename T>
-// CHECK-NEXT:void convert_kernel(T b, int *aaa, double bbb[8][0]){
+// CHECK-NEXT:void convert_kernel(T b, const sycl::nd_item<3> &item_ct1, int *aaa,
+// CHECK-NEXT:                    double bbb[8][0]){
 // CHECK:  T a = item_ct1.get_local_range(2) * item_ct1.get_group(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT:}
 template<typename T>
@@ -264,7 +266,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}, T>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128) * sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          convert_kernel(b, aaa_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), bbb_acc_ct1);
+// CHECK-NEXT: convert_kernel(b, item_ct1, aaa_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), bbb_acc_ct1);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:  }
@@ -455,8 +457,7 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 
 class IndexType {};
 
-// CHECK: void thread_id() {
-// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK: void thread_id(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:  auto tidx = item_ct1.get_local_id(2);
 // CHECK-NEXT:  auto tidx_int = static_cast<int>(item_ct1.get_local_id(2));
 // CHECK-NEXT: }
@@ -465,8 +466,7 @@ __device__ void thread_id() {
   auto tidx_int = static_cast<int>(threadIdx.x);
 }
 
-// CHECK: template <typename IndexType = int> void thread_id() {
-// CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK: template <typename IndexType = int> void thread_id(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:   auto tidx = item_ct1.get_local_id(2);
 // CHECK-NEXT:   auto tidx_template = static_cast<IndexType>(item_ct1.get_local_id(2));
 // CHECK-NEXT:   auto tidx_int = static_cast<int>(item_ct1.get_local_id(2));
@@ -477,8 +477,7 @@ template <typename IndexType = int> __device__ void thread_id() {
   auto tidx_int = static_cast<int>(threadIdx.x);
 }
 
-// CHECK: template <typename IndexType = int> void kernel() {
-// CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK: template <typename IndexType = int> void kernel(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:   auto tidx = item_ct1.get_local_id(2);
 // CHECK-NEXT:   auto tidx_template = static_cast<IndexType>(item_ct1.get_local_id(2));
 // CHECK-NEXT:   auto tidx_int = static_cast<int>(item_ct1.get_local_id(2));
@@ -531,8 +530,8 @@ void foo() {
 template<class T, int N>
 class foo_class1{
 public:
-// CHECK: void foo() {
-// CHECK-NEXT: int a = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
+// CHECK: void foo(const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT: int a = item_ct1.get_local_id(2);
   __device__ void foo() {
     int a = threadIdx.x;
   }
@@ -540,8 +539,8 @@ public:
 template<int N>
 class foo_class1<int, N>{
 public:
-// CHECK: void foo() {
-// CHECK-NEXT: int a = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
+// CHECK: void foo(const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT: int a = item_ct1.get_local_id(2);
   __device__ void foo() {
     int a = threadIdx.x;
   }
