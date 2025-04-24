@@ -91,46 +91,20 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
                 getParentAsAssignedBO(ME, *Result.Context))) {
           auto *LHS = BO->getLHS()->IgnoreCasts();
           if (auto *ME = dyn_cast<MemberExpr>(LHS)) {
-            std::cout << "Member Expr\n";
-            // Get the base expression of the MemberExpr
             auto *Base = ME->getBase()->IgnoreImpCasts();
-
-            // Check if the base is a DeclRefExpr
             if (auto *DRE = dyn_cast<DeclRefExpr>(Base)) {
-              std::cout << "DeclRef Expr\n";
-              // Get the variable declaration
               if (auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-                std::cout << "Base VarDecl Expr\n";
-                // Get the variable name
-                std::string varName = VD->getNameAsString();
-
-                // Get the RHS of the assignment
-                clang::Expr *RHS = BO->getRHS()->IgnoreCasts();
-
-                // Check if RHS is a DeclRefExpr referring to a function
+                std::string VarName = VD->getNameAsString();
+                auto *RHS = BO->getRHS()->IgnoreCasts();
                 if (auto *RHS_DRE = dyn_cast<DeclRefExpr>(RHS)) {
-                  std::cout << "RHS DRE Expr\n";
                   if (auto *FD = dyn_cast<FunctionDecl>(RHS_DRE->getDecl())) {
-                    std::cout << "RHS FunctionDecl Expr\n";
-                    // Get the function name
-                    std::string funcName = FD->getNameAsString();
-                    std::string wrapperName = funcName + "_wrapper";
-
-                    // Construct the replacement expression
-                    std::string ReplacementExpr =
-                        varName + ".set_func((void*) dpct::wrapper_register(&" +
-                        wrapperName + ").get());";
-                    std::cout << "Replacement String: " << ReplacementExpr
-                              << "\n";
-                    std::string rp = "(void*) dpct::wrapper_register(&" +
-                                     wrapperName + ").get()";
-                    StringRef ReplacedArg = rp;
-                    emplaceTransformation(ReplaceMemberAssignAsSetMethod(
-                        BO, ME, FieldName, ReplacedArg));
-                    // Replace the original assignment with the new expression
-                    // emplaceTransformation(
-                    //     new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(),
-                    //                      std ::move(ReplacementExpr)));
+                    std::string FuncName = FD->getNameAsString();
+                    std::string WrapperName = FuncName;
+                    std::string AccessOperator = VD->getType()->isPointerType() ? "->" : ".";
+                    std::string ReplacementStr = VarName + AccessOperator + "set_func("
+                        "(void*) dpct::wrapper_register(&" + WrapperName ;
+                    emplaceTransformation(new ReplaceToken(BO->getBeginLoc(), BO->getEndLoc(), std::move(ReplacementStr)));
+                    emplaceTransformation(new InsertAfterStmt(BO, ")"));
                     return;
                   }
                 }
@@ -139,7 +113,6 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
           }
         }
       }
-      std::cout << "Coming here\n";
       if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
         StringRef ReplacedArg = "";
         emplaceTransformation(

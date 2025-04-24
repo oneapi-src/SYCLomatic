@@ -26,10 +26,9 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
-    CALL_FACTORY_ENTRY("cudaGraphLaunch",
-                       CALL(MapNames::getDpctNamespace() +
-                                "experimental::launch",
-                            ARG(0), ARG(1))),
+    CALL_FACTORY_ENTRY("cudaGraphLaunch", CALL(MapNames::getDpctNamespace() +
+                                                   "experimental::launch",
+                                               ARG(0), ARG(1))),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphLaunch",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphLaunch"),
@@ -109,7 +108,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY("cudaGraphAddKernelNode",
                        CALL(MapNames::getDpctNamespace() +
                                 "experimental::add_kernel_node",
-                            ARG(0), ARG(1), ARG(2))),
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphAddKernelNode",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphAddKernelNode"),
