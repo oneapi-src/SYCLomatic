@@ -28,3 +28,18 @@ void exec_kernel(CUfunction cuFunc, CUmodule cuMod, CUstream stream) {
   // CHECK: dpct::invoke_kernel_function((dpct::kernel_function)function, *stream, sycl::range<3>(100, 100, 100), sycl::range<3>(100, 100, 100), 1024, NULL, config);
   cuLaunchKernel((CUfunction)function, 100, 100, 100, 100, 100, 100, 1024, stream, NULL, config);
 }
+
+class CString {
+  private:
+    char *str;
+  public:
+    CString(): str(NULL) {};
+    operator const char* () const { return str; }
+
+    operator char* () { return str; }
+};
+
+void test_casting(CUmodule mod, CUfunction func, const CString &name) {
+  // CHECK: func = dpct::get_kernel_function(mod, (const char*)name);
+  cuModuleGetFunction(&func, mod, name);
+}
