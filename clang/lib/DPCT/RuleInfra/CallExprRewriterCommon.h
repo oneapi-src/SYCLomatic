@@ -149,6 +149,8 @@ public:
     clang::QualType ArgType = InputArg->getType().getCanonicalType();
     ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
     bool NeedParen = false;
+    std::cout << "Arg type: " << ArgType.getAsString() << "\n";
+    std::cout << "Given type " << TypeInfo << "\n";
     if (ArgType.getAsString() != TypeInfo) {
       NeedParen = needExtraParens(SubExpr);
       Stream << "(" << TypeInfo << ")";
