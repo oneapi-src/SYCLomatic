@@ -658,8 +658,12 @@ DPCT_ENUM_OPTION(
             int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
             "Disable the enqueued barriers extension.", false),
         DPCT_OPTION_ENUM_VALUE(
-            "free-function-queries", int(DPCPPExtensionsDefaultEnabled::ExtDE_FreeQueries),
-            "Disable the free query extension.", false),
+            "free-function-queries",
+            int(DPCPPExtensionsDefaultEnabled::ExtDE_FreeQueries),
+            "Disable the free function query experimental extension that "
+            "allows getting 'id', 'item', 'nd_item', 'group', and 'sub_group' "
+            "instances globally.",
+            false),
         DPCT_OPTION_ENUM_VALUE(
             "peer_access", int(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess),
             "Disable the peer access extension.", false),
@@ -728,7 +732,8 @@ DPCT_ENUM_OPTION(
             "free-function-queries", int(ExperimentalFeatures::Exp_FreeQueries),
             "DEPRECATED : Experimental extension that allows getting 'id', "
             "'item', 'nd_item', 'group', and\n"
-            "'sub_group' instances globally. The free-function-queries will be enabled as default.",
+            "'sub_group' instances globally. Deprecate this option as the "
+            "feature is turned on by default.",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "local-memory-kernel-scope-allocation",
