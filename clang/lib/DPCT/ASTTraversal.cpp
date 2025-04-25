@@ -198,7 +198,7 @@ REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 
 REGISTER_RULE(NVSHMEMRule, PassKind::PK_Migration, RuleGroupKind::RK_NVSHMEM)
 
-REGISTER_RULE(CUTENSORRule, PassKind::PK_Migration, RuleGroupKind::RK_CUTENSOR)
+REGISTER_RULE(CUTensorRule, PassKind::PK_Migration, RuleGroupKind::RK_CUTENSOR)
 
 } // namespace dpct
 } // namespace clang

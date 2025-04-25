@@ -12,7 +12,7 @@
 using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
-void clang::dpct::CUTENSORRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+void clang::dpct::CUTensorRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto CutensorAPIs = [&]() {
     return hasAnyName(
         // Helper Functions
@@ -57,15 +57,12 @@ void clang::dpct::CUTENSORRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cutensorMgDestroyContractionPlan", "cutensorMgContraction");
   };
 
-  llvm::outs() << "[DEBUG] Inside regMatcher\n";
-
   MF.addMatcher(callExpr(callee(functionDecl(CutensorAPIs()))).bind("call"),
                 this);
 }
 
-void clang::dpct::CUTENSORRule::runRule(
+void clang::dpct::CUTensorRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  llvm::outs() << "[DEBUG] Inside runRule\n";
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
     std::string FuncName = "";
     const FunctionDecl *FD = CE->getDirectCallee();

@@ -16,7 +16,7 @@ using namespace clang::ast_matchers;
 namespace clang {
 namespace dpct {
 
-class CUTENSORRule : public NamedMigrationRule<CUTENSORRule> {
+class CUTensorRule : public NamedMigrationRule<CUTensorRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
