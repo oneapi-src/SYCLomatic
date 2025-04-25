@@ -59,7 +59,7 @@ int sharedMemoryOpen(const char *name, size_t sz, sharedMemoryInfo *info) {
 
 typedef struct shmStruct_st {
   // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcMemHandle_t is not supported, please try to remigrate with option: --use-experimental-features=l0-ipc.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcMemHandle_t is not supported, please try to remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcMemHandle_t memHandle;
 } shmStruct;
@@ -93,7 +93,7 @@ int childProcess(int id) {
   shm = (shmStruct *)info.addr;
   int *ptr;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcOpenMemHandle is not supported, please try to remigrate with option: --use-experimental-features=l0-ipc.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcOpenMemHandle is not supported, please try to remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcOpenMemHandle((void **)&ptr, shm->memHandle,
                        cudaIpcMemLazyEnablePeerAccess);
@@ -118,7 +118,7 @@ int parentProcess(char *app) {
   cudaMalloc(&ptr, DATA_SIZE);
   int *hostptr = (int *)malloc(DATA_SIZE);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcGetMemHandle is not supported, please try to remigrate with option: --use-experimental-features=l0-ipc.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcGetMemHandle is not supported, please try to remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcGetMemHandle(&shm->memHandle, ptr);
 
@@ -136,7 +136,7 @@ int parentProcess(char *app) {
   }
   std::cout << "verified Pass.\n";
   // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcCloseMemHandle is not supported, please try to remigrate with option: --use-experimental-features=l0-ipc.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcCloseMemHandle is not supported, please try to remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcCloseMemHandle(ptr);
   return 0;

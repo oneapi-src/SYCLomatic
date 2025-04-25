@@ -13,7 +13,7 @@ void foo() {
   int device;
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcMemHandle_t is not supported, please try to
-  // CHECK-NEXT: remigrate with option: --use-experimental-features=l0-ipc.
+  // CHECK-NEXT: remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcEventHandle_t *handleEvent;
   cudaEvent_t event;
@@ -64,19 +64,19 @@ void foo() {
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcGetMemHandle is not supported, please try to
-  // CHECK-NEXT: remigrate with option: --use-experimental-features=l0-ipc.
+  // CHECK-NEXT: remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcGetMemHandle(handleMem, devPtr);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcOpenMemHandle is not supported, please try to
-  // CHECK-NEXT:  remigrate with option: --use-experimental-features=l0-ipc.
+  // CHECK-NEXT:  remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcOpenMemHandle(&devPtr, *handleMem, flags);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcCloseMemHandle is not supported, please try to
-  // CHECK-NEXT: remigrate with option: --use-experimental-features=l0-ipc.
+  // CHECK-NEXT: remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcCloseMemHandle(devPtr);
 

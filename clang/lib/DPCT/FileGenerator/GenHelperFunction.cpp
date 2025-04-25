@@ -150,6 +150,10 @@ const std::string CodePinSerializationBasicAllContentStr =
 #include "clang/DPCT/codepin/serialization/basic.hpp.inc"
     ;
 
+const std::string ZEUtilsAllContentStr =
+#include "clang/DPCT/ze_utils.hpp.inc"
+    ;
+
 const std::string CmakeAllContentStr =
 #include "clang/DPCT/dpct.cmake.inc"
     ;

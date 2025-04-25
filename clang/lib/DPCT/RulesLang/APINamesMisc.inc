@@ -151,7 +151,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         UNSUPPORT_FACTORY_ENTRY("cudaIpcGetMemHandle",
                                 Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                                 ARG("cudaIpcGetMemHandle"),
-                                ARG("--use-experimental-features=l0-ipc")))))
+                                ARG("--use-experimental-features=level_zero")))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -164,7 +164,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         UNSUPPORT_FACTORY_ENTRY("cudaIpcCloseMemHandle",
                                 Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                                 ARG("cudaIpcCloseMemHandle"),
-                                ARG("--use-experimental-features=l0-ipc")))))
+                                ARG("--use-experimental-features=level_zero")))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -177,4 +177,4 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         UNSUPPORT_FACTORY_ENTRY("cudaIpcOpenMemHandle",
                                 Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                                 ARG("cudaIpcOpenMemHandle"),
-                                ARG("--use-experimental-features=l0-ipc")))))
+                                ARG("--use-experimental-features=level_zero")))))

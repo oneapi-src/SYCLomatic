@@ -14,10 +14,7 @@
 #include <type_traits>
 #include <cassert>
 #include <cstdint>
-#if DPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO
-#include "level_zero/ze_api.h"
-#include "sycl/ext/oneapi/backend/level_zero.hpp"
-#endif
+
 // TODO: Remove these function definitions once they exist in the DPC++ compiler
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 template <typename T>
@@ -1349,90 +1346,6 @@ inline uint32_t ternary_logic_op(uint32_t a, uint32_t b, uint32_t c,
 
   return result;
 }
-
-#ifdef DPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO
-#if defined(__linux__)
-namespace experimental {
-
-///  System call number definitions for kernel compatibility.
-///  SYS_pidfd_open: Process file descriptor opener (requires kernel 5.6+).
-///  SYS_pidfd_getfd: Cross-process FD fetcher system call.
-#ifndef SYS_pidfd_open
-#define SYS_pidfd_open 434
-#endif
-
-#ifndef SYS_pidfd_getfd
-#define SYS_pidfd_getfd 438
-#endif
-
-/// Process id and IPC memory handle structure for cross-process sharing.
-struct dpct_ipc_mem_handle_t {
-  pid_t pid;
-  ze_ipc_mem_handle_t handle;
-};
-
-/// Extracts native Level Zero context handle from SYCL context.
-/// \param [in] context SYCL context object
-/// \returns Native Level Zero context handle
-ze_context_handle_t get_ze_context(sycl::context context) {
-  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(context);
-}
-
-/// Retrieves native Level Zero device handle from SYCL device.
-/// \param [in] device SYCL device object
-/// \returns Native Level Zero device handle
-ze_device_handle_t get_ze_device(sycl::device device) {
-  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(device);
-}
-/// Acquires native Level Zero event handle from SYCL event.
-/// \param [in] event SYCL event object
-/// \returns Native Level Zero event handle
-ze_event_handle_t get_ze_event(sycl::event event) {
-  return sycl::get_native<sycl::backend::ext_oneapi_level_zero>(event);
-}
-
-/// Acquires IPC handle for shared memory region.
-/// \param [in] ptr Pointer to shared memory region
-/// \param [out] phipc Output IPC handle structure
-/// \returns Level Zero operation status code
-ze_result_t get_mem_ipc_handle(const void *ptr, dpct_ipc_mem_handle_t *phipc) {
-  phipc->pid = getpid();
-  return zeMemGetIpcHandle(
-      get_ze_context(dpct::get_current_device().get_context()), ptr,
-      &phipc->handle);
-}
-/// Releases resources associated with IPC handle.
-/// \param [in] ptr Pointer to shared memory region
-/// \returns Level Zero operation status code
-ze_result_t close_mem_ipc_handle(const void *ptr) {
-  return zeMemCloseIpcHandle(
-      get_ze_context(dpct::get_current_device().get_context()), (char *)ptr);
-}
-/// Cross-process file descriptor translator.
-/// \param [in] phipc Source IPC handle structure
-/// \returns Local process file descriptor
-template <class T> int get_cur_pid(T phipc) {
-  int pidfd = syscall(SYS_pidfd_open, phipc.pid, 0);
-  int fd;
-  memcpy(&fd, (void *)&phipc.handle.data, sizeof(int));
-  int newfd = syscall(SYS_pidfd_getfd, pidfd, fd, 0);
-  return newfd;
-}
-/// Maps remote IPC memory to local address space.
-/// \param [in] hipc Source IPC handle structure
-/// \param [out] ptr Mapped memory pointer in local process
-/// \returns Level Zero operation status code
-ze_result_t open_mem_ipc_handle(dpct_ipc_mem_handle_t hipc, void **ptr) {
-  int newfd = get_cur_pid(hipc);
-  memcpy(&hipc.handle.data, &newfd, sizeof(newfd));
-  return zeMemOpenIpcHandle(
-      get_ze_context(dpct::get_current_device().get_context()),
-      get_ze_device(dpct::get_current_device()), hipc.handle, 0u, ptr);
-}
-
-} // namespace experimental
-#endif // __linux__
-#endif // DPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO
 
 #ifdef _WIN32
 #define DPCT_EXPORT __declspec(dllexport)

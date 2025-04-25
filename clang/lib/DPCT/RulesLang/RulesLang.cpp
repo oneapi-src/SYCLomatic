@@ -931,7 +931,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (CanonicalTypeStr == "cudaIpcMemHandle_st") {
       if (!DpctGlobalInfo::useExtIPC()) {
         report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
-               "cudaIpcMemHandle_t", "--use-experimental-features=l0-ipc");
+               "cudaIpcMemHandle_t", "--use-experimental-features=level_zero");
         return;
       }
     }

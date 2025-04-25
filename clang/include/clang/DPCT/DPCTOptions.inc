@@ -827,10 +827,10 @@ DPCT_ENUM_OPTION(
             "Experimental extension that allows use of SYCL prefetch APIs.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
-            "l0-ipc", int(ExperimentalFeatures::Exp_IPC),
+            "level_zero", int(ExperimentalFeatures::Exp_IPC),
             "Experimental extension that allows the use of Level Zero APIs "
-            "to migrate IPC code, with the DPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO "
-            "macro defined to enable these APIs.\n",
+            "to migrate the target code. For example, migrate the CUDA Inter "
+            "Process Communication(IPC) APIs. \n",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "all", int(ExperimentalFeatures::Exp_All),

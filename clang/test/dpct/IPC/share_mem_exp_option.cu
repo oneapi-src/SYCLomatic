@@ -1,7 +1,7 @@
 // UNSUPPORTED: system-windows
-// RUN: dpct --use-experimental-features=l0-ipc --format-range=none  -out-root %T/share_mem_exp_option %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: dpct --use-experimental-features=level_zero --format-range=none  -out-root %T/share_mem_exp_option %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/share_mem_exp_option/share_mem_exp_option.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DDPCT_EXT_ONEAPI_BACKEND_LEVEL_ZERO -DNO_BUILD_TEST  %T/share_mem_exp_option/share_mem_exp_option.dp.cpp -o %T/share_mem_exp_option/share_mem_exp_option.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl  -DNO_BUILD_TEST  %T/share_mem_exp_option/share_mem_exp_option.dp.cpp -o %T/share_mem_exp_option/share_mem_exp_option.dp.o %}
 
 
 #include <cuda.h>
@@ -69,7 +69,7 @@ int sharedMemoryOpen(const char *name, size_t sz, sharedMemoryInfo *info)
 
 typedef struct shmStruct_st
 {
-  // CHECK: dpct::experimental::dpct_ipc_mem_handle_t memHandle;
+  // CHECK: dpct::experimental::ipc_mem_handle_ext_t memHandle;
   cudaIpcMemHandle_t memHandle;
 } shmStruct;
 
@@ -109,7 +109,7 @@ int childProcess(int id)
   }
   shm = (shmStruct *)info.addr;
   int *ptr;
-  // CHECK: dpct::experimental::open_mem_ipc_handle(*(dpct::experimental::dpct_ipc_mem_handle_t *)&shm->memHandle, (void **)&ptr);
+  // CHECK: dpct::experimental::open_mem_ipc_handle(*(dpct::experimental::ipc_mem_handle_ext_t *)&shm->memHandle, (void **)&ptr);
   cudaIpcOpenMemHandle((void **)&ptr, *(cudaIpcMemHandle_t *)&shm->memHandle,
                        cudaIpcMemLazyEnablePeerAccess);
 
@@ -132,7 +132,7 @@ int parentProcess(char *app)
   memset((void *)shm, 0, sizeof(*shm));
   cudaMalloc(&ptr, DATA_SIZE);
   int *hostptr = (int *)malloc(DATA_SIZE);
-  // CHECK: dpct::experimental::get_mem_ipc_handle(ptr, (dpct::experimental::dpct_ipc_mem_handle_t *)&shm->memHandle);
+  // CHECK: dpct::experimental::get_mem_ipc_handle(ptr, (dpct::experimental::ipc_mem_handle_ext_t *)&shm->memHandle);
   cudaIpcGetMemHandle((cudaIpcMemHandle_t *)&shm->memHandle, ptr);
 
   char *const args[] = {app, "0", NULL};
