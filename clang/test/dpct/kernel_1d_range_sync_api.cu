@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct  --format-range=none --assume-nd-range-dim=1  -out-root %T/kernel_1d_range_sync_api %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_1d_range_sync_api/kernel_1d_range_sync_api.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/kernel_1d_range_sync_api/kernel_1d_range_sync_api.dp.cpp -o %T/kernel_1d_range_sync_api/kernel_1d_range_sync_api.dp.o %}
+// RUN: %if build_lit %{icpx -c  -DNO_BUILD_TEST -fsycl %T/kernel_1d_range_sync_api/kernel_1d_range_sync_api.dp.cpp -o %T/kernel_1d_range_sync_api/kernel_1d_range_sync_api.dp.o %}
 
 
 #include "cooperative_groups.h"
@@ -26,7 +26,7 @@ __global__ void global1() {
   // CHECK: int GroupSize = sycl::ext::oneapi::this_work_item::get_work_group<1>().get_local_linear_range();
   int GroupSize = block.size();
 }
-
+#ifndef NO_BUILD_TEST
 // CHECK: #define TB(b) auto b = sycl::ext::oneapi::this_work_item::get_work_group<dpct_placeholder /* Fix the dimension manually */>();
 #define TB(b) cg::thread_block b = cg::this_thread_block();
 
@@ -64,3 +64,4 @@ int foo5() {
 
   return 0;
 }
+#endif

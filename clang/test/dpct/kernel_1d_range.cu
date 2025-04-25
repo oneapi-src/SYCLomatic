@@ -614,7 +614,7 @@ int foo5() {
   global4<<<1,1>>>();
   return 0;
 }
-
+#ifndef NO_BUILD_TEST
 //CHECK:#define TIDx2 sycl::ext::oneapi::this_work_item::get_nd_item<dpct_placeholder /* Fix the dimension manually */>().get_local_id(0)
 #define TIDx2 threadIdx.x
 
@@ -648,7 +648,7 @@ int foo6() {
   global6<<<dim3(1,2,3),1>>>();
   return 0;
 }
-
+#endif
 //CHECK:void global7() {
 //CHECK-NEXT:  unsigned int tid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-NEXT:}
