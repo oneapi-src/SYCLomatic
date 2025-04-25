@@ -6,6 +6,11 @@
 #
 #===----------------------------------------------------------------------===//
 
+set(COMPATIBILITY_VERSION 12.0)
+set(COMPATIBILITY_VALUE 120)
+set(COMPATIBILITY_VERSION_MAJOR 12)
+set(COMPATIBILITY_VERSION_MINOR 0)
+
 macro(_DPCT_GET_SOURCES _sources)
   set( ${_sources} )
   foreach(arg ${ARGN})

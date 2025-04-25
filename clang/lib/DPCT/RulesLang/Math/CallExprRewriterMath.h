@@ -388,29 +388,29 @@ public:
             return Rewriter.value();
         }
       }
-      if (math::IsUnresolvedLookupExpr(C)) {
-        if (math::IsDirectCallerPureDevice(C)) {
-          if (Rewriter = getDeviceRewriter(C))
-            return Rewriter.value();
-        }
-      }
       if (math::IsDefinedInCUDA()(C)) {
         if (Rewriter = getDeviceRewriter(C))
           return Rewriter.value();
       }
     }
-
-    // Host and device
-    if (HostDeviceRewriter && HostDeviceRewriter.value().first(C))
-      return HostDeviceRewriter.value().second.second->create(C);
-
-    if (EmulationRewriter && EmulationRewriter.value().first(C))
-      return EmulationRewriter.value().second.second->create(C);
-
-    if (UnsupportedWarningRewriter &&
-        UnsupportedWarningRewriter.value().first(C))
-      return UnsupportedWarningRewriter.value().second.second->create(C);
-
+    if (math::IsUnresolvedLookupExpr(C)) {
+      if (math::IsDirectCallerPureDevice(C)) {
+        if (auto Rewriter = getDeviceRewriter(C))
+          return Rewriter.value();
+      } else if (math::IsDirectCallerPureHost(C)) {
+        return NoRewriteRewriter.value().second.second->create(C);
+      }
+    }
+    if (!math::IsDefinedByUser()(C)) {
+      // Host and device
+      if (HostDeviceRewriter && HostDeviceRewriter.value().first(C))
+        return HostDeviceRewriter.value().second.second->create(C);
+      if (EmulationRewriter && EmulationRewriter.value().first(C))
+        return EmulationRewriter.value().second.second->create(C);
+      if (UnsupportedWarningRewriter &&
+          UnsupportedWarningRewriter.value().first(C))
+        return UnsupportedWarningRewriter.value().second.second->create(C);
+    }
     return NoRewriteRewriter.value().second.second->create(C);
   }
 };

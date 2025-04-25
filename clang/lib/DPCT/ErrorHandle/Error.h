@@ -67,6 +67,7 @@ enum ProcessStatus {
   MigrationErrorCannotWrite = -52,
   MigratePythonBuildScriptOnlyNotSpecifed = -53,
   MigratePythonBuildScriptSpecifiedButPythonRuleFileNotSpecified = -54,
+  MigrationErrorReadWriteCMakeHelperFile = -55,
 };
 
 namespace clang {
