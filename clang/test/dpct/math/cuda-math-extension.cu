@@ -181,6 +181,14 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = __fmaf_ru(f0, f1, f2);
   // CHECK: f2 = sycl::ext::intel::math::fmaf_rz(f0, f1, f2);
   f2 = __fmaf_rz(f0, f1, f2);
+  // CHECK: f2 = sycl::ext::intel::math::fmaf_rd(f0, f1, f2);
+  f2 = __fmaf_ieee_rd(f0, f1, f2);
+  // CHECK: f2 = sycl::ext::intel::math::fmaf_rn(f0, f1, f2);
+  f2 = __fmaf_ieee_rn(f0, f1, f2);
+  // CHECK: f2 = sycl::ext::intel::math::fmaf_ru(f0, f1, f2);
+  f2 = __fmaf_ieee_ru(f0, f1, f2);
+  // CHECK: f2 = sycl::ext::intel::math::fmaf_rz(f0, f1, f2);
+  f2 = __fmaf_ieee_rz(f0, f1, f2);
   // CHECK: f2 = sycl::ext::intel::math::fmul_rd(f0, f1);
   f2 = __fmul_rd(f0, f1);
   // CHECK: f2 = sycl::ext::intel::math::fmul_rn(f0, f1);

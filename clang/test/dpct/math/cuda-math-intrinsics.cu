@@ -1342,6 +1342,27 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
+  f2 = __fmaf_ieee_rd(f0, f1, f2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
+  f2 = __fmaf_ieee_rn(f0, f1, f2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
+  f2 = __fmaf_ieee_ru(f0, f1, f2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
+  f2 = __fmaf_ieee_rz(f0, f1, f2);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
   f2 = __fmaf_rd(i, i, i);
   // CHECK: /*
@@ -1359,6 +1380,27 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
   f2 = __fmaf_rz(i, i, i);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
+  f2 = __fmaf_ieee_rd(i, i, i);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
+  f2 = __fmaf_ieee_rn(i, i, i);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
+  f2 = __fmaf_ieee_ru(i, i, i);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
+  f2 = __fmaf_ieee_rz(i, i, i);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
