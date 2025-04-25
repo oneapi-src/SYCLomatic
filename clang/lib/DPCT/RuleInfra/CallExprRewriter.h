@@ -70,7 +70,7 @@ private:
   static void initRewriterMapMisc();
   static void initRewriterMapNccl();
   static void initRewriterMapNvshmem();
-  static void initRewriterMapCUTENSOR();
+  static void initRewriterMapCUTensor();
   static void initRewriterMapStream();
   static void initRewriterMapTexture();
   static void initRewriterMapThrust();

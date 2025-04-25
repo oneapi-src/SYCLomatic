@@ -1,4 +1,4 @@
-//===-------------------- CallExprRewriterCUTENSOR.cpp --------------------===//
+//===-------------------- CallExprRewriterCUTensor.cpp --------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -21,11 +21,11 @@ namespace dpct {
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME, MSGID)                                \
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
 
-void CallExprRewriterFactoryBase::initRewriterMapCUTENSOR() {
+void CallExprRewriterFactoryBase::initRewriterMapCUTensor() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesCUTENSOR.inc"
+#include "APINamesCUTensor.inc"
       }));
 }
 
