@@ -35,90 +35,90 @@
 ****************************************************************************/
 
 // Helper Functions
-ENTRY(cutensorCreate, cutensorCreate, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorDestroy, cutensorDestroy, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorCreateTensorDescriptor, cutensorCreateTensorDescriptor, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorDestroyTensorDescriptor, cutensorDestroyTensorDescriptor, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorGetErrorString, cutensorGetErrorString, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorGetVersion, cutensorGetVersion, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorGetCudartVersion, cutensorGetCudartVersion, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorCreate, cutensorCreate, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorDestroy, cutensorDestroy, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorCreateTensorDescriptor, cutensorCreateTensorDescriptor, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorDestroyTensorDescriptor, cutensorDestroyTensorDescriptor, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorGetErrorString, cutensorGetErrorString, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorGetVersion, cutensorGetVersion, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorGetCudartVersion, cutensorGetCudartVersion, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
 
 
 // Element-wise Operations
-ENTRY(cutensorCreateElementwiseTrinary, cutensorCreateElementwiseTrinary, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorElementwiseTrinaryExecute, cutensorElementwiseTrinaryExecute, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorCreateElementwiseBinary, cutensorCreateElementwiseBinary, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorElementwiseBinaryExecute, cutensorElementwiseBinaryExecute, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorCreatePermutation, cutensorCreatePermutation, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorPermute, cutensorPermute, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorCreateElementwiseTrinary, cutensorCreateElementwiseTrinary, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorElementwiseTrinaryExecute, cutensorElementwiseTrinaryExecute, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorCreateElementwiseBinary, cutensorCreateElementwiseBinary, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorElementwiseBinaryExecute, cutensorElementwiseBinaryExecute, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorCreatePermutation, cutensorCreatePermutation, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorPermute, cutensorPermute, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
 
 
 // Contraction Operations
-ENTRY(cutensorCreateContraction, cutensorCreateContraction, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorContract, cutensorContract, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorCreateContractionTrinary, cutensorCreateContractionTrinary, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorContractTrinary, cutensorContractTrinary, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorCreateContraction, cutensorCreateContraction, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorContract, cutensorContract, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorCreateContractionTrinary, cutensorCreateContractionTrinary, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorContractTrinary, cutensorContractTrinary, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
 
 
 // Reduction Operations
-ENTRY(cutensorCreateReduction, cutensorCreateReduction, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorReduce, cutensorReduce, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorCreateReduction, cutensorCreateReduction, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorReduce, cutensorReduce, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
 
 
 // Generic Operation Functions
-ENTRY(cutensorDestroyOperationDescriptor, cutensorDestroyOperationDescriptor, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorOperationDescriptorGetAttribute, cutensorOperationDescriptorGetAttribute, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorOperationDescriptorSetAttribute, cutensorOperationDescriptorSetAttribute, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorCreatePlanPreference, cutensorCreatePlanPreference, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorDestroyPlanPreference, cutensorDestroyPlanPreference, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorPlanPreferenceSetAttribute, cutensorPlanPreferenceSetAttribute, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorEstimateWorkspaceSize, cutensorEstimateWorkspaceSize, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorCreatePlan, cutensorCreatePlan, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorDestroyPlan, cutensorDestroyPlan, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorPlanGetAttribute, cutensorPlanGetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorDestroyOperationDescriptor, cutensorDestroyOperationDescriptor, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorOperationDescriptorGetAttribute, cutensorOperationDescriptorGetAttribute, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorOperationDescriptorSetAttribute, cutensorOperationDescriptorSetAttribute, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorCreatePlanPreference, cutensorCreatePlanPreference, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorDestroyPlanPreference, cutensorDestroyPlanPreference, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorPlanPreferenceSetAttribute, cutensorPlanPreferenceSetAttribute, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorEstimateWorkspaceSize, cutensorEstimateWorkspaceSize, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorCreatePlan, cutensorCreatePlan, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorDestroyPlan, cutensorDestroyPlan, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorPlanGetAttribute, cutensorPlanGetAttribute, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
 
 
 // Cache-related Operations
-ENTRY(cutensorHandleResizePlanCache, cutensorHandleResizePlanCache, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorHandleReadPlanCacheFromFile, cutensorHandleReadPlanCacheFromFile, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorHandleWritePlanCacheToFile, cutensorHandleWritePlanCacheToFile, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorReadKernelCacheFromFile, cutensorReadKernelCacheFromFile, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorWriteKernelCacheToFile, cutensorWriteKernelCacheToFile, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorHandleResizePlanCache, cutensorHandleResizePlanCache, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorHandleReadPlanCacheFromFile, cutensorHandleReadPlanCacheFromFile, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorHandleWritePlanCacheToFile, cutensorHandleWritePlanCacheToFile, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorReadKernelCacheFromFile, cutensorReadKernelCacheFromFile, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorWriteKernelCacheToFile, cutensorWriteKernelCacheToFile, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
 
 
 // Logger Functions
-ENTRY(cutensorLoggerSetCallback, cutensorLoggerSetCallback, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorLoggerSetFile, cutensorLoggerSetFile, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorLoggerOpenFile, cutensorLoggerOpenFile, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorLoggerSetLevel, cutensorLoggerSetLevel, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorLoggerSetMask, cutensorLoggerSetMask, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorLoggerForceDisable, cutensorLoggerForceDisable, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorLoggerSetCallback, cutensorLoggerSetCallback, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorLoggerSetFile, cutensorLoggerSetFile, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorLoggerOpenFile, cutensorLoggerOpenFile, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorLoggerSetLevel, cutensorLoggerSetLevel, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorLoggerSetMask, cutensorLoggerSetMask, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorLoggerForceDisable, cutensorLoggerForceDisable, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
 
 
 // cuTENSORMg - General Operations
-ENTRY(cutensorMgCreate, cutensorMgCreate, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgDestroy, cutensorMgDestroy, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgCreateTensorDescriptor, cutensorMgCreateTensorDescriptor, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgDestroyTensorDescriptor, cutensorMgDestroyTensorDescriptor, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgCreate, cutensorMgCreate, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgDestroy, cutensorMgDestroy, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgCreateTensorDescriptor, cutensorMgCreateTensorDescriptor, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgDestroyTensorDescriptor, cutensorMgDestroyTensorDescriptor, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
 
 
 // cuTENSORMg - Copy Operations
-ENTRY(cutensorMgCreateCopyDescriptor, cutensorMgCreateCopyDescriptor, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgDestroyCopyDescriptor, cutensorMgDestroyCopyDescriptor, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgCopyGetWorkspace, cutensorMgCopyGetWorkspace, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgCreateCopyPlan, cutensorMgCreateCopyPlan, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgDestroyCopyPlan, cutensorMgDestroyCopyPlan, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgCopy, cutensorMgCopy, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgCreateCopyDescriptor, cutensorMgCreateCopyDescriptor, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgDestroyCopyDescriptor, cutensorMgDestroyCopyDescriptor, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgCopyGetWorkspace, cutensorMgCopyGetWorkspace, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgCreateCopyPlan, cutensorMgCreateCopyPlan, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgDestroyCopyPlan, cutensorMgDestroyCopyPlan, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgCopy, cutensorMgCopy, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
 
 
 // cuTENSORMg - Contraction Operations
-ENTRY(cutensorMgCreateContractionDescriptor, cutensorMgCreateContractionDescriptor, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgDestroyContractionDescriptor, cutensorMgDestroyContractionDescriptor, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgCreateContractionFind, cutensorMgCreateContractionFind, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgDestroyContractionFind, cutensorMgDestroyContractionFind, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgContractionGetWorkspace, cutensorMgContractionGetWorkspace, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgCreateContractionPlan, cutensorMgCreateContractionPlan, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgDestroyContractionPlan, cutensorMgDestroyContractionPlan, false, NO_FLAG, P4, "comment")
-ENTRY(cutensorMgContraction, cutensorMgContraction, false, NO_FLAG, P4, "comment")
+ENTRY(cutensorMgCreateContractionDescriptor, cutensorMgCreateContractionDescriptor, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgDestroyContractionDescriptor, cutensorMgDestroyContractionDescriptor, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgCreateContractionFind, cutensorMgCreateContractionFind, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgDestroyContractionFind, cutensorMgDestroyContractionFind, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgContractionGetWorkspace, cutensorMgContractionGetWorkspace, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgCreateContractionPlan, cutensorMgCreateContractionPlan, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgDestroyContractionPlan, cutensorMgDestroyContractionPlan, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
+ENTRY(cutensorMgContraction, cutensorMgContraction, false, API_CALL_UNSUPPORTED, P4, "DPCT1007")
 
 // clang-format on

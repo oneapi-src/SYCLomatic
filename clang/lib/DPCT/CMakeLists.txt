@@ -205,6 +205,7 @@ add_clang_library(DPCT
   RulesLang/CallExprRewriterCG.cpp
   RulesLang/CallExprRewriterWmma.cpp
   RulesSHMEM/CallExprRewriterNvshmem.cpp
+  RulesTensor/CallExprRewriterCUTensor.cpp
   ErrorHandle/CrashRecovery.cpp
   Diagnostics/Diagnostics.cpp
   ErrorHandle/Error.cpp
@@ -244,6 +245,7 @@ add_clang_library(DPCT
   RulesCCL/NCCLAPIMigration.cpp
   RuleInfra/TypeLocRewriters.cpp
   RulesSHMEM/NVSHMEMAPIMigration.cpp
+  RulesTensor/CUTensorAPIMigration.cpp
   Linux/AutoComplete.cpp
   RulesAsm/AsmMigration.cpp
   QueryAPIMapping/QueryAPIMapping.cpp

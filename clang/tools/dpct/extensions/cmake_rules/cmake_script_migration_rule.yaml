@@ -118,21 +118,26 @@
   In: set${empty}(${empty}CMAKE_CXX_COMPILER ${version})
   Out: set(CMAKE_CXX_COMPILER icpx)
 
-- Rule: rule_set_property_cuda_seprarable_only
+- Rule: rule_set_property_cuda_seprarable_1
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: set_property_cuda_seprarable_only
-  In: set_target_properties${empty}(${target_property} CUDA_SEPARABLE_COMPILATION ${state})
-  Out: |
-    #[[
-    set_target_properties(${target_property} CUDA_SEPARABLE_COMPILATION ${state})]]
+  CmakeSyntax: set_property_cuda_seprarable_1
+  In: set_target_properties${empty}(${target_property} PROPERTIES CUDA_SEPARABLE_COMPILATION ${state} )
+  Out: set_target_properties(${target_property} PROPERTIES "" "")
 
-- Rule: rule_set_property_cuda_seprarable
+- Rule: rule_set_property_cuda_seprarable_2
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: set_property_cuda_seprarable
-  In: set_target_properties${empty}(${target_property} CUDA_SEPARABLE_COMPILATION ${state} ${other_properties})
-  Out: set_target_properties(${target_property} ${other_properties})
+  CmakeSyntax: set_property_cuda_seprarable_2
+  In: set_target_properties${empty}(${target_property} PROPERTIES CUDA_SEPARABLE_COMPILATION ${state} ${other_properties})
+  Out: set_target_properties(${target_property} PROPERTIES ${other_properties})
+
+- Rule: rule_set_property_cuda_seprarable_3
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property_cuda_seprarable_3
+  In: set_target_properties${empty}(${target_property} PROPERTIES CUDA_SEPARABLE_COMPILATION ${state})
+  Out: set_target_properties(${target_property} PROPERTIES "" "")
 
 - Rule: rule_set_property_cuda_architechtures
   Kind: CMakeRule
@@ -145,10 +150,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_property_cuda_architechtures_only
-  In: set_target_properties${empty}(${target_property} CUDA_ARCHITECHTURES ${state})
-  Out: |
-    #[[
-    set_target_properties(${target_property} CUDA_ARCHITECHTURES ${state})]]
+  In: set_target_properties${empty}(${targets} PROPERTIES CUDA_ARCHITECHTURES ${state})
+  Out: set_target_properties(${targets} PROPERTIES "" "")
 
 - Rule: rule_cuda_compile_ptx
   Kind: CMakeRule
@@ -2417,7 +2420,7 @@
     value:
       MatchMode: Full
       In: CUDA_VERSION
-      Out: COMPATIBILITY_VERSION
+      Out: COMPATIBILITY_VALUE
       RuleId: "replace_CUDA_VERSION_with_COMPATIBILITY_VERSION"
 
 - Rule: rule_CUDA_VERSION_MAJOR
