@@ -87,8 +87,9 @@ ze_result_t open_mem_ipc_handle(ipc_mem_handle_ext_t ipc_ext_handle,
 }
 
 } // namespace experimental
+} // namespace dpct
+
 #endif // __linux__
 #endif // ONEAPI_BACKEND_LEVEL_ZERO_EXT
 
-} // namespace dpct
 #endif // ! __ZE_UTILS_HPP__
