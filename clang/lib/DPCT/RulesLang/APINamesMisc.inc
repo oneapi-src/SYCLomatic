@@ -148,23 +148,25 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                            CALL(MapNames::getDpctNamespace() +
                                     "experimental::get_mem_ipc_handle",
                                 ARG(1), ARG(0))),
-        UNSUPPORT_FACTORY_ENTRY("cudaIpcGetMemHandle",
-                                Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-                                ARG("cudaIpcGetMemHandle"),
-                                ARG("--use-experimental-features=level_zero")))))
+        UNSUPPORT_FACTORY_ENTRY(
+            "cudaIpcGetMemHandle", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+            ARG("cudaIpcGetMemHandle"),
+            ARG("--use-experimental-features=level_zero")))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         clang::dpct::UseExtL0IPC,
         CALL_FACTORY_ENTRY("cudaIpcCloseMemHandle",
-                           CALL(MapNames::getDpctNamespace() +
-                                    "experimental::close_mem_ipc_handle",
+                           CALL("zeMemCloseIpcHandle",
+                               CALL("sycl::get_native<sycl::backend::ext_oneapi_level_zero>",  MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                                 "get_current_device"),
+                                            false, "get_context")),
                                 ARG(0))),
-        UNSUPPORT_FACTORY_ENTRY("cudaIpcCloseMemHandle",
-                                Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-                                ARG("cudaIpcCloseMemHandle"),
-                                ARG("--use-experimental-features=level_zero")))))
+        UNSUPPORT_FACTORY_ENTRY(
+            "cudaIpcCloseMemHandle", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+            ARG("cudaIpcCloseMemHandle"),
+            ARG("--use-experimental-features=level_zero")))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
