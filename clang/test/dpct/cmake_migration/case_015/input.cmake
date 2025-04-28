@@ -64,3 +64,7 @@ set_target_properties(target_one
                       CUDA_ARCHITECHTURES Kepler+Tesla
                       OTHER_PROPERTY 1)
 
+set_target_properties(target
+    PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON
+   )

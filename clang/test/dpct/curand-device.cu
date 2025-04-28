@@ -42,8 +42,7 @@ __global__ void picount(int *totals) {
   }
 }
 
-//CHECK: void cuda_kernel_initRND(unsigned long seed, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *States,
-//CHECK-NEXT:                     const sycl::nd_item<3> &item_ct1)
+//CHECK: void cuda_kernel_initRND(unsigned long seed, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *States)
 __global__ void cuda_kernel_initRND(unsigned long seed, curandStateMRG32k3a_t *States)
 {
   int tid = threadIdx.x;
@@ -56,8 +55,7 @@ __global__ void cuda_kernel_initRND(unsigned long seed, curandStateMRG32k3a_t *S
   curand_init(seed, pixel, 10, &States[id]);
 }
 
-//CHECK: void cuda_kernel_RNDnormalDitribution(sycl::double2 *Image, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *States,
-//CHECK-NEXT:                                  const sycl::nd_item<3> &item_ct1)
+//CHECK: void cuda_kernel_RNDnormalDitribution(sycl::double2 *Image, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *States)
 __global__ void cuda_kernel_RNDnormalDitribution(double2 *Image, curandStateMRG32k3a_t *States)
 {
   int tid = threadIdx.x;
@@ -83,7 +81,7 @@ int main(int argc, char **argv) {
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, NBLOCKS) * sycl::range<3>(1, 1, WARP_SIZE), sycl::range<3>(1, 1, WARP_SIZE)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:        picount(dOut_acc_ct0.get_raw_pointer(), item_ct1, counter_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+  //CHECK-NEXT:        picount(dOut_acc_ct0.get_raw_pointer(), counter_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   picount<<<NBLOCKS, WARP_SIZE>>>(dOut);
@@ -105,7 +103,7 @@ int main(int argc, char **argv) {
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:         cuda_kernel_initRND(1234, RandomStates_acc_ct1.get_raw_pointer(), item_ct1);
+  //CHECK-NEXT:         cuda_kernel_initRND(1234, RandomStates_acc_ct1.get_raw_pointer());
   //CHECK-NEXT:       });
   //CHECK-NEXT:   });
   //CHECK-NEXT: q_ct1.submit(
@@ -116,7 +114,7 @@ int main(int argc, char **argv) {
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:         cuda_kernel_RNDnormalDitribution(Image_acc_ct0.get_raw_pointer(), RandomStates_acc_ct1.get_raw_pointer(), item_ct1);
+  //CHECK-NEXT:         cuda_kernel_RNDnormalDitribution(Image_acc_ct0.get_raw_pointer(), RandomStates_acc_ct1.get_raw_pointer());
   //CHECK-NEXT:       });
   //CHECK-NEXT:   });
   cuda_kernel_initRND<<<16,32>>>(1234, RandomStates);
@@ -144,7 +142,7 @@ int foo() {
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:         cuda_kernel_initRND(1234, &RandomStates_acc_ct1[0], item_ct1);
+  //CHECK-NEXT:         cuda_kernel_initRND(1234, &RandomStates_acc_ct1[0]);
   //CHECK-NEXT:       });
   //CHECK-NEXT:   });
   cuda_kernel_initRND<<<16,32>>>(1234, RandomStates);

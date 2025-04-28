@@ -7,10 +7,10 @@
 #include <cuda_runtime.h>
 
 // CHECK:   /* DPCT_ORIG __global__ void testKernelPtr(const int *L, const int *M, int N) {*/
-// CHECK-NEXT:void testKernelPtr(const int *L, const int *M, int N,
-// CHECK-NEXT: const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
+// CHECK-NEXT:void testKernelPtr(const int *L, const int *M, int N) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
   // CHECK: /* DPCT_ORIG   int gtid = blockIdx.x  * blockDim.x */
+  // CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
   // CHECK-NEXT:   int gtid = item_ct1.get_group(2) /*comments*/ * item_ct1.get_local_range(2) /*comments
   // CHECK-NEXT:  comments*/
   // CHECK-NEXT: /* DPCT_ORIG   + threadIdx.x;*/
@@ -21,9 +21,10 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 }
 
 // CHECK:     /* DPCT_ORIG __global__ void testKernel(int L, int M, int N) {*/
-// CHECK-NEXT: void testKernel(int L, int M, int N, const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
+// CHECK-NEXT: void testKernel(int L, int M, int N) {
 __global__ void testKernel(int L, int M, int N) {
   // CHECK:      /* DPCT_ORIG   int gtid = blockIdx.x*/
+  // CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
   // CHECK-NEXT:  int gtid = item_ct1.get_group(2)
   // CHECK-NEXT: /* DPCT_ORIG              * blockDim.x*/
   // CHECK-NEXT:                * item_ct1.get_local_range(2)
@@ -74,7 +75,7 @@ int main() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         testKernelPtr(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), karg3, item_ct1);
+  // CHECK-NEXT:         testKernelPtr(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), karg3);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1,
@@ -93,7 +94,7 @@ int main() {
   // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int);
   // CHECK-NEXT:         });
   testKernel<<<10, intvar>>>(karg1int, karg2int, // comments
                              // comments.
@@ -105,7 +106,7 @@ int main() {
   // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1), sycl::range<3>(1, 2, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int);
   // CHECK-NEXT:         });
   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int,
                                       /* comments */
@@ -120,7 +121,7 @@ int main() {
   // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1) * sycl::range<3>(3, 2, 1), sycl::range<3>(3, 2, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int);
   // CHECK-NEXT:         }); // comments
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int,
 	  karg2int, /* comments */karg3int/* comments */); // comments
@@ -132,7 +133,7 @@ int main() {
   // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, griddim.x) * sycl::range<3>(1, 1, griddim.y + 2), sycl::range<3>(1, 1, griddim.y + 2)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int);
   // CHECK-NEXT:         });
   testKernel<<<griddim.x, griddim.y + 2>>>(karg1int, karg2int, karg3int);
 
@@ -176,7 +177,6 @@ int main() {
 // CHECK-NEXT:                            int n,
 // CHECK-NEXT:                            int blockIndex,
 // CHECK-NEXT:                            int baseIndex,
-// CHECK-NEXT:                            const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                            uint8_t *dpct_local);
 template <bool storeSum, bool isNP2>
 __global__ static void foo_2(unsigned int *g_odata,
@@ -199,8 +199,7 @@ __global__ static void foo_2(unsigned int *g_odata,
 // CHECK-NEXT:                          int n,
 // CHECK-NEXT:                          int ai, int bi,
 // CHECK-NEXT:                          int mem_ai, int mem_bi,
-// CHECK-NEXT:                          int bankOffsetA, int bankOffsetB,
-// CHECK-NEXT:                          const sycl::nd_item<3> &item_ct1);
+// CHECK-NEXT:                          int bankOffsetA, int bankOffsetB);
 template <bool isNP2>
 __device__ static void foo_1(unsigned int* g_odata,
                           const unsigned int* s_data,
@@ -222,8 +221,7 @@ __device__ static void foo_1(unsigned int* g_odata,
 // CHECK-NEXT:                              int n,
 // CHECK-NEXT:                              int ai, int bi,
 // CHECK-NEXT:                              int mem_ai, int mem_bi,
-// CHECK-NEXT:                              int bankOffsetA, int bankOffsetB,
-// CHECK-NEXT:                              const sycl::nd_item<3> &item_ct1)
+// CHECK-NEXT:                              int bankOffsetA, int bankOffsetB)
 template <bool isNP2>
 __device__ static void foo_1(unsigned int* g_odata,
                               const unsigned int* s_data,
@@ -236,7 +234,7 @@ __device__ static void foo_1(unsigned int* g_odata,
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    item_ct1.barrier();
+// CHECK-NEXT:        sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
     __syncthreads();
 
 }
@@ -255,7 +253,6 @@ __device__ static void foo_1(unsigned int* g_odata,
 // CHECK-NEXT:                        int n,
 // CHECK-NEXT:                        int blockIndex,
 // CHECK-NEXT:                        int baseIndex,
-// CHECK-NEXT:                        const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                        uint8_t *dpct_local)
 template <bool storeSum, bool isNP2>
 __global__ static void foo_2(unsigned int *g_odata,

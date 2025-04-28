@@ -24,15 +24,13 @@ set_target_properties(target_one PROPERTIES CXX_Standard 14)
 set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
 
 # Test CUDA_SEPARABLE_COMPILATION
-#[[
-set_target_properties(target_one PROPERTIES CUDA_SEPARABLE_COMPILATION Off)]]
+set_target_properties(target_one PROPERTIES "" "")
 
 # No change unless property matches exactly
 set_target_properties(target_one PROPERTIES Cuda_SEPARABLE_COMPILATION Off)
 
 # Test CUDA_ARCHITECHTURES
-#[[
-set_target_properties(target_one PROPERTIES CUDA_ARCHITECHTURES Auto)]]
+set_target_properties(target_one PROPERTIES "" "")
 
 # No change unless property matches exactly
 set_target_properties(target_one PROPERTIES cuda_architechtures All)
@@ -40,9 +38,9 @@ set_target_properties(target_one PROPERTIES cuda_architechtures All)
 add_library(target_two MODULE nosrc2.dp.cpp)
 
 # Test two target specs
-#[[
-set_target_properties(target_one target_two PROPERTIES CUDA_ARCHITECHTURES Kepler+Tesla)]]
+set_target_properties(target_one target_two PROPERTIES "" "")
 
 # Make sure other properties are intact
 set_target_properties(target_one PROPERTIES OTHER_PROPERTY 1)
 
+set_target_properties(target PROPERTIES "" "")

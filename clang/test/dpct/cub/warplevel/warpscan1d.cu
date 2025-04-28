@@ -37,13 +37,12 @@ __device__ void Scan1(ScanTy &s) {
   s.InclusiveSum(d, d);
 }
 
-// CHECK: void TemplateKernel1(int* data,
-// CHECK-NEXT:  const sycl::nd_item<1> &item_ct1) {
+// CHECK: void TemplateKernel1(int* data) {
 // CHECK-NEXT:  typedef sycl::sub_group WarpScan;
 // CHECK-NEXT:  typedef sycl::group<1> BlockScan;
 // CHECK-EMPTY:
-// CHECK-NEXT:  WarpScan ws(item_ct1.get_sub_group());
-// CHECK-NEXT:  BlockScan bs(item_ct1.get_group());
+// CHECK-NEXT:  WarpScan ws(sycl::ext::oneapi::this_work_item::get_sub_group());
+// CHECK-NEXT:  BlockScan bs(sycl::ext::oneapi::this_work_item::get_work_group<1>());
 // CHECK-NEXT:  Scan1<WarpScan, int>(ws);
 // CHECK-NEXT:  Scan1<BlockScan, int>(bs);
 // CHECK-NEXT:}
@@ -73,7 +72,7 @@ int main() {
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:           sycl::nd_range<1>(sycl::range<1>(2) * sycl::range<1>(128), sycl::range<1>(128)),
 //CHECK-NEXT:           [=](sycl::nd_item<1> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-//CHECK-NEXT:             TemplateKernel1(dev_data, item_ct1);
+//CHECK-NEXT:             TemplateKernel1(dev_data);
 //CHECK-NEXT:           });
   TemplateKernel1<<<2, 128>>>(dev_data);
   cudaDeviceSynchronize();

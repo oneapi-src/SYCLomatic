@@ -780,10 +780,12 @@ bool TextureRule::processTexVarDeclInDevice(const VarDecl *VD) {
 }
 
 void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
-
   if (getAssistNodeAsType<UnresolvedLookupExpr>(Result,
                                                 "unresolvedLookupExpr")) {
     const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "callExpr");
+    if (const auto *FD = CE->getDirectCallee())
+      if (isUserDefinedDecl(FD))
+        return;
     ExprAnalysis A;
     A.analyze(CE);
     emplaceTransformation(A.getReplacement());
@@ -932,7 +934,10 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     if (!ReplType.empty())
       emplaceTransformation(new ReplaceToken(TL->getBeginLoc(), TL->getEndLoc(),
                                              std::string(ReplType)));
-  } else if (auto CE = getNodeAsType<CallExpr>(Result, "call")) {
+  } else if (const auto *CE = getNodeAsType<CallExpr>(Result, "call")) {
+    if (const auto *FD = CE->getDirectCallee())
+      if (isUserDefinedDecl(FD))
+        return;
     auto Name = CE->getDirectCallee()->getNameAsString();
     if (DpctGlobalInfo::useSYCLCompat()) {
       report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false, Name);

@@ -35,7 +35,7 @@ void testReference(const int &i) {
   // CHECK: dpct::get_out_of_order_queue().parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         helloFromGPU(i, item_ct1);
+  // CHECK-NEXT:         helloFromGPU(i);
   // CHECK-NEXT:       });
   helloFromGPU<<<griddim, threaddim>>>(i);
 
@@ -57,7 +57,7 @@ struct TestThis {
     // CHECK-NEXT:     cgh.parallel_for(
     // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
     // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:         testKernel(args_arg1_ct0, args_arg2_ct1, arg3_ct2, item_ct1);
+    // CHECK-NEXT:         testKernel(args_arg1_ct0, args_arg2_ct1, arg3_ct2);
     // CHECK-NEXT:       });
     // CHECK-NEXT:   });
     testKernel<<<griddim, threaddim>>>(args.arg1, args.arg2, arg3);
@@ -267,14 +267,14 @@ void run_foo7(T *a, const T *b, const T *c, const T *d, const T *e, const int f,
     //CHECK:cgh.parallel_for(
     //CHECK-NEXT:  sycl::nd_range<3>(grid * block, block), 
     //CHECK-NEXT:  [=](sycl::nd_item<3> item_ct1) {
-    //CHECK-NEXT:    foo_kernel6(a_acc_ct0.get_raw_pointer(), b_acc_ct1.get_raw_pointer(), c_acc_ct2.get_raw_pointer(), d_acc_ct3.get_raw_pointer(), f, g, h, item_ct1);
+    //CHECK-NEXT:    foo_kernel6(a_acc_ct0.get_raw_pointer(), b_acc_ct1.get_raw_pointer(), c_acc_ct2.get_raw_pointer(), d_acc_ct3.get_raw_pointer(), f, g, h);
     //CHECK-NEXT:  });
     foo_kernel6<<<grid, block, 0, stream>>>(a, b, c, d, f, g, h);
   } else {
     //CHECK:cgh.parallel_for(
     //CHECK-NEXT:  sycl::nd_range<3>(grid * block, block), 
     //CHECK-NEXT:  [=](sycl::nd_item<3> item_ct1) {
-    //CHECK-NEXT:    foo_kernel6(a_acc_ct0.get_raw_pointer(), b_acc_ct1.get_raw_pointer(), c_acc_ct2.get_raw_pointer(), d_acc_ct3.get_raw_pointer(), e_acc_ct4.get_raw_pointer(), f, g, h, item_ct1);
+    //CHECK-NEXT:    foo_kernel6(a_acc_ct0.get_raw_pointer(), b_acc_ct1.get_raw_pointer(), c_acc_ct2.get_raw_pointer(), d_acc_ct3.get_raw_pointer(), e_acc_ct4.get_raw_pointer(), f, g, h);
     //CHECK-NEXT:  });
     foo_kernel6<<<grid, block, 0, stream>>>(a, b, c, d, e, f, g, h);
   }

@@ -1,6 +1,6 @@
 // UNSUPPORTED: system-linux
 // RUN: cat %S/SVMbenchmark.vcxproj > %T/SVMbenchmark.vcxproj
-// RUN: dpct -output-file=b_kernel_outputfile_win.txt --format-range=none  --vcxprojfile=%T/SVMbenchmark.vcxproj  -in-root=%S -out-root=%T  %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include"
+// RUN: dpct --no-dpcpp-extensions=free-function-queries -output-file=b_kernel_outputfile_win.txt --format-range=none  --vcxprojfile=%T/SVMbenchmark.vcxproj  -in-root=%S -out-root=%T  %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include"
 
 // RUN: cat %S/check_compilation_ref.txt  >%T/check_compilation_db.txt
 // RUN: cat %T/compile_commands.json >>%T/check_compilation_db.txt
@@ -10,7 +10,7 @@
 // RUN: cat %T/b_kernel_outputfile_win.txt >>%T/check_b_kernel_outputfile_windows.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check_b_kernel_outputfile_windows.txt %T/check_b_kernel_outputfile_windows.txt
 
-// RUN: dpct --format-range=none -output-file=output-file.txt -in-root=%S -out-root=%T/2 %s --process-all --cuda-include-path="%cuda-path/include"
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none -output-file=output-file.txt -in-root=%S -out-root=%T/2 %s --process-all --cuda-include-path="%cuda-path/include"
 // RUN: cat %S/readme_2_ref.txt > %T/2/readme_2.txt
 // RUN: cat %S/readme_2.txt > %T/2/check_output-file.txt
 // RUN: cat %T/2/output-file.txt >>%T/2/check_output-file.txt

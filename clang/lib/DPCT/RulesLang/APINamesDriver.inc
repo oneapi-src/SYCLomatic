@@ -47,7 +47,7 @@ FEATURE_REQUEST_FACTORY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
                                             CALL(MapNames::getDpctNamespace() +
                                                      "get_kernel_function",
-                                                 ARG(1), ARG(2)))))
+                                                 ARG(1), CAST_IF_NOT_SAME(makeLiteral("const char *"), ARG(2))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,

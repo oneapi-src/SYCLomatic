@@ -1,5 +1,5 @@
 // UNSUPPORTED: system-linux
-// RUN: dpct --format-range=none --usm-level=none -out-root=%T/test_path_in_windows -in-root=%S %S/test_PATH_in_Windows.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda --comments -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none -out-root=%T/test_path_in_windows -in-root=%S %S/test_PATH_in_Windows.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda --comments -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/test_path_in_windows/test_path_in_windows.dp.cpp --match-full-lines %S/test_path_in_windows.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/test_path_in_windows/test_path_in_windows.dp.cpp -o %T/test_path_in_windows/test_path_in_windows.dp.o %}
 

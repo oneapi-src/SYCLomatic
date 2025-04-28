@@ -11,9 +11,9 @@
 
 class TestObject{
 public:
-  // CHECK: static void run(int *in, int *out, const sycl::nd_item<3> &item_ct1, int &a0) {
+  // CHECK: static void run(int *in, int *out, int &a0) {
   // CHECK-NEXT:  // the size of s is static
-  // CHECK-NEXT:  a0 = item_ct1.get_local_id(2);
+  // CHECK-NEXT:  a0 = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
   __device__ static void run(int *in, int *out) {
     __shared__ int a0; // the size of s is static
     a0 = threadIdx.x;
@@ -30,8 +30,7 @@ __global__ void memberAcc() {
   s.test();
 }
 
-// CHECK: void nonTypeTemplateReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT: sycl::int2 *s) {
+// CHECK: void nonTypeTemplateReverse(int *d, int n, sycl::int2 *s) {
 // CHECK-NEXT:  // the size of s is dependent on parameter
 template <int ArraySize>
 __global__ void nonTypeTemplateReverse(int *d, int n) {
@@ -42,8 +41,7 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
   }
 }
 
-// CHECK: void staticReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]], int &a0,
-// CHECK-NEXT: int *s) {
+// CHECK: void staticReverse(int *d, int n, int &a0, int *s) {
 __global__ void staticReverse(int *d, int n) {
   const int size = 64;
   // CHECK:  // the size of s is static
@@ -52,12 +50,12 @@ __global__ void staticReverse(int *d, int n) {
   if (t < 64) {
     s[t] = d[t];
   }
-  // CHECK: TestObject::run(d, d, item_ct1, a0);
+  // CHECK: TestObject::run(d, d, a0);
   TestObject::run(d, d);
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
+// CHECK-NEXT: void templateReverse(TData *d, TData n,
 // CHECK-NEXT:                      TData s[64/*size * 2*/][128/*size * 4*/],
 // CHECK-NEXT:                      TData s3[64/*size * 2*/][128/*size * 4*/][32/*size*/]) {
 template<typename TData>
@@ -106,7 +104,7 @@ void testTemplate() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<T>(d_d_acc_ct0.get_raw_pointer(), n, item_ct1, s_acc_ct1, s3_acc_ct1);
+  // CHECK-NEXT:         templateReverse<T>(d_d_acc_ct0.get_raw_pointer(), n, s_acc_ct1, s3_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<T><<<1, n>>>(d_d, n);
@@ -159,7 +157,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         staticReverse(&d_d_acc_ct0[0], n, item_ct1, a0_acc_ct1, s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+  // CHECK-NEXT:         staticReverse(&d_d_acc_ct0[0], n, a0_acc_ct1, s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   staticReverse<<<1, n>>>(d_d, n);
@@ -189,7 +187,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<int>(&d_d_acc_ct0[0], n, item_ct1, s_acc_ct1, s3_acc_ct1);
+  // CHECK-NEXT:         templateReverse<int>(&d_d_acc_ct0[0], n, s_acc_ct1, s3_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<int><<<1, n>>>(d_d, n);
@@ -202,7 +200,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         nonTypeTemplateReverse<SIZE>(&d_d_acc_ct0[0], n, item_ct1, s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+  // CHECK-NEXT:         nonTypeTemplateReverse<SIZE>(&d_d_acc_ct0[0], n, s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   nonTypeTemplateReverse<SIZE><<<1, n>>>(d_d, n);

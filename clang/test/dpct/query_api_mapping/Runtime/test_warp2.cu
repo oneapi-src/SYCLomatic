@@ -8,7 +8,7 @@
 // __reduce_add_sync-NEXT:   /*
 // __reduce_add_sync-NEXT:   DPCT1023:0: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
 // __reduce_add_sync-NEXT:   */
-// __reduce_add_sync-NEXT:   r = sycl::reduce_over_group(item_ct1.get_sub_group(), value, sycl::plus<>());
+// __reduce_add_sync-NEXT:   r = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), value, sycl::plus<>());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__reduce_and_sync | FileCheck %s -check-prefix=__reduce_and_sync
 // __reduce_and_sync: CUDA API:
@@ -17,7 +17,7 @@
 // __reduce_and_sync-NEXT:   /*
 // __reduce_and_sync-NEXT:   DPCT1023:0: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
 // __reduce_and_sync-NEXT:   */
-// __reduce_and_sync-NEXT:   r = sycl::reduce_over_group(item_ct1.get_sub_group(), value, sycl::bit_and<>());
+// __reduce_and_sync-NEXT:   r = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), value, sycl::bit_and<>());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__reduce_max_sync | FileCheck %s -check-prefix=__reduce_max_sync
 // __reduce_max_sync: CUDA API:
@@ -26,7 +26,7 @@
 // __reduce_max_sync-NEXT:   /*
 // __reduce_max_sync-NEXT:   DPCT1023:0: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
 // __reduce_max_sync-NEXT:   */
-// __reduce_max_sync-NEXT:   r = sycl::reduce_over_group(item_ct1.get_sub_group(), value, sycl::maximum());
+// __reduce_max_sync-NEXT:   r = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), value, sycl::maximum());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__reduce_min_sync | FileCheck %s -check-prefix=__reduce_min_sync
 // __reduce_min_sync: CUDA API:
@@ -35,7 +35,7 @@
 // __reduce_min_sync-NEXT:   /*
 // __reduce_min_sync-NEXT:   DPCT1023:0: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
 // __reduce_min_sync-NEXT:   */
-// __reduce_min_sync-NEXT:   r = sycl::reduce_over_group(item_ct1.get_sub_group(), value, sycl::minimum());
+// __reduce_min_sync-NEXT:   r = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), value, sycl::minimum());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__reduce_or_sync | FileCheck %s -check-prefix=__reduce_or_sync
 // __reduce_or_sync: CUDA API:
@@ -44,7 +44,7 @@
 // __reduce_or_sync-NEXT:   /*
 // __reduce_or_sync-NEXT:   DPCT1023:0: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
 // __reduce_or_sync-NEXT:   */
-// __reduce_or_sync-NEXT:   r = sycl::reduce_over_group(item_ct1.get_sub_group(), value, sycl::bit_or<>());
+// __reduce_or_sync-NEXT:   r = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), value, sycl::bit_or<>());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__reduce_xor_sync | FileCheck %s -check-prefix=__reduce_xor_sync
 // __reduce_xor_sync: CUDA API:
@@ -53,4 +53,4 @@
 // __reduce_xor_sync-NEXT:   /*
 // __reduce_xor_sync-NEXT:   DPCT1023:0: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
 // __reduce_xor_sync-NEXT:   */
-// __reduce_xor_sync-NEXT:   r = sycl::reduce_over_group(item_ct1.get_sub_group(), value, sycl::bit_xor<>());
+// __reduce_xor_sync-NEXT:   r = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), value, sycl::bit_xor<>());

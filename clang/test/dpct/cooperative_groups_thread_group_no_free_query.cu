@@ -6,16 +6,16 @@
 
 #include <cooperative_groups.h>
 #include <cooperative_groups/reduce.h>
-// CHECK:  #define test33(a) testThreadGroup(a, item_ct1)
+// CHECK:  #define test33(a) testThreadGroup(a)
 #define test33(a) testThreadGroup(a)
 #define test22(a) test33(a)
 #define test11(a) test22(a)
-// CHECK:  #define test44(a) testThreadGroup(a, item_ct1)
+// CHECK:  #define test44(a) testThreadGroup(a)
 #define test44(a) testThreadGroup(a)
 
 namespace cg = cooperative_groups;
 
-// CHECK:  void testThreadGroup(dpct::experimental::group_base<3> g, const sycl::nd_item<3> &item_ct1) {
+// CHECK:  void testThreadGroup(dpct::experimental::group_base<3> g) {
 __device__ void testThreadGroup(cg::thread_group g) {
   // CHECK:  g.get_local_linear_id();
   g.thread_rank();
@@ -23,7 +23,7 @@ __device__ void testThreadGroup(cg::thread_group g) {
   g.sync();
   // CHECK:  g.get_local_linear_range();
   g.size();
-
+  // CHECK:  auto block = sycl::ext::oneapi::this_work_item::get_work_group<3>();
   auto block = cg::this_thread_block();
   // CHECK: dpct::dim3(block.get_local_id());
   block.thread_index();
@@ -33,7 +33,7 @@ __global__ void kernelFunc() {
   auto block = cg::this_thread_block();
   // CHECK: dpct::dim3(block.get_local_id());
   block.thread_index();
-  // CHECK:  auto threadBlockGroup = item_ct1.get_group();
+  // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::this_work_item::get_work_group<3>();
   auto threadBlockGroup = cg::this_thread_block();
 
 
@@ -48,9 +48,9 @@ __global__ void kernelFunc() {
 
   test11(tilePartition16);
   testThreadGroup(tilePartition16);
-  // CHECK:  test44(dpct::experimental::group(tilePartition16, item_ct1));
-  // CHECK:  test11(dpct::experimental::group(tilePartition32, item_ct1));
-  // CHECK:  test11(dpct::experimental::group(threadBlockGroup, item_ct1));
+  // CHECK:  test44(dpct::experimental::group(tilePartition16, sycl::ext::oneapi::this_work_item::get_nd_item<3>()));
+  // CHECK:  test11(dpct::experimental::group(tilePartition32, sycl::ext::oneapi::this_work_item::get_nd_item<3>()));
+  // CHECK:  test11(dpct::experimental::group(threadBlockGroup, sycl::ext::oneapi::this_work_item::get_nd_item<3>()));
   test44(tilePartition16);
   test11(tilePartition32);
   test11(threadBlockGroup);

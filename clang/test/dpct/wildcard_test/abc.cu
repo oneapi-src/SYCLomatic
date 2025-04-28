@@ -1,13 +1,12 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root=%T/abc -in-root=%S %S/*.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: dpct  --format-range=none --usm-level=none -out-root=%T/abc -in-root=%S %S/*.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/abc/abc.dp.cpp --match-full-lines %S/abc.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/abc/abc.dp.cpp -o %T/abc/abc.dp.o %}
 // RUN: FileCheck --input-file %T/abc/abd.dp.cpp --match-full-lines %S/abd.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/abc/abd.dp.cpp -o %T/abc/abd.dp.o %}
 
-// CHECK: void testKernelPtr(const int *L, const int *M, int N,
-// CHECK: const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
+// CHECK: void testKernelPtr(const int *L, const int *M, int N) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
-  // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
+  // CHECK: int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
@@ -25,7 +24,7 @@ int main() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         testKernelPtr(karg2_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), karg3, item_ct1);
+  // CHECK-NEXT:         testKernelPtr(karg2_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), karg3);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg2, karg2, karg3);

@@ -7,7 +7,8 @@
 #include <iostream>
 #include <memory>
 
-// CHECK:void atomic_kernel(int *atomic_array, const sycl::nd_item<3> &item_ct1) {
+// CHECK:void atomic_kernel(int *atomic_array) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:  unsigned int tid = item_ct1.get_local_range(2) * item_ct1.get_group(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT:  dpct::atomic_fetch_add<sycl::access::address_space::generic_space, sycl::memory_order::relaxed, sycl::memory_scope::system>(&atomic_array[0], 10);
 // CHECK-NEXT:  dpct::atomic_exchange<sycl::access::address_space::generic_space, sycl::memory_order::relaxed, sycl::memory_scope::system>(&atomic_array[1], tid);

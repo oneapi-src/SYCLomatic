@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/function_pointer %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct  --format-range=none -out-root %T/function_pointer %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/function_pointer/function_pointer.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/function_pointer/function_pointer.dp.cpp -o %T/function_pointer/function_pointer.dp.o %}
 
@@ -19,7 +19,7 @@ __global__ static inline void vectorAdd(const int *A, int *B, int *C, int N) {
 // CHECK:        queue.parallel_for(
 // CHECK:          nr,
 // CHECK:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK:            vectorAdd(A, B, C, N, item_ct1);
+// CHECK:            vectorAdd(A, B, C, N);
 // CHECK:          });
 // CHECK:  }
 
@@ -39,7 +39,7 @@ __global__ static inline void vectorTemplateAdd(const T *A, T *B, T *C, int N) {
 // CHECK:      queue.parallel_for(
 // CHECK:        nr,
 // CHECK:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK:          vectorTemplateAdd<T>(A, B, C, N, item_ct1);
+// CHECK:          vectorTemplateAdd<T>(A, B, C, N);
 // CHECK:        });
 // CHECK:  }
 

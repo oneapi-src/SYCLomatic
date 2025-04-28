@@ -10,31 +10,30 @@ T &host_instantiation(T &a) { return a; }
 // CHECK: template const std::vector<sycl::float2> &host_instantiation(std::vector<sycl::float2> const &);
 template const std::vector<float2> &host_instantiation(std::vector<float2> const &);
 
-// CHECK: void kernel(int *, const sycl::nd_item<3> &item_ct1, T *a);
+// CHECK: void kernel(int *, T *a);
 template<class T>
 __global__ void kernel(int *);
 
-// CHECK: template void kernel<sycl::float2>(int *, const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT: sycl::float2 *a);
+// CHECK: template void kernel<sycl::float2>(int *, sycl::float2 *a);
 template __global__ void kernel<float2>(int *);
 
-// CHECK: template void kernel<int>(int *, const sycl::nd_item<3> &item_ct1, int *a);
+// CHECK: template void kernel<int>(int *, int *a);
 template __global__ void kernel<int>(int *);
 
 template<class T>
-// CHECK: void kernel1(T *, const sycl::nd_item<3> &item_ct1, T *a) {
+// CHECK: void kernel1(T *, T *a) {
 __global__ void kernel1(T *) {
   __shared__ T a[10];
   int b = blockDim.x;
 }
 
-// CHECK: template void kernel1(sycl::char4 *, const sycl::nd_item<3> &item_ct1, sycl::char4 *a);
+// CHECK: template void kernel1(sycl::char4 *, sycl::char4 *a);
 template __global__ void kernel1(char4 *);
 
-// CHECK: template void kernel1<int>(int *, const sycl::nd_item<3> &item_ct1, int *a);
+// CHECK: template void kernel1<int>(int *, int *a);
 template __global__ void kernel1<int>(int *);
 
-// CHECK: void kernel2(T1 *, T2 *, const sycl::nd_item<3> &item_ct1, T1 *a1, T2 *a2) {
+// CHECK: void kernel2(T1 *, T2 *, T1 *a1, T2 *a2) {
 template<class T1, class T2>
 __global__ void kernel2(T1 *, T2 *) {
   __shared__ T1 a1[10];
@@ -42,26 +41,23 @@ __global__ void kernel2(T1 *, T2 *) {
   int b = blockDim.x;
 }
 
-// CHECK: template void kernel2(sycl::char4 *, int *, const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT: sycl::char4 *a1, int *a2);
+// CHECK: template void kernel2(sycl::char4 *, int *, sycl::char4 *a1, int *a2);
 template __global__ void kernel2(char4 *, int *);
 
-// CHECK: template void kernel2<int>(int *, sycl::float2 *, const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:  int *a1, sycl::float2 *a2);
+// CHECK: template void kernel2<int>(int *, sycl::float2 *, int *a1, sycl::float2 *a2);
 template __global__ void kernel2<int>(int *, float2 *);
 
-// CHECK: template void kernel2<sycl::float2, sycl::char4>(sycl::float2 *, sycl::char4 *,
-// CHECK-NEXT:   const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:   sycl::float2 *a1, sycl::char4 *a2);
+// CHECK: template void kernel2<sycl::float2, sycl::char4>(sycl::float2 *, sycl::char4 *, sycl::float2 *a1,
+// CHECK-NEXT:   sycl::char4 *a2);
 template __global__ void kernel2<float2, char4>(float2 *, char4 *);
 
 template<unsigned S, class T>
-// CHECK: void kernel3(T *, const sycl::nd_item<3> &item_ct1, T *a) {
+// CHECK: void kernel3(T *, T *a) {
 __global__ void kernel3(T *) {
   __shared__ T a[S];
   int b = blockDim.x;
 }
-// CHECK: template void kernel3<20>(int *, const sycl::nd_item<3> &item_ct1, int *a);
+// CHECK: template void kernel3<20>(int *, int *a);
 template __global__ void kernel3<20>(int *);
 
 template <typename T> void func_2_same_pram(T a, T b) {}
@@ -80,7 +76,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel<sycl::float2>(d, item_ct1, a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         kernel<sycl::float2>(d, a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel<float2><<<1,1>>>(d);
@@ -92,7 +88,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel<sycl::int4>(d, item_ct1, a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         kernel<sycl::int4>(d, a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel<int4><<<1,1>>>(d);
@@ -104,7 +100,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel1(d, item_ct1, (int *)a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         kernel1(d, (int *)a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel1<<<1,1>>>(d);
@@ -117,7 +113,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel2<int>(d, d1, item_ct1, a1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), (sycl::float2 *)a2_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         kernel2<int>(d, d1, a1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), (sycl::float2 *)a2_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel2<int><<<1,1>>>(d, d1);
@@ -129,7 +125,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel3<20>(d, item_ct1, (int *)a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         kernel3<20>(d, (int *)a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel3<20><<<1,1>>>(d);
@@ -144,7 +140,7 @@ int main() {
     func_2_same_pram(u, func_same_return(dim.y));
 }
 
-// CHECK: void kernel(int *, const sycl::nd_item<3> &item_ct1, T *a) {
+// CHECK: void kernel(int *, T *a) {
 template<class T>
 __global__ void kernel(int *) {
   __shared__ T a[10];
