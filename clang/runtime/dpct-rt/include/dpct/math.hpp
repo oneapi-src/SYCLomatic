@@ -2218,11 +2218,11 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
   ldmatrix(addr, m4, trans, 3);
 }
 
-/// Stores 1 8x8 b16 matrix from local memory to shared memory (32-bits per wi)
+/// Stores 1 8x8 b16 matrix from private memory to local memory (32-bits per wi)
 /// Requires the sub-group size of kernel calling this function to be 32
 /// \tparam [in] T The type of matrix elements
-/// \param [in] addr The address of the matrix in shared memory
-/// \param [in] m The local memory containing data of matrix
+/// \param [in] addr The address of the matrix in local memory
+/// \param [in] m The private memory containing data of matrix
 /// \param [in] item The sycl::nd_item index space class
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 /// \param [in] mat The matrix index to be stored
@@ -2273,12 +2273,12 @@ void stmatrix(uintptr_t addr, T m, const ItemT &item, bool trans = false,
   }
 }
 
-/// Stores 2 8x8 b16 matrix from local memory to shared memory (32-bits per wi)
+/// Stores 2 8x8 b16 matrix from private memory to local memory (32-bits per wi)
 /// Requires the sub-group size of kernel calling this function to be 32
 /// \tparam [in] T The type of matrix elements
-/// \param [in] addr The address of the matrix in shared memory
-/// \param [in] m1 The local memory containing data of 1st matrix
-/// \param [in] m2 The local memory containing data of 2nd matrix
+/// \param [in] addr The address of the matrix in local memory
+/// \param [in] m1 The private memory containing data of 1st matrix
+/// \param [in] m2 The private memory containing data of 2nd matrix
 /// \param [in] item The sycl::nd_item index space class
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 template <typename T, typename ItemT>
@@ -2290,14 +2290,14 @@ void stmatrix(uintptr_t addr, T m1, T m2, const ItemT &item,
   stmatrix(addr, m2, item, trans, 1);
 }
 
-/// Stores 4 8x8 b16 matrix from local memory to shared memory (32-bits per wi)
+/// Stores 4 8x8 b16 matrix from private memory to local memory (32-bits per wi)
 /// Requires the sub-group size of kernel calling this function to be 32
 /// \tparam [in] T The type of matrix elements
-/// \param [in] addr The address of the matrix in shared memory
-/// \param [in] m1 The local memory containing data of 1st matrix
-/// \param [in] m2 The local memory containing data of 2nd matrix
-/// \param [in] m3 The local memory containing data of 3rd matrix
-/// \param [in] m4 The local memory containing data of 4th matrix
+/// \param [in] addr The address of the matrix in local memory
+/// \param [in] m1 The private memory containing data of 1st matrix
+/// \param [in] m2 The private memory containing data of 2nd matrix
+/// \param [in] m3 The private memory containing data of 3rd matrix
+/// \param [in] m4 The private memory containing data of 4th matrix
 /// \param [in] item The sycl::nd_item index space class
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 template <typename T, typename ItemT>
