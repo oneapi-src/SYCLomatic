@@ -1930,7 +1930,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                           "cufftType", "cudaMemoryType", "CUctx_flags_enum",
                           "CUpointer_attribute_enum", "CUmemorytype_enum",
                           "cudaGraphicsMapFlags", "cudaGraphicsRegisterFlags",
-                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum", "cudaGraphExecUpdateResult"))),
+                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum",
+                          "cudaGraphExecUpdateResult"))),
                       matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
       this);
