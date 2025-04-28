@@ -1355,7 +1355,9 @@ public:
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
-  static void setUseWrapperRegisterFnPtr() { UseWrapperRegisterFnPtrFlag = true; }
+  static void setUseWrapperRegisterFnPtr() {
+    UseWrapperRegisterFnPtrFlag = true;
+  }
   static bool useWrapperRegisterFnPtr() { return UseWrapperRegisterFnPtrFlag; }
   static void setUseSYCLCompat(bool Flag = true) { UseSYCLCompatFlag = Flag; }
   static bool useSYCLCompat() { return UseSYCLCompatFlag; }
