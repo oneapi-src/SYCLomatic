@@ -385,8 +385,8 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
     Types.push_back(Context.getBuiltinType(InlineAsmBuiltinType::u32));
   }
 
-  return ::new (Context) InlineAsmInstruction(Opcode, StateSpaces, Attrs, Types,
-                                              Out.get(), Pred.get(), Ops);
+  return ::new (Context) InlineAsmInstruction(
+      Opcode, std::move(StateSpaces), Attrs, Types, Out.get(), Pred.get(), Ops);
 }
 
 InlineAsmExprResult InlineAsmParser::ParseExpression() {
