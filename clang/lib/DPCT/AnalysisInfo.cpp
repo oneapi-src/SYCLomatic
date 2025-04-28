@@ -2811,6 +2811,7 @@ void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
                               bool NeedSizeFold) {
   ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   ExprAnalysis EA;
+  EA.IsAnalyzingCtTypeInfo = true;
   EA.analyze(TL.getSizeExpr());
   auto TDSI = EA.getTemplateDependentStringInfo();
   if (TDSI->containsTemplateDependentMacro())

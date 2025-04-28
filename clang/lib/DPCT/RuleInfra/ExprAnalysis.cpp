@@ -421,74 +421,6 @@ void StringReplacements::replaceString() {
   ReplMap.clear();
 }
 
-void StringReplacements::adjustSourceStrAndTDRs() {
-  std::vector<size_t> Occurrences;
-  size_t Pos = 0;
-  while ((Pos = SourceStr.find(ConstExprExpansionInfoVDStr, Pos)) !=
-         std::string::npos) {
-    Occurrences.push_back(Pos);
-    Pos += ConstExprExpansionInfoVDStr.length();
-  }
-
-  int LengthDiff = ConstExprExpansionInfoVDInitStr.length() -
-                   ConstExprExpansionInfoVDStr.length();
-
-  for (auto Occ : Occurrences) {
-    const auto &Iter = TDRs.find(Occ);
-    if (Iter != TDRs.end()) {
-      TDRs.erase(Iter);
-    }
-  }
-  std::map<size_t, std::shared_ptr<TemplateDependentReplacement>> NewTDRs;
-  for (const auto &[Pos, Value] : TDRs) {
-    int NewPos = Pos;
-    for (auto Occ : Occurrences) {
-      if (Occ < static_cast<size_t>(Pos)) {
-        NewPos += LengthDiff;
-      } else {
-        break;
-      }
-    }
-    auto NewValue = std::make_shared<TemplateDependentReplacement>(
-        SourceStr, NewPos, Value->getLength(), Value->getTemplateIndex());
-    NewTDRs[NewPos] = NewValue;
-  }
-  TDRs = std::move(NewTDRs);
-
-  std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
-      NewTDRsInConstExprExpansion;
-  for (const auto &[Pos, Value] : TDRsInConstExprExpansion) {
-    for (auto Occ : Occurrences) {
-      int NewPos = Occ + Pos;
-      for (auto PrevOcc : Occurrences) {
-        if (PrevOcc < static_cast<size_t>(Occ)) {
-          NewPos += LengthDiff;
-        } else {
-          break;
-        }
-      }
-      auto NewValue = std::make_shared<TemplateDependentReplacement>(
-          SourceStr, NewPos, Value->getLength(), Value->getTemplateIndex());
-      NewTDRsInConstExprExpansion[NewPos] = NewValue;
-      break;
-    }
-  }
-  TDRsInConstExprExpansion = std::move(NewTDRsInConstExprExpansion);
-
-  Pos = 0;
-  while ((Pos = SourceStr.find(ConstExprExpansionInfoVDStr, Pos)) !=
-         std::string::npos) {
-    SourceStr.replace(Pos, ConstExprExpansionInfoVDStr.length(),
-                      ConstExprExpansionInfoVDInitStr);
-    Pos += ConstExprExpansionInfoVDInitStr.length();
-  }
-
-  TDRs.insert(TDRsInConstExprExpansion.begin(), TDRsInConstExprExpansion.end());
-  for (const auto &[Pos, Value] : TDRs) {
-    Value->alterSource(SourceStr);
-  }
-}
-
 ExprAnalysis::ExprAnalysis(const Expr *Expression)
     : Context(DpctGlobalInfo::getContext()),
       SM(DpctGlobalInfo::getSourceManager()) {
@@ -622,17 +554,13 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
     addReplacement(DRE, TemplateDecl->getIndex());
   else if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl());
-           VD && VD->isConstexpr()) {
-    if (VD->getInit() && VD->getInit()->getBeginLoc().isValid() &&
-        !ConstExprExpansion) {
-      ConstExprExpansion = true;
+           VD && VD->isConstexpr() &&
+           IsAnalyzingCtTypeInfo /*&& IsDependent*/) {
+    if (VD->getInit() && VD->getInit()->getBeginLoc().isValid()) {
       ExprAnalysis EA(VD->getInit());
       std::string VDInitStr = EA.getReplacedString();
       std::string VDStr = VD->getNameAsString();
-      ReplSet.addConstExprExpansionInfo(VDStr, VDInitStr);
-      ReplSet.addTemplateDependentReplacementInConstExprExpansion(
-          EA.getReplSetTDRs());
-      ConstExprExpansion = false;
+      addReplacement(0, VDStr.size(), VDInitStr);
     }
   } else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
     std::unordered_set<std::string> targetStr = {
