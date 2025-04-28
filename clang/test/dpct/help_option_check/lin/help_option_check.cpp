@@ -4,8 +4,8 @@
 // RUN: cd %T/help_option_check
 
 // RUN: dpct --help > output.txt
-// RUN: diff --strip-trailing-cr %S/help_all.txt %T/help_option_check/output.txt >> %T/diff.txt
+// RUN: diff --strip-trailing-cr %S/help_all.txt %T/help_option_check/output.txt
 // RUN: dpct --help=basic > output.txt
-// RUN: diff --strip-trailing-cr %S/help_basic.txt %T/help_option_check/output.txt >> %T/diff.txt
+// RUN: diff --strip-trailing-cr %S/help_basic.txt %T/help_option_check/output.txt
 // RUN: dpct --help=advanced > output.txt
-// RUN: diff --strip-trailing-cr %S/help_advanced.txt %T/help_option_check/output.txt >> %T/diff.txt
+// RUN: diff --strip-trailing-cr %S/help_advanced.txt %T/help_option_check/output.txt
