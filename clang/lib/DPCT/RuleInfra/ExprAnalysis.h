@@ -77,7 +77,6 @@ public:
   }
   inline size_t getOffset() const { return Offset; }
   inline size_t getLength() const { return Length; }
-  inline unsigned getTemplateIndex() const { return TemplateIndex; }
   const TemplateArgumentInfo &
   getTargetArgument(const std::vector<TemplateArgumentInfo> &TemplateList);
   void replace(const std::vector<TemplateArgumentInfo> &TemplateList);
@@ -173,10 +172,6 @@ public:
     replaceString();
     return SourceStr;
   }
-  inline std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
-  getTDRs() {
-    return TDRs;
-  }
 
 private:
   StringReplacements(const StringReplacements &) = delete;
@@ -243,10 +238,6 @@ public:
   inline bool hasReplacement() { return ReplSet.hasReplacements(); }
   inline const std::string &getReplacedString() {
     return ReplSet.getReplacedString();
-  }
-  inline std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
-  getReplSetTDRs() {
-    return ReplSet.getTDRs();
   }
   inline std::shared_ptr<TemplateDependentStringInfo>
   getTemplateDependentStringInfo() {
