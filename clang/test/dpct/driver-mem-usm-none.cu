@@ -100,6 +100,8 @@ int main(){
 
     // CHECK: dpct::dpct_memcpy(cpy);
     cuMemcpy2D(&cpy);
+    // CHECK: dpct::dpct_memcpy(cpy);
+    cuMemcpy2DUnaligned(&cpy);
     // CHECK: dpct::async_dpct_memcpy(cpy, *stream);
     cuMemcpy2DAsync(&cpy, stream);
 

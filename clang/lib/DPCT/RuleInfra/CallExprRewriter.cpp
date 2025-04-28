@@ -134,13 +134,15 @@ std::optional<std::string> FuncCallExprRewriter::buildRewriteString() {
 
 std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
-    CallExprRewriterFactoryBase::RewriterMap = std::make_unique<std::unordered_map<
-    std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
+    CallExprRewriterFactoryBase::RewriterMap =
+        std::make_unique<std::unordered_map<
+            std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
 
 std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
-    CallExprRewriterFactoryBase::MethodRewriterMap = std::make_unique<std::unordered_map<
-    std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
+    CallExprRewriterFactoryBase::MethodRewriterMap =
+        std::make_unique<std::unordered_map<
+            std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
 
 void CallExprRewriterFactoryBase::initRewriterMap() {
   if (DpctGlobalInfo::useSYCLCompat()) {
@@ -162,6 +164,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapMisc();
   initRewriterMapNccl();
   initRewriterMapNvshmem();
+  initRewriterMapCUTensor();
   initRewriterMapStream();
   initRewriterMapTexture();
   initRewriterMapThrust();

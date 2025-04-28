@@ -51,7 +51,7 @@ struct tex_reader_2 {
   __device__ int4 operator()(int idx) const { return tex1Dfetch(tex_1, idx); }
 };
 template <typename tex_reader> __global__ void kernel_2() {
-  //CHECK:int idx = item_ct1.get_local_id(2);
+  //CHECK:int idx = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
   //CHECK-NEXT:tex_reader reader;
   //CHECK-NEXT:float res = reader(idx, tex_1).x();
   int idx = threadIdx.x;

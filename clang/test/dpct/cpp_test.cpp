@@ -266,7 +266,7 @@ int kernel_test() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         testKernelPtr(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), karg3, item_ct1);
+  // CHECK-NEXT:         testKernelPtr(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), karg3);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
@@ -278,21 +278,21 @@ int kernel_test() {
   // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int);
   // CHECK-NEXT:         });
   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
 
   // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1), sycl::range<3>(1, 2, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int);
   // CHECK-NEXT:         });
   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);
 
   // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1) * sycl::range<3>(3, 2, 1), sycl::range<3>(3, 2, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int);
   // CHECK-NEXT:         });
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
 }

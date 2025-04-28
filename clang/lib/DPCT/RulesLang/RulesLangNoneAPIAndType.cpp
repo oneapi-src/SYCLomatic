@@ -809,7 +809,6 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
   auto Decl = getAssistNodeAsType<VarDecl>(Result, "decl");
-  DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
   if (MemVarRef && Func && Decl) {
     if (isCubVar(Decl)) {
       return;
@@ -820,8 +819,11 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     if (VD == nullptr)
       return;
-
-    auto Var = Global.findMemVarInfo(VD);
+    std::string CanonicalType = VD->getType().getCanonicalType().getAsString();
+    if (CanonicalType.find("block_tile_memory") != std::string::npos) {
+      return;
+    }
+    auto Var = MemVarInfo::buildMemVarInfo(VD);
     if (Func->hasAttr<CUDAGlobalAttr>() || Func->hasAttr<CUDADeviceAttr>()) {
       if (!(DpctGlobalInfo::useGroupLocalMemory() &&
             VD->hasAttr<CUDASharedAttr>() &&

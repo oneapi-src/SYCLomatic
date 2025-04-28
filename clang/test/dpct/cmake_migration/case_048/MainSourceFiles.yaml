@@ -46,6 +46,8 @@ MainSourceFilesDigest:
     Digest:          9f681b5a2cafa7dff67d7e4ac13d1302
     HasCUDASyntax:   false
 DpctVersion:     19.0.0
+SDKVersionMajor: '12'
+SDKVersionMinor: '0'
 MainHelperFileName: ''
 USMLevel:        ''
 FeatureMap:      {}

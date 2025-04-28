@@ -131,7 +131,7 @@ bool test_striped_to_blocked() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         StripedToBlockedKernel(d_data, item_ct1, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
+  // CHECK-NEXT:         StripedToBlockedKernel(d_data, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   StripedToBlockedKernel<<<1, 128>>>(d_data);
@@ -166,7 +166,7 @@ bool test_blocked_to_striped() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         BlockedToStripedKernel(d_data, item_ct1, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
+  // CHECK-NEXT:         BlockedToStripedKernel(d_data, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   BlockedToStripedKernel<<<1, 128>>>(d_data);
@@ -214,7 +214,7 @@ bool test_scatter_to_blocked() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         ScatterToBlockedKernel(d_data, d_rank, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         ScatterToBlockedKernel(d_data, d_rank, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   ScatterToBlockedKernel<<<1, 128>>>(d_data, d_rank);
@@ -259,7 +259,7 @@ bool test_scatter_to_striped() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         ScatterToStripedKernel(d_data, d_rank, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         ScatterToStripedKernel(d_data, d_rank, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   ScatterToStripedKernel<<<1, 128>>>(d_data, d_rank);
@@ -299,7 +299,7 @@ bool test_blocked_to_warp_striped() {
   // CHECK-NEXT:      cgh.parallel_for(
   // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)), 
   // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:          BlockedToWarpStripedKernel(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:          BlockedToWarpStripedKernel(d_data, &temp_storage_acc[0]);
   // CHECK-NEXT:        });
   // CHECK-NEXT:    });
   BlockedToWarpStripedKernel<<<1, 128>>>(d_data);
@@ -350,7 +350,7 @@ bool test_warp_striped_to_blocked() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)), 
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:         WarpStripedToBlockedKernel(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         WarpStripedToBlockedKernel(d_data, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   WarpStripedToBlockedKernel<<<1, 128>>>(d_data);

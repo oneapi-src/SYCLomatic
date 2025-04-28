@@ -11,7 +11,7 @@
 
 template <typename T>
 __global__ void test(T *data) {
-  // CHECK: T tid = item_ct1.get_local_id(2);
+  // CHECK: T tid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
   T tid = threadIdx.x;
 
   // CHECK: dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&data[0], tid);
@@ -108,7 +108,7 @@ void InvokeKernel() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, k_threads_per_block), sycl::range<3>(1, 1, k_threads_per_block)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         test<T>(dev_ptr_acc_ct0.get_raw_pointer(), item_ct1);
+  // CHECK-NEXT:         test<T>(dev_ptr_acc_ct0.get_raw_pointer());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   test<T><<<1, k_threads_per_block>>>(dev_ptr);
@@ -139,8 +139,8 @@ int main() {
   InvokeKernel<double>();
 }
 
-// CHECK: void foo(const sycl::nd_item<3> &item_ct1, uint8_t *dpct_local,
-// CHECK-NEXT:         uint32_t &share_v) {
+// CHECK: void foo(uint8_t *dpct_local, uint32_t &share_v) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 // CHECK-NEXT:    dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&share_array[b], 1);
@@ -159,8 +159,8 @@ __shared__ uint32_t share_v;
   atomicAdd(&share_v, 1);
 }
 
-// CHECK: void foo_2(const sycl::nd_item<3> &item_ct1, uint8_t *dpct_local,
-// CHECK-NEXT:            uint32_t &share_v) {
+// CHECK: void foo_2(uint8_t *dpct_local, uint32_t &share_v) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 // CHECK-NEXT:    uint32_t *p_1 = &share_array[b];
@@ -454,8 +454,8 @@ __global__ void k() {
   atomicAdd(&f, f);
 }
 
-// CHECK: void mykernel(unsigned int *dev, const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:              uint8_t *dpct_local) {
+// CHECK: void mykernel(unsigned int *dev, uint8_t *dpct_local) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  unsigned int* as= (unsigned int*)sm;
 // CHECK-NEXT:  const int kc=item_ct1.get_local_id(2);
@@ -474,9 +474,8 @@ __global__ void mykernel(unsigned int *dev) {
 
 // TODO: Further refine the analysis of barrier to support this case.
 // CHECK: void mykernel_1(unsigned char *buffer, long size,
-// CHECK-NEXT:                             unsigned int *histo,
-// CHECK-NEXT:                             const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:                             unsigned int *temp) {
+// CHECK-NEXT:                             unsigned int *histo, unsigned int *temp) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-EMPTY:
 // CHECK-NEXT:  temp[item_ct1.get_local_id(2)] = 0;
 // CHECK-NEXT:  /*
@@ -552,8 +551,8 @@ __device__ void __gpu_sync(int blocks_to_synch) {
   while(g_mutex < blocks_to_synch);
 }
 
-//CHECK:void atomicInc_foo(const sycl::nd_item<3> &item_ct1, uint8_t *dpct_local,
-//CHECK-NEXT:                   unsigned int &share_v) {
+//CHECK:void atomicInc_foo(uint8_t *dpct_local, unsigned int &share_v) {
+//CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 //CHECK-NEXT:  auto share_array = (unsigned int *)dpct_local;
 //CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 //CHECK-NEXT:    dpct::atomic_fetch_compare_inc<sycl::access::address_space::generic_space>(&share_array[b], 1);

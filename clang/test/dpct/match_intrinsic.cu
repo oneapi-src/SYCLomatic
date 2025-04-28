@@ -10,14 +10,14 @@
 __global__ void match_any() {
   unsigned mask;
   int val;
-  // CHECK: dpct::match_any_over_sub_group(item_ct1.get_sub_group(), mask, val);
+  // CHECK: dpct::match_any_over_sub_group(sycl::ext::oneapi::this_work_item::get_sub_group(), mask, val);
   __match_any_sync(mask, val);
 }
 
 __global__ void match_any2() {
   unsigned mask;
   int * val;
-  // CHECK: dpct::match_any_over_sub_group(item_ct1.get_sub_group(), mask, (unsigned long long)val);
+  // CHECK: dpct::match_any_over_sub_group(sycl::ext::oneapi::this_work_item::get_sub_group(), mask, (unsigned long long)val);
   __match_any_sync(mask, (unsigned long long)val);
 }
 
@@ -25,7 +25,7 @@ __global__ void match_all() {
   unsigned mask;
   int val;
   int pred;
-  // CHECK: dpct::match_all_over_sub_group(item_ct1.get_sub_group(), mask, val, &pred);
+  // CHECK: dpct::match_all_over_sub_group(sycl::ext::oneapi::this_work_item::get_sub_group(), mask, val, &pred);
   __match_all_sync(mask, val, &pred);
 }
 

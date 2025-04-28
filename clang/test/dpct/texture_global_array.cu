@@ -96,8 +96,7 @@ void createTestTextureAlternative(int instance, unsigned char *d_In, int rSize,
 }
 
 // CHECK: void test_Kernel(dpct::image_accessor_ext<float, 2> tex_inArg, float *d_out,
-// CHECK-NEXT: int yPitchOutInFloat,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT: int yPitchOutInFloat) {
 __global__ void test_Kernel(cudaTextureObject_t tex_inArg, float *d_out,
                             int yPitchOutInFloat) {
   // x and y are coordinates of the output 2D array
@@ -130,7 +129,7 @@ void test(float *d_Out, int rSize, int pSize, int pPitch) {
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(gridSz * blockSz, blockSz),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:         test_Kernel(dpct::image_accessor_ext<float, 2>(tex_Input_0_smpl, tex_Input_0_acc), d_Out, pPitch_sizeof_float_ct2, item_ct1);
+  //CHECK-NEXT:         test_Kernel(dpct::image_accessor_ext<float, 2>(tex_Input_0_smpl, tex_Input_0_acc), d_Out, pPitch_sizeof_float_ct2);
   //CHECK-NEXT:       });
   //CHECK-NEXT:   });
   test_Kernel<<<gridSz, blockSz>>>(tex_Input[0], d_Out, pPitch / sizeof(float));

@@ -713,6 +713,11 @@ void MapNames::setExplicitNamespaceMap(
                           getLibraryHelperNamespace() + "fft::fft_engine_ptr",
                           HelperFeatureEnum::device_ext)},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
+      {"CUdevice_P2PAttribute",
+       std::make_shared<TypeNameRule>(DpctGlobalInfo::usePeerAccess()
+                                          ? getClNamespace() +
+                                                "ext::oneapi::peer_access"
+                                          : "CUdevice_P2PAttribute")},
       {"CUarray_st",
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
@@ -1243,10 +1248,42 @@ void MapNames::setExplicitNamespaceMap(
       {"CU_DEVICE_ATTRIBUTE_MAX_PITCH",
        std::make_shared<EnumNameRule>("get_max_pitch",
                                       HelperFeatureEnum::device_ext)},
+      {"CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED")},
+      {"CU_DEVICE_P2P_ATTRIBUTE_CUDA_ARRAY_ACCESS_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_CUDA_ARRAY_ACCESS_SUPPORTED")},
+      {"CU_DEVICE_P2P_ATTRIBUTE_ACCESS_ACCESS_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_ACCESS_ACCESS_SUPPORTED")},
+      {"CU_DEVICE_P2P_ATTRIBUTE_ARRAY_ACCESS_ACCESS_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_ARRAY_ACCESS_ACCESS_SUPPORTED")},
+      {"CU_DEVICE_P2P_ATTRIBUTE_NATIVE_ATOMIC_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() +
+                     "ext::oneapi::peer_access::atomics_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_NATIVE_ATOMIC_SUPPORTED")},
+      {"CU_CTX_BLOCKING_SYNC", std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_COREDUMP_ENABLE", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_LMEM_RESIZE_TO_MAX", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_MAP_HOST", std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SCHED_AUTO", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_SCHED_BLOCKING_SYNC", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_SCHED_SPIN", std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SCHED_YIELD", std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SYNC_MEMOPS", std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_USER_COREDUMP_ENABLE", std::make_shared<EnumNameRule>("0")},
       {"CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK",
        std::make_shared<EnumNameRule>("get_device_info().get_local_mem_size",
                                       HelperFeatureEnum::device_ext)},
@@ -1608,6 +1645,18 @@ void MapNames::setExplicitNamespaceMap(
                ? getExpNamespace() +
                      "external_semaphore_handle_type::win32_nt_dx12_fence"
                : "cudaExternalSemaphoreHandleTypeD3D12Fence")},
+      {"cudaExternalSemaphoreHandleTypeTimelineSemaphoreFd",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_semaphore_handle_type::timeline_fd"
+               : "cudaExternalSemaphoreHandleTypeTimelineSemaphoreFd")},
+      {"cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_semaphore_handle_type::timeline_win32_nt_handle"
+               : "cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32")},
       {"NVSHMEM_TEAM_WORLD",
        std::make_shared<EnumNameRule>("ISHMEM_TEAM_WORLD")},
       {"NVSHMEM_TEAM_SHARED",

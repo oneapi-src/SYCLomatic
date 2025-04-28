@@ -3,8 +3,9 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/pass-filter/pass-filter.dp.cpp -o %T/pass-filter/pass-filter.dp.o %}
 
 // Test that only IterationSpaceBuiltinRule is being run
-// CHECK: void test_00(const sycl::nd_item<3> &item_ct1) {
+// CHECK: void test_00() {
 __global__ void test_00() {
+  // CHECK: auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
   // CHECK: size_t tix = item_ct1.get_local_id(2);
   // CHECK: size_t tiy = item_ct1.get_local_id(1);
   // CHECK: size_t tiz = item_ct1.get_local_id(0);

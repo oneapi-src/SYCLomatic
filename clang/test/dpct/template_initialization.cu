@@ -24,8 +24,9 @@ void foo(const M<float2>& in) {
 
 
 // CHECK: template<typename T>
-// CHECK: void kernel(T* in, T* out, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = in[{{.*}}[[ITEM]].get_local_id(2)];
+// CHECK: void kernel(T* in, T* out) {
+// CHECK: auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK: out[item_ct1.get_local_id(2)] = in[item_ct1.get_local_id(2)];
 // CHECK: }
 template<typename T>
 __global__ void kernel(T* in, T* out) {
@@ -58,7 +59,7 @@ void run_test() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         kernel<T>(d_in_acc_ct0.get_raw_pointer(), &d_out_acc_ct1[0], item_ct1);
+  // CHECK-NEXT:         kernel<T>(d_in_acc_ct0.get_raw_pointer(), &d_out_acc_ct1[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel<T><<<1, num_threads>>>(d_in, d_out);
