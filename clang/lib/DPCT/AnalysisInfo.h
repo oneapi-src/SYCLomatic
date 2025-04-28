@@ -1730,7 +1730,14 @@ private:
   static std::unordered_set<std::string> CustomHelperFunctionAddtionalIncludes;
   static std::unordered_map<clang::tooling::UnifiedPath, std::bitset<32>>
       HeaderInsertedBitMap;
+  // `IsAfterBitsStdcxx` is used as a flag. It is set to true when PP meet
+  // <bits/stdc++.h>. It is reset to false when starting to process a new
+  // translation unit.
   static bool IsAfterBitsStdcxx;
+  // If `IsAfterBitsStdcxx` is true, it means <bits/stdc++.h> is already
+  // included, so the tool will record all files included since this time point.
+  // When inserting `sycl.hpp`, the tool can check if the insert location is in
+  // the map, if it is, the tool will also insert `sycl.hpp` at the main file.
   static std::map<clang::tooling::UnifiedPath /*MainFile*/,
                   std::set<clang::tooling::UnifiedPath>>
       AfterBitsStdcxxFiles;
