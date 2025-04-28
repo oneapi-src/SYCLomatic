@@ -25,14 +25,13 @@ void print_data(int* data, int num) {
   }
   std::cout << std::endl;
 }
-//CHECK: void ExclusiveScanKernel(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ExclusiveScanKernel(int* data) {
 //CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-NEXT:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(item_ct1.get_group(), input, 0, sycl::plus<>());
+//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, 0, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void ExclusiveScanKernel(int* data) {
@@ -48,14 +47,13 @@ __global__ void ExclusiveScanKernel(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ExclusiveScanKernel_Max(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ExclusiveScanKernel_Max(int* data) {
 //CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-NEXT:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(item_ct1.get_group(), input, 0, sycl::maximum<>());
+//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, 0, sycl::maximum<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void ExclusiveScanKernel_Max(int* data) {
@@ -71,14 +69,13 @@ __global__ void ExclusiveScanKernel_Max(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ExclusiveScanKernel_Min(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ExclusiveScanKernel_Min(int* data) {
 //CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-NEXT:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(item_ct1.get_group(), input, 0, sycl::minimum<>());
+//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, 0, sycl::minimum<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void ExclusiveScanKernel_Min(int* data) {
@@ -94,14 +91,13 @@ __global__ void ExclusiveScanKernel_Min(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ExclusiveSumKernel(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void ExclusiveSumKernel(int* data) {
 //CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-NEXT:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(item_ct1.get_group(), input, 0, sycl::plus<>());
+//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, 0, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void ExclusiveSumKernel(int* data) {
@@ -117,14 +113,13 @@ __global__ void ExclusiveSumKernel(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void InclusiveScanKernel(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void InclusiveScanKernel(int* data) {
 //CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-NEXT:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_group(), input, sycl::plus<>());
+//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void InclusiveScanKernel(int* data) {
@@ -140,14 +135,13 @@ __global__ void InclusiveScanKernel(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void InclusiveScanKernel_Max(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void InclusiveScanKernel_Max(int* data) {
 //CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-NEXT:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_group(), input, sycl::maximum<>());
+//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, sycl::maximum<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void InclusiveScanKernel_Max(int* data) {
@@ -163,14 +157,13 @@ __global__ void InclusiveScanKernel_Max(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void InclusiveScanKernel_Min(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void InclusiveScanKernel_Min(int* data) {
 //CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-NEXT:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_group(), input, sycl::minimum<>());
+//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, sycl::minimum<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void InclusiveScanKernel_Min(int* data) {
@@ -186,14 +179,13 @@ __global__ void InclusiveScanKernel_Min(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void InclusiveSumKernel(int* data,
-//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK: void InclusiveSumKernel(int* data) {
 //CHECK-EMPTY:
-//CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
+//CHECK-NEXT:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_group(), input, sycl::plus<>());
+//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void InclusiveSumKernel(int* data) {
@@ -210,13 +202,12 @@ __global__ void InclusiveSumKernel(int* data) {
 }
 
 // CHECK: template <int THREADS_PER_BLOCK>
-// CHECK: void SomeKernel(int *data,
-// CHECK：                const sycl::nd_item<3> &item_ct1) {
+// CHECK: void SomeKernel(int *data) {
 // CHECK-NOT: typedef cub::BlockScan<int, THREADS_PER_BLOCK> BlockScan; 
-// CHECK:  int threadid = item_ct1.get_local_id(2);
+// CHECK:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 // CHECK:  int input = data[threadid];
 // CHECK:  int output = 0;
-// CHECK:  output = sycl::inclusive_scan_over_group(item_ct1.get_group(), input, sycl::plus<>());
+// CHECK:  output = sycl::inclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, sycl::plus<>());
 // CHECK:  data[threadid] = output;
 // CHECK:}
 template <int THREADS_PER_BLOCK>
@@ -243,7 +234,7 @@ int main() {
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          ExclusiveScanKernel(dev_data, item_ct1);
+//CHECK-NEXT:          ExclusiveScanKernel(dev_data);
 //CHECK-NEXT:        });
   ExclusiveScanKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -253,7 +244,7 @@ init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          ExclusiveScanKernel_Max(dev_data, item_ct1);
+//CHECK-NEXT:          ExclusiveScanKernel_Max(dev_data);
 //CHECK-NEXT:        });
   ExclusiveScanKernel_Max<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -263,7 +254,7 @@ init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          ExclusiveScanKernel_Min(dev_data, item_ct1);
+//CHECK-NEXT:          ExclusiveScanKernel_Min(dev_data);
 //CHECK-NEXT:        });
   ExclusiveScanKernel_Min<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -273,7 +264,7 @@ init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          ExclusiveSumKernel(dev_data, item_ct1);
+//CHECK-NEXT:          ExclusiveSumKernel(dev_data);
 //CHECK-NEXT:        });
   ExclusiveSumKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -283,7 +274,7 @@ init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          InclusiveScanKernel(dev_data, item_ct1);
+//CHECK-NEXT:          InclusiveScanKernel(dev_data);
 //CHECK-NEXT:        });
   InclusiveScanKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -293,7 +284,7 @@ init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          InclusiveScanKernel_Max(dev_data, item_ct1);
+//CHECK-NEXT:          InclusiveScanKernel_Max(dev_data);
 //CHECK-NEXT:        });
   InclusiveScanKernel_Max<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -303,7 +294,7 @@ init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          InclusiveScanKernel_Min(dev_data, item_ct1);
+//CHECK-NEXT:          InclusiveScanKernel_Min(dev_data);
 //CHECK-NEXT:        });
   InclusiveScanKernel_Min<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -313,7 +304,7 @@ init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          InclusiveSumKernel(dev_data, item_ct1);
+//CHECK-NEXT:          InclusiveSumKernel(dev_data);
 //CHECK-NEXT:        });
   InclusiveSumKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -322,7 +313,7 @@ init_data(dev_data, TotalThread);
 // CHECK: q_ct1.parallel_for(
 // CHECK-NEXT: sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
 // CHECK-NEXT: [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT: SomeKernel<4>(dev_data, item_ct1);
+// CHECK-NEXT: SomeKernel<4>(dev_data);
 // CHECK-NEXT: });
   SomeKernel<4><<<GridSize, BlockSize>>>(dev_data);
 

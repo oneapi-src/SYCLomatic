@@ -18,7 +18,7 @@ int main() {
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:     ExampleKernel(item_ct1);
+  // CHECK-NEXT:     ExampleKernel();
   // CHECK-NEXT:   });
   ExampleKernel<<<1, 128>>>();
   cudaStreamSynchronize(0);

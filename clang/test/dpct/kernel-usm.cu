@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/kernel-usm %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct  --format-range=none -out-root %T/kernel-usm %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel-usm/kernel-usm.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/kernel-usm/kernel-usm.dp.cpp -o %T/kernel-usm/kernel-usm.dp.o %}
 
@@ -15,8 +15,8 @@ __device__ void testDevice(const int *K) {
   int t = K[0];
 }
 
-// CHECK: void testKernelPtr(const int *L, const int *M, int N,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
+// CHECK: void testKernelPtr(const int *L, const int *M, int N) {
+// CHECK-NEXT: auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT: testDevice(L);
 // CHECK-NEXT: int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
@@ -40,14 +40,14 @@ int main() {
   // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernelPtr((const int *)karg1, karg2, karg3, item_ct1);
+  // CHECK-NEXT:           testKernelPtr((const int *)karg1, karg2, karg3);
   // CHECK-NEXT:         });
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 }
 
 // CHECK:inline dpct::shared_memory<float, 1> result(32);
-// CHECK-NEXT:void my_kernel(float* result, const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT: float *resultInGroup) {
+// CHECK-NEXT:void my_kernel(float* result, float *resultInGroup) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:  // __shared__ variable
 // CHECK-NEXT:  resultInGroup[item_ct1.get_local_id(2)] = item_ct1.get_group(2);
 // CHECK-NEXT:  memcpy(&result[item_ct1.get_group(2)*8], resultInGroup, sizeof(float)*8);
@@ -62,7 +62,7 @@ int main() {
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel(result_ct0, item_ct1, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:          my_kernel(result_ct0, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:  printf("%f ", result[10]);
@@ -89,7 +89,7 @@ int run_foo5 () {
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel(result2_ct0, item_ct1, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:          my_kernel(result2_ct0, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:  printf("%f ", result2[10]);
@@ -111,7 +111,7 @@ int run_foo6 () {
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel(result3_ct0, item_ct1, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:          my_kernel(result3_ct0, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:  printf("%f ", result3[0]);
@@ -124,8 +124,8 @@ int run_foo7 () {
 
 // CHECK:inline dpct::shared_memory<float, 0> in;
 // CHECK-NEXT:inline dpct::shared_memory<float, 0> out;
-// CHECK-NEXT:void my_kernel2(float in, float *out, const sycl::nd_item<3> &item_ct1) {
-// CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
+// CHECK-NEXT:void my_kernel2(float in, float *out) {
+// CHECK-NEXT:  if (sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2) == 0) {
 // CHECK-NEXT:    memcpy(out, &in, sizeof(float));
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -139,7 +139,7 @@ int run_foo7 () {
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel2(in_ct0, out_ct1, item_ct1);
+// CHECK-NEXT:          my_kernel2(in_ct0, out_ct1);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:  printf("%f ", out[0]);

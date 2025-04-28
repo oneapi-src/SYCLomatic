@@ -61,8 +61,10 @@ void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cuGraphicsUnregisterResource", "cudaImportExternalMemory",
         "cudaExternalMemoryGetMappedMipmappedArray",
         "cudaExternalMemoryGetMappedBuffer", "cudaDestroyExternalMemory",
-        "cudaImportExternalSemaphore", "cudaSignalExternalSemaphoresAsync_v2",
-        "cudaWaitExternalSemaphoresAsync_v2", "cudaDestroyExternalSemaphore");
+        "cudaImportExternalSemaphore", "cudaSignalExternalSemaphoresAsync",
+        "cudaSignalExternalSemaphoresAsync_v2",
+        "cudaWaitExternalSemaphoresAsync", "cudaWaitExternalSemaphoresAsync_v2",
+        "cudaDestroyExternalSemaphore");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(graphicsInteropAPI()))).bind("call"), this);

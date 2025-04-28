@@ -27,6 +27,7 @@
 #include "RulesSHMEM/NVSHMEMAPIMigration.h"
 #include "RulesSecurity/Homoglyph.h"
 #include "RulesSecurity/MisleadingBidirectional.h"
+#include "RulesTensor/CUTensorAPIMigration.h"
 #include "TextModification.h"
 #include "Utility.h"
 
@@ -196,6 +197,8 @@ REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 
 REGISTER_RULE(NVSHMEMRule, PassKind::PK_Migration, RuleGroupKind::RK_NVSHMEM)
+
+REGISTER_RULE(CUTensorRule, PassKind::PK_Migration, RuleGroupKind::RK_CUTensor)
 
 } // namespace dpct
 } // namespace clang

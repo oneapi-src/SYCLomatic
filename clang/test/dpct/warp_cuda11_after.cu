@@ -13,7 +13,7 @@ __global__ void reduce_add_sync() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::plus<>());
+  // CHECK-NEXT: sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), val, sycl::plus<>());
   __reduce_add_sync(mask, val);
 }
 
@@ -23,7 +23,7 @@ __global__ void reduce_min_sync() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::minimum());
+  // CHECK-NEXT: sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), val, sycl::minimum());
   __reduce_min_sync(mask, val);
 }
 
@@ -33,7 +33,7 @@ __global__ void reduce_max_sync() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::maximum());
+  // CHECK-NEXT: sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), val, sycl::maximum());
   __reduce_max_sync(mask, val);
 }
 
@@ -43,7 +43,7 @@ __global__ void reduce_and_sync() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::bit_and<>());
+  // CHECK-NEXT: sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), val, sycl::bit_and<>());
   __reduce_and_sync(mask, val);
 }
 
@@ -53,7 +53,7 @@ __global__ void reduce_or_sync() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::bit_or<>());
+  // CHECK-NEXT: sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), val, sycl::bit_or<>());
   __reduce_or_sync(mask, val);
 }
 
@@ -63,7 +63,7 @@ __global__ void reduce_xor_sync() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::bit_xor<>());
+  // CHECK-NEXT: sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), val, sycl::bit_xor<>());
   __reduce_xor_sync(mask, val);
 }
 
@@ -71,42 +71,42 @@ int main() {
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:     reduce_add_sync(item_{{[0-9a-z]+}});
+  // CHECK-NEXT:     reduce_add_sync();
   // CHECK-NEXT:   });
   reduce_add_sync<<<1, 32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:     reduce_min_sync(item_{{[0-9a-z]+}});
+  // CHECK-NEXT:     reduce_min_sync();
   // CHECK-NEXT:   });
   reduce_min_sync<<<1, 32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:     reduce_max_sync(item_{{[0-9a-z]+}});
+  // CHECK-NEXT:     reduce_max_sync();
   // CHECK-NEXT:   });
   reduce_max_sync<<<1, 32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:     reduce_and_sync(item_{{[0-9a-z]+}});
+  // CHECK-NEXT:     reduce_and_sync();
   // CHECK-NEXT:   });
   reduce_and_sync<<<1, 32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:     reduce_or_sync(item_{{[0-9a-z]+}});
+  // CHECK-NEXT:     reduce_or_sync();
   // CHECK-NEXT:   });
   reduce_or_sync<<<1, 32>>>();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:     reduce_xor_sync(item_{{[0-9a-z]+}});
+  // CHECK-NEXT:     reduce_xor_sync();
   // CHECK-NEXT:   });
   reduce_xor_sync<<<1, 32>>>();
 

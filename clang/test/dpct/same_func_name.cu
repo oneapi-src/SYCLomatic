@@ -4,7 +4,7 @@
 
 // device function
 // CHECK:template <typename ValueType>
-// CHECK-NEXT:int device_kernel(const sycl::nd_item<3> &item_ct1)
+// CHECK-NEXT:int device_kernel()
 template <typename ValueType>
 __device__ int device_kernel()
 {
@@ -13,7 +13,7 @@ __device__ int device_kernel()
 
 // global function
 // CHECK:template <typename ValueType>
-// CHECK-NEXT:void kernel(const sycl::nd_item<3> &item_ct1)
+// CHECK-NEXT:void kernel()
 template <typename ValueType>
 __global__ void kernel()
 {
@@ -80,9 +80,9 @@ void kernel(int i, int j)
 
 
 // CHECK:template <typename ValueType>
-// CHECK-NEXT:void kernel_2(const sycl::nd_item<3> &item_ct1)
+// CHECK-NEXT:void kernel_2()
 // CHECK-NEXT:{
-// CHECK-NEXT:    auto tidx = item_ct1.get_local_id(2);
+// CHECK-NEXT:    auto tidx = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 // CHECK-NEXT:}
 template <typename ValueType>
 __global__ void kernel_2()
@@ -91,10 +91,9 @@ __global__ void kernel_2()
 }
 
 // CHECK:template <typename ValueType>
-// CHECK-NEXT:void kernel_2(int a,
-// CHECK-NEXT:              const sycl::nd_item<3> &item_ct1)
+// CHECK-NEXT:void kernel_2(int a)
 // CHECK-NEXT:{
-// CHECK-NEXT:    auto tidx = item_ct1.get_local_id(2);
+// CHECK-NEXT:    auto tidx = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 // CHECK-NEXT:}
 template <typename ValueType>
 __global__ void kernel_2(int a)

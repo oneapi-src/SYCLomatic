@@ -62,6 +62,11 @@ int save2Yaml(
   }
 
   TUR.DpctVersion = clang::dpct::getDpctVersionStr();
+
+  auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
+  TUR.SDKVersionMajor = std::to_string(Ver.first);
+  TUR.SDKVersionMinor = std::to_string(Ver.second);
+
   TUR.OptionMap = clang::dpct::DpctGlobalInfo::getCurrentOptMap();
 
   YAMLOut << TUR;

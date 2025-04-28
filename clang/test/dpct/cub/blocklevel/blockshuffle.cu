@@ -9,8 +9,8 @@
 #include <iostream>
 #include <cub/block/block_shuffle.cuh>
 
-// CHECK: void BlockShuffleKernel(const sycl::nd_item<3> &item_ct1,
-// CHECK:       uint8_t *temp_storage) {
+// CHECK: void BlockShuffleKernel(uint8_t *temp_storage) {  
+// CHECK:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK:   int d[4];
 // CHECK:   typedef dpct::group::group_shuffle<int, 128, 1> BS;
 // CHECK:   int a;
@@ -38,7 +38,7 @@ bool test_striped_to_blocked() {
 // CHECK:         cgh.parallel_for(
 // CHECK:           sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
 // CHECK:           [=](sycl::nd_item<3> item_ct1) {
-// CHECK:             BlockShuffleKernel(item_ct1, &temp_storage_acc[0]);
+// CHECK:             BlockShuffleKernel(&temp_storage_acc[0]);
 // CHECK:           });
 // CHECK:       });
   BlockShuffleKernel<<<1, 128>>>();

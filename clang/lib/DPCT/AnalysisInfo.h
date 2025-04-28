@@ -1296,7 +1296,9 @@ public:
     return getUsingExperimental<ExperimentalFeatures::Exp_RootGroup>();
   }
   static bool useFreeQueries() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
+    return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>() ||
+           getUsingExtensionDE(
+               DPCPPExtensionsDefaultEnabled::ExtDE_FreeQueries);
   }
   static bool useGroupLocalMemory() {
     return getUsingExperimental<ExperimentalFeatures::Exp_GroupSharedMemory>();

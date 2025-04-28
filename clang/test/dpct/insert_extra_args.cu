@@ -2,31 +2,31 @@
 // RUN: FileCheck --input-file %T/insert_extra_args/insert_extra_args.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/insert_extra_args/insert_extra_args.dp.cpp -o %T/insert_extra_args/insert_extra_args.dp.o %}
 
-//CHECK: void deviceFoo(int i, int j, const sycl::nd_item<3> &item_ct1){
-//CHECK-NEXT: int a = item_ct1.get_group(2);
+//CHECK: void deviceFoo(int i, int j){
+//CHECK-NEXT: int a = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2);
 //CHECK-NEXT: }
 __device__ void deviceFoo(int i, int j){
   int a = blockIdx.x;
 }
 
-//CHECK: void deviceFoo1(int i, const sycl::nd_item<3> &item_ct1, int j = 0){
-//CHECK-NEXT:   int a = item_ct1.get_group(2);
+//CHECK: void deviceFoo1(int i, int j = 0){
+//CHECK-NEXT:   int a = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2);
 //CHECK-NEXT: }
 __device__ void deviceFoo1(int i, int j = 0){
   int a = blockIdx.x;
 }
 
-//CHECK: void deviceFoo2(const sycl::nd_item<3> &item_ct1, int i = 0, int j = 0){
-//CHECK-NEXT:   int a = item_ct1.get_group(2);
+//CHECK: void deviceFoo2(int i = 0, int j = 0){
+//CHECK-NEXT:   int a = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2);
 //CHECK-NEXT: }
 __device__ void deviceFoo2(int i = 0, int j = 0){
   int a = blockIdx.x;
 }
 
-//CHECK: void callDeviceFoo(const sycl::nd_item<3> &item_ct1){
-//CHECK-NEXT:   deviceFoo(1, 2, item_ct1);
-//CHECK-NEXT:   deviceFoo1(1, item_ct1, 2);
-//CHECK-NEXT:   deviceFoo2(item_ct1, 1, 2);
+//CHECK: void callDeviceFoo(){
+//CHECK-NEXT:   deviceFoo(1, 2);
+//CHECK-NEXT:   deviceFoo1(1, 2);
+//CHECK-NEXT:   deviceFoo2(1, 2);
 //CHECK-NEXT: }
 __global__ void callDeviceFoo(){
   deviceFoo(1, 2);
@@ -34,22 +34,22 @@ __global__ void callDeviceFoo(){
   deviceFoo2(1, 2);
 }
 
-//CHECK: void kernelFoo(int i, int j, const sycl::nd_item<3> &item_ct1){
-//CHECK-NEXT: int a = item_ct1.get_group(2);
+//CHECK: void kernelFoo(int i, int j){
+//CHECK-NEXT: int a = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2);
 //CHECK-NEXT: }
 __global__ void kernelFoo(int i, int j){
   int a = blockIdx.x;
 }
 
-//CHECK: void kernelFoo1(int i, const sycl::nd_item<3> &item_ct1, int j = 0){
-//CHECK-NEXT:   int a = item_ct1.get_group(2);
+//CHECK: void kernelFoo1(int i, int j = 0){
+//CHECK-NEXT:   int a = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2);
 //CHECK-NEXT: }
 __global__ void kernelFoo1(int i, int j = 0){
   int a = blockIdx.x;
 }
 
-//CHECK: void kernelFoo2(const sycl::nd_item<3> &item_ct1, int i = 0, int j = 0){
-//CHECK-NEXT:   int a = item_ct1.get_group(2);
+//CHECK: void kernelFoo2(int i = 0, int j = 0){
+//CHECK-NEXT:   int a = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2);
 //CHECK-NEXT: }
 __global__ void kernelFoo2(int i = 0, int j = 0){
   int a = blockIdx.x;
@@ -61,19 +61,19 @@ int main(){
   //CHECK: q_ct1.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:           kernelFoo(1, 2, item_ct1);
+  //CHECK-NEXT:           kernelFoo(1, 2);
   //CHECK-NEXT:         });
   kernelFoo<<<1,2>>>(1,2);
   //CHECK: q_ct1.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:           kernelFoo1(1, item_ct1, 2);
+  //CHECK-NEXT:           kernelFoo1(1, 2);
   //CHECK-NEXT:         });
   kernelFoo1<<<1,2>>>(1,2);
   //CHECK: q_ct1.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:           kernelFoo2(item_ct1, 1, 2);
+  //CHECK-NEXT:           kernelFoo2(1, 2);
   //CHECK-NEXT:         });
   kernelFoo2<<<1,2>>>(1,2);
   return 0;
@@ -83,8 +83,8 @@ int main(){
 typedef float Real_t;
 #define VOLUDER(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,dvdc)	(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,dvdc)
 
-//CHECK: float foo(float a, float b, int c, const sycl::nd_item<3> &item_ct1) {
-//CHECK-NEXT:  int i = item_ct1.get_group(2);
+//CHECK: float foo(float a, float b, int c) {
+//CHECK-NEXT:  int i = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2);
 //CHECK-NEXT:  return 1.0f;
 //CHECK-NEXT:}
 __device__ float foo(float a, float b, int c) {
@@ -96,10 +96,10 @@ __global__ void bar() {
     float ind0, ind1, ind2, ind3, ind4, ind5, dvdzn;
     float xn, yn;
 
-   //CHECK: VOLUDER(foo(xn,ind0,8, item_ct1),foo(xn,ind1,8, item_ct1),foo(xn,ind2,8, item_ct1),
-   //CHECK-NEXT:         foo(xn,ind3,8, item_ct1),foo(xn,ind4,8, item_ct1),foo(xn,ind5,8, item_ct1),
-   //CHECK-NEXT:         foo(yn,ind0,8, item_ct1),foo(yn,ind1,8, item_ct1),foo(yn,ind2,8, item_ct1),
-   //CHECK-NEXT:         foo(yn,ind3,8, item_ct1),foo(yn,ind4,8, item_ct1),foo(yn,ind5,8, item_ct1),
+   //CHECK: VOLUDER(foo(xn,ind0,8),foo(xn,ind1,8),foo(xn,ind2,8),
+   //CHECK-NEXT:         foo(xn,ind3,8),foo(xn,ind4,8),foo(xn,ind5,8),
+   //CHECK-NEXT:         foo(yn,ind0,8),foo(yn,ind1,8),foo(yn,ind2,8),
+   //CHECK-NEXT:         foo(yn,ind3,8),foo(yn,ind4,8),foo(yn,ind5,8),
    //CHECK-NEXT:       dvdzn);
     VOLUDER(foo(xn,ind0,8),foo(xn,ind1,8),foo(xn,ind2,8),
             foo(xn,ind3,8),foo(xn,ind4,8),foo(xn,ind5,8),

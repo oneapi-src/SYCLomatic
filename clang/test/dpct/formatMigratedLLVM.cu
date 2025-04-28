@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/formatMigratedLLVM.cu
 // RUN: cd %T
-// RUN: dpct --out-root %T/formatMigratedLLVM formatMigratedLLVM.cu --cuda-include-path="%cuda-path/include" --format-style=llvm  -- -std=c++14  -x cuda --cuda-host-only
+// RUN: dpct  --out-root %T/formatMigratedLLVM formatMigratedLLVM.cu --cuda-include-path="%cuda-path/include" --format-style=llvm  -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace formatMigratedLLVM.cu --match-full-lines --input-file %T/formatMigratedLLVM/formatMigratedLLVM.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/formatMigratedLLVM/formatMigratedLLVM.dp.cpp -o %T/formatMigratedLLVM/formatMigratedLLVM.dp.o %}
 
@@ -17,8 +17,8 @@ __device__ void testDevice(const int *K) {
      //CHECK:void testDevice1(const int *K) { int t = K[0]; }
 __device__ void testDevice1(const int *K) { int t = K[0]; }
 
-     //CHECK:void testKernelPtr(const int *L, const int *M, int N,
-//CHECK-NEXT:                   const sycl::nd_item<3> &item_ct1) {
+     //CHECK:void testKernelPtr(const int *L, const int *M, int N) {
+//CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 //CHECK-NEXT:  testDevice(L);
 //CHECK-NEXT:  int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
 //CHECK-NEXT:             item_ct1.get_local_id(2);
@@ -40,8 +40,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 //CHECK-NEXT:  int karg3 = 80;
 //CHECK-NEXT:  q_ct1.parallel_for(sycl::nd_range<3>(griddim * threaddim, threaddim),
 //CHECK-NEXT:                     [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:                       testKernelPtr((const int *)karg1, karg2, karg3,
-//CHECK-NEXT:                                     item_ct1);
+//CHECK-NEXT:                       testKernelPtr((const int *)karg1, karg2, karg3);
 //CHECK-NEXT:                     });
 //CHECK-NEXT:}
 int main() {
@@ -100,8 +99,7 @@ typedef struct
 //CHECK-NEXT:                                 const float cut_lj_innersq,
 //CHECK-NEXT:                                 const float g_ewald, const float qqrd2e,
 //CHECK-NEXT:                                 const float denom_lj_inv,
-//CHECK-NEXT:                                 const int loop_trip,
-//CHECK-NEXT:                                 const sycl::nd_item<3> &item_ct1, float *sp_lj,
+//CHECK-NEXT:                                 const int loop_trip, float *sp_lj,
 //CHECK-NEXT:                                 float *sp_coul, int *ljd, double la[8][1]) {
 template <int EFLAG>
 __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,

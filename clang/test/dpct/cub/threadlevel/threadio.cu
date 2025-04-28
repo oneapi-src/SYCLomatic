@@ -10,9 +10,9 @@
 #include <cuda_runtime.h>
 #include <cub/cub.cuh>
 
-// CHECK: void ThreadLoadKernel(const sycl::nd_item<3> &item_ct1) {
+// CHECK: void ThreadLoadKernel() {
 // CHECK-NEXT:     int *d_in;
-// CHECK-NEXT:     int val = *(d_in + item_ct1.get_local_id(2));
+// CHECK-NEXT:     int val = *(d_in + sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2));
 // CHECK-NEXT:   }
 __global__ void ThreadLoadKernel() {
   int *d_in;

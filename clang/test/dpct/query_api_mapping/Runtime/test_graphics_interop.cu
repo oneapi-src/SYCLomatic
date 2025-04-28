@@ -46,10 +46,10 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGraphicsUnmapResources | FileCheck %s -check-prefix=CUDA_GRAPHICS_UNMAP_RESOURCES
 // CUDA_GRAPHICS_UNMAP_RESOURCES: CUDA API:
 // CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT:    cudaGraphicsUnmapResources(c /*int*/,
-// CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT:                             r /*cudaGraphicsResource_t **/);
+// CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT:                               r /*cudaGraphicsResource_t **/);
 // CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT:    cudaGraphicsUnmapResources(c /*int*/,
-// CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT:                             r /*cudaGraphicsResource_t **/,
-// CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT:                             s /*cudaStream_t*/);
+// CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT:                               r /*cudaGraphicsResource_t **/,
+// CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT:                               s /*cudaStream_t*/);
 // CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
 // CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT:    dpct::experimental::unmap_resources(c, r);
 // CUDA_GRAPHICS_UNMAP_RESOURCES-NEXT:    dpct::experimental::unmap_resources(c, r, s);

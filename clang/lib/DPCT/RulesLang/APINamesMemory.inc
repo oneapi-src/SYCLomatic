@@ -878,6 +878,21 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     UsePeerAccess(),
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuDeviceGetP2PAttribute", DEREF(ARG_WC(0)),
+        MEMBER_CALL(
+            CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(2)), false,
+            "ext_oneapi_can_access_peer",
+            CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(3)),
+            ARG_WC(1)))),
+    ASSIGNABLE_FACTORY(
+        WARNING_FACTORY_ENTRY("cuDeviceGetP2PAttribute",
+                              ASSIGN_FACTORY_ENTRY("cuDeviceGetP2PAttribute",
+                                                   DEREF(ARG_WC(0)), ARG("0")),
+                              Diagnostics::EXPLICIT_PEER_ACCESS)))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UsePeerAccess(),
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cuDeviceCanAccessPeer", DEREF(ARG_WC(0)),
         MEMBER_CALL(
             CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(1)), false,

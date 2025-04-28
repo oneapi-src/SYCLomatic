@@ -49,10 +49,11 @@ const int num_elements = 16;
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 const int size = 64;
 __device__ float tmp[size];
-// CHECK: void kernel2(float *out, const nd_item<3> &[[ITEM:item_ct1]], int &al, float *fx,
+// CHECK: void kernel2(float *out, int &al, float *fx,
 // CHECK-NEXT:              dpct::accessor<float, global, 2> fy, float *tmp) {
-// CHECK-NEXT:   out[{{.*}}[[ITEM]].get_local_id(2)] += al;
-// CHECK-NEXT:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];
+// CHECK-NEXT:   auto item_ct1 = ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK-NEXT:   out[item_ct1.get_local_id(2)] += al;
+// CHECK-NEXT:   fx[item_ct1.get_local_id(2)] = fy[item_ct1.get_local_id(2)][item_ct1.get_local_id(2)];
 // CHECK-NEXT:   tmp[1] = 1.0f;
 // CHECK-NEXT: }
 __global__ void kernel2(float *out) {

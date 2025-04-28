@@ -110,7 +110,7 @@ void bar8(){
 // CHECK:  q_ct1.parallel_for(
 // CHECK:    sycl::nd_range<3>(sycl::range<3>(1, 1, 100), sycl::range<3>(1, 1, 100)),
 // CHECK:    [=](sycl::nd_item<3> item_ct1) {
-// CHECK:      kernel(A, B, C, item_ct1);
+// CHECK:      kernel(A, B, C);
 // CHECK:    });
 // CHECK:  free(h_temp);
     cudaMemcpy(A, h_temp, 100 * sizeof(float), cudaMemcpyDeviceToHost);

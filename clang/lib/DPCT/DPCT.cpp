@@ -463,6 +463,59 @@ void parseFormatStyle() {
   DpctGlobalInfo::setCodeFormatStyle(Style);
 }
 
+void updateCompatibilityVersionInfo(clang::tooling::UnifiedPath OutRoot,
+                                    std::string Major, std::string Minor) {
+  const std::string CmakeHelpFile =
+      appendPath(OutRoot.getCanonicalPath().str(), "dpct.cmake");
+  std::ifstream InFile(CmakeHelpFile);
+  if (!InFile) {
+    std::string ErrMsg = "Failed to open file: " + CmakeHelpFile;
+    ShowStatus(MigrationErrorReadWriteCMakeHelperFile, std::move(ErrMsg));
+    dpctExit(MigrationErrorReadWriteCMakeHelperFile);
+  }
+
+  const std::string VersionStr = Major + "." + Minor;
+  const int CompatibilityValue = std::stoi(Major) * 10 + std::stoi(Minor);
+  std::vector<std::string> Lines;
+  std::string Line;
+  bool Inserted = false;
+
+  // Constant block of content to insert
+  const std::vector<std::string> CompatibilityBlock = {
+      "set(COMPATIBILITY_VERSION " + VersionStr + ")",
+      "set(COMPATIBILITY_VALUE " + std::to_string(CompatibilityValue) + ")",
+      "set(COMPATIBILITY_VERSION_MAJOR " + Major + ")",
+      "set(COMPATIBILITY_VERSION_MINOR " + Minor + ")",
+      "" // Add an empty line for good format
+  };
+
+  auto isCommentOrEmpty = [](const std::string &Line) {
+    return Line.empty() || Line[0] == '#';
+  };
+
+  while (std::getline(InFile, Line)) {
+    // Insert the compatibility definition block after the first comment section
+    if (!Inserted && !isCommentOrEmpty(Line)) {
+      Lines.insert(Lines.end(), CompatibilityBlock.begin(),
+                   CompatibilityBlock.end());
+      Inserted = true;
+    }
+    Lines.push_back(Line);
+  }
+  InFile.close();
+
+  std::ofstream OutFile(CmakeHelpFile);
+  if (!OutFile) {
+    std::string ErrMsg = "Failed to write to file: " + CmakeHelpFile;
+    ShowStatus(MigrationErrorReadWriteCMakeHelperFile, std::move(ErrMsg));
+    dpctExit(MigrationErrorReadWriteCMakeHelperFile);
+  }
+  for (const auto &Line : Lines) {
+    OutFile << Line << "\n";
+  }
+  OutFile.close();
+}
+
 static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
   std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
                                         DpctGlobalInfo::getYamlFileName());
@@ -471,7 +524,16 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
     if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
       llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
     }
+
+    if (MigrateBuildScriptOnly || DpctGlobalInfo::migrateCMakeScripts()) {
+      std::string Major = PreTU->SDKVersionMajor;
+      std::string Minor = PreTU->SDKVersionMinor;
+      if (!Major.empty() && !Minor.empty()) {
+        updateCompatibilityVersionInfo(OutRoot, Major, Minor);
+      }
+    }
   }
+
   for (auto &Entry : PreTU->MainSourceFilesDigest) {
     if (Entry.HasCUDASyntax)
       MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);

@@ -8,12 +8,12 @@
 
 class TestObject{
 public:
-  // CHECK: static void run(int *in, int *out, const sycl::nd_item<3> &item_ct1) {
+  // CHECK: static void run(int *in, int *out) {
   // CHECK-NEXT:    /*
   // CHECK-NEXT:    DPCT1115:{{[0-9]+}}: The sycl::ext::oneapi::group_local_memory_for_overwrite is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.
   // CHECK-NEXT:    */
-  // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory_for_overwrite<int>(item_ct1.get_group()); // the size of s is static
-  // CHECK-NEXT:  a0 = item_ct1.get_local_id(2);
+  // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory_for_overwrite<int>(sycl::ext::oneapi::this_work_item::get_work_group<3>()); // the size of s is static
+  // CHECK-NEXT:  a0 = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
   __device__ static void run(int *in, int *out) {
     __shared__ int a0; // the size of s is static
     a0 = threadIdx.x;
@@ -21,8 +21,8 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: void memberAcc(const sycl::nd_item<3> &item_ct1) {
-// CHECK-NEXT: auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<TestObject>(item_ct1.get_group()); // the size of s is static
+// CHECK: void memberAcc() {
+// CHECK-NEXT: auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<TestObject>(sycl::ext::oneapi::this_work_item::get_work_group<3>()); // the size of s is static
 // CHECK-NEXT: s.test();
 // CHECK-NEXT: }
 __global__ void memberAcc() {
@@ -30,8 +30,8 @@ __global__ void memberAcc() {
   s.test();
 }
 
-// CHECK: void nonTypeTemplateReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
-// CHECK-NEXT:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<sycl::int2[2*ArraySize*ArraySize]>(item_ct1.get_group()); // the size of s is dependent on parameter
+// CHECK: void nonTypeTemplateReverse(int *d, int n) {
+// CHECK-NEXT:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<sycl::int2[2*ArraySize*ArraySize]>(sycl::ext::oneapi::this_work_item::get_work_group<3>()); // the size of s is dependent on parameter
 template <int ArraySize>
 __global__ void nonTypeTemplateReverse(int *d, int n) {
   __shared__ int2 s[2*ArraySize*ArraySize]; // the size of s is dependent on parameter
@@ -41,26 +41,26 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
   }
 }
 
-// CHECK: void staticReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
+// CHECK: void staticReverse(int *d, int n) {
 __global__ void staticReverse(int *d, int n) {
   const int size = 64;
-  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<int[size]>(item_ct1.get_group()); // the size of s is static
+  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<int[size]>(sycl::ext::oneapi::this_work_item::get_work_group<3>()); // the size of s is static
   __shared__ int s[size]; // the size of s is static
   int t = threadIdx.x;
   if (t < 64) {
     s[t] = d[t];
   }
-  // CHECK: TestObject::run(d, d, item_ct1);
+  // CHECK: TestObject::run(d, d);
   TestObject::run(d, d);
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
+// CHECK-NEXT: void templateReverse(TData *d, TData n) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
   const int size = 32;
-  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<TData[size * 2][size * 4]>(item_ct1.get_group()); // the size of s is static
-  // CHECK-NEXT:  auto &s3 = *sycl::ext::oneapi::group_local_memory_for_overwrite<TData[size * 2][size * 4][size]>(item_ct1.get_group()); // the size of s is static
+  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<TData[size * 2][size * 4]>(sycl::ext::oneapi::this_work_item::get_work_group<3>()); // the size of s is static
+  // CHECK-NEXT:  auto &s3 = *sycl::ext::oneapi::group_local_memory_for_overwrite<TData[size * 2][size * 4][size]>(sycl::ext::oneapi::this_work_item::get_work_group<3>()); // the size of s is static
   __shared__ TData s[size * 2][size * 4]; // the size of s is static
   __shared__ TData s3[size * 2][size * 4][size]; // the size of s is static
   int t = threadIdx.x;
@@ -85,7 +85,7 @@ void testTemplate() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<T>(d_d_acc_ct0.get_raw_pointer(), n, item_ct1);
+  // CHECK-NEXT:         templateReverse<T>(d_d_acc_ct0.get_raw_pointer(), n);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<T><<<1, n>>>(d_d, n);
@@ -104,7 +104,7 @@ int main(void) {
   // CHECK: q_ct1.parallel_for<dpct_kernel_name<class memberAcc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           memberAcc(item_ct1);
+  // CHECK-NEXT:           memberAcc();
   // CHECK-NEXT:         });
   memberAcc<<<1, 1>>>();
   // CHECK: q_ct1.submit(
@@ -114,7 +114,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         staticReverse(&d_d_acc_ct0[0], n, item_ct1);
+  // CHECK-NEXT:         staticReverse(&d_d_acc_ct0[0], n);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   staticReverse<<<1, n>>>(d_d, n);
@@ -127,7 +127,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<int>(&d_d_acc_ct0[0], n, item_ct1);
+  // CHECK-NEXT:         templateReverse<int>(&d_d_acc_ct0[0], n);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<int><<<1, n>>>(d_d, n);
@@ -139,7 +139,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         nonTypeTemplateReverse<SIZE>(&d_d_acc_ct0[0], n, item_ct1);
+  // CHECK-NEXT:         nonTypeTemplateReverse<SIZE>(&d_d_acc_ct0[0], n);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   nonTypeTemplateReverse<SIZE><<<1, n>>>(d_d, n);
@@ -147,7 +147,7 @@ int main(void) {
 
 extern __shared__ int smem[];
 
-// CHECK: void foo(int *pd, int len, const sycl::nd_item<3> &item_ct1, int *smem) { smem[item_ct1.get_local_id(2)] = 0; }
+// CHECK: void foo(int *pd, int len, int *smem) { smem[sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2)] = 0; }
 __global__ void foo(int *pd, int len) { smem[threadIdx.x] = 0; }
 
 // CHECK: void bar(int *pd, int len) {
@@ -160,7 +160,7 @@ __global__ void foo(int *pd, int len) { smem[threadIdx.x] = 0; }
 // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class foo_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 32) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)), 
 // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:           foo(pd_acc_ct0.get_raw_pointer(), len, item_ct1, smem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:           foo(pd_acc_ct0.get_raw_pointer(), len, smem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:         });
 // CHECK-NEXT:     });
 // CHECK-NEXT: }

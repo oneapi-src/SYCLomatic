@@ -149,6 +149,8 @@ public:
     clang::QualType ArgType = InputArg->getType().getCanonicalType();
     ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
     bool NeedParen = false;
+    std::cout << "Arg type: " << ArgType.getAsString() << "\n";
+    std::cout << "Given type " << TypeInfo << "\n";
     if (ArgType.getAsString() != TypeInfo) {
       NeedParen = needExtraParens(SubExpr);
       Stream << "(" << TypeInfo << ")";
@@ -2130,6 +2132,16 @@ public:
     if (!FD)
       return false;
     return isFromCUDA(FD);
+  }
+};
+class IsDefinedByUser {
+public:
+  IsDefinedByUser() {}
+  bool operator()(const CallExpr *C) {
+    auto FD = C->getDirectCallee();
+    if (!FD)
+      return false;
+    return isUserDefinedDecl(FD);
   }
 };
 } // namespace math
