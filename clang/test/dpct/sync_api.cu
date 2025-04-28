@@ -10,7 +10,7 @@
 namespace cg = cooperative_groups;
 using namespace cooperative_groups;
 
-// CHECK: #define TB(b) auto b = item_ct1.get_group();
+// CHECK: #define TB(b) auto b = sycl::ext::oneapi::this_work_item::get_work_group<3>();
 #define TB(b) cg::thread_block b = cg::this_thread_block();
 
 __device__ void foo(int i) {}
@@ -19,14 +19,14 @@ __device__ void foo(int i) {}
 __device__ void test(cg::thread_block cta) {
 	cg::sync(cta);
 }
-// CHECK: void k(const sycl::nd_item<3> &item_ct1) {
+// CHECK: void k() {
 __global__ void k() {
-  // CHECK: sycl::group<3> cta = item_ct1.get_group();
+  // CHECK: sycl::group<3> cta = sycl::ext::oneapi::this_work_item::get_work_group<3>();
   cg::thread_block cta = cg::this_thread_block();
   // CHECK: item_ct1.barrier();
   cg::sync(cta);
 
-  // CHECK: sycl::group<3> block = item_ct1.get_group();
+  // CHECK: sycl::group<3> block = sycl::ext::oneapi::this_work_item::get_work_group<3>();
   cg::thread_block block = cg::this_thread_block();
   // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
@@ -41,7 +41,7 @@ __global__ void k() {
   // CHECK: item_ct1.barrier();
   cg::sync(cg::this_thread_block());
 
-  // CHECK: sycl::group<3> b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
+  // CHECK: sycl::group<3> b0 = sycl::ext::oneapi::this_work_item::get_work_group<3>(), b1 = sycl::ext::oneapi::this_work_item::get_work_group<3>();
   cg::thread_block b0 = cg::this_thread_block(), b1 = cg::this_thread_block();
 
   TB(blk);
@@ -63,41 +63,41 @@ __global__ void k() {
   // CHECK-NEXT: sycl::atomic_fence(sycl::memory_order::acq_rel, sycl::memory_scope::system);
   __threadfence_system();
   // CHECK: item_ct1.barrier();
-  // CHECK-NEXT: sycl::all_of_group(item_ct1.get_group(), p);
+  // CHECK-NEXT: sycl::all_of_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p);
   __syncthreads_and(p);
   // CHECK: item_ct1.barrier();
-  // CHECK-NEXT: sycl::any_of_group(item_ct1.get_group(), p);
+  // CHECK-NEXT: sycl::any_of_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p);
   __syncthreads_or(p);
   // CHECK: item_ct1.barrier();
-  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>());
+  // CHECK-NEXT: sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>());
   __syncthreads_count(p);
-  // CHECK: sycl::group_barrier(item_ct1.get_sub_group());
+  // CHECK: sycl::group_barrier(sycl::ext::oneapi::this_work_item::get_sub_group());
   __syncwarp(0xffffffff);
 
-  // CHECK: int a = (item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p));
+  // CHECK: int a = (item_ct1.barrier(), sycl::all_of_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p));
   int a = __syncthreads_and(p);
-  // CHECK: int b = (item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p));
+  // CHECK: int b = (item_ct1.barrier(), sycl::any_of_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p));
   int b = __syncthreads_or(p);
-  // CHECK: int c = (item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>()));
+  // CHECK: int c = (item_ct1.barrier(), sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>()));
   int c = __syncthreads_count(p);
 
-  // CHECK: foo((item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p)));
+  // CHECK: foo((item_ct1.barrier(), sycl::all_of_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p)));
   foo(__syncthreads_and(p));
-  // CHECK: foo((item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p)));
+  // CHECK: foo((item_ct1.barrier(), sycl::any_of_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p)));
   foo(__syncthreads_or(p));
-  // CHECK: foo((item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>())));
+  // CHECK: foo((item_ct1.barrier(), sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>())));
   foo(__syncthreads_count(p));
 
-  // CHECK: FOO((item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p)));
+  // CHECK: FOO((sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(), sycl::all_of_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p)));
   FOO(__syncthreads_and(p));
-  // CHECK: FOO((item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p)));
+  // CHECK: FOO((sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(), sycl::any_of_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p)));
   FOO(__syncthreads_or(p));
-  // CHECK: FOO((item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>())));
+  // CHECK: FOO((sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(), sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>())));
   FOO(__syncthreads_count(p));
 }
 
-// CHECK: void kernel(const sycl::nd_item<3> &item_ct1) {
-// CHECK-NEXT:  sycl::ext::oneapi::experimental::root_group grid = item_ct1.ext_oneapi_get_root_group();
+// CHECK: void kernel() {
+// CHECK-NEXT:  sycl::ext::oneapi::experimental::root_group grid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().ext_oneapi_get_root_group();
 // CHECK-NEXT:  sycl::group_barrier(grid);
 // CHECK-NEXT:}
 __global__ void kernel() {
@@ -112,7 +112,7 @@ int main() {
   // CHECK-NEXT:  dpct::get_in_order_queue().parallel_for(
   // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   // CHECK-NEXT:  exp_props,     [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:      kernel(item_ct1);
+  // CHECK-NEXT:      kernel();
   // CHECK-NEXT:    });
   // CHECK-NEXT: }
   // CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
@@ -124,14 +124,13 @@ int main() {
 #define LOGICAL_SIZE 8
 
 // CHECK:void foo1(sycl::group<3> &tb,
-// CHECK-NEXT:   sycl::sub_group &tbt32,
-// CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT:   sycl::sub_group &tbt32) {
 __device__ void foo1(cg::thread_block &tb,
                      cg::thread_block_tile<32> &tbt32) {
 // CHECK: item_ct1.get_local_linear_id();
-// CHECK-NEXT: item_ct1.get_sub_group().get_local_linear_id();
+// CHECK-NEXT: sycl::ext::oneapi::this_work_item::get_sub_group().get_local_linear_id();
 // CHECK-NEXT: item_ct1.get_local_linear_id();
-// CHECK-NEXT: item_ct1.get_sub_group().get_local_linear_id();
+// CHECK-NEXT: sycl::ext::oneapi::this_work_item::get_sub_group().get_local_linear_id();
   tb.thread_rank();
   tbt32.thread_rank();
   cg::thread_rank(tb);
@@ -141,23 +140,23 @@ __device__ void foo1(cg::thread_block &tb,
 // CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
 // CHECK-NEXT: */
 // CHECK-NEXT: item_ct1.barrier();
-// CHECK-NEXT: sycl::group_barrier(item_ct1.get_sub_group());
+// CHECK-NEXT: sycl::group_barrier(sycl::ext::oneapi::this_work_item::get_sub_group());
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
 // CHECK-NEXT: */
 // CHECK-NEXT: item_ct1.barrier();
-// CHECK-NEXT: sycl::group_barrier(item_ct1.get_sub_group());
+// CHECK-NEXT: sycl::group_barrier(sycl::ext::oneapi::this_work_item::get_sub_group());
   tb.sync();
   tbt32.sync();
   cg::sync(tb);
   cg::sync(tbt32);
 
-// CHECK: dpct::experimental::logical_group tbt8 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), LOGICAL_SIZE);
+// CHECK: dpct::experimental::logical_group tbt8 = dpct::experimental::logical_group(item_ct1, sycl::ext::oneapi::this_work_item::get_work_group<3>(), LOGICAL_SIZE);
 // CHECK-NEXT: int size = tbt8.get_local_linear_range();
 // CHECK-NEXT: int rank = tbt8.get_local_linear_id();
 // CHECK-NEXT: double temp = 0;
 // CHECK-NEXT: int offset = 4;
-// CHECK-NEXT: temp = dpct::shift_sub_group_left(item_ct1.get_sub_group(), temp, offset, 8);
+// CHECK-NEXT: temp = dpct::shift_sub_group_left(sycl::ext::oneapi::this_work_item::get_sub_group(), temp, offset, 8);
   cg::thread_block_tile<LOGICAL_SIZE> tbt8 = cg::tiled_partition<LOGICAL_SIZE>(tb);
   int size = tbt8.size();
   int rank = tbt8.thread_rank();
@@ -167,20 +166,20 @@ __device__ void foo1(cg::thread_block &tb,
 }
 
 __global__ void foo2() {
-// CHECK: sycl::group<3> tb = item_ct1.get_group();
-// CHECK-NEXT: sycl::sub_group tbt32 = item_ct1.get_sub_group();
+// CHECK: sycl::group<3> tb = sycl::ext::oneapi::this_work_item::get_work_group<3>();
+// CHECK-NEXT: sycl::sub_group tbt32 = sycl::ext::oneapi::this_work_item::get_sub_group();
   cg::thread_block tb = cg::this_thread_block();
   cg::thread_block_tile<32> tbt32 = cg::tiled_partition<32>(tb);
   foo1(tb, tbt32);
 }
 
 __global__ void foo_tile32() {
-// CHECK: sycl::group<3> ttb = item_ct1.get_group();
-// CHECK-NEXT: sycl::sub_group tile32 = item_ct1.get_sub_group();
+// CHECK: sycl::group<3> ttb = sycl::ext::oneapi::this_work_item::get_work_group<3>();
+// CHECK-NEXT: sycl::sub_group tile32 = sycl::ext::oneapi::this_work_item::get_sub_group();
 // CHECK-NEXT: double rowThreadSum = 0.0;
 // CHECK-NEXT: int offset= 32;
-// CHECK-NEXT: sycl::shift_group_left(item_ct1.get_sub_group(), rowThreadSum, offset);
-// CHECK-NEXT: item_ct1.get_sub_group().get_local_linear_id();
+// CHECK-NEXT: sycl::shift_group_left(sycl::ext::oneapi::this_work_item::get_sub_group(), rowThreadSum, offset);
+// CHECK-NEXT: sycl::ext::oneapi::this_work_item::get_sub_group().get_local_linear_id();
   cg::thread_block ttb = cg::this_thread_block();
   cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(ttb);
   double rowThreadSum = 0.0;
@@ -197,7 +196,7 @@ int foo3() {
   // CHECK-NEXT:  dpct::get_in_order_queue().parallel_for(
   // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:  exp_props,     [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:       foo2(item_ct1);
+  // CHECK-NEXT:       foo2();
   // CHECK-NEXT:     });
   //  CHECK-NEXT: }
   foo2<<<1,1>>>();

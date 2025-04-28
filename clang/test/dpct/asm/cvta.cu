@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
-// RUN: dpct --format-range=none -out-root %T/cvta %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct  --format-range=none -out-root %T/cvta %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only 
 // RUN: FileCheck %s --match-full-lines --input-file %T/cvta/cvta.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/cvta/cvta.dp.cpp -o %T/cvta/cvta.dp.o %}
 
@@ -9,13 +9,12 @@
 #include <cuda_runtime.h>
 
 
-// CHECK: void test_cvta_to_shared_u64(uint64_t* output, const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:                             int *shared_data) {
+// CHECK: void test_cvta_to_shared_u64(uint64_t* output, int *shared_data) {
 // CHECK-NEXT:     // Shared memory 
 // CHECK-NEXT:    shared_data[0] = 0;
 // CHECK-NEXT:    uint64_t shared_addr = 0;
 // CHECK-NEXT:    shared_addr = (uint64_t)(&shared_data[0]);
-// CHECK-NEXT:    output[item_ct1.get_local_id(2)] = shared_addr;
+// CHECK-NEXT:    output[sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2)] = shared_addr;
 // CHECK-NEXT:}
 __global__ void test_cvta_to_shared_u64(uint64_t* output) {
     __shared__ int shared_data[1]; // Shared memory
@@ -27,8 +26,8 @@ __global__ void test_cvta_to_shared_u64(uint64_t* output) {
 
 
 #define N 128
-// CHECK: void testKernel(unsigned int *addr_out, const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:                 int *B_shared) {
+// CHECK: void testKernel(unsigned int *addr_out, int *B_shared) {
+// CHECK-NEXT:     auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:      // Shared memory
 // CHECK-NEXT:     unsigned int addr1;
 // CHECK-NEXT:     int k_0_1 = item_ct1.get_group(2);
@@ -55,8 +54,8 @@ __global__ void testKernel(unsigned int *addr_out) {
 }
 
 
-// CHECK: void read_shared_value(int *output, const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:                       int *shared_data) {
+// CHECK: void read_shared_value(int *output, int *shared_data) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:   // Shared memory allocation
 // CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
 // CHECK-NEXT:    shared_data[0] = 42;

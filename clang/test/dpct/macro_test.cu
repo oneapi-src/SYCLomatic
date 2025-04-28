@@ -5,7 +5,7 @@
 // RUN: cd %T
 // RUN: rm -rf %T/macro_test_output
 // RUN: mkdir %T/macro_test_output
-// RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries   -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/macro_test_output/macro_test.dp.cpp -o %T/macro_test_output/macro_test.dp.o %}
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
@@ -441,7 +441,7 @@ FFF
 // CHECK: FFFFF(pos, q)
 // CHECK-NEXT: {
 // CHECK-EMPTY:
-// CHECK-NEXT: const int tid = item_ct1.get_local_id(2);
+// CHECK-NEXT:    const int tid = item_ct1.get_local_id(2);
 // CHECK-NEXT: }
 FFFFF(pos, q)
 {
@@ -458,7 +458,7 @@ FFFFF(pos, q)
 // CHECK: FFFFFF(pos, q)
 // CHECK-NEXT: {
 // CHECK-EMPTY:
-// CHECK-NEXT: const int tid = item_ct1.get_local_id(2);
+// CHECK-NEXT:    const int tid = item_ct1.get_local_id(2);
 // CHECK-NEXT: }
 FFFFFF(pos, q)
 {
@@ -485,7 +485,7 @@ __device__ void foo6(AAA, BBB)
 //CHECK-NEXT: #define MUL(a, b) sycl::mul24((unsigned int)a, (unsigned int)b)
 //CHECK-NEXT: void foo7(const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:   unsigned int tid = MUL(item_ct1.get_local_range(2), item_ct1.get_group(2)) +
-//CHECK-NEXT:       item_ct1.get_local_range(2);
+//CHECK-NEXT:                      item_ct1.get_local_range(2);
 //CHECK-NEXT:   unsigned int tid2 = sycl::mul24((unsigned int)item_ct1.get_local_range(2),
 //CHECK-NEXT:                                   (unsigned int)item_ct1.get_group_range(2));
 //CHECK-NEXT: }

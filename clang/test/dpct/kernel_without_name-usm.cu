@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/kernel_without_name-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct  --format-range=none -out-root %T/kernel_without_name-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_without_name-usm/kernel_without_name-usm.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/kernel_without_name-usm/kernel_without_name-usm.dp.cpp -o %T/kernel_without_name-usm/kernel_without_name-usm.dp.o %}
 
@@ -82,14 +82,14 @@ void run_foo2() {
   }();
 }
 
-// CHECK: void foo_kernel3(const sycl::nd_item<3> &item_ct1) {
-// CHECK-NEXT:   auto lambda1 = [&](const sycl::nd_item<3> &item_ct1) {
-// CHECK-NEXT:     item_ct1.get_local_id(2);
+// CHECK: void foo_kernel3() {
+// CHECK-NEXT:   auto lambda1 = [&]() {
+// CHECK-NEXT:     sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 // CHECK-NEXT:   };
-// CHECK-NEXT:   auto lambda2 = [&](const sycl::nd_item<3> &item_ct1) {
-// CHECK-NEXT:     lambda1(item_ct1);
+// CHECK-NEXT:   auto lambda2 = [&]() {
+// CHECK-NEXT:     lambda1();
 // CHECK-NEXT:   };
-// CHECK-NEXT:   lambda2(item_ct1);
+// CHECK-NEXT:   lambda2();
 // CHECK-NEXT: }
 __global__ void foo_kernel3() {
   auto lambda1 = [&]() {

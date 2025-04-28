@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cuda.h>
 
+#include <string>
+
 typedef uint64_t u64;
 
 // CHECK: void exec_kernel(dpct::kernel_function cuFunc, dpct::kernel_library cuMod, dpct::queue_ptr stream) {
@@ -15,9 +17,10 @@ void exec_kernel(CUfunction cuFunc, CUmodule cuMod, CUstream stream) {
   // verify the conversion from dpct::kernel_library to uint64_t
   mod = (u64)cuMod;
 
+  std::string kernel_name{"kfoo"};
   // verify the conversion from uint64_t to dpct::kernel_library
-  // CHECK: cuFunc = dpct::get_kernel_function((dpct::kernel_library)mod, "kfoo");
-  cuModuleGetFunction(&cuFunc, (CUmodule)mod, "kfoo");
+  // CHECK: cuFunc = dpct::get_kernel_function((dpct::kernel_library)mod, kernel_name.c_str());
+  cuModuleGetFunction(&cuFunc, (CUmodule)mod, kernel_name.c_str());
 
   // verify the conversion from dpct::kernel_function to uint64_t
   function = (u64)cuFunc;
@@ -27,4 +30,19 @@ void exec_kernel(CUfunction cuFunc, CUmodule cuMod, CUstream stream) {
   // verify the conversion from uint64_t to dpct::kernel_function
   // CHECK: dpct::invoke_kernel_function((dpct::kernel_function)function, *stream, sycl::range<3>(100, 100, 100), sycl::range<3>(100, 100, 100), 1024, NULL, config);
   cuLaunchKernel((CUfunction)function, 100, 100, 100, 100, 100, 100, 1024, stream, NULL, config);
+}
+
+class CString {
+  private:
+    char *str;
+  public:
+    CString(): str(NULL) {};
+    operator const char* () const { return str; }
+
+    operator char* () { return str; }
+};
+
+void test_casting(CUmodule mod, CUfunction func, const CString &name) {
+  // CHECK: func = dpct::get_kernel_function(mod, (const char *)name);
+  cuModuleGetFunction(&func, mod, name);
 }

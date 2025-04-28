@@ -50,10 +50,11 @@ struct FuncObj {
   }
 };
 
-// CHECK:void simple_kernel(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT:              float const *const_angle, int * const const_ptr) {
+// CHECK:void simple_kernel(float *d_array, float const *const_angle,
+// CHECK-NEXT:              int * const const_ptr) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:  int index;
-// CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
+// CHECK-NEXT:  index = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT:  FuncObj f;
 // CHECK-NEXT:  const_ptr[index] = index;
 // CHECK-NEXT:  if (index < 360) {
@@ -77,11 +78,12 @@ __global__ void simple_kernel(float *d_array) {
 // CHECK: inline dpct::constant_memory<float, 0> const_one;
 __device__ __constant__ float const_one;
 
-// CHECK:void simple_kernel_one(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
+// CHECK:void simple_kernel_one(float *d_array,
 // CHECK-NEXT:                  dpct::accessor<float, dpct::constant, 2> const_float,
 // CHECK-NEXT:                  float const_one) {
+// CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:  int index;
-// CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
+// CHECK-NEXT:  index = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT:  if (index < 33) {
 // CHECK-NEXT:    d_array[index] = const_one + const_float[index][index];
 // CHECK-NEXT:  }
@@ -160,7 +162,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:             simple_kernel(d_array, item_ct1, const_angle_ptr_ct1, *const_ptr_ptr_ct1);
+  // CHECK-NEXT:             simple_kernel(d_array, const_angle_ptr_ct1, *const_ptr_ptr_ct1);
   // CHECK-NEXT:           });
   // CHECK-NEXT:       });
   // CHECK-NEXT:   }
@@ -193,7 +195,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:             simple_kernel_one(d_array, item_ct1, const_float_acc_ct1, *const_one_ptr_ct1);
+  // CHECK-NEXT:             simple_kernel_one(d_array, const_float_acc_ct1, *const_one_ptr_ct1);
   // CHECK-NEXT:           });
   // CHECK-NEXT:       });
   // CHECK-NEXT:   }

@@ -12,7 +12,8 @@ namespace cg = cooperative_groups;
 // sync(X), X.sync(), thread_rank(X), X.thread_rank(), X.size()
 
 __device__ void foo() {
-  // CHECK: auto block = item_ct1.get_group();
+  // CHECK: auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+  // CHECK: auto block = sycl::ext::oneapi::this_work_item::get_work_group<3>();
   auto block = cg::this_thread_block();
 
   // CHECK: auto group_x = syclcompat::dim3(block.get_group_id(2), block.get_group_id(1), block.get_group_id(0)).x;
@@ -21,11 +22,11 @@ __device__ void foo() {
   auto thread_x = block.thread_index().x;
 
   const cg::thread_block_tile<32> ctile32 = cg::tiled_partition<32>(block);
-  // CHECK: sycl::sub_group tile32 = item_ct1.get_sub_group();
+  // CHECK: sycl::sub_group tile32 = sycl::ext::oneapi::this_work_item::get_sub_group();
   cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(block);
 
-  // CHECK: const syclcompat::experimental::logical_group ctile16 = syclcompat::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+  // CHECK: const syclcompat::experimental::logical_group ctile16 = syclcompat::experimental::logical_group(item_ct1, sycl::ext::oneapi::this_work_item::get_work_group<3>(), 16);
   const cg::thread_block_tile<16> ctile16 = cg::tiled_partition<16>(block);
-  // CHECK: syclcompat::experimental::logical_group tile16 = syclcompat::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+  // CHECK: syclcompat::experimental::logical_group tile16 = syclcompat::experimental::logical_group(item_ct1, sycl::ext::oneapi::this_work_item::get_work_group<3>(), 16);
   cg::thread_block_tile<16> tile16 = cg::tiled_partition<16>(block);
 }

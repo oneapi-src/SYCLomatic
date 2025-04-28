@@ -115,7 +115,7 @@ int main() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         BlockedKernel(d_data, 5, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         BlockedKernel(d_data, 5, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   BlockedKernel<<<1, 128>>>(d_data, 5);
@@ -130,7 +130,7 @@ int main() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         StripedKernel(d_data, 5, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         StripedKernel(d_data, 5, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   StripedKernel<<<1, 128>>>(d_data, 5);
@@ -142,7 +142,7 @@ int main() {
 // CHECK:       cgh.parallel_for(
 // CHECK:         sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
 // CHECK:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK:           TransposeKernel(d_data, 5, item_ct1, &temp_storage_acc[0]);
+// CHECK:           TransposeKernel(d_data, 5, &temp_storage_acc[0]);
 // CHECK:         });
 // CHECK:     });
   TransposeKernel<<<1, 128>>>(d_data, 5);
@@ -154,7 +154,7 @@ int main() {
 // CHECK:      cgh.parallel_for(
 // CHECK:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
 // CHECK:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK:          SubGroupTransposeKernel(d_data, 5, item_ct1, &temp_storage_acc[0]);
+// CHECK:          SubGroupTransposeKernel(d_data, 5, &temp_storage_acc[0]);
 // CHECK:        });
 // CHECK:    });
   SubGroupTransposeKernel<<<1, 128>>>(d_data, 5);

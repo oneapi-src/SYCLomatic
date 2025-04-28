@@ -1,12 +1,13 @@
-// RUN: dpct --format-range=none -out-root %T/syncthreads %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct  --format-range=none -out-root %T/syncthreads %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/syncthreads/syncthreads.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/syncthreads/syncthreads.dp.cpp -o %T/syncthreads/syncthreads.dp.o %}
 
 #include "cuda_fp16.h"
 
-// CHECK: void test_syncthreads(int *arr, const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
+// CHECK: void test_syncthreads(int *arr) {
 __global__ void test_syncthreads(int *arr) {
-  // CHECK: [[ITEMNAME]].barrier(sycl::access::fence_space::local_space);
+  // CHECK: auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
   arr[threadIdx.x] = threadIdx.x;
 }
@@ -102,7 +103,7 @@ __global__ void test3() {
   int a;
   int b;
   goto label;
-  //CHECK:item_ct1.barrier();
+  //CHECK: sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
   __syncthreads();
   a++;
 label:
@@ -115,7 +116,7 @@ struct S1 {
 };
 __global__ void test4(S1 s1) {
   s1.data;
-  // CHECK:item_ct1.barrier();
+  // CHECK: sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
   __syncthreads();
 }
 
@@ -124,7 +125,7 @@ struct S2 {
 };
 __global__ void test5(S2 s2) {
   s2.data;
-  // CHECK:item_ct1.barrier(sycl::access::fence_space::local_space);
+  // CHECK:sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(sycl::access::fence_space::local_space);
   __syncthreads();
 }
 
@@ -134,14 +135,14 @@ struct S3 {
 };
 __global__ void test7(S3 s3) {
   s3.data;
-  // CHECK:item_ct1.barrier();
+  // CHECK:sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
   __syncthreads();
 }
 
 __global__ void test8(S3 *s3) {
   int a = 1;
   s3[a].data;
-  // CHECK:item_ct1.barrier();
+  // CHECK:  sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
   __syncthreads();
 }
 
@@ -157,7 +158,7 @@ struct S4 {
 
 __global__ void test9(S4 a) {
   S4 b(a);
-  // CHECK:item_ct1.barrier();
+  // CHECK:sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
   __syncthreads();
 }
 
@@ -319,7 +320,7 @@ __global__ void test12(uint8_t *pout) {
   int idx = 456;
   idx = bar12(idx);
   local[idx] = idx;
-  //CHECK:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK:  sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(sycl::access::fence_space::local_space);
   //CHECK-NEXT:  pout[idx] = local[idx];
   __syncthreads();
   pout[idx] = local[idx];
@@ -341,7 +342,7 @@ __global__ void test13(uint8_t *pout) {
   //CHECK-NEXT:  /*
   //CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
   //CHECK-NEXT:  */
-  //CHECK-NEXT:  item_ct1.barrier();
+  //CHECK-NEXT:  sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
   //CHECK-NEXT:  uint8_t a = 4;
   pout[idx] = 456;
   __syncthreads();
@@ -361,7 +362,7 @@ __global__ void test14(uint8_t *pout) {
   int idx = 456;
   idx = bar14();
   //CHECK:  pout[idx] = 789;
-  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK-NEXT:  sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(sycl::access::fence_space::local_space);
   //CHECK-NEXT:  uint8_t a = 4;
   pout[idx] = 789;
   __syncthreads();
@@ -373,7 +374,7 @@ __global__ void test15(float *_res) {
   __shared__ float2 ker_even[123]; // shared mem
   //CHECK:  float *res = _res + 123;
   //CHECK-NEXT:  res[2] = 123;
-  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK-NEXT:  sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(sycl::access::fence_space::local_space);
   //CHECK-NEXT:  res += 2;
   float *res = _res + 123;
   res[2] = 123;
@@ -383,7 +384,7 @@ __global__ void test15(float *_res) {
 
 template <class T> __global__ void test16(T *res) {
   //CHECK:  auto a = res[2];
-  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK-NEXT:  sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(sycl::access::fence_space::local_space);
   //CHECK-NEXT:  a++;
   auto a = res[2];
   __syncthreads();
@@ -400,7 +401,7 @@ template void foo16<float>(int grid, int block, float *res, cudaStream_t stream)
 __global__ void test17(float *f) {
   __shared__ float ff[10];
   //CHECK:  *((sycl::float2 *)&ff[2]) = *((sycl::float2 *)&f[123]);
-  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK-NEXT:  sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(sycl::access::fence_space::local_space);
   *((float2 *)&ff[2]) = *((float2 *)&f[123]);
   __syncthreads();
   float xyz = f[123];
@@ -410,7 +411,7 @@ __global__ void test17(float *f) {
 __global__ void test18(unsigned int *aaa) {
   __shared__ unsigned int bbb[2][10];
   //CHECK:  *((sycl::uint4 *)(&aaa[5])) = *((sycl::uint4 *)&bbb[1][2]);
-  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK-NEXT:  sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(sycl::access::fence_space::local_space);
   *((uint4 *)(&aaa[5])) = *((uint4 *)&bbb[1][2]);
   __syncthreads();
   unsigned int xyz = bbb[1][2];
@@ -444,7 +445,7 @@ __device__ void recursive1(int i) {
 
 __global__ void test20() {
   // CHECK: recursive(10);
-  // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
+  // CHECK-NEXT: sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(sycl::access::fence_space::local_space);
   recursive(10);
   __syncthreads();
 }

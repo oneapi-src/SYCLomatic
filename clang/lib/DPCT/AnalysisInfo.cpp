@@ -2947,7 +2947,7 @@ void MemVarInfo::migrateToDeviceGlobal(const VarDecl *MemVar) {
   auto &Ctx = DpctGlobalInfo::getContext();
   auto &MacroArgMap = DpctGlobalInfo::getMacroArgRecordMap();
   auto TSI = MemVar->getTypeSourceInfo();
-  auto OriginTL = TSI->getTypeLoc();
+  auto OriginTL = TSI->getTypeLoc().getUnqualifiedLoc().getAs<TypeLoc>();
   auto TL = OriginTL;
   auto BegLoc = MemVar->getBeginLoc();
   if (BegLoc.isMacroID()) {
