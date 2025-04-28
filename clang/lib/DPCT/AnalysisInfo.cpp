@@ -326,16 +326,22 @@ private:
 
   static const FreeQueriesNames &getNames(FreeQueriesKind);
   static std::shared_ptr<FreeQueriesInfo> getInfo(const FunctionDecl *);
-  static void printFreeQueriesFunctionName(llvm::raw_ostream &OS,
-                                           FreeQueriesKind K,
-                                           unsigned Dimension) {
+  template <typename T>
+  static void printFreeQueriesFunctionName(
+      llvm::raw_ostream &OS, FreeQueriesKind K, T Dimension,
+      typename std::enable_if<std::is_same_v<T, unsigned> ||
+                              std::is_same_v<T, std::string>>::type * = 0) {
     OS << getNames(K).FreeQueriesFuncName;
     if (K != FreeQueriesKind::SubGroup) {
       OS << '<';
-      if (Dimension) {
-        OS << Dimension;
+      if constexpr (std::is_same_v<T, unsigned>) {
+        if (Dimension) {
+          OS << Dimension;
+        } else {
+          OS << "dpct_placeholder /* Fix the dimension manually */";
+        }
       } else {
-        OS << "dpct_placeholder /* Fix the dimension manually */";
+        OS << Dimension;
       }
       OS << '>';
     }
@@ -7517,27 +7523,8 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
       return;
     auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
     DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-    switch (K) {
-    case FreeQueriesKind::NdItem: {
-      OS << MapNames::getClNamespace()
-         << "ext::oneapi::this_work_item::get_nd_item<{{NEEDREPLACEG" +
-                std::to_string(Index) + "}}>()";
-      break;
-    }
-    case FreeQueriesKind::Group: {
-      OS << MapNames::getClNamespace()
-         << "ext::oneapi::this_work_item::get_work_group<{{NEEDREPLACEG" +
-                std::to_string(Index) + "}}>()";
-      break;
-    }
-    case FreeQueriesKind::SubGroup: {
-      OS << MapNames::getClNamespace()
-         << "ext::oneapi::this_work_item::get_sub_group()";
-      break;
-    }
-    default:
-      llvm_unreachable("Unexpected FreeQueriesKind");
-    }
+    printFreeQueriesFunctionName<std::string>(
+        OS, K, "{{NEEDREPLACEG" + std::to_string(Index) + "}}");
   } else {
     if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD))
       DFI->setItem();
@@ -7597,7 +7584,7 @@ void FreeQueriesInfo::emplaceExtraDecl() {
     auto &KindNames =
         getNames(static_cast<FreeQueriesKind>(FreeQueriesKind::NdItem));
     OS << "auto " << KindNames.ExtraVariableName << " = ";
-    printFreeQueriesFunctionName(
+    printFreeQueriesFunctionName<unsigned>(
         OS, static_cast<FreeQueriesKind>(FreeQueriesKind::NdItem), Dimension);
     OS << ';' << NL << Indent;
   }
@@ -7611,8 +7598,8 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
   bool IsMacro = isMacro(Num);
   if (IsMacro) {
     if (Index < MacroInfos.size()) {
-      return buildStringFromPrinter(printFreeQueriesFunctionName, Kind,
-                                    MacroInfos[Index]->Dimension);
+      return buildStringFromPrinter(printFreeQueriesFunctionName<unsigned>,
+                                    Kind, MacroInfos[Index]->Dimension);
     }
 #ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "FreeQueriesInfo index[" << Index
@@ -7632,7 +7619,8 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
 
 std::string FreeQueriesInfo::getReplaceString(FreeQueriesKind K) {
   if (K != FreeQueriesKind::NdItem || Counter[K] < 2)
-    return buildStringFromPrinter(printFreeQueriesFunctionName, K, Dimension);
+    return buildStringFromPrinter(printFreeQueriesFunctionName<unsigned>, K,
+                                  Dimension);
   else
     return getNames(K).ExtraVariableName;
 }
