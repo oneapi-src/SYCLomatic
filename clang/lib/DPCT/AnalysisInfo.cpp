@@ -327,10 +327,10 @@ private:
   static const FreeQueriesNames &getNames(FreeQueriesKind);
   static std::shared_ptr<FreeQueriesInfo> getInfo(const FunctionDecl *);
   template <typename T>
-  static void printFreeQueriesFunctionName(
-      llvm::raw_ostream &OS, FreeQueriesKind K, T Dimension,
-      typename std::enable_if<std::is_same_v<T, unsigned> ||
-                              std::is_same_v<T, std::string>>::type * = 0) {
+  static typename std::enable_if<std::is_same_v<T, unsigned> ||
+                                 std::is_same_v<T, std::string>>::type
+  printFreeQueriesFunctionName(llvm::raw_ostream &OS, FreeQueriesKind K,
+                               T Dimension) {
     OS << getNames(K).FreeQueriesFuncName;
     if (K != FreeQueriesKind::SubGroup) {
       OS << '<';
