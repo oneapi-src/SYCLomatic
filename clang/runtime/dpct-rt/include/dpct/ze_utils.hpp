@@ -19,25 +19,19 @@ namespace dpct {
 namespace experimental {
 
 namespace detail {
-///  System call number definitions for kernel compatibility.
-///  SYS_pidfd_open: Process file descriptor opener (requires kernel 5.6+).
-///  SYS_pidfd_getfd: Cross-process FD fetcher system call.
-#ifndef SYS_pidfd_open
-#define SYS_pidfd_open 434
-#endif
-
-#ifndef SYS_pidfd_getfd
-#define SYS_pidfd_getfd 438
-#endif
 
 /// Covert remote fd to the local fd through IPC handle extension.
 /// \param [in] ipc_ext_handle The extension of the IPC handle
 /// \returns Local process file descriptor
 template <class T> int convert_fd_from_handle(T ipc_ext_handle) {
-  int pidfd = syscall(SYS_pidfd_open, ipc_ext_handle.pid, 0);
+  int pidfd = syscall(434, ipc_ext_handle.pid,
+                      0); // obtain a file descriptor that refers to a
+                          // process(requires kernel 5.6+).
   if (pidfd < 0)
     return -1;
-  return syscall(SYS_pidfd_getfd, pidfd, *(int *)ipc_ext_handle.handle.data, 0);
+  return syscall(438, pidfd, *(int *)ipc_ext_handle.handle.data,
+                 0); // obtain a duplicate of another process's file
+                     // descriptor(requires kernel 5.6+).
 }
 
 } // namespace detail
