@@ -175,10 +175,13 @@ RewriterMap dpct::createSinglePrecisionIntrinsicsRewriterMap() {
           "__fmaf_ieee_rd",
           MATH_API_REWRITER_PAIR(
               math::Tag::math_libdevice,
-              CALL_FACTORY_ENTRY(
+              WARNING_FACTORY_ENTRY(
                   "__fmaf_ieee_rd",
-                  CALL(MapNames::getClNamespace() + "ext::intel::math::fmaf_rd",
-                       ARG(0), ARG(1), ARG(2)))),
+                  CALL_FACTORY_ENTRY("__fmaf_ieee_rd",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::fmaf_rd",
+                                          ARG(0), ARG(1), ARG(2))),
+                  Diagnostics::FTZ_BEHAVIOR)),
           MATH_API_REWRITER_PAIR(
               math::Tag::emulation,
               WARNING_FACTORY_ENTRY(
@@ -195,10 +198,13 @@ RewriterMap dpct::createSinglePrecisionIntrinsicsRewriterMap() {
           "__fmaf_ieee_rn",
           MATH_API_REWRITER_PAIR(
               math::Tag::math_libdevice,
-              CALL_FACTORY_ENTRY(
+              WARNING_FACTORY_ENTRY(
                   "__fmaf_ieee_rn",
-                  CALL(MapNames::getClNamespace() + "ext::intel::math::fmaf_rn",
-                       ARG(0), ARG(1), ARG(2)))),
+                  CALL_FACTORY_ENTRY("__fmaf_ieee_rn",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::fmaf_rn",
+                                          ARG(0), ARG(1), ARG(2))),
+                  Diagnostics::FTZ_BEHAVIOR)),
           MATH_API_REWRITER_PAIR(
               math::Tag::emulation,
               WARNING_FACTORY_ENTRY(
@@ -215,10 +221,13 @@ RewriterMap dpct::createSinglePrecisionIntrinsicsRewriterMap() {
           "__fmaf_ieee_ru",
           MATH_API_REWRITER_PAIR(
               math::Tag::math_libdevice,
-              CALL_FACTORY_ENTRY(
+              WARNING_FACTORY_ENTRY(
                   "__fmaf_ieee_ru",
-                  CALL(MapNames::getClNamespace() + "ext::intel::math::fmaf_ru",
-                       ARG(0), ARG(1), ARG(2)))),
+                  CALL_FACTORY_ENTRY("__fmaf_ieee_ru",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::fmaf_ru",
+                                          ARG(0), ARG(1), ARG(2))),
+                  Diagnostics::FTZ_BEHAVIOR)),
           MATH_API_REWRITER_PAIR(
               math::Tag::emulation,
               WARNING_FACTORY_ENTRY(
@@ -235,10 +244,13 @@ RewriterMap dpct::createSinglePrecisionIntrinsicsRewriterMap() {
           "__fmaf_ieee_rz",
           MATH_API_REWRITER_PAIR(
               math::Tag::math_libdevice,
-              CALL_FACTORY_ENTRY(
+              WARNING_FACTORY_ENTRY(
                   "__fmaf_ieee_rz",
-                  CALL(MapNames::getClNamespace() + "ext::intel::math::fmaf_rz",
-                       ARG(0), ARG(1), ARG(2)))),
+                  CALL_FACTORY_ENTRY("__fmaf_ieee_rz",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::fmaf_rz",
+                                          ARG(0), ARG(1), ARG(2))),
+                  Diagnostics::FTZ_BEHAVIOR)),
           MATH_API_REWRITER_PAIR(
               math::Tag::emulation,
               WARNING_FACTORY_ENTRY(

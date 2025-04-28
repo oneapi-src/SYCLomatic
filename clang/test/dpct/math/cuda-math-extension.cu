@@ -181,13 +181,24 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = __fmaf_ru(f0, f1, f2);
   // CHECK: f2 = sycl::ext::intel::math::fmaf_rz(f0, f1, f2);
   f2 = __fmaf_rz(f0, f1, f2);
-  // CHECK: f2 = sycl::ext::intel::math::fmaf_rd(f0, f1, f2);
+  // CHECK: DPCT1138:{{[0-9]+}}: The flush-to-zero behavior can only be controlled by the compiler option in SYCL. Please verify the correctness of the migrated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::ext::intel::math::fmaf_rd(f0, f1, f2);
   f2 = __fmaf_ieee_rd(f0, f1, f2);
-  // CHECK: f2 = sycl::ext::intel::math::fmaf_rn(f0, f1, f2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1138:{{[0-9]+}}: The flush-to-zero behavior can only be controlled by the compiler option in SYCL. Please verify the correctness of the migrated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::ext::intel::math::fmaf_rn(f0, f1, f2);
   f2 = __fmaf_ieee_rn(f0, f1, f2);
-  // CHECK: f2 = sycl::ext::intel::math::fmaf_ru(f0, f1, f2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1138:{{[0-9]+}}: The flush-to-zero behavior can only be controlled by the compiler option in SYCL. Please verify the correctness of the migrated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::ext::intel::math::fmaf_ru(f0, f1, f2);
   f2 = __fmaf_ieee_ru(f0, f1, f2);
-  // CHECK: f2 = sycl::ext::intel::math::fmaf_rz(f0, f1, f2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1138:{{[0-9]+}}: The flush-to-zero behavior can only be controlled by the compiler option in SYCL. Please verify the correctness of the migrated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::ext::intel::math::fmaf_rz(f0, f1, f2);
   f2 = __fmaf_ieee_rz(f0, f1, f2);
   // CHECK: f2 = sycl::ext::intel::math::fmul_rd(f0, f1);
   f2 = __fmul_rd(f0, f1);
