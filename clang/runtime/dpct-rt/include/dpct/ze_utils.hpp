@@ -66,7 +66,6 @@ inline void get_mem_ipc_handle(const void *ptr,
 /// Opens an IPC memory handle to retrieve a device pointer.
 /// \param [in] ext_handle IPC memory handle extension
 /// \param [out] pptr Pointer to device allocation in this process
-/// \returns Level Zero operation status code
 inline void open_mem_ipc_handle(ipc_mem_handle_ext_t ext_handle, void **pptr) {
   int fd = detail::get_fd_of_peer_process(ext_handle);
   if (fd < 0)
