@@ -96,7 +96,7 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
-  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_fill(item_ct1.get_sub_group(), acc_frag.get(), 0.0f);
+  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_fill(sycl::ext::oneapi::this_work_item::get_sub_group(), acc_frag.get(), 0.0f);
   nvcuda::wmma::fill_fragment(acc_frag, 0.0f);
 
   // Loop over k
@@ -109,9 +109,9 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
     // Bounds checking
     if (aRow < m_ld && aCol < k_ld && bRow < k_ld && bCol < n_ld) {
       // Load the inputs
-      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), a_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(a + aCol + aRow * lda), lda);
+      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::this_work_item::get_sub_group(), a_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(a + aCol + aRow * lda), lda);
       nvcuda::wmma::load_matrix_sync(a_frag, a + aCol + aRow * lda, lda);
-      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), b_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(b + bRow + bCol * ldb), ldb);
+      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::this_work_item::get_sub_group(), b_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(b + bRow + bCol * ldb), ldb);
       nvcuda::wmma::load_matrix_sync(b_frag, b + bRow + bCol * ldb, ldb);
 
       // CHECK: for (int i = 0; i < c_frag.num_elements; i++) {
@@ -122,7 +122,7 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
       }
 
       // Perform the matrix multiplication
-      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_mad(item_ct1.get_sub_group(), acc_frag.get(), a_frag.get(), b_frag.get(), acc_frag.get());
+      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_mad(sycl::ext::oneapi::this_work_item::get_sub_group(), acc_frag.get(), a_frag.get(), b_frag.get(), acc_frag.get());
       nvcuda::wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);
     }
   }
@@ -133,13 +133,13 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   int cRow = warpM * WMMA_M;
 
   if (cRow < m_ld && cCol < n_ld) {
-    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::row_major);
+    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::this_work_item::get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::row_major);
     nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc,
                                    nvcuda::wmma::mem_row_major);
-    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, ly);
+    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::this_work_item::get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, ly);
     nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc, ly);
     // Store the output
-    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, float>(d + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::col_major);
+    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(sycl::ext::oneapi::this_work_item::get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, float>(d + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::col_major);
     nvcuda::wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc,
                                     nvcuda::wmma::mem_col_major);
   }
@@ -218,7 +218,7 @@ using namespace nvcuda;
 template<typename T>
 __global__ void simple_wmma_gemm(T *d) {
   wmma::fragment<wmma::accumulator, 16, 16, 16, T> c_frag;
-  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, T>(d), 1, sycl::ext::oneapi::experimental::matrix::layout::row_major);
+  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(sycl::ext::oneapi::this_work_item::get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, T>(d), 1, sycl::ext::oneapi::experimental::matrix::layout::row_major);
   wmma::store_matrix_sync(d, c_frag, 1, wmma::mem_row_major);
 }
 int main() {

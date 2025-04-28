@@ -3143,9 +3143,9 @@ __global__ void test_mul24_complicated() {
   // CHECK: unsigned int  threadN = sycl::mul24((int)item_ct1.get_local_range(2), (int)item_ct1.get_group_range(2));
   unsigned int  threadN = __mul24(blockDim.x, gridDim.x);
 
-  // CHECK: unsigned int     tid2 = MUL(item_ct1.get_local_range(2), item_ct1.get_group(2)) + item_ct1.get_local_id(2);
+  // CHECK: unsigned int     tid2 = MUL(sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_range(2), sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2)) + item_ct1.get_local_id(2);
   unsigned int     tid2 = MUL(blockDim.x, blockIdx.x) + threadIdx.x;
-  // CHECK: unsigned int threadN2 = MUL(item_ct1.get_local_range(2), item_ct1.get_group_range(2));
+  // CHECK: unsigned int threadN2 = MUL(sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_range(2), sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group_range(2));
   unsigned int threadN2 = MUL(blockDim.x, gridDim.x);
 }
 
@@ -3153,14 +3153,15 @@ __global__ void test_mul24_complicated() {
 #define UMUL(a, b) __umul24(a, b)
 
 __global__ void test_umul24_complicated() {
+  // CHECK: auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
   // CHECK: unsigned int      tid = sycl::mul24((unsigned int)item_ct1.get_local_range(2), (unsigned int)item_ct1.get_group(2)) + item_ct1.get_local_id(2);
   unsigned int      tid = __umul24(blockDim.x, blockIdx.x) + threadIdx.x;
   // CHECK: unsigned int  threadN = sycl::mul24((unsigned int)item_ct1.get_local_range(2), (unsigned int)item_ct1.get_group_range(2));
   unsigned int  threadN = __umul24(blockDim.x, gridDim.x);
 
-  // CHECK: unsigned int     tid2 = UMUL(item_ct1.get_local_range(2), item_ct1.get_group(2)) + item_ct1.get_local_id(2);
+  // CHECK: unsigned int     tid2 = UMUL(sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_range(2), sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2)) + item_ct1.get_local_id(2);
   unsigned int     tid2 = UMUL(blockDim.x, blockIdx.x) + threadIdx.x;
-  // CHECK: unsigned int threadN2 = UMUL(item_ct1.get_local_range(2), item_ct1.get_group_range(2));
+  // CHECK: unsigned int threadN2 = UMUL(sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_range(2), sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group_range(2));
   unsigned int threadN2 = UMUL(blockDim.x, gridDim.x);
 }
 

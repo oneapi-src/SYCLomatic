@@ -10,7 +10,8 @@
 #include <limits>
 #include <stdio.h>
 
-// CHECK: void laneid(int *id, const sycl::nd_item<3> &item_ct1) {
+// CHECK: void laneid(int *id) {
+// CHECK:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:   id[item_ct1.get_local_id(2)] = item_ct1.get_sub_group().get_local_linear_id();
 // CHECK-NEXT: }
 __global__ void laneid(int *id) {

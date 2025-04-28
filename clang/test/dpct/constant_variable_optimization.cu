@@ -26,8 +26,8 @@ __global__ void kernel1(int *ptr){
 }
 
 
-// CHECK: __dpct_inline__ void kernel2(int *ptr, const sycl::nd_item<3> &item_ct1, int const *dev_d){
-// CHECK:     int i = item_ct1.get_local_id(2);
+// CHECK: __dpct_inline__ void kernel2(int *ptr, int const *dev_d){
+// CHECK:     int i = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 // CHECK:     ptr[i] = dev_b[i];
 // CHECK:     ptr[i] = dev_d[i];
 // CHECK: }
@@ -87,7 +87,7 @@ int main(){
 // CHECK:         cgh.parallel_for(
 // CHECK:           sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
 // CHECK:           [=](sycl::nd_item<3> item_ct1) {
-// CHECK:             kernel2(dp2, item_ct1, dev_d_ptr_ct1);
+// CHECK:             kernel2(dp2, dev_d_ptr_ct1);
 // CHECK:           });
 // CHECK:       });
 // CHECK:   }

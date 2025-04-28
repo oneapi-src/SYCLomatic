@@ -31,9 +31,9 @@ __host__ __device__ aa operator+(aa cc){
 }
 };
 
-// CHECK: static int Env_cuda_thread_in_threadblock(int axis,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1)
+// CHECK: static int Env_cuda_thread_in_threadblock(int axis)
 // CHECK-NEXT: {
+// CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:
 // CHECK-NEXT:   return axis==0 ? item_ct1.get_local_id(2) :
@@ -109,9 +109,9 @@ __host__ __device__ static int Env_cuda_thread_in_threadblock(int axis)
   return a;
 }
 
-// CHECK: static int Env_cuda_thread_in_threadblock1(int axis,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1)
+// CHECK: static int Env_cuda_thread_in_threadblock1(int axis)
 // CHECK-NEXT: {
+// CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:
 // CHECK-NEXT:   return axis==0 ? item_ct1.get_local_id(2) :
@@ -143,9 +143,9 @@ __host__ __device__ static int Env_cuda_thread_in_threadblock1(int axis)
   return a;
 }
 
-// CHECK: static int Env_cuda_thread_in_threadblock2(int axis,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1)
+// CHECK: static int Env_cuda_thread_in_threadblock2(int axis)
 // CHECK-NEXT: {
+// CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:
 // CHECK-NEXT:   return axis==0 ? item_ct1.get_local_id(2) :
@@ -177,9 +177,9 @@ __host__ __device__ static int Env_cuda_thread_in_threadblock2(int axis)
   return a;
 }
 
-// CHECK: static int Env_cuda_thread_in_threadblock3(int axis,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1)
+// CHECK: static int Env_cuda_thread_in_threadblock3(int axis)
 // CHECK-NEXT: {
+// CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:
 // CHECK-NEXT:   return axis==0 ? item_ct1.get_local_id(2) :
@@ -211,9 +211,9 @@ __host__ __device__ static int Env_cuda_thread_in_threadblock3(int axis)
   return a;
 }
 
-// CHECK: static int Env_cuda_thread_in_threadblock4(int axis,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1)
+// CHECK: static int Env_cuda_thread_in_threadblock4(int axis)
 // CHECK-NEXT: {
+// CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:
 // CHECK-NEXT:   return axis==0 ? item_ct1.get_local_id(2) :
@@ -246,14 +246,14 @@ __host__ __device__ static int Env_cuda_thread_in_threadblock4(int axis)
 }
 
 // CHECK: template<typename T>
-// CHECK-NEXT: int test(T a, T b, const sycl::nd_item<3> &item_ct1);
+// CHECK-NEXT: int test(T a, T b);
 // CHECK-NEXT: template<typename T>
 // CHECK-NEXT: int test_host_ct{{[0-9]+}}(T a, T b);
 // CHECK-EMPTY:
 // CHECK-NEXT: template<typename T>
-// CHECK-NEXT: int test(T a, T b, const sycl::nd_item<3> &item_ct1){
+// CHECK-NEXT: int test(T a, T b){
 // CHECK-EMPTY:
-// CHECK-NEXT:   return item_ct1.get_local_id(2) > 10 ? a : b;
+// CHECK-NEXT:   return sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2) > 10 ? a : b;
 // CHECK-EMPTY:
 // CHECK-NEXT: }
 // CHECK-NEXT: template<typename T>
@@ -276,9 +276,9 @@ __host__ __device__ int test(T a, T b){
 #endif
 }
 
-// CHECK: int test1(const sycl::nd_item<3> &item_ct1){
+// CHECK: int test1(){
 // CHECK-NEXT:   #if DPCT_COMPATIBILITY_TEMP > 800
-// CHECK-NEXT:     return item_ct1.get_local_id(2) > 8;
+// CHECK-NEXT:     return sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2) > 8;
 // CHECK-NEXT:   #elif DPCT_COMPATIBILITY_TEMP > 700
 // CHECK-NEXT:     return threadIdx.x > 7;
 // CHECK-NEXT:   #elif __CUDA_ARCH__ > 600
@@ -352,16 +352,16 @@ __host__ __device__ int test2(){
   #endif
 }
 
-// CHECK: void kernel(const sycl::nd_item<3> &item_ct1){
+// CHECK: void kernel(){
 // CHECK-NEXT:   float a, b;
-// CHECK-NEXT:   Env_cuda_thread_in_threadblock(0, item_ct1);
-// CHECK-NEXT:   Env_cuda_thread_in_threadblock1(0, item_ct1);
-// CHECK-NEXT:   Env_cuda_thread_in_threadblock2(0, item_ct1);
-// CHECK-NEXT:   Env_cuda_thread_in_threadblock3(0, item_ct1);
-// CHECK-NEXT:   Env_cuda_thread_in_threadblock4(0, item_ct1);
-// CHECK-NEXT:   test(0, 0, item_ct1);
-// CHECK-NEXT:   test<float>(a, b, item_ct1);
-// CHECK-NEXT:   test1(item_ct1);
+// CHECK-NEXT:   Env_cuda_thread_in_threadblock(0);
+// CHECK-NEXT:   Env_cuda_thread_in_threadblock1(0);
+// CHECK-NEXT:   Env_cuda_thread_in_threadblock2(0);
+// CHECK-NEXT:   Env_cuda_thread_in_threadblock3(0);
+// CHECK-NEXT:   Env_cuda_thread_in_threadblock4(0);
+// CHECK-NEXT:   test(0, 0);
+// CHECK-NEXT:   test<float>(a, b);
+// CHECK-NEXT:   test1();
 // CHECK-NEXT:   test2();
 // CHECK-NEXT: }
 __global__ void kernel(){

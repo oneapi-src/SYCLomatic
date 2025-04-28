@@ -11,9 +11,9 @@
 #include <stdio.h>
 #define VECTOR_SIZE 256
 
-//     CHECK:void VectorAddKernel(float* A, float* B, float* C,
-// CHECK-NEXT:                     const sycl::nd_item<3> &item_ct1)
+//     CHECK:void VectorAddKernel(float* A, float* B, float* C)
 //CHECK-NEXT:{
+//CHECK-NEXT:    auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 //CHECK-NEXT:    A[item_ct1.get_local_id(2)] = item_ct1.get_local_id(2) + 1.0f;
 //CHECK-NEXT:    B[item_ct1.get_local_id(2)] = item_ct1.get_local_id(2) + 1.0f;
 //CHECK-NEXT:    C[item_ct1.get_local_id(2)] =
@@ -44,7 +44,7 @@ int main()
   //     CHECK:  q_ct1.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, VECTOR_SIZE),
   // CHECK-NEXT:                                       sycl::range<3>(1, 1, VECTOR_SIZE)),
   // CHECK-NEXT:                     [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:                       VectorAddKernel(d_A, d_B, d_C, item_ct1);
+  // CHECK-NEXT:                       VectorAddKernel(d_A, d_B, d_C);
   // CHECK-NEXT:                     });
   VectorAddKernel<<<1, VECTOR_SIZE>>>(d_A, d_B, d_C);
 

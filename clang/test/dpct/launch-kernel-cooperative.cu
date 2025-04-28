@@ -9,8 +9,7 @@ __device__ void template_device(T *d) {
   __shared__ T s[16];
 }
 
-// CHECK: void template_kernel(T *d, const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT: uint8_t *dpct_local, T *s) {
+// CHECK: void template_kernel(T *d, uint8_t *dpct_local, T *s) {
 template<class T>
 __global__ void template_kernel(T *d) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -18,7 +17,7 @@ __global__ void template_kernel(T *d) {
   template_device(d);
 }
 
-// CHECK: void kernel(int *d, dpct::image_accessor_ext<int, 1> tex, const sycl::nd_item<3> &item_ct1) {
+// CHECK: void kernel(int *d, dpct::image_accessor_ext<int, 1> tex) {
 __global__ void kernel(int *d, cudaTextureObject_t tex) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
   tex1D(d + gtid, tex, gtid);
@@ -57,7 +56,7 @@ int main() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         kernel(d_acc_ct0.get_raw_pointer(), dpct::image_accessor_ext<int, 1>(tex_smpl, tex_acc), item_ct1);
+  // CHECK-NEXT:         kernel(d_acc_ct0.get_raw_pointer(), dpct::image_accessor_ext<int, 1>(tex_smpl, tex_acc));
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   cudaLaunchCooperativeKernel((void *)&kernel, dim3(16), dim3(16), args, 0, 0);
@@ -74,7 +73,7 @@ int main() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         template_kernel<int>(d_acc_ct0.get_raw_pointer(), item_ct1, dpct_local_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), s_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
+  // CHECK-NEXT:         template_kernel<int>(d_acc_ct0.get_raw_pointer(), dpct_local_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), s_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   cudaLaunchCooperativeKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);

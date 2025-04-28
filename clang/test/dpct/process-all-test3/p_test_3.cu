@@ -13,11 +13,10 @@
 // This test case is used to verify that
 // if process-all, -p and in-root are passed and no other input specified, try to migrate or copy all files from in-root.
 
-// CHECK: void addKernel(int *c, const int *a, const int *b,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1)
+// CHECK: void addKernel(int *c, const int *a, const int *b)
 __global__ void addKernel(int *c, const int *a, const int *b)
 {
-    // CHECK: int i = item_ct1.get_local_id(2);
+    // CHECK: int i = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
     int i = threadIdx.x;
     c[i] = a[i] + b[i];
 }
