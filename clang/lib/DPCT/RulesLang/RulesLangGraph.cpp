@@ -58,7 +58,8 @@ void GraphRule::registerMatcher(MatchFinder &MF) {
         "cudaGraphInstantiate", "cudaGraphLaunch", "cudaGraphExecDestroy",
         "cudaGraphAddEmptyNode", "cudaGraphAddDependencies",
         "cudaGraphExecUpdate", "cudaGraphNodeGetType", "cudaGraphGetNodes",
-        "cudaGraphGetRootNodes", "cudaGraphDestroy", "cudaGraphAddKernelNode");
+        "cudaGraphGetRootNodes", "cudaGraphDestroy", "cudaGraphAddKernelNode",
+        "cudaGraphKernelNodeGetParams", "cudaGraphKernelNodeSetParams");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
@@ -70,6 +71,12 @@ void GraphRule::registerMatcher(MatchFinder &MF) {
                      recordType(hasDeclaration(recordDecl(typeName()))))))))
           .bind("Type"),
       this);
+
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(
+                               asString("cudaGraphExecUpdateResultInfo"))),
+                           member(hasName("result")))
+                    .bind("execUpdateResult"),
+                this);
 }
 
 void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -100,10 +107,16 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
                   if (auto *FD = dyn_cast<FunctionDecl>(RHS_DRE->getDecl())) {
                     std::string FuncName = FD->getNameAsString();
                     std::string WrapperName = FuncName;
-                    std::string AccessOperator = VD->getType()->isPointerType() ? "->" : ".";
-                    std::string ReplacementStr = VarName + AccessOperator + "set_func("
-                        "(void*) dpct::wrapper_register(&" + WrapperName ;
-                    emplaceTransformation(new ReplaceToken(BO->getBeginLoc(), BO->getEndLoc(), std::move(ReplacementStr)));
+                    std::string AccessOperator =
+                        VD->getType()->isPointerType() ? "->" : ".";
+                    std::string ReplacementStr =
+                        VarName + AccessOperator +
+                        "set_func("
+                        "(void*) dpct::wrapper_register(&" +
+                        WrapperName;
+                    emplaceTransformation(
+                        new ReplaceToken(BO->getBeginLoc(), BO->getEndLoc(),
+                                         std::move(ReplacementStr)));
                     emplaceTransformation(new InsertAfterStmt(BO, ")"));
                     return;
                   }
@@ -120,6 +133,23 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
       } else {
         emplaceTransformation(new RenameFieldInMemberExpr(
             ME, buildString("get_", FieldName, "()")));
+      }
+    }
+    return;
+  }
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "execUpdateResult")) {
+    auto MD = ME->getMemberDecl();
+    const Expr *Base = ME->getBase();
+    if (MD->getNameAsString() == "result") {
+      if (auto *DRE = dyn_cast<DeclRefExpr>(Base)) {
+        SourceLocation StartLoc = Base->getBeginLoc();
+        SourceLocation EndLoc = ME->getEndLoc();
+        const SourceManager &SM = *Result.SourceManager;
+        EndLoc = Lexer::getLocForEndOfToken(EndLoc, 0, SM,
+                                            Result.Context->getLangOpts());
+        std::string VarNameStr = DRE->getNameInfo().getAsString();
+        emplaceTransformation(
+            new ReplaceToken(StartLoc, EndLoc, std::move(VarNameStr)));
       }
     }
     return;

@@ -58,22 +58,25 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
-    MEMBER_CALL_FACTORY_ENTRY("cudaGraphExecUpdate", ARG(0), true, "update",
-                              DEREF(1)),
+    CALL_FACTORY_ENTRY("cudaGraphExecUpdate",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::update",
+                            ARG(0), ARG(1), ARG(2))),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphExecUpdate",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphExecUpdate"),
                             ARG("--use-experimental-features=graph"))))
 
-CONDITIONAL_FACTORY_ENTRY(
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
-    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaGraphNodeGetType", DEREF(1),
-                                            MEMBER_CALL(ARG(0), true,
-                                                        "get_type"))),
+    CALL_FACTORY_ENTRY("cudaGraphNodeGetType",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::get_node_type",
+                            ARG(0), ARG(1))),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphNodeGetType",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphNodeGetType"),
-                            ARG("--use-experimental-features=graph")))
+                            ARG("--use-experimental-features=graph"))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
@@ -112,4 +115,26 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cudaGraphAddKernelNode",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphAddKernelNode"),
+                            ARG("--use-experimental-features=graph"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY("cudaGraphKernelNodeGetParams",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::kernel_node_get_params",
+                            ARG(0), ARG(1))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphKernelNodeGetParams",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphKernelNodeGetParams"),
+                            ARG("--use-experimental-features=graph"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY("cudaGraphKernelNodeSetParams",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::kernel_node_set_params",
+                            ARG(0), ARG(1))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphKernelNodeSetParams",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphKernelNodeSetParams"),
                             ARG("--use-experimental-features=graph"))))

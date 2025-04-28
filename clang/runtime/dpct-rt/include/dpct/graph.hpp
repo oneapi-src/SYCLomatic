@@ -33,6 +33,12 @@ struct kernel_node_params {
   unsigned int shared_mem_bytes{};
 
   std::vector<dpct::experimental::node_ptr> dependencies{};
+  kernel_node_params() = default;
+  kernel_node_params(const kernel_node_params &other)
+      : block_dim(other.block_dim), grid_dim(other.grid_dim),
+        kernel_params(other.kernel_params), func(other.func),
+        shared_mem_bytes(other.shared_mem_bytes),
+        dependencies(other.dependencies) {}
 
 public:
   void set_block_dim(const dpct::dim3 &block_dim) {
@@ -142,6 +148,7 @@ public:
                        dpct::experimental::node_ptr *dependencies,
                        std::size_t numberOfDependencies,
                        dpct::experimental::kernel_node_params *params) {
+    node_graph_params_map[*node] = std::make_pair(graph, params);
     for (std::size_t i = 0; i < numberOfDependencies; i++) {
       params->add_dependency(dependencies[i]);
     }
@@ -156,7 +163,6 @@ public:
     for (std::size_t i = 0; i < kernel_params_vector.size(); i++) {
       auto &node_kernel_params_pair = kernel_params_vector[i];
       auto node_params = node_kernel_params_pair.second;
-
       const auto &dependency_ptrs = node_params->get_dependencies();
       std::vector<sycl::ext::oneapi::experimental::node> dependencies;
       dependencies.reserve(dependency_ptrs.size());
@@ -184,9 +190,12 @@ public:
       }
       node_kernel_params_pair.first = new_node;
     }
-    auto final_graph = graph->finalize();
+    execGraph = new sycl::ext::oneapi::experimental::command_graph<
+        sycl::ext::oneapi::experimental::graph_state::executable>(
+        graph->finalize(
+            sycl::ext::oneapi::experimental::property::graph::updatable{}));
     queue->submit(
-        [&](sycl::handler &cgh) { cgh.ext_oneapi_graph(final_graph); });
+        [&](sycl::handler &cgh) { cgh.ext_oneapi_graph(*execGraph); });
   }
 
   void instantiate(dpct::experimental::command_graph_exec_ptr *execGraph,
@@ -195,7 +204,31 @@ public:
   }
 
   void kernel_node_get_params(dpct::experimental::node_ptr node,
-                              dpct::experimental::kernel_node_params *params) {}
+                              dpct::experimental::kernel_node_params *params) {
+    auto it = node_graph_params_map.find(node);
+    if (it == node_graph_params_map.end()) {
+      return;
+    }
+    *params = *(it->second.second);
+  }
+
+  void kernel_node_set_params(dpct::experimental::node_ptr node,
+                              dpct::experimental::kernel_node_params *params) {
+    node_graph_params_map[node].second = params;
+  }
+
+  void get_node_type(dpct::experimental::node_ptr node,
+                     sycl::ext::oneapi::experimental::node_type *nodeType) {
+    if (node_graph_params_map.find(node) != node_graph_params_map.end()) {
+      *nodeType = sycl::ext::oneapi::experimental::node_type::kernel;
+    } else {
+      if (node) {
+        *nodeType = node->get_type();
+      } else {
+        *nodeType = sycl::ext::oneapi::experimental::node_type::empty;
+      }
+    }
+  }
 
 private:
   std::unordered_map<sycl::queue *, command_graph_ptr> queue_graph_map;
@@ -214,8 +247,9 @@ private:
                             dpct::experimental::kernel_node_params *>>>
       graph_kernel_node_params_map;
   std::unordered_map<dpct::experimental::node_ptr,
-                     dpct::experimental::kernel_node_params>
-      node_params_map;
+                     std::pair<dpct::experimental::command_graph_ptr,
+                               dpct::experimental::kernel_node_params *>>
+      node_graph_params_map;
 };
 } // namespace detail
 
@@ -326,11 +360,31 @@ static void launch(dpct::experimental::command_graph_exec_ptr execGraph,
 
 static void
 kernel_node_get_params(dpct::experimental::node_ptr node,
-                       dpct::experimental::kernel_node_params *params) {}
+                       dpct::experimental::kernel_node_params *params) {
+  detail::graph_mgr::instance().kernel_node_get_params(node, params);
+}
 
 static void
 kernel_node_set_params(dpct::experimental::node_ptr node,
-                       dpct::experimental::kernel_node_params *params) {}
+                       dpct::experimental::kernel_node_params *params) {
+  detail::graph_mgr::instance().kernel_node_set_params(node, params);
+}
+
+static void
+get_node_type(dpct::experimental::node_ptr node,
+              sycl::ext::oneapi::experimental::node_type *nodeType) {
+  detail::graph_mgr::instance().get_node_type(node, nodeType);
+}
+
+static void update(dpct::experimental::command_graph_exec_ptr graphExec,
+                   dpct::experimental::command_graph_ptr graph,
+                   int *updateResultInfo) {
+  graphExec->update(*graph);
+  if (!graphExec) {
+    *updateResultInfo = 0;
+  }
+  *updateResultInfo = 1;
+}
 
 } // namespace experimental
 } // namespace dpct

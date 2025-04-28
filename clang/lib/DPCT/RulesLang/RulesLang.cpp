@@ -1930,7 +1930,7 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                           "cufftType", "cudaMemoryType", "CUctx_flags_enum",
                           "CUpointer_attribute_enum", "CUmemorytype_enum",
                           "cudaGraphicsMapFlags", "cudaGraphicsRegisterFlags",
-                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum"))),
+                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum", "cudaGraphExecUpdateResult"))),
                       matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
       this);
@@ -2050,7 +2050,16 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
               EnumName == "cudaGraphNodeTypeMemset" ||
               EnumName == "cudaGraphNodeTypeHost" ||
               EnumName == "cudaGraphNodeTypeGraph" ||
-              EnumName == "cudaGraphNodeTypeEmpty")) {
+              EnumName == "cudaGraphNodeTypeEmpty" ||
+              EnumName == "cudaGraphExecUpdateSuccess" ||
+              EnumName == "cudaGraphExecUpdateError" ||
+              EnumName == "cudaGraphExecUpdateErrorTopologyChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorNodeTypeChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorFunctionChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorParametersChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorNotSupported" ||
+              EnumName == "cudaGraphExecUpdateErrorUnsupportedFunctionChange" ||
+              EnumName == "cudaGraphExecUpdateErrorAttributesChanged")) {
     report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
            EnumName, "--use-experimental-features=graph");
     return;

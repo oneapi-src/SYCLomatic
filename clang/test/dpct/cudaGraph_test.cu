@@ -96,10 +96,10 @@ int main() {
   // CHECK: dpct::experimental::add_dependencies(graph, node10, node11, 1);
   cudaGraphAddDependencies(graph, node10, node11, 1);
 
-  // CHECK: execGraph = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>((*graph2)->finalize());
-  // CHECK-NEXT: *execGraph2 = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>(graph->finalize());
-  // CHECK-NEXT: **execGraph3 = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>((*graph2)->finalize());
-  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(**execGraph3 = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>((*graph2)->finalize())));
+  // CHECK: dpct::experimental::instantiate(&execGraph, *graph2);
+  // CHECK-NEXT: dpct::experimental::instantiate(execGraph2, graph);
+  // CHECK-NEXT: dpct::experimental::instantiate(*execGraph3, *graph2);
+  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::instantiate(*execGraph3, *graph2)));
   cudaGraphInstantiate(&execGraph, *graph2, nullptr, nullptr, 0);
   cudaGraphInstantiate(execGraph2, graph, nullptr, nullptr, 0);
   cudaGraphInstantiate(*execGraph3, *graph2, nullptr, nullptr, 0);
@@ -110,24 +110,31 @@ int main() {
 
   cudaStream_t *stream2;
 
-  // CHECK: stream->ext_oneapi_graph(*execGraph);
-  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(stream->ext_oneapi_graph(*execGraph)));
-  // CHECK-NEXT: (*stream2)->ext_oneapi_graph(**execGraph2);
+  // CHECK: dpct::experimental::launch(execGraph, stream);
+  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::launch(execGraph, stream)));
+  // CHECK-NEXT: dpct::experimental::launch(*execGraph2, *stream2);
   cudaGraphLaunch(execGraph, stream);
   CUDA_CHECK_THROW(cudaGraphLaunch(execGraph, stream));
   cudaGraphLaunch(*execGraph2, *stream2);
 
 #ifndef DNO_BUILD_TEST
-  // CHECK: execGraph->update(*graph);
-  cudaGraphExecUpdate(execGraph, graph, nullptr, nullptr);
 
-  // CHECK: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(execGraph->update(*graph)));
-  CUDA_CHECK_THROW(cudaGraphExecUpdate(execGraph, graph, nullptr, nullptr));
+  cudaGraphExecUpdateResultInfo updateResult;
+  // CHECK: dpct::experimental::update(execGraph, graph, &updateResult);
+  cudaGraphExecUpdate(execGraph, graph, &updateResult);
+
+  // CHECK: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::update(execGraph, graph, &updateResult)));
+  CUDA_CHECK_THROW(cudaGraphExecUpdate(execGraph, graph, &updateResult));
+
+  // CHECK: if(updateResult == 1){}
+  // CHECK-NEXT: if(updateResult == 0){}
+  if(updateResult.result == cudaGraphExecUpdateSuccess){}
+  if(updateResult.result == cudaGraphExecUpdateErrorTopologyChanged){}
 #endif
 
   // CHECK: sycl::ext::oneapi::experimental::node_type nodeType;
-  // CHECK-NEXT: nodeType = node->get_type();
-  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(nodeType = node->get_type()));
+  // CHECK-NEXT: dpct::experimental::get_node_type(node, &nodeType);
+  // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_node_type(node, &nodeType)));
   cudaGraphNodeType nodeType;
   cudaGraphNodeGetType(node, &nodeType);
   CUDA_CHECK_THROW(cudaGraphNodeGetType(node, &nodeType));
