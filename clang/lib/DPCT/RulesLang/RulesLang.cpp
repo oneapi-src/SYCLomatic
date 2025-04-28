@@ -931,6 +931,14 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    if (CanonicalTypeStr == "cudaGraphExecUpdateResult") {
+      if (!DpctGlobalInfo::useExtGraph()) {
+        report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               "cudaGraphExecUpdateResult",
+               "--use-experimental-features=graph");
+      }
+    }
+
     if (CanonicalTypeStr == "cudaGraphicsRegisterFlags" ||
         CanonicalTypeStr == "cudaGraphicsMapFlags") {
       if (!DpctGlobalInfo::useExtBindlessImages()) {

@@ -72,6 +72,17 @@ int main() {
   cudaGraphAddDependencies(graph, NULL, NULL, 0);
 
   // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaKernelNodeParams is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaKernelNodeParams params;
+  params.blockDim = dim3(10);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphAddKernelNode is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphAddKernelNode(&node, graph, nullptr, 0, &params);
+
+  // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphGetNodes is not supported, please try to remigrate with option: --use-experimental-features=graph.
   // CHECK-NEXT: */
   cudaGraphGetNodes(graph, NULL, nullptr);

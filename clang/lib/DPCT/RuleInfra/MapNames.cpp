@@ -647,7 +647,7 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaGraphExecUpdateResult",
        std::make_shared<TypeNameRule>(DpctGlobalInfo::useExtGraph()
                                           ? "int"
-                                          : "cudaGraphExecUpdateResultInfo")},
+                                          : "cudaGraphExecUpdateResult")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
       {"CUmemorytype",
        std::make_shared<TypeNameRule>(getClNamespace() + "usm::alloc")},

@@ -59,7 +59,7 @@ public:
   unsigned int get_shared_mem_bytes() const { return shared_mem_bytes; }
 
   void add_dependency(dpct::experimental::node_ptr dependency) {
-    dependencies.push_back(std::move(dependency));
+    dependencies.push_back(dependency);
   }
   const std::vector<dpct::experimental::node_ptr> &get_dependencies() const {
     return dependencies;
