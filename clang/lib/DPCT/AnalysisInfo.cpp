@@ -905,7 +905,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     // Add the label for profiling macro "DPCT_PROFILING_ENABLED", which will be
     // replaced by "#define DPCT_PROFILING_ENABLED" or not in the post
     // replacement.
-    if (DpctGlobalInfo::useExtIPC())
+    if (DpctGlobalInfo::useExtLevelZero())
       OS << "#define ONEAPI_BACKEND_LEVEL_ZERO_EXT" << getNL();
 
     OS << "{{NEEDREPLACEP0}}";

@@ -20,16 +20,24 @@ namespace experimental {
 
 namespace detail {
 
-/// Covert remote fd to the local fd through IPC handle extension.
-/// \param [in] ipc_ext_handle The extension of the IPC handle
-/// \returns Local process file descriptor
-template <class T> int convert_fd_from_handle(T ipc_ext_handle) {
-  int pidfd = syscall(434, ipc_ext_handle.pid,
+#ifndef _SYS_pidfd_open
+#define _SYS_pidfd_open 434 // syscall number for pidfd_open
+#endif
+
+#ifndef _SYS_pidfd_getfd
+#define _SYS_pidfd_getfd 438 // syscall number for pidfd_getfd
+#endif
+
+/// Obtain a duplicate of another process's file descriptor.
+/// \param [in] ext_handle IPC memory handle extension
+/// \returns obtained file descriptor
+template <class T> int get_fd_of_peer_process(T ext_handle) {
+  int pidfd = syscall(_SYS_pidfd_open, ext_handle.pid,
                       0); // obtain a file descriptor that refers to a
                           // process(requires kernel 5.6+).
   if (pidfd < 0)
     return -1;
-  return syscall(438, pidfd, *(int *)ipc_ext_handle.handle.data,
+  return syscall(_SYS_pidfd_getfd, pidfd, *(int *)ext_handle.handle.data,
                  0); // obtain a duplicate of another process's file
                      // descriptor(requires kernel 5.6+).
 }
@@ -41,35 +49,37 @@ struct ipc_mem_handle_ext_t {
   ze_ipc_mem_handle_t handle;
 };
 
-/// Acquires IPC handle for shared memory region.
-/// \param [in] ptr Pointer to shared memory region
-/// \param [out] handle_ptr Output IPC handle
-/// \returns Level Zero operation status code
-inline ze_result_t get_mem_ipc_handle(const void *ptr,
-                                      ipc_mem_handle_ext_t *handle_ptr) {
-  handle_ptr->pid = getpid();
-  return zeMemGetIpcHandle(
-      sycl::get_native<sycl::backend::ext_oneapi_level_zero>(
-          dpct::get_current_device().get_context()),
-      ptr, &handle_ptr->handle);
+/// Creates an IPC memory handle for the specified allocation.
+/// \param [in] ptr Pointer to the device memory allocation
+/// \param [out] ext_handle_ptr IPC memory handle extension
+inline void get_mem_ipc_handle(const void *ptr,
+                               ipc_mem_handle_ext_t *ext_handle_ptr) {
+  ext_handle_ptr->pid = getpid();
+  auto ret =
+      zeMemGetIpcHandle(sycl::get_native<sycl::backend::ext_oneapi_level_zero>(
+                            dpct::get_current_device().get_context()),
+                        ptr, &ext_handle_ptr->handle);
+  if (ret != ZE_RESULT_SUCCESS)
+    throw std::runtime_error("The zeMemGetIpcHandle execution failed.");
 }
 
-/// Maps remote IPC memory to local address space.
-/// \param [in] ipc_ext_handle The extension of the IPC handle
-/// \param [out] ptr Mapped memory pointer in local process
+/// Opens an IPC memory handle to retrieve a device pointer.
+/// \param [in] ext_handle IPC memory handle extension
+/// \param [out] pptr Pointer to device allocation in this process
 /// \returns Level Zero operation status code
-inline ze_result_t open_mem_ipc_handle(ipc_mem_handle_ext_t ipc_ext_handle,
-                                       void **ptr) {
-  int newfd = detail::convert_fd_from_handle(ipc_ext_handle);
-  if (newfd < 0)
-    throw std::runtime_error("Cannot convert fd from handle");
-  *((int *)ipc_ext_handle.handle.data) = newfd;
-  return zeMemOpenIpcHandle(
-      sycl::get_native<sycl::backend::ext_oneapi_level_zero>(
-          dpct::get_current_device().get_context()),
-      sycl::get_native<sycl::backend::ext_oneapi_level_zero>(
-          (sycl::device)dpct::get_current_device()),
-      ipc_ext_handle.handle, 0u, ptr);
+inline void open_mem_ipc_handle(ipc_mem_handle_ext_t ext_handle, void **pptr) {
+  int fd = detail::get_fd_of_peer_process(ext_handle);
+  if (fd < 0)
+    throw std::runtime_error("Cannot get file descriptor of peer process.");
+  *((int *)ext_handle.handle.data) = fd;
+  auto ret =
+      zeMemOpenIpcHandle(sycl::get_native<sycl::backend::ext_oneapi_level_zero>(
+                             dpct::get_current_device().get_context()),
+                         sycl::get_native<sycl::backend::ext_oneapi_level_zero>(
+                             (sycl::device)dpct::get_current_device()),
+                         ext_handle.handle, 0u, pptr);
+  if (ret != ZE_RESULT_SUCCESS)
+    throw std::runtime_error("The zeMemOpenIpcHandle execution failed.");
 }
 
 } // namespace experimental

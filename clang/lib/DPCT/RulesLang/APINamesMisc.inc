@@ -143,7 +143,7 @@ REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuGetExportTable",
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
-        clang::dpct::UseExtL0IPC,
+        clang::dpct::UseExtLevelZero,
         CALL_FACTORY_ENTRY("cudaIpcGetMemHandle",
                            CALL(MapNames::getDpctNamespace() +
                                     "experimental::get_mem_ipc_handle",
@@ -156,7 +156,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
-        clang::dpct::UseExtL0IPC,
+        clang::dpct::UseExtLevelZero,
         CALL_FACTORY_ENTRY("cudaIpcCloseMemHandle",
                            CALL("zeMemCloseIpcHandle",
                                CALL("sycl::get_native<sycl::backend::ext_oneapi_level_zero>",  MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
@@ -171,7 +171,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
-        clang::dpct::UseExtL0IPC,
+        clang::dpct::UseExtLevelZero,
         CALL_FACTORY_ENTRY("cudaIpcOpenMemHandle",
                            CALL(MapNames::getDpctNamespace() +
                                     "experimental::open_mem_ipc_handle",

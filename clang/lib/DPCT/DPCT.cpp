@@ -1061,7 +1061,7 @@ int runDPCT(int argc, const char **argv) {
           else if (Option.ends_with("prefetch"))
             Experimentals.addValue(ExperimentalFeatures::Exp_Prefetch);
           else if (Option.ends_with("level_zero"))
-            Experimentals.addValue(ExperimentalFeatures::Exp_IPC);
+            Experimentals.addValue(ExperimentalFeatures::Exp_LevelZero);
         } else if (Option == "--no-dry-pattern") {
           NoDRYPattern.setValue(true);
         }
