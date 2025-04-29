@@ -186,8 +186,7 @@ public:
     }
     execGraph = new sycl::ext::oneapi::experimental::command_graph<
         sycl::ext::oneapi::experimental::graph_state::executable>(
-        graph->finalize(
-            sycl::ext::oneapi::experimental::property::graph::updatable{}));
+        graph->finalize());
     queue->submit(
         [&](sycl::handler &cgh) { cgh.ext_oneapi_graph(*execGraph); });
   }
