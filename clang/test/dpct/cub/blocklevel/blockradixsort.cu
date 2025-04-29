@@ -194,7 +194,7 @@ __global__ void test_unsupported(int *data) {
 template <typename T, int N>
 void print_array(T (&arr)[N]) {
   for (int i = 0; i < N; ++i) {
-    std::cout << arr[i] << (i == N - 1 ? '\n' : ',');
+    std::cout << (int)arr[i] << (i == N - 1 ? '\n' : ',');
   }
 }
 
@@ -253,7 +253,7 @@ bool test_sorthalf() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         SortHalf(d_data, item_ct1, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
+  // CHECK-NEXT:         SortHalf(d_data, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   SortHalf<<<1, 128>>>(d_data);
