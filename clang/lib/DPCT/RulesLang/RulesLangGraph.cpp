@@ -94,37 +94,45 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
       if (FieldName == "func") {
-        if (auto BO = dyn_cast<BinaryOperator>(
-                getParentAsAssignedBO(ME, *Result.Context))) {
-          auto *LHS = BO->getLHS()->IgnoreCasts();
-          if (auto *ME = dyn_cast<MemberExpr>(LHS)) {
-            auto *Base = ME->getBase()->IgnoreImpCasts();
-            if (auto *DRE = dyn_cast<DeclRefExpr>(Base)) {
-              if (auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-                std::string VarName = VD->getNameAsString();
-                auto *RHS = BO->getRHS()->IgnoreCasts();
-                if (auto *RHS_DRE = dyn_cast<DeclRefExpr>(RHS)) {
-                  if (auto *FD = dyn_cast<FunctionDecl>(RHS_DRE->getDecl())) {
-                    std::string FuncName = FD->getNameAsString();
-                    std::string WrapperName = FuncName;
-                    std::string AccessOperator =
-                        VD->getType()->isPointerType() ? "->" : ".";
-                    std::string ReplacementStr =
-                        VarName + AccessOperator +
-                        "set_func("
-                        "(void*) dpct::wrapper_register(&" +
-                        WrapperName;
-                    emplaceTransformation(
-                        new ReplaceToken(BO->getBeginLoc(), BO->getEndLoc(),
-                                         std::move(ReplacementStr)));
-                    emplaceTransformation(new InsertAfterStmt(BO, ")"));
-                    return;
-                  }
-                }
-              }
-            }
-          }
+        auto BO = dyn_cast<BinaryOperator>(
+            getParentAsAssignedBO(ME, *Result.Context));
+        if (!BO) {
+          return;
         }
+        auto *LHS = BO->getLHS()->IgnoreCasts();
+        auto *ME_LHS = dyn_cast<MemberExpr>(LHS);
+        if (!ME_LHS) {
+          return;
+        }
+        auto *Base = ME_LHS->getBase()->IgnoreImpCasts();
+        auto *DRE = dyn_cast<DeclRefExpr>(Base);
+        if (!DRE) {
+          return;
+        }
+        auto *VD = dyn_cast<VarDecl>(DRE->getDecl());
+        if (!VD) {
+          return;
+        }
+        std::string VarName = VD->getNameAsString();
+        auto *RHS = BO->getRHS()->IgnoreCasts();
+        auto *RHS_DRE = dyn_cast<DeclRefExpr>(RHS);
+        if (!RHS_DRE) {
+          return;
+        }
+        auto *FD = dyn_cast<FunctionDecl>(RHS_DRE->getDecl());
+        if (!FD) {
+          return;
+        }
+        std::string FuncName = FD->getNameAsString();
+        std::string WrapperName = FuncName;
+        std::string AccessOperator =
+            VD->getType()->isPointerType() ? "->" : ".";
+        std::string ReplacementStr =
+            VarName + AccessOperator +
+            "set_func((void*) dpct::wrapper_register(&" + WrapperName;
+        emplaceTransformation(new ReplaceToken(
+            BO->getBeginLoc(), BO->getEndLoc(), std::move(ReplacementStr)));
+        emplaceTransformation(new InsertAfterStmt(BO, ")"));
       }
       if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
         StringRef ReplacedArg = "";
