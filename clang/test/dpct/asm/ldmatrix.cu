@@ -22,7 +22,7 @@ __device__ void load_matrix_x1(void *sh_r_addr, int *r) {
   // CHECK: auto addr = sh_r_addr;
   uint32_t addr = static_cast<uint32_t>(__cvta_generic_to_shared(sh_r_addr));
 
-  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], item_ct1);
+  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0]);
   asm volatile("ldmatrix.sync.aligned.m8n8.x1.shared.b16 {%0}, [%1];\n"
                 : "=r"(r[0])
                 : "r"(addr));
@@ -32,7 +32,7 @@ __device__ void load_matrix_x2(void *sh_r_addr, int *r) {
   // CHECK: auto addr = sh_r_addr;
   uint32_t addr = static_cast<uint32_t>(__cvta_generic_to_shared(sh_r_addr));
 
-  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], &r[1], item_ct1);
+  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], &r[1]);
   asm volatile("ldmatrix.sync.aligned.m8n8.x2.shared.b16 {%0, %1}, [%2];\n"
                 : "=r"(r[0]), "=r"(r[1])
                 : "r"(addr));
@@ -42,7 +42,7 @@ __device__ void load_matrix_x4(void *sh_r_addr, int *r) {
   // CHECK: auto addr = sh_r_addr;
   uint32_t addr = static_cast<uint32_t>(__cvta_generic_to_shared(sh_r_addr));
 
-  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], &r[1], &r[2], &r[3], item_ct1);
+  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], &r[1], &r[2], &r[3]);
   asm volatile("ldmatrix.sync.aligned.m8n8.x4.shared.b16 {%0, %1, %2, %3}, [%4];\n"
                 : "=r"(r[0]), "=r"(r[1]), "=r"(r[2]), "=r"(r[3])
                 : "r"(addr));
@@ -52,7 +52,7 @@ __device__ void load_matrix_x1_trans(void *sh_r_addr, int *r) {
   // CHECK: auto addr = sh_r_addr;
   uint32_t addr = static_cast<uint32_t>(__cvta_generic_to_shared(sh_r_addr));
 
-  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], item_ct1, true);
+  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], true);
   asm volatile("ldmatrix.sync.aligned.m8n8.x1.trans.shared.b16 {%0}, [%1];\n"
                 : "=r"(r[0])
                 : "r"(addr));
@@ -62,7 +62,7 @@ __device__ void load_matrix_x2_trans(void *sh_r_addr, int *r) {
   // CHECK: auto addr = sh_r_addr;
   uint32_t addr = static_cast<uint32_t>(__cvta_generic_to_shared(sh_r_addr));
 
-  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], &r[1], item_ct1, true);
+  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], &r[1], true);
   asm volatile("ldmatrix.sync.aligned.m8n8.x2.trans.shared.b16 {%0, %1}, [%2];\n"
                 : "=r"(r[0]), "=r"(r[1])
                 : "r"(addr));
@@ -72,7 +72,7 @@ __device__ void load_matrix_x4_trans(void *sh_r_addr, int *r) {
   // CHECK: auto addr = sh_r_addr;
   uint32_t addr = static_cast<uint32_t>(__cvta_generic_to_shared(sh_r_addr));
 
-  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], &r[1], &r[2], &r[3], item_ct1, true);
+  // CHECK: dpct::experimental::matrix::ldmatrix((uintptr_t)addr, &r[0], &r[1], &r[2], &r[3], true);
   asm volatile("ldmatrix.sync.aligned.m8n8.x4.trans.shared.b16 {%0, %1, %2, %3}, [%4];\n"
                 : "=r"(r[0]), "=r"(r[1]), "=r"(r[2]), "=r"(r[3])
                 : "r"(addr));

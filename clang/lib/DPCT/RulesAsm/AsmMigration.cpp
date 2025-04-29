@@ -1344,16 +1344,13 @@ protected:
     if (emitStmt(Src)) {
       return SYCLGenError();
     }
-    OS() << ", ";
     for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
       if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
         continue;
-      OS() << "&";
+      OS() << ", &";
       if (emitStmt(VE->getElement(Inst)))
         return SYCLGenError();
-      OS() << ", ";
     }
-    OS() << DpctGlobalInfo::getItem(GAS);
     if (Inst->hasAttr(InstAttr::trans))
       OS() << ", true";
     OS() << ");";
