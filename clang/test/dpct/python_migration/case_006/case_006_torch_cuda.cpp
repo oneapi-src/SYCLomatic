@@ -7,3 +7,9 @@
 
 // RUN: dpct -in-root ./ -out-root out_ipex ./input.py --migrate-build-script-only --migrate-build-script=Python --rule-file=%T/../../../../../../../extensions/python_rules/python_build_script_migration_rule_ipex.yaml
 // RUN: diff --strip-trailing-cr %S/expected.py %T/out_ipex/input.py >> %T/diff.txt
+
+// RUN: mkdir -p %T/out_pytorch1
+// RUN: cp %S/MainSourceFiles.yaml %T/out_pytorch1/MainSourceFiles.yaml
+// RUN: dpct -in-root ./ -out-root out_pytorch1 ./input.py --migrate-build-script-only --migrate-build-script=Python --rule-file=%T/../../../../../../../extensions/python_rules/python_build_script_migration_rule_pytorch.yaml
+// dpct.cmake should not be copied into %T/out_pytorch1 direcotrtory.
+// RUN: test ! -f %T/out_pytorch1/dpct.cmake
