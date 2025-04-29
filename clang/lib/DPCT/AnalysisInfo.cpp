@@ -7554,6 +7554,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS,
     (*Iter)->Infos.push_back(Idx);
     Index = Iter - MacroInfos.begin();
   } else {
+    IsMacro = false;
     auto SLocInfo = DpctGlobalInfo::getLocInfo(SL);
     if (SLocInfo.first != FilePath)
       return;
@@ -7603,7 +7604,7 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
     }
 #ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "FreeQueriesInfo index[" << Index
-                 << "]is larger than list size[" << InfoList.size() << "]\n";
+                 << "] is larger than list size[" << MacroInfos.size() << "]\n";
     assert(0);
 #endif // DPCT_DEBUG_BUILD
   }
@@ -7611,7 +7612,7 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
     return InfoList[Index]->getReplaceString(getKind(Num));
 #ifdef DPCT_DEBUG_BUILD
   llvm::errs() << "FreeQueriesInfo index[" << Index
-               << "]is larger than list size[" << InfoList.size() << "]\n";
+               << "] is larger than list size[" << InfoList.size() << "]\n";
   assert(0);
 #endif // DPCT_DEBUG_BUILD
   return "";
