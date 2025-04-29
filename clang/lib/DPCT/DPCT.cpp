@@ -525,7 +525,8 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
       llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
     }
 
-    if (MigrateBuildScriptOnly || DpctGlobalInfo::migrateCMakeScripts()) {
+    if (MigrateBuildScriptOnly && !DpctGlobalInfo::migratePythonScripts() ||
+        DpctGlobalInfo::migrateCMakeScripts()) {
       std::string Major = PreTU->SDKVersionMajor;
       std::string Minor = PreTU->SDKVersionMinor;
       if (!Major.empty() && !Minor.empty()) {
