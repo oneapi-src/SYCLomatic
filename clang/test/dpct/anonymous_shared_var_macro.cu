@@ -16,8 +16,8 @@
 // CHECK:     float a1d[7];                                                              \
 // CHECK:   };                                                                           \
 // CHECK:   type_ct2 *atoms = (type_ct2 *)atoms_ct1;                                     \
-// CHECK:   if (item_ct1.get_local_id(2) < 7) {                                          \
-// CHECK:     bspline_coeffs.a1d[item_ct1.get_local_id(2)] = 0;                          \
+// CHECK:   if (sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2) < 7) {                                          \
+// CHECK:     bspline_coeffs.a1d[sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2)] = 0;                          \
 // CHECK:   };
 
 #define BSPLINE_DEFS \

@@ -19,8 +19,8 @@ __device__ void testDevice(const int *K) {
      //CHECK:void testDevice1(const int *K) { int t = K[1]; }
 __device__ void testDevice1(const int *K) { int t = K[1]; }
 
-//CHECK:void testKernelPtr(const int *L, const int *M, int N,
-//CHECK-NEXT:                   const sycl::nd_item<3> &item_ct1) {
+//CHECK:void testKernelPtr(const int *L, const int *M, int N) {
+//CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 //CHECK-NEXT:  testDevice(L);
 //CHECK-NEXT:  int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
 //CHECK-NEXT:             item_ct1.get_local_id(2);
@@ -42,8 +42,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 //CHECK-NEXT:  int karg3 = 80;
 //CHECK-NEXT:  q_ct1.parallel_for(sycl::nd_range<3>(griddim * threaddim, threaddim),
 //CHECK-NEXT:                     [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:                       testKernelPtr((const int *)karg1, karg2, karg3,
-//CHECK-NEXT:                                     item_ct1);
+//CHECK-NEXT:                       testKernelPtr((const int *)karg1, karg2, karg3);
 //CHECK-NEXT:                     });
 //CHECK-NEXT:}
 int main() {
@@ -102,8 +101,7 @@ typedef struct
 //CHECK-NEXT:                                 const float cut_lj_innersq,
 //CHECK-NEXT:                                 const float g_ewald, const float qqrd2e,
 //CHECK-NEXT:                                 const float denom_lj_inv,
-//CHECK-NEXT:                                 const int loop_trip,
-//CHECK-NEXT:                                 const sycl::nd_item<3> &item_ct1, float *sp_lj,
+//CHECK-NEXT:                                 const int loop_trip, float *sp_lj,
 //CHECK-NEXT:                                 float *sp_coul, int *ljd, double la[8][1]) {
 template <int EFLAG>
 __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
@@ -147,8 +145,7 @@ void test() {
 
 
 
-     //CHECK:void k_mdppp_outer_n0(const sycl::nd_item<3> &item_ct1, float *sp_lj,
-//CHECK-NEXT:                      float *sp_coul, int *ljd, double la[8][1]) {
+     //CHECK:void k_mdppp_outer_n0(float *sp_lj, float *sp_coul, int *ljd, double la[8][1]) {
 __global__ void k_mdppp_outer_n0() {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -157,8 +154,7 @@ __global__ void k_mdppp_outer_n0() {
   const int tid = threadIdx.x;
 }
 
-     //CHECK:void k_mdppp_outer_n1(const int * __restrict__ pos,
-//CHECK-NEXT:                      const sycl::nd_item<3> &item_ct1, float *sp_lj,
+     //CHECK:void k_mdppp_outer_n1(const int * __restrict__ pos, float *sp_lj,
 //CHECK-NEXT:                      float *sp_coul, int *ljd, double la[8][1]) {
 __global__ void k_mdppp_outer_n1(const int * __restrict__ pos) {
   __shared__ float sp_lj[4];
@@ -170,7 +166,6 @@ __global__ void k_mdppp_outer_n1(const int * __restrict__ pos) {
 
      //CHECK:void k_mdppp_outer_22(const int * __restrict__ pos,
 //CHECK-NEXT:                                 const float * __restrict__ q,
-//CHECK-NEXT:                                 const sycl::nd_item<3> &item_ct1,
 //CHECK-NEXT:                                 float *sp_lj,
 //CHECK-NEXT:                                 float *sp_coul,
 //CHECK-NEXT:                                 int *ljd,
@@ -186,8 +181,7 @@ __global__ void k_mdppp_outer_22(const int * __restrict__ pos,
 
 
      //CHECK:void k_mdppp_outer_n2(const int * __restrict__ pos, const float * __restrict__ q,
-//CHECK-NEXT:                      const sycl::nd_item<3> &item_ct1, float *sp_lj,
-//CHECK-NEXT:                      float *sp_coul, int *ljd, double la[8][1]) {
+//CHECK-NEXT:                      float *sp_lj, float *sp_coul, int *ljd, double la[8][1]) {
 void __device__ k_mdppp_outer_n2(const int * __restrict__ pos, const float * __restrict__ q) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -199,8 +193,7 @@ void __device__ k_mdppp_outer_n2(const int * __restrict__ pos, const float * __r
 
 
      //CHECK:void k_mdppp_outer_n3(const int * __restrict__ pos, const float * __restrict__ q,
-//CHECK-NEXT:                      const sycl::nd_item<3> &item_ct1, float *sp_lj,
-//CHECK-NEXT:                      float *sp_coul, int *ljd, double la[8][1]) {
+//CHECK-NEXT:                      float *sp_lj, float *sp_coul, int *ljd, double la[8][1]) {
 __device__
 void k_mdppp_outer_n3(const int * __restrict__ pos, const float * __restrict__ q) {
   __shared__ float sp_lj[4];
@@ -213,8 +206,7 @@ void k_mdppp_outer_n3(const int * __restrict__ pos, const float * __restrict__ q
 #define AAA const int * __restrict__ pos
 #define BBB const float * __restrict__ q
 
-     //CHECK:void foo1(AAA, BBB, const sycl::nd_item<3> &item_ct1, float *sp_lj,
-//CHECK-NEXT:          float *sp_coul, int *ljd, double la[8][1]) {
+     //CHECK:void foo1(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd, double la[8][1]) {
 __device__ void foo1(AAA, BBB) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -223,8 +215,8 @@ __device__ void foo1(AAA, BBB) {
   const int tid = threadIdx.x;
 }
 
-     //CHECK:void foo2(const int * __restrict__ pos, BBB, const sycl::nd_item<3> &item_ct1,
-//CHECK-NEXT:          float *sp_lj, float *sp_coul, int *ljd, double la[8][1]) {
+     //CHECK:void foo2(const int * __restrict__ pos, BBB, float *sp_lj, float *sp_coul,
+    //CHECK          int *ljd, double la[8][1]) {
 __device__ void foo2(const int * __restrict__ pos, BBB) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -233,8 +225,8 @@ __device__ void foo2(const int * __restrict__ pos, BBB) {
   const int tid = threadIdx.x;
 }
 
-     //CHECK:void foo3(AAA, const float * __restrict__ q, const sycl::nd_item<3> &item_ct1,
-//CHECK-NEXT:          float *sp_lj, float *sp_coul, int *ljd, double la[8][1]) {
+     //CHECK:void foo3(AAA, const float * __restrict__ q, float *sp_lj, float *sp_coul,
+//CHECK-NEXT:          int *ljd, double la[8][1]) {
 __device__ void foo3(AAA, const float * __restrict__ q) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -243,7 +235,7 @@ __device__ void foo3(AAA, const float * __restrict__ q) {
   const int tid = threadIdx.x;
 }
 
-//CHECK:#define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
+//CHECK:#define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
 #define FFFFF(aaa,bbb) __device__ void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb)
 
 FFFFF(pos, q)

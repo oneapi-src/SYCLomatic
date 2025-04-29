@@ -1343,31 +1343,40 @@ inline void import_external_semaphore(external_sem_wrapper **extSem,
 /// parameters.
 /// \param [in] numExtSems Number of external semaphores to signal.
 /// \param [in] q_ptr The queue used to signal the external semaphore resource.
-inline void signal_external_semaphore(external_sem_wrapper **extSem,
-                                      external_sem_params *semSignalParams,
-                                      unsigned int numExtSems,
-                                      queue_ptr q_ptr = &get_default_queue()) {
+inline void signal_external_semaphores(external_sem_wrapper **extSem,
+                                       external_sem_params *semSignalParams,
+                                       unsigned int numExtSems,
+                                       queue_ptr q_ptr = &get_default_queue()) {
   for (int i = 0; i < numExtSems; i++) {
     auto extSemType = extSem[i]->get_handle_type();
+    switch (extSemType) {
 #ifdef _WIN32
-    if (extSemType == sycl::ext::oneapi::experimental::
-                          external_semaphore_handle_type::win32_nt_dx12_fence) {
+    case sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+        win32_nt_dx12_fence:
+    case sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+        timeline_win32_nt_handle:
       q_ptr->ext_oneapi_signal_external_semaphore(
           extSem[i]->get(), semSignalParams[i].get_value());
-    } else if (extSemType ==
-               sycl::ext::oneapi::experimental::external_semaphore_handle_type::
-                   win32_nt_handle) {
+      break;
+    case sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+        win32_nt_handle:
       q_ptr->ext_oneapi_signal_external_semaphore(extSem[i]->get());
-    }
-#else
-    if (extSemType == sycl::ext::oneapi::experimental::
-                          external_semaphore_handle_type::opaque_fd) {
+      break;
+#else  // _WIN32
+    case sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+        timeline_fd:
+      q_ptr->ext_oneapi_signal_external_semaphore(
+          extSem[i]->get(), semSignalParams[i].get_value());
+      break;
+    case sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+        opaque_fd:
       q_ptr->ext_oneapi_signal_external_semaphore(extSem[i]->get());
-    }
+      break;
 #endif // _WIN32
-    else {
+    default:
       throw std::runtime_error(
           "Unsupported external semaphore resource handle type!");
+      break;
     }
   }
 }
@@ -1377,31 +1386,40 @@ inline void signal_external_semaphore(external_sem_wrapper **extSem,
 /// \param [in] semWaitParams Pointer to the external semaphore wait parameters.
 /// \param [in] numExtSems Number of external semaphores to wait.
 /// \param [in] q_ptr The queue used to wait on the external semaphore resource.
-inline void wait_external_semaphore(external_sem_wrapper **extSem,
-                                    external_sem_params *semWaitParams,
-                                    unsigned int numExtSems,
-                                    queue_ptr q_ptr = &get_default_queue()) {
+inline void wait_external_semaphores(external_sem_wrapper **extSem,
+                                     external_sem_params *semWaitParams,
+                                     unsigned int numExtSems,
+                                     queue_ptr q_ptr = &get_default_queue()) {
   for (int i = 0; i < numExtSems; i++) {
     auto extSemType = extSem[i]->get_handle_type();
+    switch (extSemType) {
 #ifdef _WIN32
-    if (extSemType == sycl::ext::oneapi::experimental::
-                          external_semaphore_handle_type::win32_nt_dx12_fence) {
+    case sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+        win32_nt_dx12_fence:
+    case sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+        timeline_win32_nt_handle:
       q_ptr->ext_oneapi_wait_external_semaphore(extSem[i]->get(),
                                                 semWaitParams[i].get_value());
-    } else if (extSemType ==
-               sycl::ext::oneapi::experimental::external_semaphore_handle_type::
-                   win32_nt_handle) {
+      break;
+    case sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+        win32_nt_handle:
       q_ptr->ext_oneapi_wait_external_semaphore(extSem[i]->get());
-    }
-#else
-    if (extSemType == sycl::ext::oneapi::experimental::
-                          external_semaphore_handle_type::opaque_fd) {
+      break;
+#else  // _WIN32
+    case sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+        timeline_fd:
+      q_ptr->ext_oneapi_wait_external_semaphore(extSem[i]->get(),
+                                                semWaitParams[i].get_value());
+      break;
+    case sycl::ext::oneapi::experimental::external_semaphore_handle_type::
+        opaque_fd:
       q_ptr->ext_oneapi_wait_external_semaphore(extSem[i]->get());
-    }
+      break;
 #endif // _WIN32
-    else {
+    default:
       throw std::runtime_error(
           "Unsupported external semaphore resource handle type!");
+      break;
     }
   }
 }

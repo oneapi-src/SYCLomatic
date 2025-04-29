@@ -7,8 +7,9 @@
 
 __device__ float out[NUM_ELEMENTS];
 
-// CHECK: __dpct_inline__ void kernel1(const sycl::nd_item<3> &[[ITEM:item_ct1]], float *out) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = [[ITEM]].get_local_id(2);
+// CHECK: __dpct_inline__ void kernel1(float *out) {
+// CHECK:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK:   out[item_ct1.get_local_id(2)] = item_ct1.get_local_id(2);
 // CHECK: }
 __forceinline__ __global__ void kernel1() {
   out[threadIdx.x] = threadIdx.x;

@@ -30,8 +30,8 @@ void run_foo1() {
   my_kernel1<<<1, 1>>>([=] __device__(int idx) { idx++; });
 }
 
-//     CHECK:template <typename Foo> void my_kernel2(const Foo &foo,
-//CHECK-NEXT:                                        const sycl::nd_item<3> &item_ct1) {
+//     CHECK:template <typename Foo> void my_kernel2(const Foo &foo) {
+//CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 //CHECK-NEXT:  std::tuple<unsigned int, unsigned int> seeds = {1, 2};
 //CHECK-NEXT:  int idx = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 //CHECK-NEXT:  dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> state;
@@ -52,7 +52,7 @@ template <typename Foo> __global__ void my_kernel2(const Foo &foo) {
 //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:      my_kernel2([] (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> * state) {
 //CHECK-NEXT:    return state->generate<oneapi::mkl::rng::device::uniform<double>, 2>();
-//CHECK-NEXT:  }, item_ct1);
+//CHECK-NEXT:  });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
 inline void run_foo2() {

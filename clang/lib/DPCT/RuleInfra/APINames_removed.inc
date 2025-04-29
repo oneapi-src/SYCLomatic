@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+// clang-format off
 ENTRY(cublasInit,                      "this functionality is redundant in SYCL.")
 ENTRY(cublasShutdown,                  "this functionality is redundant in SYCL.")
 ENTRY(cublasGetError,                  "this functionality is redundant in SYCL.")
@@ -42,4 +43,8 @@ ENTRY(cudaProfilerStop,                "SYCL currently does not support this fun
 ENTRY(cuFuncSetAttribute,              "SYCL currently does not support setting kernel function attributes")
 ENTRY(cuGetExportTable,                "SYCL does not provide a standard API to export internal runtime or driver API. Check and implement the functionality corresponding to the function of the first parameter `const void **table` populated by the API.")
 
+ENTRY(cuDevicePrimaryCtxSetFlags_v2,   "SYCL currently does not support setting device context flags.")
+ENTRY(cuDevicePrimaryCtxGetState,      "SYCL currently does not support querying device context flags.")
+
 ENTRY(cudaGraphicsResourceSetMapFlags, "this functionality is deprecated in DX12 and hence is not supported in SYCL.")
+// clang-format on

@@ -109,10 +109,14 @@ int main() {
   memHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32Kmt;
 #endif // !NO_BUILD_TEST
 
-  // CHECK: semHandleDesc.set_handle_type(sycl::ext::oneapi::experimental::external_semaphore_handle_type::win32_nt_handle);
+  // CHECK: semHandleDesc.set_handle_type(sycl::ext::oneapi::experimental::external_semaphore_handle_type::timeline_win32_nt_handle);
+  // CHECK-NEXT: semHandleDesc.set_handle_type(sycl::ext::oneapi::experimental::external_semaphore_handle_type::timeline_fd);
+  // CHECK-NEXT: semHandleDesc.set_handle_type(sycl::ext::oneapi::experimental::external_semaphore_handle_type::win32_nt_handle);
   // CHECK-NEXT: semHandleDesc.set_handle_type(sycl::ext::oneapi::experimental::external_semaphore_handle_type::win32_nt_dx12_fence);
   // CHECK-NEXT: semHandleDesc.set_handle_type(sycl::ext::oneapi::experimental::external_semaphore_handle_type::opaque_fd);
   // CHECK-NEXT: semHandleDesc.set_handle_type(semHandleType);
+  semHandleDesc.type = cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32;
+  semHandleDesc.type = cudaExternalSemaphoreHandleTypeTimelineSemaphoreFd;
   semHandleDesc.type = cudaExternalSemaphoreHandleTypeOpaqueWin32;
   semHandleDesc.type = cudaExternalSemaphoreHandleTypeD3D12Fence;
   semHandleDesc.type = cudaExternalSemaphoreHandleTypeOpaqueFd;
@@ -365,10 +369,10 @@ int main() {
   // CHECK-WINDOWS-NEXT: DPCT1136:{{[0-9]+}}: SYCL Bindless Images extension only supports importing external resource using NT handle on Windows. If assert(semHandleDesc.get_win32_handle()) fails, you may need to adjust the code to use (semHandleDesc.get_win32_handle()).
   // CHECK-WINDOWS-NEXT: */
   // CHECK: dpct::experimental::import_external_semaphore(&extSem, &semHandleDesc);
-  // CHECK-NEXT: dpct::experimental::signal_external_semaphore(&extSem, &signalParams, 1);
-  // CHECK-NEXT: dpct::experimental::signal_external_semaphore(extSemArr, signalParamsArr, numExtSems, stream);
-  // CHECK-NEXT: dpct::experimental::wait_external_semaphore(&extSem, &waitParams, 1);
-  // CHECK-NEXT: dpct::experimental::wait_external_semaphore(extSemArr, waitParamsArr, numExtSems, stream);
+  // CHECK-NEXT: dpct::experimental::signal_external_semaphores(&extSem, &signalParams, 1);
+  // CHECK-NEXT: dpct::experimental::signal_external_semaphores(extSemArr, signalParamsArr, numExtSems, stream);
+  // CHECK-NEXT: dpct::experimental::wait_external_semaphores(&extSem, &waitParams, 1);
+  // CHECK-NEXT: dpct::experimental::wait_external_semaphores(extSemArr, waitParamsArr, numExtSems, stream);
   // CHECK-NEXT: delete extSem;
   cudaImportExternalSemaphore(&extSem, &semHandleDesc);
   cudaSignalExternalSemaphoresAsync(&extSem, &signalParams, 1);

@@ -17,8 +17,8 @@ __device__ void testDevice(const int *K) {
      //CHECK:void testDevice1(const int *K) { int t = K[0]; }
 __device__ void testDevice1(const int *K) { int t = K[0]; }
 
-     //CHECK:void testKernelPtr(const int *L, const int *M, int N,
-//CHECK-NEXT:                   const sycl::nd_item<3> &item_ct1) {
+     //CHECK:void testKernelPtr(const int *L, const int *M, int N) {
+//CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 //CHECK-NEXT:  testDevice(L);
 //CHECK-NEXT:  int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
 //CHECK-NEXT:             item_ct1.get_local_id(2);
@@ -41,8 +41,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 //CHECK-NEXT:  int karg3 = 80;
 //CHECK-NEXT:  q_ct1.parallel_for(sycl::nd_range<3>(griddim * threaddim, threaddim),
 //CHECK-NEXT:                     [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:                       testKernelPtr((const int *)karg1, karg2, karg3,
-//CHECK-NEXT:                                     item_ct1);
+//CHECK-NEXT:                       testKernelPtr((const int *)karg1, karg2, karg3);
 //CHECK-NEXT:                     });
 //CHECK-NEXT:}
 int main() {

@@ -199,13 +199,29 @@ CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     CONDITIONAL_FACTORY_ENTRY(
         makeCheckNot(CheckArgIsDefaultCudaStream(3)),
+        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaSignalExternalSemaphoresAsync",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::signal_external_semaphores",
+                                ARG(0), ARG(1), ARG(2), ARG(3)))),
+        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaSignalExternalSemaphoresAsync",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::signal_external_semaphores",
+                                ARG(0), ARG(1), ARG(2))))),
+    UNSUPPORT_FACTORY_ENTRY("cudaSignalExternalSemaphoresAsync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaSignalExternalSemaphoresAsync"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckNot(CheckArgIsDefaultCudaStream(3)),
         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaSignalExternalSemaphoresAsync_v2",
                            CALL(MapNames::getDpctNamespace() +
-                                    "experimental::signal_external_semaphore",
+                                    "experimental::signal_external_semaphores",
                                 ARG(0), ARG(1), ARG(2), ARG(3)))),
         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaSignalExternalSemaphoresAsync_v2",
                            CALL(MapNames::getDpctNamespace() +
-                                    "experimental::signal_external_semaphore",
+                                    "experimental::signal_external_semaphores",
                                 ARG(0), ARG(1), ARG(2))))),
     UNSUPPORT_FACTORY_ENTRY("cudaSignalExternalSemaphoresAsync_v2", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaSignalExternalSemaphoresAsync_v2"),
@@ -215,13 +231,29 @@ CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     CONDITIONAL_FACTORY_ENTRY(
         makeCheckNot(CheckArgIsDefaultCudaStream(3)),
+        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaWaitExternalSemaphoresAsync",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::wait_external_semaphores",
+                                ARG(0), ARG(1), ARG(2), ARG(3)))),
+        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaWaitExternalSemaphoresAsync",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::wait_external_semaphores",
+                                ARG(0), ARG(1), ARG(2))))),
+    UNSUPPORT_FACTORY_ENTRY("cudaWaitExternalSemaphoresAsync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaWaitExternalSemaphoresAsync"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckNot(CheckArgIsDefaultCudaStream(3)),
         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaWaitExternalSemaphoresAsync_v2",
                            CALL(MapNames::getDpctNamespace() +
-                                    "experimental::wait_external_semaphore",
+                                    "experimental::wait_external_semaphores",
                                 ARG(0), ARG(1), ARG(2), ARG(3)))),
         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaWaitExternalSemaphoresAsync_v2",
                            CALL(MapNames::getDpctNamespace() +
-                                    "experimental::wait_external_semaphore",
+                                    "experimental::wait_external_semaphores",
                                 ARG(0), ARG(1), ARG(2))))),
     UNSUPPORT_FACTORY_ENTRY("cudaWaitExternalSemaphoresAsync_v2", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaWaitExternalSemaphoresAsync_v2"),

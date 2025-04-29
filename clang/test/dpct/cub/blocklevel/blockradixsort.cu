@@ -217,7 +217,7 @@ bool test_sort() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         Sort(d_data, item_ct1, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
+  // CHECK-NEXT:         Sort(d_data, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   Sort<<<1, 128>>>(d_data);
@@ -289,7 +289,7 @@ bool test_sort_descending() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         SortDescending(d_data, item_ct1, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
+  // CHECK-NEXT:         SortDescending(d_data, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   SortDescending<<<1, 128>>>(d_data);
@@ -323,7 +323,7 @@ bool test_sort_blocked_to_striped() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         SortBlockedToStriped(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         SortBlockedToStriped(d_data, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   SortBlockedToStriped<<<1, 128>>>(d_data);
@@ -364,7 +364,7 @@ bool test_sort_descending_blocked_to_striped() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         SortDescendingBlockedToStriped(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         SortDescendingBlockedToStriped(d_data, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   SortDescendingBlockedToStriped<<<1, 128>>>(d_data);
@@ -441,7 +441,7 @@ bool test_sort_bit() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         SortBit(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         SortBit(d_data, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   SortBit<<<1, 128>>>(d_data);
@@ -511,7 +511,7 @@ bool test_sort_descending_bit() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         SortDescendingBit(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         SortDescendingBit(d_data, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   SortDescendingBit<<<1, 128>>>(d_data);
@@ -545,7 +545,7 @@ bool test_sort_blocked_to_striped_bit() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         SortBlockedToStripedBit(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         SortBlockedToStripedBit(d_data, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   SortBlockedToStripedBit<<<1, 128>>>(d_data);
@@ -615,7 +615,7 @@ bool test_sort_descending_blocked_to_striped_bit() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         SortDescendingBlockedToStripedBit(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         SortDescendingBlockedToStripedBit(d_data, &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   SortDescendingBlockedToStripedBit<<<1, 128>>>(d_data);

@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/builtin_warpSize %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=free-function-queries  --format-range=none -out-root %T/builtin_warpSize %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/builtin_warpSize/builtin_warpSize.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/builtin_warpSize/builtin_warpSize.dp.cpp -o %T/builtin_warpSize/builtin_warpSize.dp.o %}
 
@@ -30,7 +30,7 @@ __global__ void bar(){
 }
 
 // CHECK: int tensorPos(const int ct, const sycl::nd_item<3> &item_ct1, int numLane = 0) {
-// CHECK-NEXT:   if (!numLane) numLane = item_ct1.get_sub_group().get_local_range().get(0);
+// CHECK-NEXT: if (!numLane) numLane = item_ct1.get_sub_group().get_local_range().get(0);
 // CHECK-NEXT:   int r = ct * numLane;
 // CHECK-NEXT:   return r;
 // CHECK-NEXT: }

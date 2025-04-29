@@ -68,6 +68,7 @@ enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_DeviceInfo,
   ExtDE_BFloat16,
   ExtDE_PeerAccess,
+  ExtDE_FreeQueries,
   ExtDE_Assert,
   ExtDE_QueueEmpty,
   ExtDE_DPCPPExtensionsDefaultEnabledEnumSize,

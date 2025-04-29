@@ -1,6 +1,6 @@
 // FIXME
 // UNSUPPORTED: system-windows
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
+// RUN: dpct --no-dpcpp-extensions=free-function-queries --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --input-file %T/template-kernel-call/template-kernel-call.dp.cpp --match-full-lines %s
 
 #include <vector>
@@ -104,7 +104,7 @@ void runTest() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, TestName, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         testKernelPtr<TestName, ktarg, T>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), item_ct1);
+  // CHECK-NEXT:          testKernelPtr<TestName, ktarg, T>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   testKernelPtr<TestName, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg2);
@@ -266,7 +266,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}, T>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128) * sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          convert_kernel(b, item_ct1, aaa_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), bbb_acc_ct1);
+// CHECK-NEXT: convert_kernel(b, item_ct1, aaa_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), bbb_acc_ct1);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:  }
