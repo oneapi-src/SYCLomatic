@@ -155,7 +155,7 @@ public:
   inline void addTemplateDependentReplacement(std::string String,
                                               unsigned TemplateIndex) {
     auto TDR = std::make_shared<TemplateDependentReplacement>(
-        String, String.size(), TemplateIndex);
+        String, 0, String.size(), TemplateIndex);
     TDRs.insert(std::make_pair(0, TDR));
   }
 
@@ -186,6 +186,7 @@ public:
     replaceString();
     return SourceStr;
   }
+  inline const std::string &getSourceStr() { return SourceStr; }
 
 private:
   StringReplacements(const StringReplacements &) = delete;
@@ -202,6 +203,7 @@ private:
 
 /// Analyze expression and generate its migrated string
 class ExprAnalysis {
+  bool FFFFF = false;
 public:
   inline std::string getRewritePrefix() { return RewritePrefix; }
 
