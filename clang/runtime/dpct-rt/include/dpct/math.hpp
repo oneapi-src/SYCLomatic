@@ -2218,8 +2218,24 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
   ldmatrix(addr, m4, trans, 3);
 }
 
-/// Stores 1 8x8 b16 matrix from private memory to local memory (32-bits per wi)
-/// Requires the sub-group size of kernel calling this function to be 32
+/// Stores 1 8x8 b16 matrix from private memory to local memory per sub-group.
+/// Requires the sub-group size of kernel calling this function to be 32.
+/// Each of the first 8 work items contain the starting address of their
+/// respective matrix row.
+/// Each of the 32 work items store 32-bits (2 packed 16-bit data) for a total
+/// of 128 bytes.
+/// Row Major: Each row of the matrix is stored by a group of 4 work items
+/// r0: t0 t1 t2 t3
+/// r1: t4 t5 t6 t7
+/// ...
+/// r7: t24 t25 t26 t27
+/// r7: t28 t29 t30 t31
+/// Col Major: Each col of the matrix is stored by a group of 4 work items
+/// r0: t0 t4 t8 ... t28
+/// r1: t0 t4 t8 ... t28
+/// ...
+/// r6: t3 t7 t11 ... t31
+/// r7: t3 t7 t11 ... t31
 /// \tparam [in] T The type of matrix elements
 /// \param [in] addr The address of the matrix in local memory
 /// \param [in] m The private memory containing data of matrix
@@ -2272,8 +2288,12 @@ void stmatrix(uintptr_t addr, T m, bool trans = false, unsigned mat = 0) {
   }
 }
 
-/// Stores 2 8x8 b16 matrix from private memory to local memory (32-bits per wi)
-/// Requires the sub-group size of kernel calling this function to be 32
+/// Stores 2 8x8 b16 matrix from private memory to local memory per sub-group.
+/// Requires the sub-group size of kernel calling this function to be 32.
+/// Each of the first 16 work items contain the starting address of their
+/// respective matrix row.
+/// Each of the 32 work items store 64-bits (32-bit per matrix) for a total
+/// of 256 bytes.
 /// \tparam [in] T The type of matrix elements
 /// \param [in] addr The address of the matrix in local memory
 /// \param [in] m1 The private memory containing data of 1st matrix
@@ -2287,8 +2307,12 @@ void stmatrix(uintptr_t addr, T m1, T m2, bool trans = false) {
   stmatrix(addr, m2, trans, 1);
 }
 
-/// Stores 4 8x8 b16 matrix from private memory to local memory (32-bits per wi)
-/// Requires the sub-group size of kernel calling this function to be 32
+/// Stores 4 8x8 b16 matrix from private memory to local memory per sub-group.
+/// Requires the sub-group size of kernel calling this function to be 32.
+/// Each of the 32 work items contain the starting address of their
+/// respective matrix row.
+/// Each of the 32 work items store 128-bits (32-bit per matrix) for a total
+/// of 512 bytes.
 /// \tparam [in] T The type of matrix elements
 /// \param [in] addr The address of the matrix in local memory
 /// \param [in] m1 The private memory containing data of 1st matrix
