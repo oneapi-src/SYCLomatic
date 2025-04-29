@@ -560,7 +560,10 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       ExprAnalysis EA(VD->getInit());
       std::string VDInitStr = EA.getReplacedString();
       std::string VDStr = VD->getNameAsString();
+      // This offset is relative to the original str
       addReplacement(0, VDStr.size(), VDInitStr);
+      //
+      addReplacement("ThreadsPerBlock", 0);
     }
   } else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
     std::unordered_set<std::string> targetStr = {
