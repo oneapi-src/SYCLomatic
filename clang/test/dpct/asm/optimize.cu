@@ -176,3 +176,14 @@ __device__ int test5() {
   MACRO(7, s32 == 0, asm("add.s32.sat %0, %1, %2;" : "=r"(s32) : "r"(s32x), "r"(0)));
   return 0;
 }
+
+// CHECK: inline void foo() {
+// CHECK-NEXT: #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+// CHECK-NEXT:   asm volatile(".reg .b8 byte0;\n");
+// CHECK-NEXT: #else
+// CHECK-NEXT:   uint8_t byte0;
+// CHECK-NEXT: #endif
+inline __device__ void foo() {
+  asm volatile(".reg .b8 byte0;\n");
+}
+

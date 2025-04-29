@@ -102,7 +102,7 @@ void InlineAsmParser::addBuiltinIdentifier() {
 
 InlineAsmBuiltinType *
 InlineAsmContext::getBuiltinType(InlineAsmBuiltinType::TypeKind Kind) {
-  assert(Kind > 0 && Kind < InlineAsmBuiltinType::NUM_TYPES && "Unknown Kind");
+  assert(Kind >= 0 && Kind < InlineAsmBuiltinType::NUM_TYPES && "Unknown Kind");
   if (AsmBuiltinTypes[Kind])
     return AsmBuiltinTypes[Kind];
 
