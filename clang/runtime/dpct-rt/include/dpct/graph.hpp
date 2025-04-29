@@ -26,19 +26,13 @@ typedef sycl::ext::oneapi::experimental::command_graph<
 typedef sycl::ext::oneapi::experimental::node *node_ptr;
 
 struct kernel_node_params {
-  dpct::dim3 block_dim{};
-  dpct::dim3 grid_dim{};
-  void **kernel_params{};
   void *func{};
+  dpct::dim3 grid_dim{};
+  dpct::dim3 block_dim{};
   unsigned int shared_mem_bytes{};
+  void **kernel_params{};
 
   std::vector<dpct::experimental::node_ptr> dependencies{};
-  kernel_node_params() = default;
-  kernel_node_params(const kernel_node_params &other)
-      : block_dim(other.block_dim), grid_dim(other.grid_dim),
-        kernel_params(other.kernel_params), func(other.func),
-        shared_mem_bytes(other.shared_mem_bytes),
-        dependencies(other.dependencies) {}
 
 public:
   void set_block_dim(const dpct::dim3 &block_dim) {
