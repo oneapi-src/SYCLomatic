@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __ZE_UTILS_HPP__
-#define __ZE_UTILS_HPP__
+#ifndef __DPCT_ZE_UTILS_HPP__
+#define __DPCT_ZE_UTILS_HPP__
 
 #ifdef ONEAPI_BACKEND_LEVEL_ZERO_EXT
 #if defined(__linux__)
@@ -82,4 +82,4 @@ inline ze_result_t open_mem_ipc_handle(ipc_mem_handle_ext_t ext_handle,
 #endif // __linux__
 #endif // ONEAPI_BACKEND_LEVEL_ZERO_EXT
 
-#endif // ! __ZE_UTILS_HPP__
+#endif // ! __DPCT_ZE_UTILS_HPP__
