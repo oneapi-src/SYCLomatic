@@ -552,13 +552,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     RefString = DRE->getNameInfo().getAsString();
   }
   if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
-    if (FFFFF)
-      addReplacement("ThreadsPerBlock", TemplateDecl->getIndex());
-    else
+    if (ConstExprExpanding) {
+      addReplacement(0 /*FIXME*/, TemplateDecl->getNameAsString(),
+                     TemplateDecl->getIndex());
+    } else
       addReplacement(DRE, TemplateDecl->getIndex());
   else if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl());
            VD && VD->isConstexpr() &&
-           IsAnalyzingCtTypeInfo /*&& IsDependent*/) {
+           IsAnalyzingCtTypeInfo /*FIXME: && IsDependent*/) {
     if (VD->getInit() && VD->getInit()->getBeginLoc().isValid()) {
       ExprAnalysis EA(VD->getInit());
       std::string VDInitStr = EA.getReplacedString();
@@ -568,9 +569,9 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       // TODO: more than 1 substrings matched
       if (Loc != std::string::npos) {
         addReplacement(Loc, VDStr.size(), VDInitStr);
-        FFFFF = true;
+        ConstExprExpanding = true;
         dispatch(VD->getInit());
-        FFFFF = false;
+        ConstExprExpanding = false;
       }
     }
   } else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {

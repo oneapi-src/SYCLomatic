@@ -152,13 +152,12 @@ public:
     TDRs.insert(std::make_pair(Offset + Shift, TDR));
   }
 
-  inline void addTemplateDependentReplacement(std::string String,
+  inline void addTemplateDependentReplacement(size_t Offset, std::string String,
                                               unsigned TemplateIndex) {
     auto TDR = std::make_shared<TemplateDependentReplacement>(
-        String, 0, String.size(), TemplateIndex);
-    TDRs.insert(std::make_pair(0, TDR));
+        String, Offset, String.size(), TemplateIndex);
+    TDRs.insert(std::make_pair(Offset, TDR));
   }
-
   // Add a string replacement
   void addStringReplacement(size_t Offset, size_t Length, std::string Text) {
     auto Result = ReplMap.insert(std::make_pair(
@@ -203,7 +202,6 @@ private:
 
 /// Analyze expression and generate its migrated string
 class ExprAnalysis {
-  bool FFFFF = false;
 public:
   inline std::string getRewritePrefix() { return RewritePrefix; }
 
@@ -611,9 +609,9 @@ protected:
     ReplSet.addTemplateDependentReplacement(Offset, Length, TemplateIndex);
   }
 
-  inline void addReplacement(std::string String,
+  inline void addReplacement(size_t Offset, std::string String,
                              unsigned TemplateIndex) {
-    ReplSet.addTemplateDependentReplacement(String, TemplateIndex);
+    ReplSet.addTemplateDependentReplacement(Offset, String, TemplateIndex);
   }
 
   // Analyze the expression, jump to corresponding analysis function according
@@ -721,6 +719,7 @@ private:
   std::string RewritePrefix;
   std::string RewritePostfix;
   std::set<HelperFeatureEnum> HelperFeatureSet;
+  bool ConstExprExpanding = false;
 
 public:
   bool IsAnalyzingCtTypeInfo = false;
