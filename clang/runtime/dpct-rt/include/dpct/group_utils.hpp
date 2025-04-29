@@ -360,16 +360,14 @@ public:
   }
 
 private:
-  template <typename KT>
-  using key_type =
-      typename std::conditional<std::is_same<KT, sycl::half>::value, uint16_t,
-                                uint32_t>::type;
   template <typename Item, bool DESCENDING>
   __dpct_inline__ void
   helper_sort(const Item &item, T (&keys)[ElementsPerWorkItem],
               int begin_bit = 0, int end_bit = 8 * sizeof(T),
               bool is_striped = false) {
-    using UnsignedT = key_type<T>;
+    using UnsignedT =
+        typename std::conditional<std::is_same<T, sycl::half>::value, uint16_t,
+                                  uint32_t>::type;
     UnsignedT(&unsigned_keys)[ElementsPerWorkItem] =
         reinterpret_cast<UnsignedT(&)[ElementsPerWorkItem]>(keys);
 
