@@ -17,7 +17,7 @@ __global__ void myKernel(int *data) {
   }
 }
 
-// CHECK: void myKernel_wrapper(int* data) {
+// CHECK: void myKernel_wrapper(int *data) {
 // CHECK:        sycl::queue queue = *dpct::kernel_launcher::_que;
 // CHECK:        unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
 // CHECK:        sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
