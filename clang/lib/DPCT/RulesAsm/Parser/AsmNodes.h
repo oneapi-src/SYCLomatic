@@ -99,9 +99,9 @@ public:
     return ((K == Kind) || ...);
   }
   template <class... Ks> bool isNot(Ks... K) { return ((K != Kind) && ...); }
-  bool isBit() const { return isOneOf(b8, b16, b32, b64); }
-  bool isSigned() const { return isOneOf(s8, s16, s32, s64); }
-  bool isUnsigned() const { return isOneOf(u8, u16, u32, u64); }
+  bool isBit() const { return isOneOf(b1, b8, b16, b32, b64); }
+  bool isSigned() const { return isOneOf(s4, s8, s16, s32, s64); }
+  bool isUnsigned() const { return isOneOf(u4, u8, u16, u32, u64); }
   bool isInt() const { return isSigned() || isUnsigned(); }
   bool isFloat() const { return isOneOf(f16, f32, f64); }
   bool isScalar() const { return isInt() || isFloat(); }

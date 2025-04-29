@@ -514,14 +514,17 @@ bool SYCLGenBase::emitType(const InlineAsmType *T) {
 bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
   switch (T->getKind()) {
     // clang-format off
+  case InlineAsmBuiltinType::b1:     OS() << "uint8_t"; break;
   case InlineAsmBuiltinType::b8:     OS() << "uint8_t"; break;
   case InlineAsmBuiltinType::b16:    OS() << "uint16_t"; break;
   case InlineAsmBuiltinType::b32:    OS() << "uint32_t"; break;
   case InlineAsmBuiltinType::b64:    OS() << "uint64_t"; break;
+  case InlineAsmBuiltinType::u4:     OS() << "uint8_t"; break;
   case InlineAsmBuiltinType::u8:     OS() << "uint8_t"; break;
   case InlineAsmBuiltinType::u16:    OS() << "uint16_t"; break;
   case InlineAsmBuiltinType::u32:    OS() << "uint32_t"; break;
   case InlineAsmBuiltinType::u64:    OS() << "uint64_t"; break;
+  case InlineAsmBuiltinType::s4:     OS() << "int8_t"; break;
   case InlineAsmBuiltinType::s8:     OS() << "int8_t"; break;
   case InlineAsmBuiltinType::s16:    OS() << "int16_t"; break;
   case InlineAsmBuiltinType::s32:    OS() << "int32_t"; break;
@@ -1347,23 +1350,19 @@ protected:
     // Register sizes for vector elements of A, B, C & D matrices
     unsigned NumVecElements[4] = {0};
 
+    // Sizes of A & B matrices
+    std::string M, N, K;
+
+    // Operator for m8n8k128/m16n8k128/m16n8k256
+    std::string MatrixOp;
+
     // Data type used to multiply A & B matrices
     std::string MulType;
-    if (Inst->hasAttr(InstAttr::m16n8k16)) {
-      // Only f16 type is supported for A and B matrix data for m16n8k16
-      if (AType->getKind() == InlineAsmBuiltinType::f16) {
-        // If A matrix type is f16, then C&D matrix types can only be f16
-        if (CType->getKind() == AType->getKind()) {
-          NumVecElements[0] = 2; // A
-          NumVecElements[1] = 4; // B
-          NumVecElements[2] = 4; // C
-          NumVecElements[3] = 4; // D
-        } else
-          return SYCLGenError();
-      } else
-        return SYCLGenError();
-    } else if (Inst->hasAttr(InstAttr::m8n8k4)) {
-      // f16 & f64 types are supported for A and B matrix data for m8n8k4
+    if (Inst->hasAttr(InstAttr::m8n8k4)) {
+      M = "8";
+      N = "8";
+      K = "4";
+      // f16 & f64 types are supported for A and B matrices of m8n8k4
       if (AType->getKind() == InlineAsmBuiltinType::f16) {
         // If A matrix type is f16, then C&D matrix types can only be f16/f32
         if (CType->getKind() == AType->getKind()) {
@@ -1389,6 +1388,242 @@ protected:
           return SYCLGenError();
       } else
         return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m8n8k16)) {
+      M = "8";
+      N = "8";
+      K = "16";
+      // Only s8/u8 types are supported for A and B matrices of m8n8k16
+      if (AType->getKind() == InlineAsmBuiltinType::s8 ||
+          AType->getKind() == InlineAsmBuiltinType::u8) {
+        // If A matrix type is s8/u8, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 1; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 2; // C
+          NumVecElements[3] = 2; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m8n8k32)) {
+      M = "8";
+      N = "8";
+      K = "32";
+      // Only s4/u4 types are supported for A and B matrices of m16n8k32
+      if (AType->getKind() == InlineAsmBuiltinType::s4 ||
+          AType->getKind() == InlineAsmBuiltinType::u4) {
+        // If A matrix type is s4/u4, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 1; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 2; // C
+          NumVecElements[3] = 2; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m8n8k128)) {
+      M = "8";
+      N = "8";
+      K = "128";
+      // Only b1 type is supported for A and B matrices of m16n8k128
+      if (AType->getKind() == InlineAsmBuiltinType::b1) {
+        // If A matrix type is b1, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 1; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 2; // C
+          NumVecElements[3] = 2; // D
+
+          // Only and/xor bitwise operations are supported for m8n8k128
+          if (Inst->hasAttr(InstAttr::op_and))
+            MatrixOp = "and";
+          else if (Inst->hasAttr(InstAttr::op_xor))
+            MatrixOp = "xor";
+          else
+            return SYCLGenError();
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m16n8k4)) {
+      M = "16";
+      N = "8";
+      K = "4";
+      // Only f64 type is supported for A and B matrices of m16n8k4
+      if (AType->getKind() == InlineAsmBuiltinType::f64) {
+        // If A matrix type is f64, then C&D matrix types can only be f64
+        if (CType->getKind() == InlineAsmBuiltinType::f64) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m16n8k8)) {
+      M = "16";
+      N = "8";
+      K = "8";
+      // Only f16/f64 types are supported for A and B matrices of m16n8k8
+      if (AType->getKind() == InlineAsmBuiltinType::f16) {
+        // If A matrix type is f16, then C&D matrix types can only be f16/f32
+        if (CType->getKind() == InlineAsmBuiltinType::f16) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 2; // C
+          NumVecElements[3] = 2; // D
+        } else if (CType->getKind() == InlineAsmBuiltinType::f32) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else if (AType->getKind() == InlineAsmBuiltinType::f64) {
+        // If A matrix type is f64, then C&D matrix types can only be f64
+        if (CType->getKind() == InlineAsmBuiltinType::f64) {
+          NumVecElements[0] = 4; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m16n8k16)) {
+      M = "16";
+      N = "8";
+      K = "16";
+      // Only f16/f64/s8/u8 type is supported for A and B matrices of m16n8k16
+      if (AType->getKind() == InlineAsmBuiltinType::f16) {
+        // If A matrix type is f16, then C&D matrix types can only be f16/f32
+        if (CType->getKind() == AType->getKind()) {
+          NumVecElements[0] = 4; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 2; // C
+          NumVecElements[3] = 2; // D
+        } else if (CType->getKind() == InlineAsmBuiltinType::f32) {
+          NumVecElements[0] = 4; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else if (AType->getKind() == InlineAsmBuiltinType::f64) {
+        // If A matrix type is f64, then C&D matrix types can only be f64
+        if (CType->getKind() == AType->getKind()) {
+          NumVecElements[0] = 8; // A
+          NumVecElements[1] = 4; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else if (AType->getKind() == InlineAsmBuiltinType::s8 ||
+                 AType->getKind() == InlineAsmBuiltinType::u8) {
+        // If A matrix type is s8/u8, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m16n8k32)) {
+      M = "16";
+      N = "8";
+      K = "32";
+      // Only s4/s8/u4/u8 types are supported for A and B matrices of m16n8k32
+      if (AType->getKind() == InlineAsmBuiltinType::s4 ||
+          AType->getKind() == InlineAsmBuiltinType::u4) {
+        // If A matrix type is s4/u4, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else if (AType->getKind() == InlineAsmBuiltinType::s8 ||
+                 AType->getKind() == InlineAsmBuiltinType::u8) {
+        // If A matrix type is s8/u8, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 4; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m16n8k64)) {
+      M = "16";
+      N = "8";
+      K = "64";
+      // Only s4/u4 types are supported for A and B matrices of m16n8k64
+      if (AType->getKind() == InlineAsmBuiltinType::s4 ||
+          AType->getKind() == InlineAsmBuiltinType::u4) {
+        // If A matrix type is s4/u4, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 4; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m16n8k128)) {
+      M = "16";
+      N = "8";
+      K = "128";
+      // Only b1 type is supported for A and B matrices of m16n8k128
+      if (AType->getKind() == InlineAsmBuiltinType::b1) {
+        // If A matrix type is b1, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+
+          // Only and/xor bitwise operations are supported for m16n8k128
+          if (Inst->hasAttr(InstAttr::op_and))
+            MatrixOp = "and";
+          else if (Inst->hasAttr(InstAttr::op_xor))
+            MatrixOp = "xor";
+          else
+            return SYCLGenError();
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m16n8k256)) {
+      M = "16";
+      N = "8";
+      K = "256";
+      // Only b1 type is supported for A and B matrices of m16n8k256
+      if (AType->getKind() == InlineAsmBuiltinType::b1) {
+        // If A matrix type is b1, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 4; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+
+          // Only and/xor bitwise operations are supported for m16n8k256
+          if (Inst->hasAttr(InstAttr::op_and))
+            MatrixOp = "and";
+          else if (Inst->hasAttr(InstAttr::op_xor))
+            MatrixOp = "xor";
+          else
+            return SYCLGenError();
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
     } else
       return SYCLGenError();
 
@@ -1407,7 +1642,12 @@ protected:
 
     MulType = ABType;
     OS() << MapNames::getDpctNamespace() << "experimental::matrix::mma";
-    OS() << "<" << MulType << ">(";
+    if (!MatrixOp.empty()) {
+      OS() << "_" << MatrixOp;
+    }
+    OS() << "<";
+    OS() << M << ", " << N << ", " << K << ", ";
+    OS() << MulType << ">(";
 
     // Add D matrix address values to store the MAD result
     for (unsigned Inst = 0; Inst != DMatVE->getNumElements(); ++Inst) {
@@ -1416,7 +1656,8 @@ protected:
       OS() << "&";
       if (emitStmt(DMatVE->getElement(Inst)))
         return SYCLGenError();
-      OS() << ", ";
+      if ((Inst + 1) != DMatVE->getNumElements())
+        OS() << ", ";
     }
 
     // Add A, B & C matrix values to compute MAD
@@ -1427,16 +1668,15 @@ protected:
         for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
           if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
             continue;
+          OS() << ", ";
           if (emitStmt(VE->getElement(Inst)))
             return SYCLGenError();
-          OS() << ", ";
         }
       } else {
         return SYCLGenError();
       }
     }
 
-    OS() << DpctGlobalInfo::getItem(GAS);
     OS() << ");";
 
     const auto *KernelDecl = getImmediateOuterFuncDecl(GAS);
