@@ -50,7 +50,7 @@ int main() {
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
   // CHECK-NEXT: res = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   int res = cublasIsamax(n, x_S, incx);
@@ -58,7 +58,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
   // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result = cublasIdamax(n, x_D, incx);
@@ -67,7 +67,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
   // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result = cublasIsamin(n, x_S, incx);
@@ -75,7 +75,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(dpct::blas::descriptor::get_saved_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(dpct::blas::descriptor::get_saved_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
   // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result = cublasIdamin(n, x_D, incx);
@@ -627,7 +627,7 @@ int main() {
   // CHECK: for(int i = [&](){
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
   // CHECK-NEXT: return res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }();;){}
   for(int i = cublasIsamax(n, x_S, incx);;){}
@@ -640,7 +640,7 @@ int main() {
 //CHECK-NEXT:  return [&](){
 //CHECK-NEXT:  auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
 //CHECK-NEXT:  sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-//CHECK-NEXT:  oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+//CHECK-NEXT:  oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
 //CHECK-NEXT:  return res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
 //CHECK-NEXT:  }();
 //CHECK-NEXT:}
