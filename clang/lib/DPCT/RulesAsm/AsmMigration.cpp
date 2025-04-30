@@ -1316,6 +1316,11 @@ protected:
     if (Inst->getNumInputOperands() != 1)
       return SYCLGenError();
 
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+
+    if (!Type || Type->getKind() != InlineAsmBuiltinType::b16)
+      return SYCLGenError();
+
     const InlineAsmVectorExpr *VE;
     if (VE = dyn_cast<InlineAsmVectorExpr>(Inst->getOutputOperand())) {
       auto numOutputOperands = VE->getNumElements();
