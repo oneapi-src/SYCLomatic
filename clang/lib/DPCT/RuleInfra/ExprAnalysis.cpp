@@ -25,6 +25,7 @@
 #include "clang/AST/StmtCXX.h"
 #include "clang/AST/TypeLoc.h"
 #include "llvm/Support/raw_ostream.h"
+#include <optional>
 
 extern clang::tooling::UnifiedPath DpctInstallPath;
 namespace clang {
@@ -552,9 +553,16 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     RefString = DRE->getNameInfo().getAsString();
   }
   if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
-    if (ConstExprExpanding) {
-      addReplacement(0 /*FIXME*/, TemplateDecl->getNameAsString(),
-                     TemplateDecl->getIndex());
+    if (ConstExprExpansionInfo) {
+      auto Loc = ConstExprExpansionInfo.value().first.find(
+          TemplateDecl->getNameAsString());
+      // TODO: more than 1 substrings matched
+      if (Loc != std::string::npos) {
+        // Offset is relative to the final migrated string
+        addReplacement(Loc + ConstExprExpansionInfo.value().second,
+                       TemplateDecl->getNameAsString(),
+                       TemplateDecl->getIndex());
+      }
     } else
       addReplacement(DRE, TemplateDecl->getIndex());
   else if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl());
@@ -569,9 +577,9 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       // TODO: more than 1 substrings matched
       if (Loc != std::string::npos) {
         addReplacement(Loc, VDStr.size(), VDInitStr);
-        ConstExprExpanding = true;
+        ConstExprExpansionInfo = std::make_pair(VDInitStr, Loc);
         dispatch(VD->getInit());
-        ConstExprExpanding = false;
+        ConstExprExpansionInfo = std::nullopt;
       }
     }
   } else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {

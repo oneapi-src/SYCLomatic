@@ -719,7 +719,9 @@ private:
   std::string RewritePrefix;
   std::string RewritePostfix;
   std::set<HelperFeatureEnum> HelperFeatureSet;
-  bool ConstExprExpanding = false;
+  std::optional<std::pair<std::string /*constexpr definitaion*/,
+                          unsigned /*constexpr offset in original str*/>>
+      ConstExprExpansionInfo = std::nullopt;
 
 public:
   bool IsAnalyzingCtTypeInfo = false;
