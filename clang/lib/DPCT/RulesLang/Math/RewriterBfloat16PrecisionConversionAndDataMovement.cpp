@@ -67,7 +67,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<int, " + MapNames::getClNamespace() +
+                  "template convert<int, " + MapNames::getClNamespace() +
                       "rounding_mode::rtn>"),
               LITERAL("0")))
       // __bfloat162int_rn
@@ -84,7 +84,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<int, " + MapNames::getClNamespace() +
+                  "template convert<int, " + MapNames::getClNamespace() +
                       "rounding_mode::rte>"),
               LITERAL("0")))
       // __bfloat162int_ru
@@ -101,7 +101,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<int, " + MapNames::getClNamespace() +
+                  "template convert<int, " + MapNames::getClNamespace() +
                       "rounding_mode::rtp>"),
               LITERAL("0")))
       // __bfloat162int_rz
@@ -118,7 +118,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<int, " + MapNames::getClNamespace() +
+                  "template convert<int, " + MapNames::getClNamespace() +
                       "rounding_mode::rtz>"),
               LITERAL("0")))
       // __bfloat162ll_rd
@@ -135,7 +135,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<long long, " + MapNames::getClNamespace() +
+                  "template convert<long long, " + MapNames::getClNamespace() +
                       "rounding_mode::rtn>"),
               LITERAL("0")))
       // __bfloat162ll_rn
@@ -152,7 +152,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<long long, " + MapNames::getClNamespace() +
+                  "template convert<long long, " + MapNames::getClNamespace() +
                       "rounding_mode::rte>"),
               LITERAL("0")))
       // __bfloat162ll_ru
@@ -169,7 +169,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<long long, " + MapNames::getClNamespace() +
+                  "template convert<long long, " + MapNames::getClNamespace() +
                       "rounding_mode::rtp>"),
               LITERAL("0")))
       // __bfloat162ll_rz
@@ -186,7 +186,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<long long, " + MapNames::getClNamespace() +
+                  "template convert<long long, " + MapNames::getClNamespace() +
                       "rounding_mode::rtz>"),
               LITERAL("0")))
       // __bfloat162short_rd
@@ -203,7 +203,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<short, " + MapNames::getClNamespace() +
+                  "template convert<short, " + MapNames::getClNamespace() +
                       "rounding_mode::rtn>"),
               LITERAL("0")))
       // __bfloat162short_rn
@@ -220,7 +220,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<short, " + MapNames::getClNamespace() +
+                  "template convert<short, " + MapNames::getClNamespace() +
                       "rounding_mode::rte>"),
               LITERAL("0")))
       // __bfloat162short_ru
@@ -237,7 +237,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<short, " + MapNames::getClNamespace() +
+                  "template convert<short, " + MapNames::getClNamespace() +
                       "rounding_mode::rtp>"),
               LITERAL("0")))
       // __bfloat162short_rz
@@ -254,7 +254,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<short, " + MapNames::getClNamespace() +
+                  "template convert<short, " + MapNames::getClNamespace() +
                       "rounding_mode::rtz>"),
               LITERAL("0")))
       // __bfloat162uint_rd
@@ -271,7 +271,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned, " + MapNames::getClNamespace() +
+                  "template convert<unsigned, " + MapNames::getClNamespace() +
                       "rounding_mode::rtn>"),
               LITERAL("0")))
       // __bfloat162uint_rn
@@ -288,7 +288,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned, " + MapNames::getClNamespace() +
+                  "template convert<unsigned, " + MapNames::getClNamespace() +
                       "rounding_mode::rte>"),
               LITERAL("0")))
       // __bfloat162uint_ru
@@ -305,7 +305,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned, " + MapNames::getClNamespace() +
+                  "template convert<unsigned, " + MapNames::getClNamespace() +
                       "rounding_mode::rtp>"),
               LITERAL("0")))
       // __bfloat162uint_rz
@@ -322,7 +322,7 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned, " + MapNames::getClNamespace() +
+                  "template convert<unsigned, " + MapNames::getClNamespace() +
                       "rounding_mode::rtz>"),
               LITERAL("0")))
       // __bfloat162ull_rd
@@ -339,8 +339,8 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned long long, " + MapNames::getClNamespace() +
-                      "rounding_mode::rtn>"),
+                  "template convert<unsigned long long, " +
+                      MapNames::getClNamespace() + "rounding_mode::rtn>"),
               LITERAL("0")))
       // __bfloat162ull_rn
       CONDITIONAL_FACTORY_ENTRY(
@@ -356,8 +356,8 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned long long, " + MapNames::getClNamespace() +
-                      "rounding_mode::rte>"),
+                  "template convert<unsigned long long, " +
+                      MapNames::getClNamespace() + "rounding_mode::rte>"),
               LITERAL("0")))
       // __bfloat162ull_ru
       CONDITIONAL_FACTORY_ENTRY(
@@ -373,8 +373,8 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned long long, " + MapNames::getClNamespace() +
-                      "rounding_mode::rtp>"),
+                  "template convert<unsigned long long, " +
+                      MapNames::getClNamespace() + "rounding_mode::rtp>"),
               LITERAL("0")))
       // __bfloat162ull_rz
       CONDITIONAL_FACTORY_ENTRY(
@@ -390,8 +390,8 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned long long, " + MapNames::getClNamespace() +
-                      "rounding_mode::rtz>"),
+                  "template convert<unsigned long long, " +
+                      MapNames::getClNamespace() + "rounding_mode::rtz>"),
               LITERAL("0")))
       // __bfloat162ushort_rd
       CONDITIONAL_FACTORY_ENTRY(
@@ -408,8 +408,8 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned short, " + MapNames::getClNamespace() +
-                      "rounding_mode::rtn>"),
+                  "template convert<unsigned short, " +
+                      MapNames::getClNamespace() + "rounding_mode::rtn>"),
               LITERAL("0")))
       // __bfloat162ushort_rn
       CONDITIONAL_FACTORY_ENTRY(
@@ -426,8 +426,8 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned short, " + MapNames::getClNamespace() +
-                      "rounding_mode::rte>"),
+                  "template convert<unsigned short, " +
+                      MapNames::getClNamespace() + "rounding_mode::rte>"),
               LITERAL("0")))
       // __bfloat162ushort_ru
       CONDITIONAL_FACTORY_ENTRY(
@@ -444,8 +444,8 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned short, " + MapNames::getClNamespace() +
-                      "rounding_mode::rtp>"),
+                  "template convert<unsigned short, " +
+                      MapNames::getClNamespace() + "rounding_mode::rtp>"),
               LITERAL("0")))
       // __bfloat162ushort_rz
       CONDITIONAL_FACTORY_ENTRY(
@@ -462,8 +462,8 @@ RewriterMap dpct::createBfloat16PrecisionConversionAndDataMovementRewriterMap() 
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<unsigned short, " + MapNames::getClNamespace() +
-                      "rounding_mode::rtz>"),
+                  "template convert<unsigned short, " +
+                      MapNames::getClNamespace() + "rounding_mode::rtz>"),
               LITERAL("0")))
       // __bfloat16_as_short
       CONDITIONAL_FACTORY_ENTRY(

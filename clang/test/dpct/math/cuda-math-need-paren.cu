@@ -8,7 +8,7 @@ using namespace std;
 
 void __global__ kernel() {
   half2 h2;
-  // CHECK: (h2 + h2).convert<float, sycl::rounding_mode::automatic>();
+  // CHECK: (h2 + h2).template convert<float, sycl::rounding_mode::automatic>();
   __half22float2(__hadd2(h2, h2));
 }
 

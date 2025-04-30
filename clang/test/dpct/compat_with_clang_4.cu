@@ -7,7 +7,7 @@
 #include "cuda_fp16.h"
 
 // CHECK: inline void foo1(sycl::half2 *array, sycl::half a) {
-// CHECK-NEXT:   array[dpct::reverse_bits<unsigned int>(123)] = {a, sycl::vec<float, 1>(2.3f).convert<sycl::half, sycl::rounding_mode::automatic>()[0]};
+// CHECK-NEXT:   array[dpct::reverse_bits<unsigned int>(123)] = {a, sycl::vec<float, 1>(2.3f).template convert<sycl::half, sycl::rounding_mode::automatic>()[0]};
 // CHECK-NEXT: }
 __device__ inline void foo1(__half2 *array, __half a) {
   array[__brev(123)] = {a, __float2half(2.3f)};

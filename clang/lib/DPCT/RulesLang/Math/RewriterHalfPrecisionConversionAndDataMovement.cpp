@@ -32,7 +32,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                             MEMBER_CALL(ARG(0), false, "y"))))),
           MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG_FACTORY_ENTRY(
               "__float22half2_rn", ARG(0), false,
-              "convert<" + MapNames::getClNamespace() + "half, " +
+              "template convert<" + MapNames::getClNamespace() + "half, " +
                   MapNames::getClNamespace() + "rounding_mode::rte>"))
       // __float2half
       CONDITIONAL_FACTORY_ENTRY(
@@ -48,7 +48,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::automatic>"),
               LITERAL("0")))
       // __float2half2_rn
@@ -65,7 +65,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
           MEMBER_CALL_FACTORY_ENTRY(
               "__float2half2_rn",
               CALL(MapNames::getClNamespace() + "float2", ARG(0)), false,
-              "convert<" + MapNames::getClNamespace() + "half, " +
+              "template convert<" + MapNames::getClNamespace() + "half, " +
                   MapNames::getClNamespace() + "rounding_mode::rte>"))
       // __float2half_rd
       CONDITIONAL_FACTORY_ENTRY(
@@ -81,7 +81,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtn>"),
               LITERAL("0")))
       // __float2half_rn
@@ -98,7 +98,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rte>"),
               LITERAL("0")))
       // __float2half_ru
@@ -115,7 +115,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtp>"),
               LITERAL("0")))
       // __float2half_rz
@@ -132,7 +132,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<float, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtz>"),
               LITERAL("0")))
       // __floats2half2_rn
@@ -153,7 +153,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               "__floats2half2_rn",
               CALL(MapNames::getClNamespace() + "float2", ARG(0), ARG(1)),
               false,
-              "convert<" + MapNames::getClNamespace() + "half, " +
+              "template convert<" + MapNames::getClNamespace() + "half, " +
                   MapNames::getClNamespace() + "rounding_mode::rte>"))
       // __half22float2
       CONDITIONAL_FACTORY_ENTRY(
@@ -170,7 +170,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                            MEMBER_CALL(ARG(0), false, "y"))))),
           MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG_FACTORY_ENTRY(
               "__half22float2", ARG(0), false,
-              "convert<float, " + MapNames::getClNamespace() +
+              "template convert<float, " + MapNames::getClNamespace() +
                   "rounding_mode::automatic>"))
       // __half2float
       CONDITIONAL_FACTORY_ENTRY(
@@ -187,7 +187,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<float, " + MapNames::getClNamespace() +
+                          "template convert<float, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::automatic>"),
               LITERAL("0")))
       // __half2half2
@@ -208,7 +209,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<int, " + MapNames::getClNamespace() +
+                          "template convert<int, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtn>"),
               LITERAL("0")))
       // __half2int_rn
@@ -226,7 +228,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<int, " + MapNames::getClNamespace() +
+                          "template convert<int, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rte>"),
               LITERAL("0")))
       // __half2int_ru
@@ -244,7 +247,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<int, " + MapNames::getClNamespace() +
+                          "template convert<int, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtp>"),
               LITERAL("0")))
       // __half2int_rz
@@ -262,7 +266,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<int, " + MapNames::getClNamespace() +
+                          "template convert<int, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtz>"),
               LITERAL("0")))
       // __half2ll_rd
@@ -280,7 +285,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<long long, " + MapNames::getClNamespace() +
+                          "template convert<long long, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtn>"),
               LITERAL("0")))
       // __half2ll_rn
@@ -298,7 +304,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<long long, " + MapNames::getClNamespace() +
+                          "template convert<long long, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rte>"),
               LITERAL("0")))
       // __half2ll_ru
@@ -316,7 +323,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<long long, " + MapNames::getClNamespace() +
+                          "template convert<long long, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtp>"),
               LITERAL("0")))
       // __half2ll_rz
@@ -334,7 +342,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<long long, " + MapNames::getClNamespace() +
+                          "template convert<long long, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtz>"),
               LITERAL("0")))
       // __half2short_rd
@@ -352,7 +361,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<short, " + MapNames::getClNamespace() +
+                          "template convert<short, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtn>"),
               LITERAL("0")))
       // __half2short_rn
@@ -370,7 +380,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<short, " + MapNames::getClNamespace() +
+                          "template convert<short, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rte>"),
               LITERAL("0")))
       // __half2short_ru
@@ -388,7 +399,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<short, " + MapNames::getClNamespace() +
+                          "template convert<short, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtp>"),
               LITERAL("0")))
       // __half2short_rz
@@ -406,7 +418,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<short, " + MapNames::getClNamespace() +
+                          "template convert<short, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtz>"),
               LITERAL("0")))
       // __half2uint_rd
@@ -424,7 +437,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned, " + MapNames::getClNamespace() +
+                          "template convert<unsigned, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtn>"),
               LITERAL("0")))
       // __half2uint_rn
@@ -442,7 +456,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned, " + MapNames::getClNamespace() +
+                          "template convert<unsigned, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rte>"),
               LITERAL("0")))
       // __half2uint_ru
@@ -460,7 +475,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned, " + MapNames::getClNamespace() +
+                          "template convert<unsigned, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtp>"),
               LITERAL("0")))
       // __half2uint_rz
@@ -478,7 +494,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned, " + MapNames::getClNamespace() +
+                          "template convert<unsigned, " +
+                              MapNames::getClNamespace() +
                               "rounding_mode::rtz>"),
               LITERAL("0")))
       // __half2ull_rd
@@ -496,7 +513,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned long long, " +
+                          "template convert<unsigned long long, " +
                               MapNames::getClNamespace() +
                               "rounding_mode::rtn>"),
               LITERAL("0")))
@@ -515,7 +532,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned long long, " +
+                          "template convert<unsigned long long, " +
                               MapNames::getClNamespace() +
                               "rounding_mode::rte>"),
               LITERAL("0")))
@@ -534,7 +551,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned long long, " +
+                          "template convert<unsigned long long, " +
                               MapNames::getClNamespace() +
                               "rounding_mode::rtp>"),
               LITERAL("0")))
@@ -553,7 +570,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned long long, " +
+                          "template convert<unsigned long long, " +
                               MapNames::getClNamespace() +
                               "rounding_mode::rtz>"),
               LITERAL("0")))
@@ -572,7 +589,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned short, " +
+                          "template convert<unsigned short, " +
                               MapNames::getClNamespace() +
                               "rounding_mode::rtn>"),
               LITERAL("0")))
@@ -591,7 +608,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned short, " +
+                          "template convert<unsigned short, " +
                               MapNames::getClNamespace() +
                               "rounding_mode::rte>"),
               LITERAL("0")))
@@ -610,7 +627,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned short, " +
+                          "template convert<unsigned short, " +
                               MapNames::getClNamespace() +
                               "rounding_mode::rtp>"),
               LITERAL("0")))
@@ -629,7 +646,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    MapNames::getClNamespace() + "half, 1>",
                                ARG(0)),
                           false,
-                          "convert<unsigned short, " +
+                          "template convert<unsigned short, " +
                               MapNames::getClNamespace() +
                               "rounding_mode::rtz>"),
               LITERAL("0")))
@@ -675,7 +692,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<int, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtn>"),
               LITERAL("0")))
       // __int2half_rn
@@ -692,7 +709,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<int, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rte>"),
               LITERAL("0")))
       // __int2half_ru
@@ -709,7 +726,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<int, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtp>"),
               LITERAL("0")))
       // __int2half_rz
@@ -726,7 +743,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<int, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtz>"),
               LITERAL("0")))
       // __funnelshift_l
@@ -863,8 +880,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<long long, 1>",
                                ARG(0)),
                           false,
-                          "convert<" + MapNames::getClNamespace() + "half, " +
-                              MapNames::getClNamespace() +
+                          "template convert<" + MapNames::getClNamespace() +
+                              "half, " + MapNames::getClNamespace() +
                               "rounding_mode::rtn>"),
               LITERAL("0")))
       // __ll2half_rn
@@ -881,8 +898,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<long long, 1>",
                                ARG(0)),
                           false,
-                          "convert<" + MapNames::getClNamespace() + "half, " +
-                              MapNames::getClNamespace() +
+                          "template convert<" + MapNames::getClNamespace() +
+                              "half, " + MapNames::getClNamespace() +
                               "rounding_mode::rte>"),
               LITERAL("0")))
       // __ll2half_ru
@@ -899,8 +916,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<long long, 1>",
                                ARG(0)),
                           false,
-                          "convert<" + MapNames::getClNamespace() + "half, " +
-                              MapNames::getClNamespace() +
+                          "template convert<" + MapNames::getClNamespace() +
+                              "half, " + MapNames::getClNamespace() +
                               "rounding_mode::rtp>"),
               LITERAL("0")))
       // __ll2half_rz
@@ -917,8 +934,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(CALL(MapNames::getClNamespace() + "vec<long long, 1>",
                                ARG(0)),
                           false,
-                          "convert<" + MapNames::getClNamespace() + "half, " +
-                              MapNames::getClNamespace() +
+                          "template convert<" + MapNames::getClNamespace() +
+                              "half, " + MapNames::getClNamespace() +
                               "rounding_mode::rtz>"),
               LITERAL("0")))
       // __low2float
@@ -953,7 +970,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<short, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtn>"),
               LITERAL("0")))
       // __short2half_rn
@@ -970,7 +987,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<short, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rte>"),
               LITERAL("0")))
       // __short2half_ru
@@ -987,7 +1004,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<short, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtp>"),
               LITERAL("0")))
       // __short2half_rz
@@ -1004,7 +1021,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<short, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtz>"),
               LITERAL("0")))
       // __short_as_half
@@ -1070,7 +1087,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<unsigned, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtn>"),
               LITERAL("0")))
       // __uint2half_rn
@@ -1087,7 +1104,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<unsigned, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rte>"),
               LITERAL("0")))
       // __uint2half_ru
@@ -1104,7 +1121,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<unsigned, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtp>"),
               LITERAL("0")))
       // __uint2half_rz
@@ -1121,7 +1138,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               MEMBER_CALL(
                   CALL(MapNames::getClNamespace() + "vec<unsigned, 1>", ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtz>"),
               LITERAL("0")))
       // __ull2half_rd
@@ -1139,8 +1156,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    "vec<unsigned long long, 1>",
                                ARG(0)),
                           false,
-                          "convert<" + MapNames::getClNamespace() + "half, " +
-                              MapNames::getClNamespace() +
+                          "template convert<" + MapNames::getClNamespace() +
+                              "half, " + MapNames::getClNamespace() +
                               "rounding_mode::rtn>"),
               LITERAL("0")))
       // __ull2half_rn
@@ -1158,8 +1175,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    "vec<unsigned long long, 1>",
                                ARG(0)),
                           false,
-                          "convert<" + MapNames::getClNamespace() + "half, " +
-                              MapNames::getClNamespace() +
+                          "template convert<" + MapNames::getClNamespace() +
+                              "half, " + MapNames::getClNamespace() +
                               "rounding_mode::rte>"),
               LITERAL("0")))
       // __ull2half_ru
@@ -1177,8 +1194,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    "vec<unsigned long long, 1>",
                                ARG(0)),
                           false,
-                          "convert<" + MapNames::getClNamespace() + "half, " +
-                              MapNames::getClNamespace() +
+                          "template convert<" + MapNames::getClNamespace() +
+                              "half, " + MapNames::getClNamespace() +
                               "rounding_mode::rtp>"),
               LITERAL("0")))
       // __ull2half_rz
@@ -1196,8 +1213,8 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                                    "vec<unsigned long long, 1>",
                                ARG(0)),
                           false,
-                          "convert<" + MapNames::getClNamespace() + "half, " +
-                              MapNames::getClNamespace() +
+                          "template convert<" + MapNames::getClNamespace() +
+                              "half, " + MapNames::getClNamespace() +
                               "rounding_mode::rtz>"),
               LITERAL("0")))
       // __ushort2half_rd
@@ -1215,7 +1232,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                   CALL(MapNames::getClNamespace() + "vec<unsigned short, 1>",
                        ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtn>"),
               LITERAL("0")))
       // __ushort2half_rn
@@ -1233,7 +1250,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                   CALL(MapNames::getClNamespace() + "vec<unsigned short, 1>",
                        ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rte>"),
               LITERAL("0")))
       // __ushort2half_ru
@@ -1251,7 +1268,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                   CALL(MapNames::getClNamespace() + "vec<unsigned short, 1>",
                        ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtp>"),
               LITERAL("0")))
       // __ushort2half_rz
@@ -1269,7 +1286,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                   CALL(MapNames::getClNamespace() + "vec<unsigned short, 1>",
                        ARG(0)),
                   false,
-                  "convert<" + MapNames::getClNamespace() + "half, " +
+                  "template convert<" + MapNames::getClNamespace() + "half, " +
                       MapNames::getClNamespace() + "rounding_mode::rtz>"),
               LITERAL("0")))
       // __ushort_as_half

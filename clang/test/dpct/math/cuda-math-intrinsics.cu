@@ -1607,115 +1607,115 @@ __global__ void kernelFuncTypecasts() {
   double d;
   double2 d2;
 
-  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rtn>()[0];
+  // CHECK: f = sycl::vec<double, 1>{d}.template convert<float, sycl::rounding_mode::rtn>()[0];
   f = __double2float_rd(d);
 
-  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rte>()[0];
+  // CHECK: f = sycl::vec<double, 1>{d}.template convert<float, sycl::rounding_mode::rte>()[0];
   f = __double2float_rn(d);
 
-  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rtp>()[0];
+  // CHECK: f = sycl::vec<double, 1>{d}.template convert<float, sycl::rounding_mode::rtp>()[0];
   f = __double2float_ru(d);
 
-  // CHECK: f = sycl::vec<double, 1>{d}.convert<float, sycl::rounding_mode::rtz>()[0];
+  // CHECK: f = sycl::vec<double, 1>{d}.template convert<float, sycl::rounding_mode::rtz>()[0];
   f = __double2float_rz(d);
 
-  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rtn>()[0];
+  // CHECK: i = sycl::vec<double, 1>{d}.template convert<int, sycl::rounding_mode::rtn>()[0];
   i = __double2int_rd(d);
 
-  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rte>()[0];
+  // CHECK: i = sycl::vec<double, 1>{d}.template convert<int, sycl::rounding_mode::rte>()[0];
   i = __double2int_rn(d);
 
-  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rtp>()[0];
+  // CHECK: i = sycl::vec<double, 1>{d}.template convert<int, sycl::rounding_mode::rtp>()[0];
   i = __double2int_ru(d);
 
-  // CHECK: i = sycl::vec<double, 1>{d}.convert<int, sycl::rounding_mode::rtz>()[0];
+  // CHECK: i = sycl::vec<double, 1>{d}.template convert<int, sycl::rounding_mode::rtz>()[0];
   i = __double2int_rz(d);
 
-  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rtn>()[0];
+  // CHECK: ll = sycl::vec<double, 1>{d}.template convert<long long, sycl::rounding_mode::rtn>()[0];
   ll = __double2ll_rd(d);
 
-  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rte>()[0];
+  // CHECK: ll = sycl::vec<double, 1>{d}.template convert<long long, sycl::rounding_mode::rte>()[0];
   ll = __double2ll_rn(d);
 
-  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rtp>()[0];
+  // CHECK: ll = sycl::vec<double, 1>{d}.template convert<long long, sycl::rounding_mode::rtp>()[0];
   ll = __double2ll_ru(d);
 
-  // CHECK: ll = sycl::vec<double, 1>{d}.convert<long long, sycl::rounding_mode::rtz>()[0];
+  // CHECK: ll = sycl::vec<double, 1>{d}.template convert<long long, sycl::rounding_mode::rtz>()[0];
   ll = __double2ll_rz(d);
 
-  // CHECK: ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rtn>()[0];
+  // CHECK: ui = sycl::vec<double, 1>{d}.template convert<unsigned int, sycl::rounding_mode::rtn>()[0];
   ui = __double2uint_rd(d);
 
-  // CHECK:ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rte>()[0];
+  // CHECK:ui = sycl::vec<double, 1>{d}.template convert<unsigned int, sycl::rounding_mode::rte>()[0];
   ui = __double2uint_rn(d);
 
-  // CHECK: ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rtp>()[0];
+  // CHECK: ui = sycl::vec<double, 1>{d}.template convert<unsigned int, sycl::rounding_mode::rtp>()[0];
   ui = __double2uint_ru(d);
 
-  // CHECK: ui = sycl::vec<double, 1>{d}.convert<unsigned int, sycl::rounding_mode::rtz>()[0];
+  // CHECK: ui = sycl::vec<double, 1>{d}.template convert<unsigned int, sycl::rounding_mode::rtz>()[0];
   ui = __double2uint_rz(d);
 
-  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rtn>()[0];
+  // CHECK: ull = sycl::vec<double, 1>{d}.template convert<unsigned long long, sycl::rounding_mode::rtn>()[0];
   ull = __double2ull_rd(d);
 
-  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rte>()[0];
+  // CHECK: ull = sycl::vec<double, 1>{d}.template convert<unsigned long long, sycl::rounding_mode::rte>()[0];
   ull = __double2ull_rn(d);
 
-  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rtp>()[0];
+  // CHECK: ull = sycl::vec<double, 1>{d}.template convert<unsigned long long, sycl::rounding_mode::rtp>()[0];
   ull = __double2ull_ru(d);
 
-  // CHECK: ull = sycl::vec<double, 1>{d}.convert<unsigned long long, sycl::rounding_mode::rtz>()[0];
+  // CHECK: ull = sycl::vec<double, 1>{d}.template convert<unsigned long long, sycl::rounding_mode::rtz>()[0];
   ull = __double2ull_rz(d);
 
   // CHECK: ll = sycl::bit_cast<long long>(d);
   ll = __double_as_longlong(d);
 
-  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rtn>()[0];
+  // CHECK: i = sycl::vec<float, 1>{f}.template convert<int, sycl::rounding_mode::rtn>()[0];
   i = __float2int_rd(f);
 
-  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rte>()[0];
+  // CHECK: i = sycl::vec<float, 1>{f}.template convert<int, sycl::rounding_mode::rte>()[0];
   i = __float2int_rn(f);
 
-  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rtp>()[0];
+  // CHECK: i = sycl::vec<float, 1>{f}.template convert<int, sycl::rounding_mode::rtp>()[0];
   i = __float2int_ru(f);
 
-  // CHECK: i = sycl::vec<float, 1>{f}.convert<int, sycl::rounding_mode::rtz>()[0];
+  // CHECK: i = sycl::vec<float, 1>{f}.template convert<int, sycl::rounding_mode::rtz>()[0];
   i = __float2int_rz(f);
 
-  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rtn>()[0];
+  // CHECK: ll = sycl::vec<float, 1>{f}.template convert<long long, sycl::rounding_mode::rtn>()[0];
   ll = __float2ll_rd(f);
 
-  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rte>()[0];
+  // CHECK: ll = sycl::vec<float, 1>{f}.template convert<long long, sycl::rounding_mode::rte>()[0];
   ll = __float2ll_rn(f);
 
-  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rtp>()[0];
+  // CHECK: ll = sycl::vec<float, 1>{f}.template convert<long long, sycl::rounding_mode::rtp>()[0];
   ll = __float2ll_ru(f);
 
-  // CHECK: ll = sycl::vec<float, 1>{f}.convert<long long, sycl::rounding_mode::rtz>()[0];
+  // CHECK: ll = sycl::vec<float, 1>{f}.template convert<long long, sycl::rounding_mode::rtz>()[0];
   ll = __float2ll_rz(f);
 
-  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rtn>()[0];
+  // CHECK: ui = sycl::vec<float, 1>{f}.template convert<unsigned int, sycl::rounding_mode::rtn>()[0];
   ui = __float2uint_rd(f);
 
-  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rte>()[0];
+  // CHECK: ui = sycl::vec<float, 1>{f}.template convert<unsigned int, sycl::rounding_mode::rte>()[0];
   ui = __float2uint_rn(f);
 
-  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rtp>()[0];
+  // CHECK: ui = sycl::vec<float, 1>{f}.template convert<unsigned int, sycl::rounding_mode::rtp>()[0];
   ui = __float2uint_ru(f);
 
-  // CHECK: ui = sycl::vec<float, 1>{f}.convert<unsigned int, sycl::rounding_mode::rtz>()[0];
+  // CHECK: ui = sycl::vec<float, 1>{f}.template convert<unsigned int, sycl::rounding_mode::rtz>()[0];
   ui = __float2uint_rz(f);
 
-  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rtn>()[0];
+  // CHECK: ull = sycl::vec<float, 1>{f}.template convert<unsigned long long, sycl::rounding_mode::rtn>()[0];
   ull = __float2ull_rd(f);
 
-  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rte>()[0];
+  // CHECK: ull = sycl::vec<float, 1>{f}.template convert<unsigned long long, sycl::rounding_mode::rte>()[0];
   ull = __float2ull_rn(f);
 
-  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rtp>()[0];
+  // CHECK: ull = sycl::vec<float, 1>{f}.template convert<unsigned long long, sycl::rounding_mode::rtp>()[0];
   ull = __float2ull_ru(f);
 
-  // CHECK: ull = sycl::vec<float, 1>{f}.convert<unsigned long long, sycl::rounding_mode::rtz>()[0];
+  // CHECK: ull = sycl::vec<float, 1>{f}.template convert<unsigned long long, sycl::rounding_mode::rtz>()[0];
   ull = __float2ull_rz(f);
 
   // CHECK: i = sycl::bit_cast<int>(f);
@@ -1724,91 +1724,91 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: ui = sycl::bit_cast<unsigned int>(f);
   ui = __float_as_uint(f);
 
-  // CHECK: d = sycl::vec<int, 1>{i}.convert<double, sycl::rounding_mode::rte>()[0];
+  // CHECK: d = sycl::vec<int, 1>{i}.template convert<double, sycl::rounding_mode::rte>()[0];
   d = __int2double_rn(i);
 
-  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rtn>()[0];
+  // CHECK: d = sycl::vec<int, 1>{i}.template convert<float, sycl::rounding_mode::rtn>()[0];
   d = __int2float_rd(i);
 
-  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rte>()[0];
+  // CHECK: d = sycl::vec<int, 1>{i}.template convert<float, sycl::rounding_mode::rte>()[0];
   d = __int2float_rn(i);
 
-  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rtp>()[0];
+  // CHECK: d = sycl::vec<int, 1>{i}.template convert<float, sycl::rounding_mode::rtp>()[0];
   d = __int2float_ru(i);
 
-  // CHECK: d = sycl::vec<int, 1>{i}.convert<float, sycl::rounding_mode::rtz>()[0];
+  // CHECK: d = sycl::vec<int, 1>{i}.template convert<float, sycl::rounding_mode::rtz>()[0];
   d = __int2float_rz(i);
 
   // CHECK: f = sycl::bit_cast<float>(i);
   f = __int_as_float(i);
 
-  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rtn>()[0];
+  // CHECK: d = sycl::vec<long long, 1>{ll}.template convert<double, sycl::rounding_mode::rtn>()[0];
   d = __ll2double_rd(ll);
 
-  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rte>()[0];
+  // CHECK: d = sycl::vec<long long, 1>{ll}.template convert<double, sycl::rounding_mode::rte>()[0];
   d = __ll2double_rn(ll);
 
-  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rtp>()[0];
+  // CHECK: d = sycl::vec<long long, 1>{ll}.template convert<double, sycl::rounding_mode::rtp>()[0];
   d = __ll2double_ru(ll);
 
-  // CHECK: d = sycl::vec<long long, 1>{ll}.convert<double, sycl::rounding_mode::rtz>()[0];
+  // CHECK: d = sycl::vec<long long, 1>{ll}.template convert<double, sycl::rounding_mode::rtz>()[0];
   d = __ll2double_rz(ll);
 
-  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rtn>()[0];
+  // CHECK: f = sycl::vec<long long, 1>{ll}.template convert<float, sycl::rounding_mode::rtn>()[0];
   f = __ll2float_rd(ll);
 
-  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rte>()[0];
+  // CHECK: f = sycl::vec<long long, 1>{ll}.template convert<float, sycl::rounding_mode::rte>()[0];
   f = __ll2float_rn(ll);
 
-  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rtp>()[0];
+  // CHECK: f = sycl::vec<long long, 1>{ll}.template convert<float, sycl::rounding_mode::rtp>()[0];
   f = __ll2float_ru(ll);
 
-  // CHECK: f = sycl::vec<long long, 1>{ll}.convert<float, sycl::rounding_mode::rtz>()[0];
+  // CHECK: f = sycl::vec<long long, 1>{ll}.template convert<float, sycl::rounding_mode::rtz>()[0];
   f = __ll2float_rz(ll);
 
   // CHECK: d = sycl::bit_cast<double>(ll);
   d = __longlong_as_double(ll);
 
-  // CHECK: d = sycl::vec<unsigned int, 1>{ui}.convert<double, sycl::rounding_mode::rte>()[0];
+  // CHECK: d = sycl::vec<unsigned int, 1>{ui}.template convert<double, sycl::rounding_mode::rte>()[0];
   d = __uint2double_rn(ui);
 
-  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rtn>()[0];
+  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.template convert<float, sycl::rounding_mode::rtn>()[0];
   f = __uint2float_rd(ui);
 
-  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rte>()[0];
+  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.template convert<float, sycl::rounding_mode::rte>()[0];
   f = __uint2float_rn(ui);
 
-  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rtp>()[0];
+  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.template convert<float, sycl::rounding_mode::rtp>()[0];
   f = __uint2float_ru(ui);
 
-  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.convert<float, sycl::rounding_mode::rtz>()[0];
+  // CHECK: f = sycl::vec<unsigned int, 1>{ui}.template convert<float, sycl::rounding_mode::rtz>()[0];
   f = __uint2float_rz(ui);
 
   // CHECK: f = sycl::bit_cast<float>(ui);
   f = __uint_as_float(ui);
 
-  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rtn>()[0];
+  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.template convert<double, sycl::rounding_mode::rtn>()[0];
   d = __ull2double_rd(ull);
 
-  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rte>()[0];
+  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.template convert<double, sycl::rounding_mode::rte>()[0];
   d = __ull2double_rn(ull);
 
-  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rtp>()[0];
+  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.template convert<double, sycl::rounding_mode::rtp>()[0];
   d = __ull2double_ru(ull);
 
-  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.convert<double, sycl::rounding_mode::rtz>()[0];
+  // CHECK: d = sycl::vec<unsigned long long, 1>{ull}.template convert<double, sycl::rounding_mode::rtz>()[0];
   d = __ull2double_rz(ull);
 
-  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rtn>()[0];
+  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.template convert<float, sycl::rounding_mode::rtn>()[0];
   f = __ull2float_rd(ull);
 
-  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rte>()[0];
+  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.template convert<float, sycl::rounding_mode::rte>()[0];
   f = __ull2float_rn(ull);
 
-  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rtp>()[0];
+  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.template convert<float, sycl::rounding_mode::rtp>()[0];
   f = __ull2float_ru(ull);
 
-  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.convert<float, sycl::rounding_mode::rtz>()[0];
+  // CHECK: f = sycl::vec<unsigned long long, 1>{ull}.template convert<float, sycl::rounding_mode::rtz>()[0];
   f = __ull2float_rz(ull);
 }
 
