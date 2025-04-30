@@ -181,7 +181,7 @@ RewriterMap dpct::createSinglePrecisionIntrinsicsRewriterMap() {
                                      CALL(MapNames::getClNamespace() +
                                               "ext::intel::math::fmaf_rd",
                                           ARG(0), ARG(1), ARG(2))),
-                  Diagnostics::FTZ_BEHAVIOR, "__fmaf_ieee_rd")),
+                  Diagnostics::FTZ_BEHAVIOR, ARG("__fmaf_ieee_rd"))),
           MATH_API_REWRITER_PAIR(
               math::Tag::emulation,
               WARNING_FACTORY_ENTRY(
@@ -204,7 +204,7 @@ RewriterMap dpct::createSinglePrecisionIntrinsicsRewriterMap() {
                                      CALL(MapNames::getClNamespace() +
                                               "ext::intel::math::fmaf_rn",
                                           ARG(0), ARG(1), ARG(2))),
-                  Diagnostics::FTZ_BEHAVIOR, "__fmaf_ieee_rn")),
+                  Diagnostics::FTZ_BEHAVIOR, ARG("__fmaf_ieee_rn"))),
           MATH_API_REWRITER_PAIR(
               math::Tag::emulation,
               WARNING_FACTORY_ENTRY(
@@ -227,7 +227,7 @@ RewriterMap dpct::createSinglePrecisionIntrinsicsRewriterMap() {
                                      CALL(MapNames::getClNamespace() +
                                               "ext::intel::math::fmaf_ru",
                                           ARG(0), ARG(1), ARG(2))),
-                  Diagnostics::FTZ_BEHAVIOR, "__fmaf_ieee_ru")),
+                  Diagnostics::FTZ_BEHAVIOR, ARG("__fmaf_ieee_ru"))),
           MATH_API_REWRITER_PAIR(
               math::Tag::emulation,
               WARNING_FACTORY_ENTRY(
@@ -250,7 +250,7 @@ RewriterMap dpct::createSinglePrecisionIntrinsicsRewriterMap() {
                                      CALL(MapNames::getClNamespace() +
                                               "ext::intel::math::fmaf_rz",
                                           ARG(0), ARG(1), ARG(2))),
-                  Diagnostics::FTZ_BEHAVIOR, "__fmaf_ieee_rz")),
+                  Diagnostics::FTZ_BEHAVIOR, ARG("__fmaf_ieee_rz"))),
           MATH_API_REWRITER_PAIR(
               math::Tag::emulation,
               WARNING_FACTORY_ENTRY(
