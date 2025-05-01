@@ -139,9 +139,8 @@ void dpct::initRewriterMethodMapCooperativeGroupsSYCLcompat(
   auto SyclId2Dim3 = [](const std::string &SourceMember,
                         const std::string &MemberCallName) {
     auto GetID = [Member = MemberCallName](std::string Dimension) {
-      return makeMemberCallCreator<false>(MemberExprBase(), false,
-                                          std::move(Member),
-                                          makeLiteral(std::move(Dimension)));
+      return makeMemberCallCreator(MemberExprBase(), false, std::move(Member),
+                                   makeLiteral(std::move(Dimension)));
     };
     auto Name = "cooperative_groups::__v1::thread_block." + SourceMember;
     return std::make_pair(

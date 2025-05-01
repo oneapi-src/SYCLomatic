@@ -702,10 +702,6 @@ template <class StreamT> void printMemberOp(StreamT &Stream, bool IsArrow) {
     Stream << ".";
 }
 
-template <class StreamT> void printDisambiguator(StreamT &Stream) {
-  Stream << "template ";
-}
-
 template <class StreamT>
 void printCapture(StreamT &Stream, bool IsCaptureRef) {
   if (IsCaptureRef)
@@ -941,7 +937,7 @@ public:
 
 template <class StreamT>
 void printBase(StreamT &Stream, std::pair<const CallExpr *, const Expr *> P,
-               bool IsArrow, bool NeedDisambiguator) {
+               bool IsArrow) {
   {
     std::unique_ptr<ParensPrinter<StreamT>> Paren;
     if (needExtraParensInMemberExpr(P.second))
@@ -949,13 +945,10 @@ void printBase(StreamT &Stream, std::pair<const CallExpr *, const Expr *> P,
     print(Stream, P);
   }
   printMemberOp(Stream, IsArrow);
-  if (NeedDisambiguator)
-    printDisambiguator(Stream);
 }
 
 template <class StreamT>
-void printBase(StreamT &Stream, const Expr *E, bool IsArrow,
-               bool NeedDisambiguator) {
+void printBase(StreamT &Stream, const Expr *E, bool IsArrow) {
   {
     std::unique_ptr<ParensPrinter<StreamT>> Paren;
     if (needExtraParensInMemberExpr(E))
@@ -963,23 +956,15 @@ void printBase(StreamT &Stream, const Expr *E, bool IsArrow,
     print(Stream, E);
   }
   printMemberOp(Stream, IsArrow);
-  if (NeedDisambiguator)
-    printDisambiguator(Stream);
 }
 template <class StreamT>
-void printBase(StreamT &Stream, const DerefExpr &D, bool,
-               bool NeedDisambiguator) {
+void printBase(StreamT &Stream, const DerefExpr &D, bool) {
   D.printMemberBase(Stream);
-  if (NeedDisambiguator)
-    printDisambiguator(Stream);
 }
 template <class StreamT, class T>
-void printBase(StreamT &Stream, const T &Val, bool IsArrow,
-               bool NeedDisambiguator) {
+void printBase(StreamT &Stream, const T &Val, bool IsArrow) {
   print(Stream, Val);
   printMemberOp(Stream, IsArrow);
-  if (NeedDisambiguator)
-    printDisambiguator(Stream);
 }
 
 template <class CalleeT, class... CallArgsT> class CallExprPrinter {
@@ -1038,24 +1023,17 @@ public:
   }
 };
 
-template <class BaseT, class MemberT, bool HasExplicitTemplateArg>
-class MemberExprPrinter {
+template <class BaseT, class MemberT> class MemberExprPrinter {
   BaseT Base;
   bool IsArrow;
   MemberT MemberName;
-  bool IsBaseDependentType = false;
 
 public:
   MemberExprPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName)
-      : Base(Base), IsArrow(IsArrow), MemberName(MemberName) {
-    if constexpr (std::is_same_v<BaseT, const Expr *>) {
-      IsBaseDependentType = Base->getType()->isDependentType();
-    }
-  }
+      : Base(Base), IsArrow(IsArrow), MemberName(MemberName) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
-    printBase(Stream, Base, IsArrow,
-              HasExplicitTemplateArg && IsBaseDependentType);
+    printBase(Stream, Base, IsArrow);
     dpct::print(Stream, MemberName);
   }
 };
@@ -1074,19 +1052,19 @@ public:
   }
 };
 
-template <class BaseT, class MemberT, bool HasExplicitTemplateArg,
+template <class BaseT, class MemberT,
           class... CallArgsT>
 class MemberCallPrinter
     : public CallExprPrinter<
-          MemberExprPrinter<BaseT, MemberT, HasExplicitTemplateArg>,
+          MemberExprPrinter<BaseT, MemberT>,
           CallArgsT...> {
 public:
   MemberCallPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName,
                     CallArgsT &&...Args)
       : CallExprPrinter<
-            MemberExprPrinter<BaseT, MemberT, HasExplicitTemplateArg>,
+            MemberExprPrinter<BaseT, MemberT>,
             CallArgsT...>(
-            MemberExprPrinter<BaseT, MemberT, HasExplicitTemplateArg>(
+            MemberExprPrinter<BaseT, MemberT>(
                 std::move(Base), IsArrow, std::move(MemberName)),
             std::forward<CallArgsT>(Args)...) {}
 };
@@ -1441,35 +1419,32 @@ public:
 
 template <class BaseT, class MemberT>
 class MemberExprRewriter
-    : public PrinterRewriter<MemberExprPrinter<BaseT, MemberT, false>> {
+    : public PrinterRewriter<MemberExprPrinter<BaseT, MemberT>> {
 public:
   MemberExprRewriter(
       const CallExpr *C, StringRef Source,
       const std::function<BaseT(const CallExpr *)> &BaseCreator, bool IsArrow,
       const std::function<MemberT(const CallExpr *)> &MemberCreator)
-      : PrinterRewriter<MemberExprPrinter<BaseT, MemberT, false>>(
+      : PrinterRewriter<MemberExprPrinter<BaseT, MemberT>>(
             C, Source, BaseCreator(C), IsArrow, MemberCreator(C)) {}
 };
 
-template <class BaseT, bool HasExplicitTemplateArg, class... ArgsT>
+template <class BaseT, class... ArgsT>
 class MemberCallExprRewriter
-    : public PrinterRewriter<MemberCallPrinter<
-          BaseT, StringRef, HasExplicitTemplateArg, ArgsT...>> {
+    : public PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>> {
 public:
   MemberCallExprRewriter(
       const CallExpr *C, StringRef Source,
       const std::function<BaseT(const CallExpr *)> &BaseCreator, bool IsArrow,
       StringRef Member,
       const std::function<ArgsT(const CallExpr *)> &...ArgsCreator)
-      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef,
-                                          HasExplicitTemplateArg, ArgsT...>>(
+      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>>(
             C, Source, BaseCreator(C), IsArrow, Member, ArgsCreator(C)...) {}
   MemberCallExprRewriter(
       const CallExpr *C, StringRef Source, const BaseT &BaseCreator,
       bool IsArrow, StringRef Member,
       const std::function<ArgsT(const CallExpr *)> &...ArgsCreator)
-      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef,
-                                          HasExplicitTemplateArg, ArgsT...>>(
+      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>>(
             C, Source, BaseCreator, IsArrow, Member, ArgsCreator(C)...) {}
 };
 

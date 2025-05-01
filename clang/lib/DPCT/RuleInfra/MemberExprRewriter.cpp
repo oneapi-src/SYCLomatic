@@ -40,7 +40,7 @@ public:
       : Base(Base), IsArrow(IsArrow), MemberName(MemberName) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
-    printBase(Stream, Base, IsArrow, false);
+    printBase(Stream, Base, IsArrow);
     dpct::print(Stream, MemberName);
   }
 };

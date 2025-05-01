@@ -2770,8 +2770,8 @@ EventQueryTraversal::buildCallReplacement(const CallExpr *Call) {
   static std::string MemberName = "get_info<" + MapNames::getClNamespace() +
                                   "info::event::command_execution_status>";
   std::string ReplStr;
-  MemberCallPrinter<const Expr *, StringRef, false> Printer(Call->getArg(0),
-                                                            true, MemberName);
+  MemberCallPrinter<const Expr *, StringRef> Printer(Call->getArg(0), true,
+                                                     MemberName);
   llvm::raw_string_ostream OS(ReplStr);
   Printer.print(OS);
   return new ReplaceStmt(Call, std::move(OS.str()));

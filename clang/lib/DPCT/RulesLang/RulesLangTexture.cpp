@@ -950,7 +950,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       std::shared_ptr<CallExprRewriter> Rewriter =
           std::make_shared<AssignableRewriter>(
               CE, std::make_shared<PrinterRewriter<MemberCallPrinter<
-                      const Expr *, RenameWithSuffix, false, StringRef>>>(
+                      const Expr *, RenameWithSuffix, StringRef>>>(
                       CE, Name, CE->getArg(0), true,
                       RenameWithSuffix("set", MethodName), Value));
       std::optional<std::string> Result = Rewriter->rewrite();
@@ -1308,7 +1308,7 @@ bool TextureRule::SettersMerger::applyResult() {
 
   std::string ReplacedText;
   llvm::raw_string_ostream OS(ReplacedText);
-  MemberCallPrinter<StringRef, StringRef, false, std::vector<std::string>>
+  MemberCallPrinter<StringRef, StringRef, std::vector<std::string>>
       Printer(D->getName(), IsArrow, "set", std::move(ArgsList));
   Printer.print(OS);
 
