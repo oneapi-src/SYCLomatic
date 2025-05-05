@@ -1386,6 +1386,16 @@ protected:
 
     if (!Type || Type->getKind() != InlineAsmBuiltinType::b16)
       return SYCLGenError();
+<<<<<<< HEAD
+=======
+
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+    const auto *Dst =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getOutputOperand());
+    if (!Dst)
+      return false;
+>>>>>>> db0271c2b2a8 (Added b16 limitation and comments)
 
     const InlineAsmVectorExpr *VE;
     if (VE = dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(0))) {

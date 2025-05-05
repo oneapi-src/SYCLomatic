@@ -2218,27 +2218,33 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
   ldmatrix(addr, m4, trans, 3);
 }
 
-/// Stores 1 8x8 b16 matrix from private memory to local memory per sub-group.
+/// Collectively stores 1 8x8 b16 (128 bytes) matrix from private memory to
+/// local memory per sub-group.
 /// Requires the sub-group size of kernel calling this function to be 32.
-/// Each of the first 8 work items contain the starting address of their
-/// respective matrix row.
-/// Each of the 32 work items store 32-bits (2 packed 16-bit data) for a total
-/// of 128 bytes.
-/// Row Major: Each row of the matrix is stored by a group of 4 work items
-/// r0: t0 t1 t2 t3
-/// r1: t4 t5 t6 t7
+/// 'mat' specifies the matrix index to be stored. The first '(mat + 1) * 8'
+/// work items of sub-group contain the starting address of their respective
+/// matrix row in 'addr'.
+/// After distributing addresses to other work items, each of the 32 work items
+/// store 32-bits (2 packed 16-bit data) into 'm' for a total of 128 bytes.
+/// 'trans' specifies to perform a transposed/non-transposed store by each work
+/// item like below
+/// Row Major: Each row of the matrix is stored by a group of 4 work items(wi)
+/// row-0: wi0 wi0 wi1 wi1 ... wi3 wi3
+/// row-1: wi4 wi4 wi5 wi5 ... wi7 wi7
 /// ...
-/// r7: t24 t25 t26 t27
-/// r7: t28 t29 t30 t31
-/// Col Major: Each col of the matrix is stored by a group of 4 work items
-/// r0: t0 t4 t8 ... t28
-/// r1: t0 t4 t8 ... t28
+/// row-6: wi24 wi24 wi25 wi25 ... wi27 wi27
+/// row-7: wi28 wi28 wi29 wi29 ... wi31 wi31
+/// Col Major: Each col of the matrix is stored by a group of 4 work items(wi)
+/// row-0: wi0 wi4 wi8 ... wi28
+/// row-1: wi0 wi4 wi8 ... wi28
 /// ...
-/// r6: t3 t7 t11 ... t31
-/// r7: t3 t7 t11 ... t31
-/// \tparam [in] T The type of matrix elements
-/// \param [in] addr The address of the matrix in local memory
-/// \param [in] m The private memory containing data of matrix
+/// row-6: wi3 wi7 wi11 ... wi31
+/// row-7: wi3 wi7 wi11 ... wi31
+/// \tparam [in] T Type of result variable (currently only supports 16-bit type)
+/// \param [in] addr The starting address of corresponding matrix row for a work
+/// item in local memory
+/// \param [in] m The private memory to store the matrix. It points to 2 b16
+/// type elements.
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 /// \param [in] mat The matrix index to be stored
 template <typename T>
@@ -2288,16 +2294,35 @@ void stmatrix(uintptr_t addr, T m, bool trans = false, unsigned mat = 0) {
   }
 }
 
-/// Stores 2 8x8 b16 matrix from private memory to local memory per sub-group.
+/// Collectively stores 2 8x8 b16 (256 bytes) matrix from private memory to
+/// local memory per sub-group.
 /// Requires the sub-group size of kernel calling this function to be 32.
-/// Each of the first 16 work items contain the starting address of their
-/// respective matrix row.
-/// Each of the 32 work items store 64-bits (32-bit per matrix) for a total
-/// of 256 bytes.
-/// \tparam [in] T The type of matrix elements
-/// \param [in] addr The address of the matrix in local memory
-/// \param [in] m1 The private memory containing data of 1st matrix
-/// \param [in] m2 The private memory containing data of 2nd matrix
+/// The first 16 work items of sub-group contain the starting address of their
+/// respective matrix row in 'addr'.
+/// After distributing addresses to other work items, each of the 32 work items
+/// store 64-bits (32-bits per matrix) into 'm1' & 'm2' for a total of 256
+/// bytes.
+/// 'trans' specifies to perform a transposed/non-transposed store by each work
+/// item like below
+/// Row Major: Each row of the matrices is stored by a group of 4 work items(wi)
+/// row-0: wi0 wi0 wi1 wi1 ... wi3 wi3
+/// row-1: wi4 wi4 wi5 wi5 ... wi7 wi7
+/// ...
+/// row-6: wi24 wi24 wi25 wi25 ... wi27 wi27
+/// row-7: wi28 wi28 wi29 wi29 ... wi31 wi31
+/// Col Major: Each col of the matrices is stored by a group of 4 work items(wi)
+/// row-0: wi0 wi4 wi8 ... wi28
+/// row-1: wi0 wi4 wi8 ... wi28
+/// ...
+/// row-6: wi3 wi7 wi11 ... wi31
+/// row-7: wi3 wi7 wi11 ... wi31
+/// \tparam [in] T Type of result variable (currently only supports 16-bit type)
+/// \param [in] addr The starting address of corresponding matrix row for a work
+/// item in local memory
+/// \param [in] m1 The private memory to store the data of 1st matrix. It points
+/// to 2 b16 type elements.
+/// \param [in] m2 The private memory to store the data of 2nd matrix. It points
+/// to 2 b16 type elements.
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 template <typename T>
 void stmatrix(uintptr_t addr, T m1, T m2, bool trans = false) {
@@ -2307,18 +2332,39 @@ void stmatrix(uintptr_t addr, T m1, T m2, bool trans = false) {
   stmatrix(addr, m2, trans, 1);
 }
 
-/// Stores 4 8x8 b16 matrix from private memory to local memory per sub-group.
+/// Collectively stores 4 8x8 b16 (512 bytes) matrix from private memory to
+/// local memory per sub-group.
 /// Requires the sub-group size of kernel calling this function to be 32.
-/// Each of the 32 work items contain the starting address of their
-/// respective matrix row.
-/// Each of the 32 work items store 128-bits (32-bit per matrix) for a total
+/// Each work item of sub-group contains the starting address of their
+/// respective matrix row in 'addr'.
+/// After distributing addresses to other work items, each of the 32 work items
+/// store 128-bits (32-bits per matrix) into 'm1', 'm2', 'm3' & 'm4' for a total
 /// of 512 bytes.
-/// \tparam [in] T The type of matrix elements
-/// \param [in] addr The address of the matrix in local memory
-/// \param [in] m1 The private memory containing data of 1st matrix
-/// \param [in] m2 The private memory containing data of 2nd matrix
-/// \param [in] m3 The private memory containing data of 3rd matrix
-/// \param [in] m4 The private memory containing data of 4th matrix
+/// 'trans' specifies to perform a transposed/non-transposed store by each work
+/// item like below
+/// Row Major: Each row of the matrices is stored by a group of 4 work items(wi)
+/// row-0: wi0 wi0 wi1 wi1 ... wi3 wi3
+/// row-1: wi4 wi4 wi5 wi5 ... wi7 wi7
+/// ...
+/// row-6: wi24 wi24 wi25 wi25 ... wi27 wi27
+/// row-7: wi28 wi28 wi29 wi29 ... wi31 wi31
+/// Col Major: Each col of the matrices is stored by a group of 4 work items(wi)
+/// row-0: wi0 wi4 wi8 ... wi28
+/// row-1: wi0 wi4 wi8 ... wi28
+/// ...
+/// row-6: wi3 wi7 wi11 ... wi31
+/// row-7: wi3 wi7 wi11 ... wi31
+/// \tparam [in] T Type of result variable (currently only supports 16-bit type)
+/// \param [in] addr The starting address of corresponding matrix row for a work
+/// item in local memory
+/// \param [in] m1 The private memory to store the data of 1st matrix. It points
+/// to 2 b16 type elements.
+/// \param [in] m2 The private memory to store the data of 2nd matrix. It points
+/// to 2 b16 type elements.
+/// \param [in] m3 The private memory to store the data of 3rd matrix. It points
+/// to 2 b16 type elements.
+/// \param [in] m4 The private memory to store the data of 4th matrix. It points
+/// to 2 b16 type elements.
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 template <typename T>
 void stmatrix(uintptr_t addr, T m1, T m2, T m3, T m4, bool trans = false) {
