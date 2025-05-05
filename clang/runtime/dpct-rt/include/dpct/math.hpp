@@ -2231,45 +2231,6 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, CDType *d4, CDType *d5,
 
 /// Multiplies 2 8x4 & 4x8 f64 matrices and accumulates the result to a 8x8 b64
 /// matrix (m8n8k4.row.col.f64.f64.f64.f64)
-/// Requires the sub-group size of kernel calling this function to be 32
-/// In: 2, 1, 1, 2
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-typename std::enable_if_t<std::is_floating_point_v<MulType>, void>
-mma(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0, CDType c1) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
-
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
-
-  if (M == 8 && N == 8 && K == 4) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      ABType recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      c0 += recv_a * recv_b;
-
-      recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
-      c1 += recv_a * recv_b;
-    }
-  }
-
-  *d0 = c0;
-  *d1 = c1;
-}
-
 /// Multiplies 2 8x16 & 16x8 u8/s8 matrices and accumulates the result to a 8x8
 /// s32 matrix (m8n8k16.row.col.s32.u8.u8.s32 / m8n8k16.row.col.s32.s8.s8.s32)
 /// Multiplies 2 8x32 & 32x8 u4/s4 matrices and accumulates the result to a 8x8
@@ -2290,15 +2251,23 @@ mma(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0, CDType c1) {
 /// \param [in] c1 The 2nd element from C matrix to be added with d1
 template <int M, int N, int K, typename MulType, typename ABType,
           typename CDType>
-std::enable_if_t<std::is_integral_v<MulType>, void>
-mma(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0, CDType c1) {
+void mma(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0, CDType c1) {
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int lane = sg.get_local_linear_id();
 
   short ROW_LOAD_OFFSET = 4 * (lane >> 2);
   short COL_LOAD_OFFSET = 8 * (lane % 4);
 
-  if (M == 8 && N == 8 && K == 16) {
+  if (M == 8 && N == 8 && K == 4) {
+    for (int i = 0; i < 4; i++) {
+      ABType recv_a = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
+      ABType recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
+      c0 += recv_a * recv_b;
+
+      recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
+      c1 += recv_a * recv_b;
+    }
+  } else if (M == 8 && N == 8 && K == 16) {
     for (int i = 0; i < 4; i++) {
       ABType recv_a = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
       ABType recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
@@ -2317,33 +2286,37 @@ mma(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0, CDType c1) {
       }
     }
   } else if (M == 8 && N == 8 && K == 32) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      ABType recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
+    if constexpr (std::is_integral_v<MulType>) {
+      for (int i = 0; i < 4; i++) {
+        ABType recv_a =
+            dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
+        ABType recv_b =
+            dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
 
-      MulType *a = reinterpret_cast<MulType *>(&recv_a);
-      MulType *b = reinterpret_cast<MulType *>(&recv_b);
+        MulType *a = reinterpret_cast<MulType *>(&recv_a);
+        MulType *b = reinterpret_cast<MulType *>(&recv_b);
 
-      for (int k = 0; k < 4; k++) {
-        MulType a0 = a[k] >> 4;
-        MulType a1 = a[k] & 0x0F;
-        MulType b0 = b[k] >> 4;
-        MulType b1 = b[k] & 0x0F;
+        for (int k = 0; k < 4; k++) {
+          MulType a0 = a[k] >> 4;
+          MulType a1 = a[k] & 0x0F;
+          MulType b0 = b[k] >> 4;
+          MulType b1 = b[k] & 0x0F;
 
-        c0 += a0 * b0;
-        c0 += a1 * b1;
-      }
+          c0 += a0 * b0;
+          c0 += a1 * b1;
+        }
 
-      recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
+        recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
 
-      for (int k = 0; k < 4; k++) {
-        MulType a0 = a[k] >> 4;
-        MulType a1 = a[k] & 0x0F;
-        MulType b0 = b[k] >> 4;
-        MulType b1 = b[k] & 0x0F;
+        for (int k = 0; k < 4; k++) {
+          MulType a0 = a[k] >> 4;
+          MulType a1 = a[k] & 0x0F;
+          MulType b0 = b[k] >> 4;
+          MulType b1 = b[k] & 0x0F;
 
-        c1 += a0 * b0;
-        c1 += a1 * b1;
+          c1 += a0 * b0;
+          c1 += a1 * b1;
+        }
       }
     }
   }
@@ -2501,144 +2474,9 @@ void mma(CDType *d0, CDType *d1, ABType a0, ABType a1, ABType b0, CDType c0,
   *d1 = c1;
 }
 
-/// Multiplies 2 16x4 & 4x8 f32/f64 matrices and accumulates the result to a
-/// 16x8 f32/f64 matrix (m16n8k4.row.col.f32.f32.f32.f32 /
-/// m16n8k4.row.col.f64.f64.f64.f64)
-/// Requires the sub-group size of kernel
-/// calling this function to be 32
-/// In: 4, 2, 1, 4
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] d2 The 3rd element to be written to the output D matrix
-/// \param [in] d3 The 4th element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-/// \param [in] c2 The 3rd element from C matrix to be added with d2
-/// \param [in] c3 The 4th element from C matrix to be added with d3
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-std::enable_if_t<std::is_floating_point_v<MulType>, void>
-mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
-    ABType b0, CDType c0, CDType c1, CDType c2, CDType c3) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
-
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
-
-  if (M == 16 && N == 8 && K == 4) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
-
-      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
-
-      c0 += recv_a[0] * recv_b[0];
-      c1 += recv_a[0] * recv_b[1];
-      c2 += recv_a[1] * recv_b[0];
-      c3 += recv_a[1] * recv_b[1];
-    }
-  } else if (M == 16 && N == 8 && K == 8) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
-
-      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
-
-      auto ra = reinterpret_cast<MulType *>(recv_a);
-      auto rb = reinterpret_cast<MulType *>(recv_b);
-
-      for (int j = 0; j < 2; j++) {
-        c0 += static_cast<float>(ra[j]) * static_cast<float>(rb[j]);
-        c1 += static_cast<float>(ra[j]) * static_cast<float>(rb[j + 2]);
-        c2 += static_cast<float>(ra[j + 2]) * static_cast<float>(rb[j]);
-        c3 += static_cast<float>(ra[j + 2]) * static_cast<float>(rb[j + 2]);
-      }
-    }
-  }
-
-  *d0 = c0;
-  *d1 = c1;
-  *d2 = c2;
-  *d3 = c3;
-}
-
-/// Multiplies 2 16x8 & 8x8 f16 matrices and accumulates the result to a
-/// 16x8 f32 matrix (m16n8k8.row.col.f32.f16.f16.f32)
-/// Requires the sub-group size of kernel
-/// calling this function to be 32
-/// In: 4, 2, 1, 4
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] d2 The 3rd element to be written to the output D matrix
-/// \param [in] d3 The 4th element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-/// \param [in] c2 The 3rd element from C matrix to be added with d2
-/// \param [in] c3 The 4th element from C matrix to be added with d3
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-std::enable_if_t<std::is_same_v<MulType, sycl::half>, void>
-mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
-    ABType b0, CDType c0, CDType c1, CDType c2, CDType c3) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
-
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
-
-  if (M == 16 && N == 8 && K == 8) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
-
-      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
-
-      auto ra = reinterpret_cast<MulType *>(recv_a);
-      auto rb = reinterpret_cast<MulType *>(recv_b);
-
-      for (int j = 0; j < 2; j++) {
-        c0 += static_cast<float>(ra[j]) * static_cast<float>(rb[j]);
-        c1 += static_cast<float>(ra[j]) * static_cast<float>(rb[j + 2]);
-        c2 += static_cast<float>(ra[j + 2]) * static_cast<float>(rb[j]);
-        c3 += static_cast<float>(ra[j + 2]) * static_cast<float>(rb[j + 2]);
-      }
-    }
-  }
-
-  *d0 = c0;
-  *d1 = c1;
-  *d2 = c2;
-  *d3 = c3;
-}
-
 /// Multiplies 2 16x16 & 16x8 f16 matrices and accumulates the result to a 16x8
-/// f16 matrix (m16n8k16.row.col.f16.f16.f16.f16) Requires the sub-group size of
-/// kernel calling this function to be 32
+/// f16 matrix (m16n8k16.row.col.f16.f16.f16.f16).
+/// Requires the sub-group size of kernel calling this function to be 32
 /// \tparam [in] M The rows of A/C/D matrix
 /// \tparam [in] N The columns of B/C/D matrix
 /// \tparam [in] K The columns/rows of A/B matrix
@@ -2706,85 +2544,17 @@ void mma(volatile CDType *d0, volatile CDType *d1, ABType a0, ABType a1,
   *d1 = c1;
 }
 
-/// Multiplies 2 16x16 & 16x8 matrices and accumulates the result to a 16x8 b32
-/// matrix (m16n8k16.row.col.f32.f16.f16.f32)
-/// Requires the sub-group size of kernel calling this function to be 32
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// In: 4, 4, 2, 4
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] d2 The 3rd element to be written to the output D matrix
-/// \param [in] d3 The 4th element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
-/// \param [in] a2 The 3rd element from A matrix to be multiplied with B matrix
-/// \param [in] a3 The 4th element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] b1 The 2nd element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-/// \param [in] c2 The 3rd element from C matrix to be added with d2
-/// \param [in] c3 The 4th element from C matrix to be added with d3
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-std::enable_if_t<std::is_same_v<MulType, sycl::half>, void>
-mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
-    ABType a2, ABType a3, ABType b0, ABType b1, CDType c0, CDType c1, CDType c2,
-    CDType c3) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
-
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
-
-  if (M == 16 && N == 8 && K == 16) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[4], recv_b[4];
-
-      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a2, ROW_LOAD_OFFSET + i);
-      recv_a[2] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
-      recv_a[3] = dpct::select_from_sub_group(sg, a3, ROW_LOAD_OFFSET + i);
-
-      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i);
-      recv_b[2] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + 4 + i);
-      recv_b[3] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + 4 + i);
-
-      auto *ra0 = reinterpret_cast<MulType *>(recv_a);
-      auto *ra1 = reinterpret_cast<MulType *>(recv_a + 2);
-      auto *rb0 = reinterpret_cast<MulType *>(recv_b);
-      auto *rb1 = reinterpret_cast<MulType *>(recv_b + 2);
-
-      // Iterate for k (i * j) times
-      for (int j = 0; j < 4; j++) {
-        auto a0 = static_cast<CDType>(ra0[j]);
-        auto a1 = static_cast<CDType>(ra1[j]);
-        auto b0 = static_cast<CDType>(rb0[j]);
-        auto b1 = static_cast<CDType>(rb1[j]);
-
-        c0 += a0 * b0;
-        c1 += a0 * b1;
-        c2 += a1 * b0;
-        c3 += a1 * b1;
-      }
-    }
-  }
-
-  *d0 = c0;
-  *d1 = c1;
-  *d2 = c2;
-  *d3 = c3;
-}
-
 /// Multiplies 2 16x8 & 8x8 u4/s4 matrices and accumulates the result to a 16x8
-/// f64 matrix (m16n8k8.row.col.f64.f64.f64.f64) Requires the sub-group size of
-/// kernel calling this function to be 32
+/// f64 matrix (m16n8k8.row.col.f64.f64.f64.f64).
+/// Multiplies 2 16x16 & 16x8 matrices and accumulates the result to a 16x8 b32
+/// matrix (m16n8k16.row.col.f32.f16.f16.f32).
+/// Multiplies 2 16x32 & 32x8 u8/s8 matrices and accumulates the result to a
+/// 16x8 b32 matrix (m16n8k32.row.col.s32.u8.u8.s32 /
+/// m16n8k32.row.col.s32.s8.s8.s32).
+/// Multiplies 2 16x64 & 64x8 u4/s4 matrices and
+/// accumulates the result to a 16x8 b32 matrix (m16n8k64.row.col.s32.u4.u4.s32
+/// / m16n8k64.row.col.s32.s4.s4.s32).
+/// Requires the sub-group size of kernel calling this function to be 32.
 /// \tparam [in] M The rows of A/C/D matrix
 /// \tparam [in] N The columns of B/C/D matrix
 /// \tparam [in] K The columns/rows of A/B matrix
@@ -2808,10 +2578,9 @@ mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
 /// \param [in] c3 The 4th element from C matrix to be added with d3
 template <int M, int N, int K, typename MulType, typename ABType,
           typename CDType>
-std::enable_if_t<std::is_floating_point_v<MulType>, void>
-mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
-    ABType a2, ABType a3, ABType b0, ABType b1, CDType c0, CDType c1, CDType c2,
-    CDType c3) {
+void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
+         ABType a2, ABType a3, ABType b0, ABType b1, CDType c0, CDType c1,
+         CDType c2, CDType c3) {
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int lane = sg.get_local_linear_id();
 
@@ -2846,54 +2615,39 @@ mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
       c2 += recv_a[1] * recv_b[0];
       c3 += recv_a[1] * recv_b[1];
     }
-  }
+  } else if (M == 16 && N == 8 && K == 16) {
+    for (int i = 0; i < 4; i++) {
+      ABType recv_a[4], recv_b[4];
 
-  *d0 = c0;
-  *d1 = c1;
-  *d2 = c2;
-  *d3 = c3;
-}
+      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
+      recv_a[1] = dpct::select_from_sub_group(sg, a2, ROW_LOAD_OFFSET + i);
+      recv_a[2] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
+      recv_a[3] = dpct::select_from_sub_group(sg, a3, ROW_LOAD_OFFSET + i);
 
-/// Multiplies 2 16x32 & 32x8 u8/s8 matrices and accumulates the result to a
-/// 16x8 b32 matrix (m16n8k32.row.col.s32.u8.u8.s32 /
-/// m16n8k32.row.col.s32.s8.s8.s32) Multiplies 2 16x64 & 64x8 u4/s4 matrices and
-/// accumulates the result to a 16x8 b32 matrix (m16n8k64.row.col.s32.u4.u4.s32
-/// / m16n8k64.row.col.s32.s4.s4.s32) Requires the sub-group size of kernel
-/// calling this function to be 32
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// In: 4, 4, 2, 4
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] d2 The 3rd element to be written to the output D matrix
-/// \param [in] d3 The 4th element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
-/// \param [in] a2 The 3rd element from A matrix to be multiplied with B matrix
-/// \param [in] a3 The 4th element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] b1 The 2nd element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-/// \param [in] c2 The 3rd element from C matrix to be added with d2
-/// \param [in] c3 The 4th element from C matrix to be added with d3
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-std::enable_if_t<std::is_integral_v<MulType>, void>
-mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
-    ABType a2, ABType a3, ABType b0, ABType b1, CDType c0, CDType c1, CDType c2,
-    CDType c3) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
+      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
+      recv_b[1] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i);
+      recv_b[2] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + 4 + i);
+      recv_b[3] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + 4 + i);
 
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
+      auto *ra0 = reinterpret_cast<MulType *>(recv_a);
+      auto *ra1 = reinterpret_cast<MulType *>(recv_a + 2);
+      auto *rb0 = reinterpret_cast<MulType *>(recv_b);
+      auto *rb1 = reinterpret_cast<MulType *>(recv_b + 2);
 
-  if (M == 16 && N == 8 && K == 32) {
+      // Iterate for k (i * j) times
+      for (int j = 0; j < 4; j++) {
+        auto a0 = static_cast<CDType>(ra0[j]);
+        auto a1 = static_cast<CDType>(ra1[j]);
+        auto b0 = static_cast<CDType>(rb0[j]);
+        auto b1 = static_cast<CDType>(rb1[j]);
+
+        c0 += a0 * b0;
+        c1 += a0 * b1;
+        c2 += a1 * b0;
+        c3 += a1 * b1;
+      }
+    }
+  } else if (M == 16 && N == 8 && K == 32) {
     for (int i = 0; i < 4; i++) {
       ABType recv_a[2], recv_b[2];
 
@@ -2932,73 +2686,77 @@ mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
       }
     }
   } else if (M == 16 && N == 8 && K == 64) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
+    if constexpr (std::is_integral_v<MulType>) {
+      for (int i = 0; i < 4; i++) {
+        ABType recv_a[2], recv_b[2];
 
-      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
+        recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
+        recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
+        recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
+        recv_b[1] =
+            dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
 
-      MulType *a = reinterpret_cast<MulType *>(recv_a);
-      MulType *b = reinterpret_cast<MulType *>(recv_b);
+        MulType *a = reinterpret_cast<MulType *>(recv_a);
+        MulType *b = reinterpret_cast<MulType *>(recv_b);
 
-      for (int k = 0; k < 4; k++) {
-        MulType a00 = a[k] >> 4;
-        MulType a01 = a[k] & 0x0F;
-        MulType a10 = a[k + 4] >> 4;
-        MulType a11 = a[k + 4] & 0x0F;
-        MulType b00 = b[k] >> 4;
-        MulType b01 = b[k] & 0x0F;
-        MulType b10 = b[k + 4] >> 4;
-        MulType b11 = b[k + 4] & 0x0F;
+        for (int k = 0; k < 4; k++) {
+          MulType a00 = a[k] >> 4;
+          MulType a01 = a[k] & 0x0F;
+          MulType a10 = a[k + 4] >> 4;
+          MulType a11 = a[k + 4] & 0x0F;
+          MulType b00 = b[k] >> 4;
+          MulType b01 = b[k] & 0x0F;
+          MulType b10 = b[k + 4] >> 4;
+          MulType b11 = b[k + 4] & 0x0F;
 
-        c0 += a00 * b00;
-        c0 += a01 * b01;
+          c0 += a00 * b00;
+          c0 += a01 * b01;
 
-        c1 += a00 * b10;
-        c1 += a01 * b11;
+          c1 += a00 * b10;
+          c1 += a01 * b11;
 
-        c2 += a10 * b00;
-        c2 += a11 * b01;
+          c2 += a10 * b00;
+          c2 += a11 * b01;
 
-        c3 += a10 * b10;
-        c3 += a11 * b11;
+          c3 += a10 * b10;
+          c3 += a11 * b11;
+        }
       }
-    }
 
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
+      for (int i = 0; i < 4; i++) {
+        ABType recv_a[2], recv_b[2];
 
-      recv_a[0] = dpct::select_from_sub_group(sg, a2, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a3, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i + 4);
+        recv_a[0] = dpct::select_from_sub_group(sg, a2, ROW_LOAD_OFFSET + i);
+        recv_a[1] = dpct::select_from_sub_group(sg, a3, ROW_LOAD_OFFSET + i);
+        recv_b[0] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i);
+        recv_b[1] =
+            dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i + 4);
 
-      MulType *a = reinterpret_cast<MulType *>(recv_a);
-      MulType *b = reinterpret_cast<MulType *>(recv_b);
+        MulType *a = reinterpret_cast<MulType *>(recv_a);
+        MulType *b = reinterpret_cast<MulType *>(recv_b);
 
-      for (int k = 0; k < 4; k++) {
-        MulType a00 = a[k] >> 4;
-        MulType a01 = a[k] & 0x0F;
-        MulType a10 = a[k + 4] >> 4;
-        MulType a11 = a[k + 4] & 0x0F;
-        MulType b00 = b[k] >> 4;
-        MulType b01 = b[k] & 0x0F;
-        MulType b10 = b[k + 4] >> 4;
-        MulType b11 = b[k + 4] & 0x0F;
+        for (int k = 0; k < 4; k++) {
+          MulType a00 = a[k] >> 4;
+          MulType a01 = a[k] & 0x0F;
+          MulType a10 = a[k + 4] >> 4;
+          MulType a11 = a[k + 4] & 0x0F;
+          MulType b00 = b[k] >> 4;
+          MulType b01 = b[k] & 0x0F;
+          MulType b10 = b[k + 4] >> 4;
+          MulType b11 = b[k + 4] & 0x0F;
 
-        c0 += a00 * b00;
-        c0 += a01 * b01;
+          c0 += a00 * b00;
+          c0 += a01 * b01;
 
-        c1 += a00 * b10;
-        c1 += a01 * b11;
+          c1 += a00 * b10;
+          c1 += a01 * b11;
 
-        c2 += a10 * b00;
-        c2 += a11 * b01;
+          c2 += a10 * b00;
+          c2 += a11 * b01;
 
-        c3 += a10 * b10;
-        c3 += a11 * b11;
+          c3 += a10 * b10;
+          c3 += a11 * b11;
+        }
       }
     }
   }
@@ -3092,12 +2850,21 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
   *d3 = c3;
 }
 
-/// Multiplies 2 16x32 & 32x8 u4/s4 matrices and accumulates the result to a
-/// 16x8 s32 matrix (m16n8k32.row.col.s32.u4.u4.s32 /
-/// m16n8k32.row.col.s32.s4.s4.s32)
+/// Multiplies 2 16x4 & 4x8 f16 matrices and accumulates the result to a
+/// 16x8 f32 matrix (m16n8k4.row.col.f16.f16.f16.f16 /
+/// m16n8k4.row.col.f32.f16.f16.f32)
+/// Multiplies 2 16x4 & 4x8 f64 matrices and accumulates the result to a
+/// 16x8 f64 matrix (m16n8k4.row.col.f64.f64.f64.f64)
+/// Multiplies 2 16x8 & 8x8 f16 matrices and accumulates the result to a
+/// 16x8 f32 matrix (m16n8k8.row.col.f32.f16.f16.f32)
+/// Multiplies 2 16x8 & 8x8 f64 matrices and accumulates the result to a
+/// 16x8 f64 matrix (m16n8k8.row.col.f64.f64.f64.f64)
 /// Multiplies 2 16x16 & 16x8 u8/s8 matrices and accumulates the result to a
 /// 16x8 s32 matrix (m16n8k16.row.col.s32.u8.u8.s32 /
 /// m16n8k16.row.col.s32.s8.s8.s32)
+/// Multiplies 2 16x32 & 32x8 u4/s4 matrices and accumulates the result to a
+/// 16x8 s32 matrix (m16n8k32.row.col.s32.u4.u4.s32 /
+/// m16n8k32.row.col.s32.s4.s4.s32)
 /// Requires the sub-group size of kernel
 /// calling this function to be 32
 /// \tparam [in] M The rows of A/C/D matrix
@@ -3120,16 +2887,48 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
 /// \param [in] c3 The 4th element from C matrix to be added with d3
 template <int M, int N, int K, typename MulType, typename ABType,
           typename CDType>
-std::enable_if_t<std::is_integral_v<MulType>, void>
-mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
-    ABType b0, CDType c0, CDType c1, CDType c2, CDType c3) {
+void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
+         ABType b0, CDType c0, CDType c1, CDType c2, CDType c3) {
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int lane = sg.get_local_linear_id();
 
   short ROW_LOAD_OFFSET = 4 * (lane >> 2);
   short COL_LOAD_OFFSET = 8 * (lane % 4);
 
-  if (M == 16 && N == 8 && K == 16) {
+  if (M == 16 && N == 8 && K == 4) {
+    for (int i = 0; i < 4; i++) {
+      ABType recv_a[2], recv_b[2];
+
+      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
+      recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
+      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
+      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
+
+      c0 += recv_a[0] * recv_b[0];
+      c1 += recv_a[0] * recv_b[1];
+      c2 += recv_a[1] * recv_b[0];
+      c3 += recv_a[1] * recv_b[1];
+    }
+  } else if (M == 16 && N == 8 && K == 8) {
+    for (int i = 0; i < 4; i++) {
+      ABType recv_a[2], recv_b[2];
+
+      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
+      recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
+      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
+      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
+
+      auto ra = reinterpret_cast<MulType *>(recv_a);
+      auto rb = reinterpret_cast<MulType *>(recv_b);
+
+      for (int j = 0; j < 2; j++) {
+        c0 += static_cast<float>(ra[j]) * static_cast<float>(rb[j]);
+        c1 += static_cast<float>(ra[j]) * static_cast<float>(rb[j + 2]);
+        c2 += static_cast<float>(ra[j + 2]) * static_cast<float>(rb[j]);
+        c3 += static_cast<float>(ra[j + 2]) * static_cast<float>(rb[j + 2]);
+      }
+    }
+  } else if (M == 16 && N == 8 && K == 16) {
     ABType recv_a[4 * 2], recv_b[4 * 2];
 
     for (int i = 0; i < 4; i++) {
@@ -3150,38 +2949,41 @@ mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
       c3 += a[i + 16] * b[i + 16];
     }
   } else if (M == 16 && N == 8 && K == 32) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
+    if constexpr (std::is_integral_v<MulType>) {
+      for (int i = 0; i < 4; i++) {
+        ABType recv_a[2], recv_b[2];
 
-      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
+        recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
+        recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
+        recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
+        recv_b[1] =
+            dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
 
-      MulType *a = reinterpret_cast<MulType *>(recv_a);
-      MulType *b = reinterpret_cast<MulType *>(recv_b);
+        MulType *a = reinterpret_cast<MulType *>(recv_a);
+        MulType *b = reinterpret_cast<MulType *>(recv_b);
 
-      for (int k = 0; k < 4; k++) {
-        MulType a00 = a[k] >> 4;
-        MulType a01 = a[k] & 0x0F;
-        MulType a10 = a[k + 4] >> 4;
-        MulType a11 = a[k + 4] & 0x0F;
-        MulType b00 = b[k] >> 4;
-        MulType b01 = b[k] & 0x0F;
-        MulType b10 = b[k + 4] >> 4;
-        MulType b11 = b[k + 4] & 0x0F;
+        for (int k = 0; k < 4; k++) {
+          MulType a00 = a[k] >> 4;
+          MulType a01 = a[k] & 0x0F;
+          MulType a10 = a[k + 4] >> 4;
+          MulType a11 = a[k + 4] & 0x0F;
+          MulType b00 = b[k] >> 4;
+          MulType b01 = b[k] & 0x0F;
+          MulType b10 = b[k + 4] >> 4;
+          MulType b11 = b[k + 4] & 0x0F;
 
-        c0 += a00 * b00;
-        c0 += a01 * b01;
+          c0 += a00 * b00;
+          c0 += a01 * b01;
 
-        c1 += a00 * b10;
-        c1 += a01 * b11;
+          c1 += a00 * b10;
+          c1 += a01 * b11;
 
-        c2 += a10 * b00;
-        c2 += a11 * b01;
+          c2 += a10 * b00;
+          c2 += a11 * b01;
 
-        c3 += a10 * b10;
-        c3 += a11 * b11;
+          c3 += a10 * b10;
+          c3 += a11 * b11;
+        }
       }
     }
   }
