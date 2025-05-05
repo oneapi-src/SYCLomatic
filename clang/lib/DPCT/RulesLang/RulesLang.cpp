@@ -348,23 +348,25 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
               "cudaExternalSemaphoreHandleType", "CUstreamCallback",
               "cudaHostFn_t", "__nv_half2", "__nv_half", "cudaGraphNodeType",
-              "CUsurfref", "CUdevice_P2PAttribute", "cudaIpcMemHandle_t"))))))
+              "CUsurfref", "CUdevice_P2PAttribute", "cudaIpcMemHandle_t",
+              "cudaGraphExecUpdateResultInfo"))))))
           .bind("cudaTypeDef"),
       this);
 
   MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-                  "cooperative_groups::__v1::coalesced_group",
-                  "cooperative_groups::__v1::grid_group",
-                  "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
-                  "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
-                  "cudaGraphicsResource_t", "CUgraphicsResource",
-                  "cudaExternalMemory_t", "cudaExternalMemoryHandleDesc",
-                  "cudaExternalMemoryMipmappedArrayDesc",
-                  "cudaExternalMemoryBufferDesc", "cudaExternalSemaphore_t",
-                  "cudaExternalSemaphoreHandleDesc",
-                  "cudaExternalSemaphoreSignalParams",
-                  "cudaExternalSemaphoreWaitParams"))))))
+      typeLoc(
+          loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+              "cooperative_groups::__v1::coalesced_group",
+              "cooperative_groups::__v1::grid_group",
+              "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
+              "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
+              "cudaGraphicsResource_t", "CUgraphicsResource",
+              "cudaExternalMemory_t", "cudaExternalMemoryHandleDesc",
+              "cudaExternalMemoryMipmappedArrayDesc",
+              "cudaExternalMemoryBufferDesc", "cudaExternalSemaphore_t",
+              "cudaExternalSemaphoreHandleDesc",
+              "cudaExternalSemaphoreSignalParams",
+              "cudaExternalSemaphoreWaitParams", "cudaKernelNodeParams"))))))
           .bind("cudaTypeDefEA"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -937,9 +939,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     if (CanonicalTypeStr == "cudaGraphExecUpdateResult") {
-      report(TL->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             CanonicalTypeStr);
-      return;
+      if (!DpctGlobalInfo::useExtGraph()) {
+        report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               "cudaGraphExecUpdateResult",
+               "--use-experimental-features=graph");
+      }
     }
 
     if (CanonicalTypeStr == "cudaGraphicsRegisterFlags" ||
@@ -1941,7 +1945,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                           "cufftType", "cudaMemoryType", "CUctx_flags_enum",
                           "CUpointer_attribute_enum", "CUmemorytype_enum",
                           "cudaGraphicsMapFlags", "cudaGraphicsRegisterFlags",
-                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum"))),
+                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum",
+                          "cudaGraphExecUpdateResult"))),
                       matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
       this);
@@ -2061,7 +2066,16 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
               EnumName == "cudaGraphNodeTypeMemset" ||
               EnumName == "cudaGraphNodeTypeHost" ||
               EnumName == "cudaGraphNodeTypeGraph" ||
-              EnumName == "cudaGraphNodeTypeEmpty")) {
+              EnumName == "cudaGraphNodeTypeEmpty" ||
+              EnumName == "cudaGraphExecUpdateSuccess" ||
+              EnumName == "cudaGraphExecUpdateError" ||
+              EnumName == "cudaGraphExecUpdateErrorTopologyChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorNodeTypeChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorFunctionChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorParametersChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorNotSupported" ||
+              EnumName == "cudaGraphExecUpdateErrorUnsupportedFunctionChange" ||
+              EnumName == "cudaGraphExecUpdateErrorAttributesChanged")) {
     report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
            EnumName, "--use-experimental-features=graph");
     return;
@@ -4638,7 +4652,7 @@ void KernelCallRefRule::runRule(
         (OuterFD->getTemplatedKind() ==
          FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
       std::string TypeRepl;
-      if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
+      if (DpctGlobalInfo::useWrapperRegisterFnPtr()) {
         if ((IsTemplateRelated &&
              (!DRE->hasExplicitTemplateArgs() ||
               (DRE->getNumTemplateArgs() <= TemplateParamNum))) ||
@@ -4647,7 +4661,7 @@ void KernelCallRefRule::runRule(
         }
       }
       insertWrapperPostfix<DeclRefExpr>(
-          DRE, std::move(TypeRepl), DpctGlobalInfo::isCVersionCUDALaunchUsed());
+          DRE, std::move(TypeRepl), DpctGlobalInfo::useWrapperRegisterFnPtr());
     }
   }
   if (auto ULE =
@@ -4684,7 +4698,7 @@ void KernelCallRefRule::runRule(
       }
     }
     insertWrapperPostfix<UnresolvedLookupExpr>(
-        ULE, getTypeRepl(ULE), DpctGlobalInfo::isCVersionCUDALaunchUsed());
+        ULE, getTypeRepl(ULE), DpctGlobalInfo::useWrapperRegisterFnPtr());
   }
 }
 
@@ -4957,7 +4971,7 @@ void KernelCallRule::runRule(
 
       if (!getAddressedRef(CalleeDRE)) {
         if (IsFuncTypeErased) {
-          DpctGlobalInfo::setCVersionCUDALaunchUsed();
+          DpctGlobalInfo::setUseWrapperRegisterFnPtr();
         }
         std::string ReplStr;
         llvm::raw_string_ostream OS(ReplStr);

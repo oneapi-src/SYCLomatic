@@ -1358,8 +1358,10 @@ public:
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
-  static void setCVersionCUDALaunchUsed() { CVersionCUDALaunchUsedFlag = true; }
-  static bool isCVersionCUDALaunchUsed() { return CVersionCUDALaunchUsedFlag; }
+  static void setUseWrapperRegisterFnPtr() {
+    UseWrapperRegisterFnPtrFlag = true;
+  }
+  static bool useWrapperRegisterFnPtr() { return UseWrapperRegisterFnPtrFlag; }
   static void setUseSYCLCompat(bool Flag = true) { UseSYCLCompatFlag = Flag; }
   static bool useSYCLCompat() { return UseSYCLCompatFlag; }
   static bool useEnqueueBarrier() {
@@ -1689,7 +1691,7 @@ private:
   static unsigned HelperFuncPreferenceFlag;
   static bool AnalysisModeFlag;
   static bool UseSYCLCompatFlag;
-  static bool CVersionCUDALaunchUsedFlag;
+  static bool UseWrapperRegisterFnPtrFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;

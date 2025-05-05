@@ -998,7 +998,17 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class GraphAnalysisRule : public NamedMigrationRule<GraphAnalysisRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 class GraphRule : public NamedMigrationRule<GraphRule> {
+  static MapNames::MapTy KernelNodeParamNames;
+  const Expr *getAssignedBO(const Expr *E, ASTContext &Context);
+  const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context);
+
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

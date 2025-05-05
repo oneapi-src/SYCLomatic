@@ -2513,7 +2513,7 @@ unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 bool DpctGlobalInfo::AnalysisModeFlag = false;
 bool DpctGlobalInfo::UseSYCLCompatFlag = false;
-bool DpctGlobalInfo::CVersionCUDALaunchUsedFlag = false;
+bool DpctGlobalInfo::UseWrapperRegisterFnPtrFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;

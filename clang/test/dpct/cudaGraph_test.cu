@@ -10,6 +10,24 @@
     cudaError_t _result = x; \
   } while (0)
 
+__global__ void myKernel(int *data) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < 10) {
+    data[idx] += 1;
+  }
+}
+
+// CHECK: void myKernel_wrapper(int * data) {
+// CHECK:        sycl::queue queue = *dpct::kernel_launcher::_que;
+// CHECK:        unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
+// CHECK:        sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
+// CHECK:        queue.parallel_for(
+// CHECK:          nr,
+// CHECK:          [=](sycl::nd_item<3> item_ct1) {
+// CHECK:            myKernel(data);
+// CHECK:          });
+// CHECK:  }
+
 int main() {
   // CHECK: dpct::experimental::command_graph_ptr graph;
   // CHECK-NEXT: dpct::experimental::command_graph_ptr *graph2;
@@ -70,6 +88,26 @@ int main() {
   // CHECK: dpct::experimental::add_empty_node(&node, graph, node10, 1);
   cudaGraphAddEmptyNode(&node, graph, node10, 1);
 
+  // CHECK: dpct::experimental::kernel_node_params params = {};
+  // CHECK-NEXT: params.set_func((void*) dpct::wrapper_register(&myKernel_wrapper).get());
+  // CHECK-NEXT: params.set_block_dim(dpct::dim3(10));
+  // CHECK-NEXT: params.set_grid_dim(dpct::dim3(1));
+  // CHECK-NEXT: params.set_shared_mem_bytes(0);
+  // CHECK-NEXT: void *kernelArgs[] = {};
+  // CHECK-NEXT: params.set_kernel_params(kernelArgs);
+  cudaKernelNodeParams params = {};
+  params.func = (void *)myKernel;
+  params.blockDim = dim3(10);
+  params.gridDim = dim3(1);
+  params.sharedMemBytes = 0;
+  void *kernelArgs[] = {};
+  params.kernelParams = kernelArgs;
+
+  // CHECK: void* function = (void*) dpct::wrapper_register(myKernel_wrapper).get();
+  // CHECK-NEXT: params.set_func(function);
+  void* function = (void*) myKernel;
+  params.func = function;
+
   size_t numNodes;
 
   // CHECK: dpct::experimental::get_nodes(graph, node4, &numNodes);
@@ -118,11 +156,22 @@ int main() {
   cudaGraphLaunch(*execGraph2, *stream2);
 
 #ifndef DNO_BUILD_TEST
-  // CHECK: execGraph->update(*graph);
-  cudaGraphExecUpdate(execGraph, graph, nullptr, nullptr);
 
-  // CHECK: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(execGraph->update(*graph)));
-  CUDA_CHECK_THROW(cudaGraphExecUpdate(execGraph, graph, nullptr, nullptr));
+  cudaGraphExecUpdateResultInfo updateResult;
+  // CHECK: dpct::experimental::update(execGraph, graph, &updateResult);
+  cudaGraphExecUpdate(execGraph, graph, &updateResult);
+
+  // CHECK: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::update(execGraph, graph, &updateResult)));
+  CUDA_CHECK_THROW(cudaGraphExecUpdate(execGraph, graph, &updateResult));
+
+  // CHECK: if (updateResult == 1) {
+  // CHECK-NEXT: }
+  // CHECK-NEXT: if (updateResult == 0) {
+  // CHECK-NEXT: }
+  if (updateResult.result == cudaGraphExecUpdateSuccess) {
+  }
+  if (updateResult.result == cudaGraphExecUpdateErrorTopologyChanged) {
+  }
 #endif
 
   // CHECK: sycl::ext::oneapi::experimental::node_type nodeType;
