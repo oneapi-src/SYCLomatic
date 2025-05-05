@@ -1642,12 +1642,13 @@ protected:
 
     MulType = ABType;
     OS() << MapNames::getDpctNamespace() << "experimental::matrix::mma";
-    if (!MatrixOp.empty()) {
-      OS() << "_" << MatrixOp;
-    }
     OS() << "<";
     OS() << M << ", " << N << ", " << K << ", ";
-    OS() << MulType << ">(";
+    OS() << MulType;
+    if (!MatrixOp.empty()) {
+      OS() << ", sycl::bit_" << MatrixOp << "<>";
+    }
+    OS() << ">(";
 
     // Add D matrix address values to store the MAD result
     for (unsigned Inst = 0; Inst != DMatVE->getNumElements(); ++Inst) {

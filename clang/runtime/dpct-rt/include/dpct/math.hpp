@@ -2230,12 +2230,16 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, CDType *d4, CDType *d5,
 }
 
 /// Multiplies 2 8x4 & 4x8 f64 matrices and accumulates the result to a 8x8 b64
-/// matrix (m8n8k4.row.col.f64.f64.f64.f64)
+/// matrix (m8n8k4.row.col.f64.f64.f64.f64).
 /// Multiplies 2 8x16 & 16x8 u8/s8 matrices and accumulates the result to a 8x8
-/// s32 matrix (m8n8k16.row.col.s32.u8.u8.s32 / m8n8k16.row.col.s32.s8.s8.s32)
+/// s32 matrix (m8n8k16.row.col.s32.u8.u8.s32 / m8n8k16.row.col.s32.s8.s8.s32).
 /// Multiplies 2 8x32 & 32x8 u4/s4 matrices and accumulates the result to a 8x8
-/// s32 matrix (m8n8k32.row.col.s32.u4.u4.s32 / m8n8k32.row.col.s32.s4.s4.s32)
-/// Requires the sub-group size of kernel calling this function to be 32
+/// s32 matrix (m8n8k32.row.col.s32.u4.u4.s32 / m8n8k32.row.col.s32.s4.s4.s32).
+/// Multiplies 2 8x128 & 128x8 b1 matrices and accumulates the result to a 8x8
+/// s32 matrix (mma.sync.aligned.m8n8k128.row.col.s32.b1.b1.s32.and.popc).
+/// Multiplies 2 8x128 & 128x8 b1 matrices and accumulates the result to a 8x8
+/// s32 matrix (mma.sync.aligned.m8n8k128.row.col.s32.b1.b1.s32.xor.popc).
+/// Requires the sub-group size of kernel calling this function to be 32.
 /// In: 2, 1, 1, 2
 /// \tparam [in] M The rows of A/C/D matrix
 /// \tparam [in] N The columns of B/C/D matrix
@@ -2249,9 +2253,10 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, CDType *d4, CDType *d5,
 /// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
 /// \param [in] c0 The 1st element from C matrix to be added with d0
 /// \param [in] c1 The 2nd element from C matrix to be added with d1
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-void mma(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0, CDType c1) {
+template <int M, int N, int K, typename MulType, typename Op = sycl::bit_and<>,
+          typename ABType, typename CDType>
+void mma(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0, CDType c1,
+         Op op = Op{}) {
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int lane = sg.get_local_linear_id();
 
@@ -2319,91 +2324,20 @@ void mma(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0, CDType c1) {
         }
       }
     }
-  }
+  } else if (M == 8 && N == 8 && K == 128) {
+    if constexpr (std::is_integral_v<MulType>) {
+      for (int i = 0; i < 4; i++) {
+        ABType recv_a =
+            dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
+        ABType recv_b =
+            dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
 
-  *d0 = c0;
-  *d1 = c1;
-}
+        c0 += sycl::popcount(op(recv_a, recv_b));
 
-/// Multiplies 2 8x128 & 128x8 b1 matrices and accumulates the result to a 8x8
-/// s32 matrix (mma.sync.aligned.m8n8k128.row.col.s32.b1.b1.s32.and.popc)
-/// Requires the sub-group size of kernel calling this function to be 32
-/// In: 2, 1, 1, 2
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-void mma_and(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0,
-             CDType c1) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
+        recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
 
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
-
-  if (M == 8 && N == 8 && K == 128) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      ABType recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-
-      c0 += sycl::popcount(recv_a & recv_b);
-
-      recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
-
-      c1 += sycl::popcount(recv_a & recv_b);
-    }
-  }
-
-  *d0 = c0;
-  *d1 = c1;
-}
-
-/// Multiplies 2 8x128 & 128x8 b1 matrices and accumulates the result to a 8x8
-/// s32 matrix (mma.sync.aligned.m8n8k128.row.col.s32.b1.b1.s32.xor.popc)
-/// Requires the sub-group size of kernel calling this function to be 32
-/// In: 2, 1, 1, 2
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-void mma_xor(CDType *d0, CDType *d1, ABType a0, ABType b0, CDType c0,
-             CDType c1) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
-
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
-
-  if (M == 8 && N == 8 && K == 128) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      ABType recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-
-      c0 += sycl::popcount(recv_a ^ recv_b);
-
-      recv_b = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
-
-      c1 += sycl::popcount(recv_a ^ recv_b);
+        c1 += sycl::popcount(op(recv_a, recv_b));
+      }
     }
   }
 
@@ -2554,6 +2488,10 @@ void mma(volatile CDType *d0, volatile CDType *d1, ABType a0, ABType a1,
 /// Multiplies 2 16x64 & 64x8 u4/s4 matrices and
 /// accumulates the result to a 16x8 b32 matrix (m16n8k64.row.col.s32.u4.u4.s32
 /// / m16n8k64.row.col.s32.s4.s4.s32).
+/// Multiplies 2 16x256 & 256x8 b1 matrices and accumulates the result to a 16x8
+/// s32 matrix (mma.sync.aligned.m16n8k256.row.col.s32.b1.b1.s32.and.popc).
+/// Multiplies 2 16x256 & 256x8 b1 matrices and accumulates the result to a 16x8
+/// s32 matrix (mma.sync.aligned.m16n8k256.row.col.s32.b1.b1.s32.xor.popc).
 /// Requires the sub-group size of kernel calling this function to be 32.
 /// \tparam [in] M The rows of A/C/D matrix
 /// \tparam [in] N The columns of B/C/D matrix
@@ -2576,11 +2514,11 @@ void mma(volatile CDType *d0, volatile CDType *d1, ABType a0, ABType a1,
 /// \param [in] c1 The 2nd element from C matrix to be added with d1
 /// \param [in] c2 The 3rd element from C matrix to be added with d2
 /// \param [in] c3 The 4th element from C matrix to be added with d3
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
+template <int M, int N, int K, typename MulType, typename Op = sycl::bit_and<>,
+          typename ABType, typename CDType>
 void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
          ABType a2, ABType a3, ABType b0, ABType b1, CDType c0, CDType c1,
-         CDType c2, CDType c3) {
+         CDType c2, CDType c3, Op op = Op{}) {
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int lane = sg.get_local_linear_id();
 
@@ -2759,6 +2697,38 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
         }
       }
     }
+  } else if (M == 16 && N == 8 && K == 256) {
+    if constexpr (std::is_integral_v<MulType>) {
+      for (int i = 0; i < 4; i++) {
+        ABType recv_a[2], recv_b[2];
+
+        recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
+        recv_a[1] = dpct::select_from_sub_group(sg, a2, ROW_LOAD_OFFSET + i);
+        recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
+        recv_b[1] =
+            dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
+
+        c0 += sycl::popcount(op(recv_a[0], recv_b[0]));
+        c1 += sycl::popcount(op(recv_a[0], recv_b[1]));
+        c2 += sycl::popcount(op(recv_a[1], recv_b[0]));
+        c3 += sycl::popcount(op(recv_a[1], recv_b[1]));
+      }
+
+      for (int i = 0; i < 4; i++) {
+        ABType recv_a[2], recv_b[2];
+
+        recv_a[0] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
+        recv_a[1] = dpct::select_from_sub_group(sg, a3, ROW_LOAD_OFFSET + i);
+        recv_b[0] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i);
+        recv_b[1] =
+            dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i + 4);
+
+        c0 += sycl::popcount(op(recv_a[0], recv_b[0]));
+        c1 += sycl::popcount(op(recv_a[0], recv_b[1]));
+        c2 += sycl::popcount(op(recv_a[1], recv_b[0]));
+        c3 += sycl::popcount(op(recv_a[1], recv_b[1]));
+      }
+    }
   }
 
   *d0 = c0;
@@ -2852,20 +2822,24 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
 
 /// Multiplies 2 16x4 & 4x8 f16 matrices and accumulates the result to a
 /// 16x8 f32 matrix (m16n8k4.row.col.f16.f16.f16.f16 /
-/// m16n8k4.row.col.f32.f16.f16.f32)
+/// m16n8k4.row.col.f32.f16.f16.f32).
 /// Multiplies 2 16x4 & 4x8 f64 matrices and accumulates the result to a
-/// 16x8 f64 matrix (m16n8k4.row.col.f64.f64.f64.f64)
+/// 16x8 f64 matrix (m16n8k4.row.col.f64.f64.f64.f64).
 /// Multiplies 2 16x8 & 8x8 f16 matrices and accumulates the result to a
-/// 16x8 f32 matrix (m16n8k8.row.col.f32.f16.f16.f32)
+/// 16x8 f32 matrix (m16n8k8.row.col.f32.f16.f16.f32).
 /// Multiplies 2 16x8 & 8x8 f64 matrices and accumulates the result to a
-/// 16x8 f64 matrix (m16n8k8.row.col.f64.f64.f64.f64)
+/// 16x8 f64 matrix (m16n8k8.row.col.f64.f64.f64.f64).
 /// Multiplies 2 16x16 & 16x8 u8/s8 matrices and accumulates the result to a
 /// 16x8 s32 matrix (m16n8k16.row.col.s32.u8.u8.s32 /
-/// m16n8k16.row.col.s32.s8.s8.s32)
+/// m16n8k16.row.col.s32.s8.s8.s32).
 /// Multiplies 2 16x32 & 32x8 u4/s4 matrices and accumulates the result to a
 /// 16x8 s32 matrix (m16n8k32.row.col.s32.u4.u4.s32 /
-/// m16n8k32.row.col.s32.s4.s4.s32)
-/// Requires the sub-group size of kernel
+/// m16n8k32.row.col.s32.s4.s4.s32).
+/// Multiplies 2 16x128 & 128x8 b1 matrices and accumulates the result to a 16x8
+/// s32 matrix (mma.sync.aligned.m16n8k128.row.col.s32.b1.b1.s32.and.popc).
+/// Multiplies 2 16x128 & 128x8 b1 matrices and accumulates the result to a 16x8
+/// s32 matrix (mma.sync.aligned.m16n8k128.row.col.s32.b1.b1.s32.xor.popc).
+/// Requires the sub-group size of kernel.
 /// calling this function to be 32
 /// \tparam [in] M The rows of A/C/D matrix
 /// \tparam [in] N The columns of B/C/D matrix
@@ -2885,10 +2859,10 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
 /// \param [in] c1 The 2nd element from C matrix to be added with d1
 /// \param [in] c2 The 3rd element from C matrix to be added with d2
 /// \param [in] c3 The 4th element from C matrix to be added with d3
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
+template <int M, int N, int K, typename MulType, typename Op = sycl::bit_and<>,
+          typename ABType, typename CDType>
 void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
-         ABType b0, CDType c0, CDType c1, CDType c2, CDType c3) {
+         ABType b0, CDType c0, CDType c1, CDType c2, CDType c3, Op op = Op{}) {
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int lane = sg.get_local_linear_id();
 
@@ -2986,253 +2960,22 @@ void mma(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0, ABType a1,
         }
       }
     }
-  }
+  } else if (M == 16 && N == 8 && K == 128) {
+    if constexpr (std::is_integral_v<MulType>) {
+      for (int i = 0; i < 4; i++) {
+        ABType recv_a[2], recv_b[2];
 
-  *d0 = c0;
-  *d1 = c1;
-  *d2 = c2;
-  *d3 = c3;
-}
+        recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
+        recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
+        recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
+        recv_b[1] =
+            dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
 
-/// Multiplies 2 16x128 & 128x8 b1 matrices and accumulates the result to a 16x8
-/// s32 matrix (mma.sync.aligned.m16n8k128.row.col.s32.b1.b1.s32.and.popc)
-/// Requires the sub-group size of kernel calling this function to be 32
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// In: 4, 2, 1, 4
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] d2 The 3rd element to be written to the output D matrix
-/// \param [in] d3 The 4th element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-/// \param [in] c2 The 3rd element from C matrix to be added with d2
-/// \param [in] c3 The 4th element from C matrix to be added with d3
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-void mma_and(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0,
-             ABType a1, ABType b0, CDType c0, CDType c1, CDType c2, CDType c3) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
-
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
-
-  if (M == 16 && N == 8 && K == 128) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
-
-      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
-
-      c0 += sycl::popcount(recv_a[0] & recv_b[0]);
-      c1 += sycl::popcount(recv_a[0] & recv_b[1]);
-      c2 += sycl::popcount(recv_a[1] & recv_b[0]);
-      c3 += sycl::popcount(recv_a[1] & recv_b[1]);
-    }
-  }
-
-  *d0 = c0;
-  *d1 = c1;
-  *d2 = c2;
-  *d3 = c3;
-}
-
-/// Multiplies 2 16x128 & 128x8 b1 matrices and accumulates the result to a 16x8
-/// s32 matrix (mma.sync.aligned.m16n8k128.row.col.s32.b1.b1.s32.xor.popc)
-/// Requires the sub-group size of kernel calling this function to be 32
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// In: 4, 2, 1, 4
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] d2 The 3rd element to be written to the output D matrix
-/// \param [in] d3 The 4th element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-/// \param [in] c2 The 3rd element from C matrix to be added with d2
-/// \param [in] c3 The 4th element from C matrix to be added with d3
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-void mma_xor(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0,
-             ABType a1, ABType b0, CDType c0, CDType c1, CDType c2, CDType c3) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
-
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
-
-  if (M == 16 && N == 8 && K == 128) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
-
-      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
-
-      c0 += sycl::popcount(recv_a[0] ^ recv_b[0]);
-      c1 += sycl::popcount(recv_a[0] ^ recv_b[1]);
-      c2 += sycl::popcount(recv_a[1] ^ recv_b[0]);
-      c3 += sycl::popcount(recv_a[1] ^ recv_b[1]);
-    }
-  }
-
-  *d0 = c0;
-  *d1 = c1;
-  *d2 = c2;
-  *d3 = c3;
-}
-
-/// Multiplies 2 16x256 & 256x8 b1 matrices and accumulates the result to a 16x8
-/// s32 matrix (mma.sync.aligned.m16n8k256.row.col.s32.b1.b1.s32.and.popc)
-/// Requires the sub-group size of kernel calling this function to be 32
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// In: 4, 4, 2, 4
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] d2 The 3rd element to be written to the output D matrix
-/// \param [in] d3 The 4th element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
-/// \param [in] a2 The 3rd element from A matrix to be multiplied with B matrix
-/// \param [in] a3 The 4th element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] b1 The 2nd element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-/// \param [in] c2 The 3rd element from C matrix to be added with d2
-/// \param [in] c3 The 4th element from C matrix to be added with d3
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-void mma_and(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0,
-             ABType a1, ABType a2, ABType a3, ABType b0, ABType b1, CDType c0,
-             CDType c1, CDType c2, CDType c3) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
-
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
-
-  if (M == 16 && N == 8 && K == 256) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
-
-      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a2, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
-
-      c0 += sycl::popcount(recv_a[0] & recv_b[0]);
-      c1 += sycl::popcount(recv_a[0] & recv_b[1]);
-      c2 += sycl::popcount(recv_a[1] & recv_b[0]);
-      c3 += sycl::popcount(recv_a[1] & recv_b[1]);
-    }
-
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
-
-      recv_a[0] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a3, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i + 4);
-
-      c0 += sycl::popcount(recv_a[0] & recv_b[0]);
-      c1 += sycl::popcount(recv_a[0] & recv_b[1]);
-      c2 += sycl::popcount(recv_a[1] & recv_b[0]);
-      c3 += sycl::popcount(recv_a[1] & recv_b[1]);
-    }
-  }
-
-  *d0 = c0;
-  *d1 = c1;
-  *d2 = c2;
-  *d3 = c3;
-}
-
-/// Multiplies 2 16x256 & 256x8 b1 matrices and accumulates the result to a 16x8
-/// s32 matrix (mma.sync.aligned.m16n8k256.row.col.s32.b1.b1.s32.xor.popc)
-/// Requires the sub-group size of kernel calling this function to be 32
-/// \tparam [in] M The rows of A/C/D matrix
-/// \tparam [in] N The columns of B/C/D matrix
-/// \tparam [in] K The columns/rows of A/B matrix
-/// \tparam [in] MulType The type of the multiplication result
-/// \tparam [in] ABType The type of the input matrices
-/// \tparam [in] CDType The type of the output matrix
-/// In: 4, 4, 2, 4
-/// \param [in] d0 The 1st element to be written to the output D matrix
-/// \param [in] d1 The 2nd element to be written to the output D matrix
-/// \param [in] d2 The 3rd element to be written to the output D matrix
-/// \param [in] d3 The 4th element to be written to the output D matrix
-/// \param [in] a0 The 1st element from A matrix to be multiplied with B matrix
-/// \param [in] a1 The 2nd element from A matrix to be multiplied with B matrix
-/// \param [in] a2 The 3rd element from A matrix to be multiplied with B matrix
-/// \param [in] a3 The 4th element from A matrix to be multiplied with B matrix
-/// \param [in] b0 The 1st element from B matrix to be multiplied with A matrix
-/// \param [in] b1 The 2nd element from B matrix to be multiplied with A matrix
-/// \param [in] c0 The 1st element from C matrix to be added with d0
-/// \param [in] c1 The 2nd element from C matrix to be added with d1
-/// \param [in] c2 The 3rd element from C matrix to be added with d2
-/// \param [in] c3 The 4th element from C matrix to be added with d3
-template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType>
-void mma_xor(CDType *d0, CDType *d1, CDType *d2, CDType *d3, ABType a0,
-             ABType a1, ABType a2, ABType a3, ABType b0, ABType b1, CDType c0,
-             CDType c1, CDType c2, CDType c3) {
-  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
-  int lane = sg.get_local_linear_id();
-
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
-
-  if (M == 16 && N == 8 && K == 256) {
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
-
-      recv_a[0] = dpct::select_from_sub_group(sg, a0, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a2, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b0, COL_LOAD_OFFSET + i + 4);
-
-      c0 += sycl::popcount(recv_a[0] ^ recv_b[0]);
-      c1 += sycl::popcount(recv_a[0] ^ recv_b[1]);
-      c2 += sycl::popcount(recv_a[1] ^ recv_b[0]);
-      c3 += sycl::popcount(recv_a[1] ^ recv_b[1]);
-    }
-
-    for (int i = 0; i < 4; i++) {
-      ABType recv_a[2], recv_b[2];
-
-      recv_a[0] = dpct::select_from_sub_group(sg, a1, ROW_LOAD_OFFSET + i);
-      recv_a[1] = dpct::select_from_sub_group(sg, a3, ROW_LOAD_OFFSET + i);
-      recv_b[0] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i);
-      recv_b[1] = dpct::select_from_sub_group(sg, b1, COL_LOAD_OFFSET + i + 4);
-
-      c0 += sycl::popcount(recv_a[0] ^ recv_b[0]);
-      c1 += sycl::popcount(recv_a[0] ^ recv_b[1]);
-      c2 += sycl::popcount(recv_a[1] ^ recv_b[0]);
-      c3 += sycl::popcount(recv_a[1] ^ recv_b[1]);
+        c0 += sycl::popcount(op(recv_a[0], recv_b[0]));
+        c1 += sycl::popcount(op(recv_a[0], recv_b[1]));
+        c2 += sycl::popcount(op(recv_a[1], recv_b[0]));
+        c3 += sycl::popcount(op(recv_a[1], recv_b[1]));
+      }
     }
   }
 
