@@ -643,10 +643,6 @@ void MapNames::setExplicitNamespaceMap(
            DpctGlobalInfo::useExtGraph()
                ? getClNamespace() + "ext::oneapi::experimental::node_type"
                : "cudaGraphNodeType")},
-      {"cudaGraphExecUpdateResultInfo",
-       std::make_shared<TypeNameRule>(DpctGlobalInfo::useExtGraph()
-                                          ? "int"
-                                          : "cudaGraphExecUpdateResultInfo")},
       {"cudaGraphExecUpdateResult",
        std::make_shared<TypeNameRule>(DpctGlobalInfo::useExtGraph()
                                           ? "int"

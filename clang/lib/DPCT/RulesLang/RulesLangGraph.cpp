@@ -70,11 +70,12 @@ void GraphRule::registerMatcher(MatchFinder &MF) {
           .bind("Type"),
       this);
 
-  MF.addMatcher(memberExpr(hasObjectExpression(hasType(
-                               asString("cudaGraphExecUpdateResultInfo"))),
-                           member(hasName("result")))
-                    .bind("execUpdateResult"),
-                this);
+  MF.addMatcher(
+      memberExpr(hasObjectExpression(
+                     hasType(asString("cudaGraphExecUpdateResultInfo"))),
+                 member(hasAnyName("result", "errorNode", "errorFromNode")))
+          .bind("execUpdateResult"),
+      this);
 }
 
 void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -92,8 +93,13 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
       if (FieldName == "func") {
-        auto BO = dyn_cast<BinaryOperator>(
-            getParentAsAssignedBO(ME, *Result.Context));
+        auto BinaryOp = getParentAsAssignedBO(ME, *Result.Context, this);
+        if (!BinaryOp) {
+          emplaceTransformation(new RenameFieldInMemberExpr(
+              ME, buildString("get_", FieldName, "()")));
+          return;
+        }
+        auto BO = dyn_cast<BinaryOperator>(BinaryOp);
         if (!BO) {
           return;
         }
@@ -138,7 +144,7 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
             BO->getBeginLoc(), BO->getEndLoc(), std::move(ReplacementStr)));
         emplaceTransformation(new InsertAfterStmt(BO, ")"));
       }
-      if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
+      if (auto BO = getParentAsAssignedBO(ME, *Result.Context, this)) {
         StringRef ReplacedArg = "";
         emplaceTransformation(
             ReplaceMemberAssignAsSetMethod(BO, ME, FieldName, ReplacedArg));
@@ -152,7 +158,9 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto ME = getNodeAsType<MemberExpr>(Result, "execUpdateResult")) {
     auto MD = ME->getMemberDecl();
     const Expr *Base = ME->getBase();
-    if (MD->getNameAsString() == "result") {
+    std::string MemberName = MD->getNameAsString();
+    if (MemberName == "result" || MemberName == "errorNode" ||
+        MemberName == "errorFromNode") {
       if (auto *DRE = dyn_cast<DeclRefExpr>(Base)) {
         SourceLocation StartLoc = Base->getBeginLoc();
         SourceLocation EndLoc = ME->getEndLoc();
@@ -163,8 +171,8 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(
             new ReplaceToken(StartLoc, EndLoc, std::move(VarNameStr)));
       }
+      return;
     }
-    return;
   }
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
@@ -175,46 +183,5 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
   EA.applyAllSubExprRepl();
 }
 
-const Expr *GraphRule::getParentAsAssignedBO(const Expr *E,
-                                             ASTContext &Context) {
-  auto Parents = Context.getParents(*E);
-  if (Parents.size() > 0)
-    return getAssignedBO(Parents[0].get<Expr>(), Context);
-  return nullptr;
-}
-
-// Return the binary operator if E is the lhs of an assign expression,
-// otherwise nullptr.
-const Expr *GraphRule::getAssignedBO(const Expr *E, ASTContext &Context) {
-  if (dyn_cast<MemberExpr>(E)) {
-    // Continue finding parents when E is MemberExpr.
-    return getParentAsAssignedBO(E, Context);
-  } else if (auto ICE = dyn_cast<ImplicitCastExpr>(E)) {
-    // Stop finding parents and return nullptr when E is ImplicitCastExpr,
-    // except for ArrayToPointerDecay cast.
-    if (ICE->getCastKind() == CK_ArrayToPointerDecay) {
-      return getParentAsAssignedBO(E, Context);
-    }
-  } else if (auto ASE = dyn_cast<ArraySubscriptExpr>(E)) {
-    // Continue finding parents when E is ArraySubscriptExpr, and remove
-    // subscript operator anyway for texture object's member.
-    emplaceTransformation(new ReplaceToken(
-        Lexer::getLocForEndOfToken(ASE->getLHS()->getEndLoc(), 0,
-                                   Context.getSourceManager(),
-                                   Context.getLangOpts()),
-        ASE->getRBracketLoc(), ""));
-    return getParentAsAssignedBO(E, Context);
-  } else if (auto BO = dyn_cast<BinaryOperator>(E)) {
-    // If E is BinaryOperator, return E only when it is assign expression,
-    // otherwise return nullptr.
-    if (BO->getOpcode() == BO_Assign)
-      return BO;
-  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
-    if (COCE->getOperator() == OO_Equal) {
-      return COCE;
-    }
-  }
-  return nullptr;
-}
 } // namespace dpct
 } // namespace clang

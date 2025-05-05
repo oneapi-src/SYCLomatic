@@ -4,6 +4,7 @@
 // RUN: FileCheck --input-file %T/cudaGraph_test/cudaGraph_test.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/cudaGraph_test/cudaGraph_test.dp.cpp -o %T/cudaGraph_test/cudaGraph_test.dp.o %}
 
+#include <__clang_cuda_runtime_wrapper.h>
 #include <cuda.h>
 #define CUDA_CHECK_THROW(x)  \
   do {                       \
@@ -108,6 +109,12 @@ int main() {
   void* function = (void*) myKernel;
   params.func = function;
 
+  // CHECK: dpct::dim3 blockDim = params.get_block_dim();
+  dim3 blockDim = params.blockDim;
+
+  // CHECK: void* func2 = params.get_func();
+  void* func2 = params.func;
+
   size_t numNodes;
 
   // CHECK: dpct::experimental::get_nodes(graph, node4, &numNodes);
@@ -155,9 +162,12 @@ int main() {
   CUDA_CHECK_THROW(cudaGraphLaunch(execGraph, stream));
   cudaGraphLaunch(*execGraph2, *stream2);
 
-#ifndef DNO_BUILD_TEST
-
+  // CHECK: int updateResult;
   cudaGraphExecUpdateResultInfo updateResult;
+
+  // CHECK: int result;
+  cudaGraphExecUpdateResult result;
+
   // CHECK: dpct::experimental::update(execGraph, graph, &updateResult);
   cudaGraphExecUpdate(execGraph, graph, &updateResult);
 
@@ -172,7 +182,11 @@ int main() {
   }
   if (updateResult.result == cudaGraphExecUpdateErrorTopologyChanged) {
   }
-#endif
+
+  // CHECK: if (updateResult != nullptr) {
+  // CHECK-NEXT: }
+  if (updateResult.errorFromNode != nullptr) {
+  }
 
   // CHECK: sycl::ext::oneapi::experimental::node_type nodeType;
   // CHECK-NEXT: nodeType = node->get_type();

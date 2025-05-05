@@ -508,6 +508,13 @@ TYPE_REWRITE_ENTRY(
                         STR("--use-experimental-features=graph"))))
 
 TYPE_REWRITE_ENTRY(
+    "cudaGraphExecUpdateResultInfo",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableGraphForType(), TYPE_FACTORY(STR("int")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=graph"))))
+
+TYPE_REWRITE_ENTRY(
     "cudaKernelNodeParams",
     TYPE_CONDITIONAL_FACTORY(
         checkEnableGraphForType(),

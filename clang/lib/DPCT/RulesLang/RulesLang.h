@@ -40,6 +40,9 @@ TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
                                                  StringRef ExtraArg = "",
                                                  StringRef ExtraFeild = "");
 
+const Expr *getAssignedBO(const Expr *E, ASTContext &Context, MigrationRule *Rule);
+const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context, MigrationRule *Rule);
+
 /// Migration rule for iteration space built-in variables (threadIdx, etc).
 class IterationSpaceBuiltinRule
     : public NamedMigrationRule<IterationSpaceBuiltinRule> {
@@ -852,9 +855,6 @@ public:
 
 /// Texture migration rule
 class TextureRule : public NamedMigrationRule<TextureRule> {
-  // Get the binary operator if E is lhs of an assign expression.
-  const Expr *getAssignedBO(const Expr *E, ASTContext &Context);
-  const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context);
   bool removeExtraMemberAccess(const MemberExpr *ME);
   void replaceTextureMember(const MemberExpr *ME, ASTContext &Context,
                             SourceManager &SM);
@@ -1006,8 +1006,6 @@ public:
 
 class GraphRule : public NamedMigrationRule<GraphRule> {
   static MapNames::MapTy KernelNodeParamNames;
-  const Expr *getAssignedBO(const Expr *E, ASTContext &Context);
-  const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context);
 
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -1023,8 +1021,6 @@ public:
 class GraphicsInteropRule : public NamedMigrationRule<GraphicsInteropRule> {
   static MapNames::MapTy ExtResMemHandleDescNames, ExtResSemParamsNames;
 
-  const Expr *getAssignedBO(const Expr *E, ASTContext &Context);
-  const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context);
   void replaceExtResMemHandleDataExpr(const MemberExpr *ME,
                                       ASTContext &Context);
   void replaceExtResSemParamsDataExpr(const MemberExpr *ME,
