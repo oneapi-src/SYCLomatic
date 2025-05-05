@@ -289,36 +289,35 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
               "half", "__half2", "half2", "cudaMemoryAdvise", "cudaError_enum",
               "cudaDeviceProp", "cudaStreamCaptureStatus",
-              "cudaGraphExecUpdateResult", "cudaGraphExecUpdateResultInfo",
-              "cudaPitchedPtr", "thrust::counting_iterator",
-              "thrust::transform_iterator", "thrust::permutation_iterator",
-              "thrust::iterator_difference", "cusolverDnHandle_t",
-              "cusolverDnParams_t", "gesvdjInfo_t", "syevjInfo_t",
-              "thrust::device_malloc_allocator", "thrust::divides",
-              "thrust::tuple", "thrust::maximum", "thrust::multiplies",
-              "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
-              "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
-              "cuFloatComplex", "cuDoubleComplex", "CUevent",
-              "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
-              "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
-              "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
-              "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
-              "cusparseIndexBase_t", "cusparseMatrixType_t",
-              "cusparseAlgMode_t", "cusparseOperation_t", "cusparseMatDescr_t",
-              "cusparseHandle_t", "CUcontext", "cublasPointerMode_t",
-              "cusparsePointerMode_t", "cublasGemmAlgo_t",
-              "cusparseSolveAnalysisInfo_t", "cudaDataType", "cublasDataType_t",
-              "curandState_t", "curandState", "curandStateXORWOW_t",
-              "curandStateXORWOW", "curandStatePhilox4_32_10_t",
-              "curandStatePhilox4_32_10", "curandStateMRG32k3a_t",
-              "curandStateMRG32k3a", "thrust::minus", "thrust::negate",
-              "thrust::logical_or", "thrust::equal_to", "thrust::less",
-              "cudaSharedMemConfig", "curandGenerator_t", "curandRngType_t",
-              "curandOrdering_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
-              "cufftComplex", "cufftDoubleComplex", "cufftResult_t",
-              "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
-              "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
-              "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
+              "cudaGraphExecUpdateResult", "cudaPitchedPtr",
+              "thrust::counting_iterator", "thrust::transform_iterator",
+              "thrust::permutation_iterator", "thrust::iterator_difference",
+              "cusolverDnHandle_t", "cusolverDnParams_t", "gesvdjInfo_t",
+              "syevjInfo_t", "thrust::device_malloc_allocator",
+              "thrust::divides", "thrust::tuple", "thrust::maximum",
+              "thrust::multiplies", "thrust::plus", "cudaDataType_t",
+              "cudaError_t", "CUresult", "CUdevice", "cudaEvent_t",
+              "cublasStatus_t", "cuComplex", "cuFloatComplex",
+              "cuDoubleComplex", "CUevent", "cublasFillMode_t",
+              "cublasDiagType_t", "cublasSideMode_t", "cublasOperation_t",
+              "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t",
+              "curandStatus_t", "cudaStream_t", "cusparseStatus_t",
+              "cusparseDiagType_t", "cusparseFillMode_t", "cusparseIndexBase_t",
+              "cusparseMatrixType_t", "cusparseAlgMode_t",
+              "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
+              "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
+              "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
+              "cublasDataType_t", "curandState_t", "curandState",
+              "curandStateXORWOW_t", "curandStateXORWOW",
+              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
+              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
+              "thrust::negate", "thrust::logical_or", "thrust::equal_to",
+              "thrust::less", "cudaSharedMemConfig", "curandGenerator_t",
+              "curandRngType_t", "curandOrdering_t", "cufftHandle", "cufftReal",
+              "cufftDoubleReal", "cufftComplex", "cufftDoubleComplex",
+              "cufftResult_t", "cufftResult", "cufftType_t", "cufftType",
+              "thrust::pair", "CUdeviceptr", "cudaDeviceAttr", "CUmodule",
+              "CUjit_option", "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
               "__nv_bfloat16", "cooperative_groups::__v1::thread_group",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
@@ -354,19 +353,19 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       this);
 
   MF.addMatcher(
-      typeLoc(
-          loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-              "cooperative_groups::__v1::coalesced_group",
-              "cooperative_groups::__v1::grid_group",
-              "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
-              "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
-              "cudaGraphicsResource_t", "CUgraphicsResource",
-              "cudaExternalMemory_t", "cudaExternalMemoryHandleDesc",
-              "cudaExternalMemoryMipmappedArrayDesc",
-              "cudaExternalMemoryBufferDesc", "cudaExternalSemaphore_t",
-              "cudaExternalSemaphoreHandleDesc",
-              "cudaExternalSemaphoreSignalParams",
-              "cudaExternalSemaphoreWaitParams", "cudaKernelNodeParams"))))))
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+                  "cooperative_groups::__v1::coalesced_group",
+                  "cooperative_groups::__v1::grid_group",
+                  "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
+                  "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
+                  "cudaGraphicsResource_t", "CUgraphicsResource",
+                  "cudaExternalMemory_t", "cudaExternalMemoryHandleDesc",
+                  "cudaExternalMemoryMipmappedArrayDesc",
+                  "cudaExternalMemoryBufferDesc", "cudaExternalSemaphore_t",
+                  "cudaExternalSemaphoreHandleDesc",
+                  "cudaExternalSemaphoreSignalParams",
+                  "cudaExternalSemaphoreWaitParams", "cudaKernelNodeParams",
+                  "cudaGraphExecUpdateResultInfo"))))))
           .bind("cudaTypeDefEA"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -2734,6 +2733,50 @@ const VarDecl *getAssignTargetDecl(const Stmt *E) {
       if (auto DRE = dyn_cast<DeclRefExpr>(L->IgnoreImpCasts()))
         return dyn_cast<VarDecl>(DRE->getDecl());
 
+  return nullptr;
+}
+
+const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context,
+                                  MigrationRule *Rule) {
+  auto Parents = Context.getParents(*E);
+  if (Parents.size() > 0)
+    return getAssignedBO(Parents[0].get<Expr>(), Context, Rule);
+  return nullptr;
+}
+
+// Return the binary operator if E is the lhs of an assign expression,
+// otherwise nullptr.
+const Expr *getAssignedBO(const Expr *E, ASTContext &Context,
+                          MigrationRule *Rule) {
+  if (dyn_cast<MemberExpr>(E)) {
+    // Continue finding parents when E is MemberExpr.
+    return getParentAsAssignedBO(E, Context, Rule);
+  } else if (auto ICE = dyn_cast<ImplicitCastExpr>(E)) {
+    // Stop finding parents and return nullptr when E is ImplicitCastExpr,
+    // except for ArrayToPointerDecay cast.
+    if (ICE->getCastKind() == CK_ArrayToPointerDecay) {
+      return getParentAsAssignedBO(E, Context, Rule);
+    }
+  } else if (auto ASE = dyn_cast<ArraySubscriptExpr>(E)) {
+    // Continue finding parents when E is ArraySubscriptExpr, and remove
+    // subscript operator anyway for texture object's member.
+    Rule->emplaceTransformation(new ReplaceToken(
+        Lexer::getLocForEndOfToken(ASE->getLHS()->getEndLoc(), 0,
+                                   Context.getSourceManager(),
+                                   Context.getLangOpts()),
+        ASE->getRBracketLoc(), ""));
+    return getParentAsAssignedBO(E, Context, Rule);
+  } else if (auto BO = dyn_cast<BinaryOperator>(E)) {
+    // If E is BinaryOperator, return E only when it is assign expression,
+    // otherwise return nullptr.
+    auto Opcode = BO->getOpcode();
+    if (Opcode == BO_Assign || Opcode == BO_OrAssign)
+      return BO;
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COCE->getOperator() == OO_Equal) {
+      return COCE;
+    }
+  }
   return nullptr;
 }
 

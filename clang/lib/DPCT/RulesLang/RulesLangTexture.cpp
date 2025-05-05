@@ -648,7 +648,7 @@ bool TextureRule::tryMerge(const MemberExpr *ME, const Expr *BO) {
 
 void TextureRule::replaceTextureMember(const MemberExpr *ME,
                                        ASTContext &Context, SourceManager &SM) {
-  auto AssignedBO = getParentAsAssignedBO(ME, Context);
+  auto AssignedBO = getParentAsAssignedBO(ME, Context, this);
   if (!DpctGlobalInfo::useExtBindlessImages() && tryMerge(ME, AssignedBO))
     return;
 
@@ -713,49 +713,6 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
       }
     }
   }
-}
-
-const Expr *TextureRule::getParentAsAssignedBO(const Expr *E,
-                                               ASTContext &Context) {
-  auto Parents = Context.getParents(*E);
-  if (Parents.size() > 0)
-    return getAssignedBO(Parents[0].get<Expr>(), Context);
-  return nullptr;
-}
-
-// Return the binary operator if E is the lhs of an assign expression, otherwise
-// nullptr.
-const Expr *TextureRule::getAssignedBO(const Expr *E, ASTContext &Context) {
-  if (dyn_cast<MemberExpr>(E)) {
-    // Continue finding parents when E is MemberExpr.
-    return getParentAsAssignedBO(E, Context);
-  } else if (auto ICE = dyn_cast<ImplicitCastExpr>(E)) {
-    // Stop finding parents and return nullptr when E is ImplicitCastExpr,
-    // except for ArrayToPointerDecay cast.
-    if (ICE->getCastKind() == CK_ArrayToPointerDecay) {
-      return getParentAsAssignedBO(E, Context);
-    }
-  } else if (auto ASE = dyn_cast<ArraySubscriptExpr>(E)) {
-    // Continue finding parents when E is ArraySubscriptExpr, and remove
-    // subscript operator anyway for texture object's member.
-    emplaceTransformation(new ReplaceToken(
-        Lexer::getLocForEndOfToken(ASE->getLHS()->getEndLoc(), 0,
-                                   Context.getSourceManager(),
-                                   Context.getLangOpts()),
-        ASE->getRBracketLoc(), ""));
-    return getParentAsAssignedBO(E, Context);
-  } else if (auto BO = dyn_cast<BinaryOperator>(E)) {
-    // If E is BinaryOperator, return E only when it is assign expression,
-    // otherwise return nullptr.
-    auto Opcode = BO->getOpcode();
-    if (Opcode == BO_Assign || Opcode == BO_OrAssign)
-      return BO;
-  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
-    if (COCE->getOperator() == OO_Equal) {
-      return COCE;
-    }
-  }
-  return nullptr;
 }
 
 bool TextureRule::processTexVarDeclInDevice(const VarDecl *VD) {
@@ -867,7 +824,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
         removeExtraMemberAccess(ME);
         replaceResourceDataExpr(getParentMemberExpr(ME), *Result.Context);
       } else if (MemberName == "resType") {
-        if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
+        if (auto BO = getParentAsAssignedBO(ME, *Result.Context, this)) {
           requestFeature(HelperFeatureEnum::device_ext);
           emplaceTransformation(
               ReplaceMemberAssignAsSetMethod(BO, ME, "data_type"));
@@ -899,7 +856,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       static std::map<std::string, std::string> ExtraArgMap = {
           {"x", "1"}, {"y", "2"}, {"z", "3"}, {"w", "4"}, {"f", ""}};
       std::string MemberName = ME->getMemberNameInfo().getAsString();
-      if (auto BO = getParentAsAssignedBO(ME, *Result.Context)) {
+      if (auto BO = getParentAsAssignedBO(ME, *Result.Context, this)) {
         requestFeature(HelperFeatureEnum::device_ext);
         requestFeature(MethodNameToSetFeatureMap.at(MemberName));
         emplaceTransformation(ReplaceMemberAssignAsSetMethod(
@@ -1031,7 +988,7 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
 
   removeExtraMemberAccess(ME);
 
-  auto AssignedBO = getParentAsAssignedBO(TopMember, Context);
+  auto AssignedBO = getParentAsAssignedBO(TopMember, Context, this);
   auto FieldName =
       ResourceTypeNames[TopMember->getMemberNameInfo().getAsString()];
   if (FieldName.empty() ||

@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6, v11.7, v11.8
 // RUN: dpct --use-experimental-features=graph --format-range=none -out-root %T/cudaGraph_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cudaGraph_test/cudaGraph_test.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/cudaGraph_test/cudaGraph_test.dp.cpp -o %T/cudaGraph_test/cudaGraph_test.dp.o %}
@@ -103,10 +103,16 @@ int main() {
   void *kernelArgs[] = {};
   params.kernelParams = kernelArgs;
 
-  // CHECK: void *function = (void *)dpct::wrapper_register(myKernel_wrapper).get();
+  // CHECK: void* function = (void*) dpct::wrapper_register(myKernel_wrapper).get();
   // CHECK-NEXT: params.set_func(function);
-  void *function = (void *)myKernel;
+  void* function = (void*) myKernel;
   params.func = function;
+
+  // CHECK: dpct::dim3 blockDim = params.get_block_dim();
+  dim3 blockDim = params.blockDim;
+
+  // CHECK: void* func2 = params.get_func();
+  void* func2 = params.func;
 
   size_t numNodes;
 
@@ -155,9 +161,12 @@ int main() {
   CUDA_CHECK_THROW(cudaGraphLaunch(execGraph, stream));
   cudaGraphLaunch(*execGraph2, *stream2);
 
-#ifndef DNO_BUILD_TEST
-
+  // CHECK: int updateResult;
   cudaGraphExecUpdateResultInfo updateResult;
+
+  // CHECK: int result;
+  cudaGraphExecUpdateResult result;
+
   // CHECK: dpct::experimental::update(execGraph, graph, &updateResult);
   cudaGraphExecUpdate(execGraph, graph, &updateResult);
 
@@ -172,7 +181,11 @@ int main() {
   }
   if (updateResult.result == cudaGraphExecUpdateErrorTopologyChanged) {
   }
-#endif
+
+  // CHECK: if (updateResult != nullptr) {
+  // CHECK-NEXT: }
+  if (updateResult.errorFromNode != nullptr) {
+  }
 
   // CHECK: sycl::ext::oneapi::experimental::node_type nodeType;
   // CHECK-NEXT: dpct::experimental::get_node_type(node, &nodeType);
