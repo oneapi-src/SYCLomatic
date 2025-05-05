@@ -188,6 +188,14 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuMipmappedArrayGetLevel", DEREF(makeCallArgCreatorWithCall(0)),
+        MEMBER_CALL(ARG(1), true, "get_mip_level", ARG(2)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuMipmappedArrayGetLevel",
+                                      MipmapNeedBindlessImage))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaMallocMipmappedArray", DEREF(makeCallArgCreatorWithCall(0)),
         NEW(MapNames::getDpctNamespace() + "experimental::image_mem_wrapper",
             DEREF(1), ARG(2),
@@ -431,6 +439,20 @@ ASSIGNABLE_FACTORY(
         CALL_FACTORY_ENTRY(
             "cuPointerGetAttributes", CALL(MapNames::getDpctNamespace() + "pointer_attributes::get",
             ARG(0), ARG(1), ARG(2), ARG(3)))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    CheckEnumArgStr(1, "CU_POINTER_ATTRIBUTE_RANGE_START_ADDR"),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsUSM(),
+        UNSUPPORT_FACTORY_ENTRY("cuPointerGetAttribute",
+                                Diagnostics::UNSUPPORTED_PARAM, ARG(1)),
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            ASSIGN_FACTORY_ENTRY(
+                "cuPointerGetAttribute", ARG(0),
+                CALL(MapNames::getDpctNamespace() + "get_base_addr", ARG(2))))),
+    UNSUPPORT_FACTORY_ENTRY("cuPointerGetAttribute",
+                            Diagnostics::UNSUPPORTED_PARAM, ARG(1))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -852,6 +874,21 @@ CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuMemSetAccess"),
                             ARG("--use-experimental-features=virtual_mem")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UsePeerAccess(),
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuDeviceGetP2PAttribute", DEREF(ARG_WC(0)),
+        MEMBER_CALL(
+            CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(2)), false,
+            "ext_oneapi_can_access_peer",
+            CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(3)),
+            ARG_WC(1)))),
+    ASSIGNABLE_FACTORY(
+        WARNING_FACTORY_ENTRY("cuDeviceGetP2PAttribute",
+                              ASSIGN_FACTORY_ENTRY("cuDeviceGetP2PAttribute",
+                                                   DEREF(ARG_WC(0)), ARG("0")),
+                              Diagnostics::EXPLICIT_PEER_ACCESS)))
 
 CONDITIONAL_FACTORY_ENTRY(
     UsePeerAccess(),

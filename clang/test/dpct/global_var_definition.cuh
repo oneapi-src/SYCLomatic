@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 #ifndef GLOBAL_VAR_DEFINITION_CUH
 #define GLOBAL_VAR_DEFINITION_CUH
 

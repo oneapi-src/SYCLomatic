@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 // RUN: echo
 #include <cuda.h>
 #include <cuda_runtime_api.h>

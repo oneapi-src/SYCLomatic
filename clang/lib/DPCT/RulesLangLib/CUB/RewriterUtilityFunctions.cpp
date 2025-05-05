@@ -162,41 +162,167 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
       MEMBER_CALL_FACTORY_ENTRY("cub::RowMajorTid", NDITEM, /*IsArrow=*/false,
                                 "get_local_linear_id")
       // cub::LoadDirectBlocked
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CALL_FACTORY_ENTRY(
-              "cub::LoadDirectBlocked",
-              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                               "group::load_direct_blocked",
-                                           0, 1, 2),
-                   NDITEM, ARG(1), ARG(2))))
+      CASE_FACTORY_ENTRY(
+          CASE(CheckArgCount(3),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY("cub::LoadDirectBlocked",
+                                      CALL(PRETTY_TEMPLATED_CALLEE(
+                                               MapNames::getDpctNamespace() +
+                                                   "group::load_direct_blocked",
+                                               0, 1, 2),
+                                           NDITEM, ARG(1), ARG(2))))),
+          CASE(CheckArgCount(4),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY("cub::LoadDirectBlocked",
+                                      CALL(PRETTY_TEMPLATED_CALLEE(
+                                               MapNames::getDpctNamespace() +
+                                                   "group::load_direct_blocked",
+                                               0, 1, 2),
+                                           NDITEM, ARG(1), ARG(2), ARG(3))))),
+          CASE(CheckArgCount(5),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY("cub::LoadDirectBlocked",
+                                      CALL(PRETTY_TEMPLATED_CALLEE(
+                                               MapNames::getDpctNamespace() +
+                                                   "group::load_direct_blocked",
+                                               0, 1, 2, 3),
+                                           NDITEM, ARG(1), ARG(2), ARG(3),
+                                           ARG(4))))))
+
       // cub::LoadDirectStriped
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CALL_FACTORY_ENTRY(
-              "cub::LoadDirectStriped",
-              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                               "group::load_direct_striped",
-                                           1, 2, 3),
-                   NDITEM, ARG(1), ARG(2))))
+      CASE_FACTORY_ENTRY(
+          CASE(CheckArgCount(3),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY("cub::LoadDirectStriped",
+                                      CALL(PRETTY_TEMPLATED_CALLEE(
+                                               MapNames::getDpctNamespace() +
+                                                   "group::load_direct_striped",
+                                               1, 2, 3),
+                                           NDITEM, ARG(1), ARG(2))))),
+          CASE(CheckArgCount(4),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY("cub::LoadDirectStriped",
+                                      CALL(PRETTY_TEMPLATED_CALLEE(
+                                               MapNames::getDpctNamespace() +
+                                                   "group::load_direct_striped",
+                                               1, 2, 3),
+                                           NDITEM, ARG(1), ARG(2), ARG(3))))),
+          CASE(CheckArgCount(5),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY("cub::LoadDirectStriped",
+                                      CALL(PRETTY_TEMPLATED_CALLEE(
+                                               MapNames::getDpctNamespace() +
+                                                   "group::load_direct_striped",
+                                               1, 2, 3, 4),
+                                           NDITEM, ARG(1), ARG(2), ARG(3),
+                                           ARG(4))))))
+      // cub::LoadDirectWarpStriped
+      CASE_FACTORY_ENTRY(
+          CASE(CheckArgCount(3),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY(
+                       "cub::LoadDirectWarpStriped",
+                       CALL(PRETTY_TEMPLATED_CALLEE(
+                                MapNames::getDpctNamespace() +
+                                    "group::load_direct_sub_group_striped",
+                                0, 1, 2),
+                            NDITEM, ARG(1), ARG(2))))),
+          CASE(CheckArgCount(4),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY(
+                       "cub::LoadDirectWarpStriped",
+                       CALL(PRETTY_TEMPLATED_CALLEE(
+                                MapNames::getDpctNamespace() +
+                                    "group::load_direct_sub_group_striped",
+                                0, 1, 2),
+                            NDITEM, ARG(1), ARG(2), ARG(3))))),
+          CASE(CheckArgCount(5),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY(
+                       "cub::LoadDirectWarpStriped",
+                       CALL(PRETTY_TEMPLATED_CALLEE(
+                                MapNames::getDpctNamespace() +
+                                    "group::load_direct_sub_group_striped",
+                                0, 1, 2, 3),
+                            NDITEM, ARG(1), ARG(2), ARG(3), ARG(4))))))
+
       // cub::StoreDirectBlocked
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CALL_FACTORY_ENTRY(
-              "cub::StoreDirectBlocked",
-              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                               "group::store_direct_blocked",
-                                           0, 1, 2),
-                   NDITEM, ARG(1), ARG(2))))
+      CASE_FACTORY_ENTRY(
+          CASE(
+              CheckArgCount(3),
+              HEADER_INSERT_FACTORY(
+                  HeaderType::HT_DPCT_GROUP_Utils,
+                  CALL_FACTORY_ENTRY("cub::StoreDirectBlocked",
+                                     CALL(PRETTY_TEMPLATED_CALLEE(
+                                              MapNames::getDpctNamespace() +
+                                                  "group::store_direct_blocked",
+                                              0, 1, 2),
+                                          NDITEM, ARG(1), ARG(2))))),
+          CASE(
+              CheckArgCount(4),
+              HEADER_INSERT_FACTORY(
+                  HeaderType::HT_DPCT_GROUP_Utils,
+                  CALL_FACTORY_ENTRY("cub::StoreDirectBlocked",
+                                     CALL(PRETTY_TEMPLATED_CALLEE(
+                                              MapNames::getDpctNamespace() +
+                                                  "group::store_direct_blocked",
+                                              0, 1, 2),
+                                          NDITEM, ARG(1), ARG(2), ARG(3))))))
+
       // cub::StoreDirectStriped
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CALL_FACTORY_ENTRY(
-              "cub::StoreDirectStriped",
-              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                               "group::store_direct_striped",
-                                           1, 2, 3),
-                   NDITEM, ARG(1), ARG(2))))
+      CASE_FACTORY_ENTRY(
+          CASE(
+              CheckArgCount(3),
+              HEADER_INSERT_FACTORY(
+                  HeaderType::HT_DPCT_GROUP_Utils,
+                  CALL_FACTORY_ENTRY("cub::StoreDirectStriped",
+                                     CALL(PRETTY_TEMPLATED_CALLEE(
+                                              MapNames::getDpctNamespace() +
+                                                  "group::store_direct_striped",
+                                              1, 2, 3),
+                                          NDITEM, ARG(1), ARG(2))))),
+          CASE(
+              CheckArgCount(4),
+              HEADER_INSERT_FACTORY(
+                  HeaderType::HT_DPCT_GROUP_Utils,
+                  CALL_FACTORY_ENTRY("cub::StoreDirectStriped",
+                                     CALL(PRETTY_TEMPLATED_CALLEE(
+                                              MapNames::getDpctNamespace() +
+                                                  "group::store_direct_striped",
+                                              1, 2, 3),
+                                          NDITEM, ARG(1), ARG(2), ARG(3))))))
+      // cub::StoreDirectWarpStriped
+      CASE_FACTORY_ENTRY(
+          CASE(CheckArgCount(3),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY(
+                       "cub::StoreDirectWarpStriped",
+                       CALL(PRETTY_TEMPLATED_CALLEE(
+                                MapNames::getDpctNamespace() +
+                                    "group::store_direct_sub_group_striped",
+                                0, 1, 2),
+                            NDITEM, ARG(1), ARG(2))))),
+          CASE(CheckArgCount(4),
+               HEADER_INSERT_FACTORY(
+                   HeaderType::HT_DPCT_GROUP_Utils,
+                   CALL_FACTORY_ENTRY(
+                       "cub::StoreDirectWarpStriped",
+                       CALL(PRETTY_TEMPLATED_CALLEE(
+                                MapNames::getDpctNamespace() +
+                                    "group::store_direct_sub_group_striped",
+                                0, 1, 2),
+                            NDITEM, ARG(1), ARG(2), ARG(3))))))
+
       // cub::ShuffleDown
       SUBGROUPSIZE_FACTORY(
           UINT_MAX,
@@ -210,9 +336,11 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                                            "experimental::shift_sub_group_left",
                                        0, 1),
                       SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
-              UNSUPPORT_FACTORY_ENTRY("cub::ShuffleDown",
-                                      Diagnostics::API_NOT_MIGRATED,
-                                      LITERAL("cub::ShuffleDown"))))
+              UNSUPPORT_FACTORY_ENTRY(
+                  "cub::ShuffleDown",
+                  Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                  LITERAL("cub::ShuffleDown"),
+                  LITERAL("--use-experimental-features=non-uniform-groups"))))
       // cub::ShuffleUp
       SUBGROUPSIZE_FACTORY(
           UINT_MAX,
@@ -226,7 +354,8 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                                "experimental::shift_sub_group_right",
                            0, 1),
                        SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
-              UNSUPPORT_FACTORY_ENTRY("cub::ShuffleUp",
-                                      Diagnostics::API_NOT_MIGRATED,
-                                      LITERAL("cub::ShuffleUp"))))};
+              UNSUPPORT_FACTORY_ENTRY(
+                  "cub::ShuffleUp", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                  LITERAL("cub::ShuffleUp"),
+                  LITERAL("--use-experimental-features=non-uniform-groups"))))};
 }

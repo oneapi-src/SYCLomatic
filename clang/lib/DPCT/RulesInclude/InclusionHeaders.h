@@ -35,6 +35,8 @@ enum class RuleGroupKind : uint8_t {
   RK_Thrust,
   RK_CUB,
   RK_WMMA,
+  RK_NVSHMEM,
+  RK_CUTensor,
   NUM
 };
 

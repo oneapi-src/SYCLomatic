@@ -658,6 +658,13 @@ DPCT_ENUM_OPTION(
             int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
             "Disable the enqueued barriers extension.", false),
         DPCT_OPTION_ENUM_VALUE(
+            "free-function-queries",
+            int(DPCPPExtensionsDefaultEnabled::ExtDE_FreeQueries),
+            "Disable the free function query experimental extension that "
+            "allows getting 'id', 'item', 'nd_item', 'group', and 'sub_group' "
+            "instances globally.",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
             "peer_access", int(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess),
             "Disable the peer access extension.", false),
         DPCT_OPTION_ENUM_VALUE("assert",
@@ -723,9 +730,10 @@ DPCT_ENUM_OPTION(
     DPCT_OPTION_VALUES(
         DPCT_OPTION_ENUM_VALUE(
             "free-function-queries", int(ExperimentalFeatures::Exp_FreeQueries),
-            "Experimental extension that allows getting 'id', "
+            "DEPRECATED : Experimental extension that allows getting 'id', "
             "'item', 'nd_item', 'group', and\n"
-            "'sub_group' instances globally.",
+            "'sub_group' instances globally. Deprecate this option as the "
+            "feature is turned on by default.",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "local-memory-kernel-scope-allocation",
@@ -826,6 +834,11 @@ DPCT_ENUM_OPTION(
             "prefetch", int(ExperimentalFeatures::Exp_Prefetch),
             "Experimental extension that allows use of SYCL prefetch APIs.\n",
             false),
+        DPCT_OPTION_ENUM_VALUE(
+            "level_zero", int(ExperimentalFeatures::Exp_LevelZero),
+            "Experimental migration feature that enables the use of Level Zero "
+            "APIs to migrate target code, like CUDA Inter-Process "
+            "Communication (IPC) APIs.\n", false),
         DPCT_OPTION_ENUM_VALUE(
             "all", int(ExperimentalFeatures::Exp_All),
             "Enable all experimental extensions listed in this option.\n",

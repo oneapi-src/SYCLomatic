@@ -415,13 +415,17 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
       ptrs, events);
   mem_free_thread.detach();
 #else
-  std::int64_t m_int64 = n;
-  std::int64_t n_int64 = n;
-  std::int64_t lda_int64 = lda;
-  std::int64_t group_sizes = batch_size;
+  std::int64_t *m_int64 = new std::int64_t;
+  std::int64_t *n_int64 = new std::int64_t;
+  std::int64_t *lda_int64 = new std::int64_t;
+  std::int64_t *group_sizes = new std::int64_t;
+  *m_int64 = n;
+  *n_int64 = n;
+  *lda_int64 = lda;
+  *group_sizes = batch_size;
   std::int64_t scratchpad_size =
       oneapi::mkl::lapack::getrf_batch_scratchpad_size<Ty>(
-          exec_queue, &m_int64, &n_int64, &lda_int64, 1, &group_sizes);
+          exec_queue, m_int64, n_int64, lda_int64, 1, group_sizes);
 
   Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
   std::int64_t *ipiv_int64 =
@@ -433,9 +437,9 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
   for (std::int64_t i = 0; i < batch_size; ++i)
     ipiv_int64_ptr[i] = ipiv_int64 + n * i;
 
-  oneapi::mkl::lapack::getrf_batch(
-      exec_queue, &m_int64, &n_int64, (Ty **)a_shared, &lda_int64,
-      ipiv_int64_ptr, 1, &group_sizes, scratchpad, scratchpad_size);
+  oneapi::mkl::lapack::getrf_batch(exec_queue, m_int64, n_int64,
+                                   (Ty **)a_shared, lda_int64, ipiv_int64_ptr,
+                                   1, group_sizes, scratchpad, scratchpad_size);
 
   sycl::event e = exec_queue.submit([&](sycl::handler &cgh) {
     cgh.parallel_for<
@@ -445,6 +449,15 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
         });
   });
 
+  exec_queue.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      delete m_int64;
+      delete n_int64;
+      delete lda_int64;
+      delete group_sizes;
+    });
+  });
   std::vector<void *> ptrs{scratchpad, ipiv_int64, ipiv_int64_ptr, a_shared};
   ::dpct::cs::enqueue_free(ptrs, {e}, exec_queue);
 #endif
@@ -535,15 +548,22 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
       ptrs, events);
   mem_free_thread.detach();
 #else
-  std::int64_t n_int64 = n;
-  std::int64_t nrhs_int64 = nrhs;
-  std::int64_t lda_int64 = lda;
-  std::int64_t ldb_int64 = ldb;
-  std::int64_t group_sizes = batch_size;
+  std::int64_t *n_int64 = new std::int64_t;
+  std::int64_t *nrhs_int64 = new std::int64_t;
+  std::int64_t *lda_int64 = new std::int64_t;
+  std::int64_t *ldb_int64 = new std::int64_t;
+  std::int64_t *group_sizes = new std::int64_t;
+  oneapi::mkl::transpose *trans_array = new oneapi::mkl::transpose;
+  *n_int64 = n;
+  *nrhs_int64 = nrhs;
+  *lda_int64 = lda;
+  *ldb_int64 = ldb;
+  *group_sizes = batch_size;
+  *trans_array = trans;
   std::int64_t scratchpad_size =
       oneapi::mkl::lapack::getrs_batch_scratchpad_size<Ty>(
-          exec_queue, &trans, &n_int64, &nrhs_int64, &lda_int64, &ldb_int64, 1,
-          &group_sizes);
+          exec_queue, trans_array, n_int64, nrhs_int64, lda_int64, ldb_int64, 1,
+          group_sizes);
 
   Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
   std::int64_t *ipiv_int64 =
@@ -569,10 +589,21 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
     ipiv_int64_ptr[i] = ipiv_int64 + n * i;
 
   sycl::event e = oneapi::mkl::lapack::getrs_batch(
-      exec_queue, &trans, &n_int64, &nrhs_int64, (Ty **)a_shared, &lda_int64,
-      ipiv_int64_ptr, (Ty **)b_shared, &ldb_int64, 1, &group_sizes, scratchpad,
+      exec_queue, trans_array, n_int64, nrhs_int64, (Ty **)a_shared, lda_int64,
+      ipiv_int64_ptr, (Ty **)b_shared, ldb_int64, 1, group_sizes, scratchpad,
       scratchpad_size);
 
+  exec_queue.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      delete n_int64;
+      delete nrhs_int64;
+      delete lda_int64;
+      delete ldb_int64;
+      delete group_sizes;
+      delete trans_array;
+    });
+  });
   std::vector<void *> ptrs{scratchpad, ipiv_int64_ptr, ipiv_int64, a_shared,
                            b_shared};
   ::dpct::cs::enqueue_free(ptrs, {e}, exec_queue);
@@ -659,12 +690,15 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
       ptrs, events);
   mem_free_thread.detach();
 #else
-  std::int64_t n_int64 = n;
-  std::int64_t ldb_int64 = ldb;
-  std::int64_t group_sizes = batch_size;
+  std::int64_t *n_int64 = new std::int64_t;
+  std::int64_t *ldb_int64 = new std::int64_t;
+  std::int64_t *group_sizes = new std::int64_t;
+  *n_int64 = n;
+  *ldb_int64 = ldb;
+  *group_sizes = batch_size;
   std::int64_t scratchpad_size =
       oneapi::mkl::lapack::getri_batch_scratchpad_size<Ty>(
-          exec_queue, &n_int64, &ldb_int64, 1, &group_sizes);
+          exec_queue, n_int64, ldb_int64, 1, group_sizes);
 
   Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
   std::int64_t *ipiv_int64 =
@@ -695,9 +729,17 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
   }
 
   sycl::event e = oneapi::mkl::lapack::getri_batch(
-      exec_queue, &n_int64, (Ty **)b_shared, &ldb_int64, ipiv_int64_ptr, 1,
-      &group_sizes, scratchpad, scratchpad_size);
+      exec_queue, n_int64, (Ty **)b_shared, ldb_int64, ipiv_int64_ptr, 1,
+      group_sizes, scratchpad, scratchpad_size);
 
+  exec_queue.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      delete n_int64;
+      delete ldb_int64;
+      delete group_sizes;
+    });
+  });
   std::vector<void *> ptrs{scratchpad, ipiv_int64_ptr, ipiv_int64, a_shared,
                            b_shared};
   ::dpct::cs::enqueue_free(ptrs, {e}, exec_queue);
@@ -780,13 +822,17 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n, T *a[],
   mem_free_thread_a.detach();
   mem_free_thread_tau.detach();
 #else
-  std::int64_t m_int64 = n;
-  std::int64_t n_int64 = n;
-  std::int64_t lda_int64 = lda;
-  std::int64_t group_sizes = batch_size;
+  std::int64_t *m_int64 = new std::int64_t;
+  std::int64_t *n_int64 = new std::int64_t;
+  std::int64_t *lda_int64 = new std::int64_t;
+  std::int64_t *group_sizes = new std::int64_t;
+  *m_int64 = n;
+  *n_int64 = n;
+  *lda_int64 = lda;
+  *group_sizes = batch_size;
   std::int64_t scratchpad_size =
       oneapi::mkl::lapack::geqrf_batch_scratchpad_size<Ty>(
-          exec_queue, &m_int64, &n_int64, &lda_int64, 1, &group_sizes);
+          exec_queue, m_int64, n_int64, lda_int64, 1, group_sizes);
 
   Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
   T **a_shared = sycl::malloc_shared<T *>(batch_size, exec_queue);
@@ -795,9 +841,18 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n, T *a[],
   exec_queue.memcpy(tau_shared, tau, batch_size * sizeof(T *)).wait();
 
   sycl::event e = oneapi::mkl::lapack::geqrf_batch(
-      exec_queue, &m_int64, &n_int64, (Ty **)a_shared, &lda_int64,
-      (Ty **)tau_shared, 1, &group_sizes, scratchpad, scratchpad_size);
+      exec_queue, m_int64, n_int64, (Ty **)a_shared, lda_int64,
+      (Ty **)tau_shared, 1, group_sizes, scratchpad, scratchpad_size);
 
+  exec_queue.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      delete m_int64;
+      delete n_int64;
+      delete lda_int64;
+      delete group_sizes;
+    });
+  });
   std::vector<void *> ptrs{scratchpad, a_shared, tau_shared};
   ::dpct::cs::enqueue_free(ptrs, {e}, exec_queue);
 #endif

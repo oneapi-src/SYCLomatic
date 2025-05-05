@@ -269,6 +269,8 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
 #ifdef SYCLomatic_CUSTOMIZATION
     Io.mapOptional("MainSourceFilesDigest", Doc.MainSourceFilesDigest);
     Io.mapOptional("DpctVersion", Doc.DpctVersion);
+    Io.mapOptional("SDKVersionMajor", Doc.SDKVersionMajor);
+    Io.mapOptional("SDKVersionMinor", Doc.SDKVersionMinor);
     Io.mapOptional("MainHelperFileName", Doc.MainHelperFileName);
     Io.mapOptional("USMLevel", Doc.USMLevel);
     // Keep here only for backward compatibility - begin

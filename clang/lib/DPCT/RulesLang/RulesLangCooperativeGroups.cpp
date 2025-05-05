@@ -22,7 +22,6 @@
 #include "clang/AST/TypeLoc.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
-#include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Lex/MacroArgs.h"
 
@@ -120,7 +119,7 @@ void CooperativeGroupsFunctionRule::runRule(
       FuncName == "num_threads" || FuncName == "inclusive_scan" ||
       FuncName == "exclusive_scan" || FuncName == "coalesced_threads" ||
       FuncName == "this_grid" || FuncName == "num_blocks" ||
-      FuncName == "block_rank") {
+      FuncName == "block_rank" || FuncName == "this_thread") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function

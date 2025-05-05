@@ -37,6 +37,7 @@
 
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D);
 void setGetReplacedNamePtr(llvm::StringRef (*Ptr)(const clang::NamedDecl *D));
@@ -404,18 +405,10 @@ public:
   void setFileEnterOffset(unsigned Offset);
   void setFirstIncludeOffset(unsigned Offset);
   void setLastIncludeOffset(unsigned Offset) { LastIncludeOffset = Offset; }
-  void setHeaderInserted(HeaderType Header) {
-    HeaderInsertedBitMap[Header] = true;
-  }
-  void setMathHeaderInserted(bool B = true) {
-    HeaderInsertedBitMap[HeaderType::HT_Math] = B;
-  }
-  void setAlgorithmHeaderInserted(bool B = true) {
-    HeaderInsertedBitMap[HeaderType::HT_Algorithm] = B;
-  }
-  void setTimeHeaderInserted(bool B = true) {
-    HeaderInsertedBitMap[HeaderType::HT_Time] = B;
-  }
+  void setHeaderInserted(HeaderType Header);
+  void setMathHeaderInserted(bool B = true);
+  void setAlgorithmHeaderInserted(bool B = true);
+  void setTimeHeaderInserted(bool B = true);
 
   void concatHeader(llvm::raw_string_ostream &OS);
   template <class FirstT, class... Args>
@@ -540,7 +533,6 @@ public:
 
   void setCCLVerValue(std::string Value) { CCLVerValue = Value; }
   std::string getCCLVerValue() { return CCLVerValue; }
-  bool hasCUDASyntax() { return HeaderInsertedBitMap[HeaderType::HT_SYCL]; }
 
   std::shared_ptr<tooling::TranslationUnitReplacements> PreviousTUReplFromYAML =
       nullptr;
@@ -602,7 +594,6 @@ private:
   std::set<std::shared_ptr<DpctFileInfo> /*MainFile*/> HasInclusionDirectiveSet;
   std::vector<std::string> InsertedHeaders;
   std::vector<std::string> InsertedHeadersCUDA;
-  std::bitset<32> HeaderInsertedBitMap;
   std::bitset<32> UsingInsertedBitMap;
   bool AddOneDplHeaders = false;
   std::vector<std::shared_ptr<ExtReplacement>> IncludeDirectiveInsertions;
@@ -1305,7 +1296,9 @@ public:
     return getUsingExperimental<ExperimentalFeatures::Exp_RootGroup>();
   }
   static bool useFreeQueries() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
+    return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>() ||
+           getUsingExtensionDE(
+               DPCPPExtensionsDefaultEnabled::ExtDE_FreeQueries);
   }
   static bool useGroupLocalMemory() {
     return getUsingExperimental<ExperimentalFeatures::Exp_GroupSharedMemory>();
@@ -1356,6 +1349,9 @@ public:
     return getUsingExperimental<
         ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();
   }
+  static bool useExtLevelZero() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_LevelZero>();
+  }
   static bool useExtPrefetch() {
     return getUsingExperimental<ExperimentalFeatures::Exp_Prefetch>();
   }
@@ -1396,6 +1392,10 @@ public:
   static std::unordered_set<std::string> &
   getCustomHelperFunctionAddtionalIncludes() {
     return CustomHelperFunctionAddtionalIncludes;
+  }
+  static std::unordered_map<clang::tooling::UnifiedPath, std::bitset<32>> &
+  getHeaderInsertedBitMap() {
+    return HeaderInsertedBitMap;
   }
   std::shared_ptr<DpctFileInfo>
   insertFile(const clang::tooling::UnifiedPath &FilePath) {
@@ -1440,8 +1440,8 @@ public:
   getCubPlaceholderIndexMap() {
     return CubPlaceholderIndexMap;
   }
-  std::vector<std::shared_ptr<DpctFileInfo>> &getCSourceFileInfo() {
-    return CSourceFileInfo;
+  std::vector<tooling::UnifiedPath> &getCSourceFileList() {
+    return CSourceFileList;
   }
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>> &
   getPriorityReplInfoMap() {
@@ -1500,6 +1500,9 @@ public:
   static void printUsingNamespace(llvm::raw_ostream &);
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
+  static bool hasCUDASyntax(tooling::UnifiedPath FilePath) {
+    return HeaderInsertedBitMap[FilePath][HeaderType::HT_SYCL];
+  }
 
 private:
   DpctGlobalInfo();
@@ -1690,7 +1693,7 @@ private:
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
-  static std::vector<std::shared_ptr<DpctFileInfo>> CSourceFileInfo;
+  static std::vector<tooling::UnifiedPath> CSourceFileList;
   static bool OptimizeMigrationFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;
@@ -1719,6 +1722,8 @@ private:
       CodePinDumpFuncDepsVec;
   static std::unordered_set<std::string> NeedParenAPISet;
   static std::unordered_set<std::string> CustomHelperFunctionAddtionalIncludes;
+  static std::unordered_map<clang::tooling::UnifiedPath, std::bitset<32>>
+      HeaderInsertedBitMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -1799,6 +1804,8 @@ public:
   }
   bool containsTemplateDependentMacro() const { return TemplateDependentMacro; }
   bool isConstantQualified() const { return IsConstantQualified; }
+  bool isAutoSpecified() { return IsAutoSpecified; }
+  std::string getDeducedTypeStr() { return DeducedTypeStr; }
 
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
@@ -1858,6 +1865,8 @@ private:
   std::vector<std::string> ArraySizeOriginExprs{};
   std::set<HelperFeatureEnum> HelperFeatureSet;
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
+  bool IsAutoSpecified = false;
+  std::string DeducedTypeStr;
 };
 
 // variable info includes name, type and location.
@@ -2617,6 +2626,8 @@ protected:
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   FormatInfo FormatInformation;
   bool HasBody = false;
+  bool IsInlineSpecified = false;
+  bool IsStaticSpecified = false;
   size_t DeclEnd = 0;
   std::map<int, std::string> TemplateParameterDefaultValueMap;
   std::map<int, std::string> ParameterDefaultValueMap;

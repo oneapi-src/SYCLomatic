@@ -45,6 +45,7 @@ extern const std::string MathDetailAllContentStr;
 extern const std::string MemoryDetailAllContentStr;
 extern const std::string CodePinAllContentStr;
 extern const std::string CodePinSerializationBasicAllContentStr;
+extern const std::string ZEUtilsAllContentStr;
 extern const std::string DpctCmakeHelperFileStr;
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot);
 void genCmakeHelperFunction(const clang::tooling::UnifiedPath &OutRoot);

@@ -43,6 +43,47 @@ int main(){
   // CHECK-NEXT: */
   cuDevicePrimaryCtxRelease(device);
 
+  // CHECK: unsigned int flags = 0;
+  // CHECK-NEXT: flags = 0;
+  // CHECK-NEXT: flags = 0;
+  unsigned int flags = CU_CTX_BLOCKING_SYNC;
+  flags = CU_CTX_SCHED_AUTO;
+  flags = CU_CTX_SCHED_YIELD;
+
+#ifndef NO_BUILD_TEST
+  // CHECK: flags = 0;
+#if (CUDA_VERSION >= 12010)
+  flags = CU_CTX_COREDUMP_ENABLE;
+#else
+  flags = CU_CTX_BLOCKING_SYNC;
+#endif
+
+  // CHECK: flags = 0;
+#if (CUDA_VERSION >= 12010)
+  flags = CU_CTX_USER_COREDUMP_ENABLE;
+#else
+  flags = CU_CTX_SCHED_AUTO;
+#endif
+
+  // CHECK: flags = 0;
+#if (CUDA_VERSION >= 12030)
+  flags = CU_CTX_SYNC_MEMOPS;
+#else
+  flags = CU_CTX_SCHED_YIELD;
+#endif
+#endif
+  int active;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuDevicePrimaryCtxSetFlags_v2 was removed because SYCL currently does not support setting device context flags.
+  // CHECK-NEXT: */
+  cuDevicePrimaryCtxSetFlags(device, flags);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuDevicePrimaryCtxGetState was removed because SYCL currently does not support querying device context flags.
+  // CHECK-NEXT: */
+  cuDevicePrimaryCtxGetState(device, &flags, &active);
+
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx = dpct::push_device_for_curr_thread(device)));
   MY_SAFE_CALL(cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device));
 

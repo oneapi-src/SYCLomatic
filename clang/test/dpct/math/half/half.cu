@@ -95,9 +95,9 @@ __global__ void kernelFuncHalfConversion() {
   f = __high2float(h2);
   // CHECK: h = h2[1];
   h = __high2half(h2);
-  // CHECK: h2 = sycl::half2(h2[1]);
+  // CHECK: h2 = sycl::half2(h2.y());
   h2 = __high2half2(h2);
-  // CHECK: h2 = sycl::half2(h2[1], h2[1]);
+  // CHECK: h2 = sycl::half2(h2.y(), h2.y());
   h2 = __highs2half2(h2, h2);
   // CHECK: h = sycl::vec<int, 1>(i).convert<sycl::half, sycl::rounding_mode::rtn>()[0];
   h = __int2half_rd(i);
@@ -121,11 +121,11 @@ __global__ void kernelFuncHalfConversion() {
   f = __low2float(*(&h2));
   // CHECK: h = h2[0];
   h = __low2half(h2);
-  // CHECK: h2 = sycl::half2(h2[0]);
+  // CHECK: h2 = sycl::half2(h2.x());
   h2 = __low2half2(h2);
-  // CHECK: h2 = sycl::half2(h2[1], h2[0]);
+  // CHECK: h2 = sycl::half2(h2.y(), h2.x());
   h2 = __lowhigh2highlow(h2);
-  // CHECK: h2 = sycl::half2(h2[0], h2[0]);
+  // CHECK: h2 = sycl::half2(h2.x(), h2.x());
   h2 = __lows2half2(h2, h2);
   // CHECK: h = sycl::vec<short, 1>(s).convert<sycl::half, sycl::rounding_mode::rtn>()[0];
   h = __short2half_rd(s);

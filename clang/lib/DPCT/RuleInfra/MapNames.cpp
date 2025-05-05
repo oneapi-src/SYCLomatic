@@ -260,6 +260,13 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaExternalMemoryDedicated",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "cudaExternalMemoryDedicated", "0")},
+      {"cudaExternalSemaphoreSignalSkipNvSciBufMemSync",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaExternalSemaphoreSignalSkipNvSciBufMemSync",
+                          "0")},
+      {"cudaExternalSemaphoreWaitSkipNvSciBufMemSync",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaExternalSemaphoreWaitSkipNvSciBufMemSync", "0")},
       {"cudaArrayDefault",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "cudaArrayDefault",
@@ -290,6 +297,10 @@ void MapNames::setExplicitNamespaceMap(
       {"CubDebugExit",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "CubDebugExit", MapNames::getCheckErrorMacroName())},
+      {"cudaCpuDeviceId",
+       MacroMigrationRule("cudaCpuDeviceId", RulePriority::Fallback,
+                          "cudaCpuDeviceId",
+                          getDpctNamespace() + "get_cpu_device_id()")},
       //...
   };
   // Type names mapping.
@@ -327,6 +338,9 @@ void MapNames::setExplicitNamespaceMap(
       {"__half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
       {"half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
+      {"__nv_half2",
+       std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
+      {"__nv_half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"cudaEvent_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "event_ptr",
                                       HelperFeatureEnum::device_ext)},
@@ -349,6 +363,9 @@ void MapNames::setExplicitNamespaceMap(
       {"CUstreamCallback",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_callback",
                                       HelperFeatureEnum::device_ext)},
+      {"cudaIpcMemHandle_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::ipc_mem_handle_ext_t")},
       {"char1", std::make_shared<TypeNameRule>("int8_t")},
       {"char2", std::make_shared<TypeNameRule>(getClNamespace() + "char2")},
       {"char3", std::make_shared<TypeNameRule>(getClNamespace() + "char3")},
@@ -543,6 +560,11 @@ void MapNames::setExplicitNamespaceMap(
            DpctGlobalInfo::useExtBindlessImages()
                ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
                : "cudaMipmappedArray_t")},
+      {"CUmipmappedArray",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
+               : "CUmipmappedArray")},
       {"cudaTextureDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "sampling_info",
                                       HelperFeatureEnum::device_ext)},
@@ -564,6 +586,13 @@ void MapNames::setExplicitNamespaceMap(
                : getDpctNamespace() + "image_wrapper_base_p",
            HelperFeatureEnum::device_ext)},
       {"CUsurfObject",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::unsampled_image_handle"
+               : getDpctNamespace() + "image_wrapper_base_p",
+           HelperFeatureEnum::device_ext)},
+      {"CUsurfref",
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
                ? getClNamespace() +
@@ -609,6 +638,11 @@ void MapNames::setExplicitNamespaceMap(
            DpctGlobalInfo::useExtGraph()
                ? getClNamespace() + "ext::oneapi::experimental::queue_state"
                : "cudaStreamCaptureStatus")},
+      {"cudaGraphNodeType",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() + "ext::oneapi::experimental::node_type"
+               : "cudaGraphNodeType")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
       {"CUmemorytype",
        std::make_shared<TypeNameRule>(getClNamespace() + "usm::alloc")},
@@ -682,6 +716,11 @@ void MapNames::setExplicitNamespaceMap(
                           getLibraryHelperNamespace() + "fft::fft_engine_ptr",
                           HelperFeatureEnum::device_ext)},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
+      {"CUdevice_P2PAttribute",
+       std::make_shared<TypeNameRule>(DpctGlobalInfo::usePeerAccess()
+                                          ? getClNamespace() +
+                                                "ext::oneapi::peer_access"
+                                          : "CUdevice_P2PAttribute")},
       {"CUarray_st",
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
@@ -741,12 +780,12 @@ void MapNames::setExplicitNamespaceMap(
       {"__nv_bfloat16", std::make_shared<TypeNameRule>(
                             getClNamespace() + "ext::oneapi::bfloat16")},
       {"__nv_bfloat162", std::make_shared<TypeNameRule>(
-                             getClNamespace() + "marray<" + getClNamespace() +
+                             getClNamespace() + "vec<" + getClNamespace() +
                              "ext::oneapi::bfloat16, 2>")},
       {"nv_bfloat16", std::make_shared<TypeNameRule>(getClNamespace() +
                                                      "ext::oneapi::bfloat16")},
       {"nv_bfloat162", std::make_shared<TypeNameRule>(
-                           getClNamespace() + "marray<" + getClNamespace() +
+                           getClNamespace() + "vec<" + getClNamespace() +
                            "ext::oneapi::bfloat16, 2>")},
       {"libraryPropertyType_t",
        std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
@@ -813,6 +852,8 @@ void MapNames::setExplicitNamespaceMap(
       {"cusparseSpGEMMAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseSpSVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"__half_raw", std::make_shared<TypeNameRule>("uint16_t")},
+      {"__half2_raw",
+       std::make_shared<TypeNameRule>(MapNames::getClNamespace() + "ushort2")},
       {"cudaFuncAttributes",
        std::make_shared<TypeNameRule>(MapNames::getDpctNamespace() +
                                       "kernel_function_info")},
@@ -878,6 +919,14 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaExternalMemoryHandleType",
        std::make_shared<TypeNameRule>(getExpNamespace() +
                                       "external_mem_handle_type")},
+      {"cudaExternalSemaphoreHandleType",
+       std::make_shared<TypeNameRule>(getExpNamespace() +
+                                      "external_semaphore_handle_type")},
+      {"nvshmem_team_t", std::make_shared<TypeNameRule>("ishmem_team_t")},
+      {"nvshmem_team_config_t",
+       std::make_shared<TypeNameRule>("ishmem_team_config_t")},
+      {"nvshmemx_init_attr_t",
+       std::make_shared<TypeNameRule>("ishmemx_attr_t")},
       // ...
   };
   // SYCLcompat unsupport types
@@ -1068,6 +1117,43 @@ void MapNames::setExplicitNamespaceMap(
                : "cudaStreamCaptureStatusActive")},
       {"cudaStreamCaptureStatusInvalidated",
        std::make_shared<EnumNameRule>("cudaStreamCaptureStatusInvalidated")},
+      // enum cudaGraphNodeType
+      {"cudaGraphNodeTypeKernel",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::node_type::kernel"
+               : "cudaGraphNodeTypeKernel")},
+      {"cudaGraphNodeTypeMemcpy",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::node_type::memcpy"
+               : "cudaGraphNodeTypeMemcpy")},
+      {"cudaGraphNodeTypeMemset",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::node_type::memset"
+               : "cudaGraphNodeTypeMemset")},
+      {"cudaGraphNodeTypeHost",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::node_type::host_task"
+               : "cudaGraphNodeTypeHost")},
+      {"cudaGraphNodeTypeGraph",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::node_type::subgraph"
+               : "cudaGraphNodeTypeGraph")},
+      {"cudaGraphNodeTypeEmpty",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::node_type::empty"
+               : "cudaGraphNodeTypeEmpty")},
       // enum CUmem_advise_enum
       {"CU_MEM_ADVISE_SET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_UNSET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
@@ -1079,6 +1165,8 @@ void MapNames::setExplicitNamespaceMap(
       {"CU_MEM_ADVISE_UNSET_ACCESSED_BY", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ALLOCATION_TYPE_PINNED", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ALLOCATION_TYPE_INVALID", std::make_shared<EnumNameRule>("1")},
+      {"CU_MEM_ALLOCATION_COMP_NONE", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ALLOCATION_COMP_GENERIC", std::make_shared<EnumNameRule>("1")},
       {"CU_MEM_ALLOCATION_TYPE_MAX",
        std::make_shared<EnumNameRule>("0xFFFFFFFF")},
       {"CU_MEM_LOCATION_TYPE_DEVICE", std::make_shared<EnumNameRule>("1")},
@@ -1166,10 +1254,42 @@ void MapNames::setExplicitNamespaceMap(
       {"CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT",
        std::make_shared<EnumNameRule>("get_async_engine_count",
                                       HelperFeatureEnum::device_ext)},
+      {"CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED")},
+      {"CU_DEVICE_P2P_ATTRIBUTE_CUDA_ARRAY_ACCESS_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_CUDA_ARRAY_ACCESS_SUPPORTED")},
+      {"CU_DEVICE_P2P_ATTRIBUTE_ACCESS_ACCESS_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_ACCESS_ACCESS_SUPPORTED")},
+      {"CU_DEVICE_P2P_ATTRIBUTE_ARRAY_ACCESS_ACCESS_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() + "ext::oneapi::peer_access::access_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_ARRAY_ACCESS_ACCESS_SUPPORTED")},
+      {"CU_DEVICE_P2P_ATTRIBUTE_NATIVE_ATOMIC_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::usePeerAccess()
+               ? getClNamespace() +
+                     "ext::oneapi::peer_access::atomics_supported"
+               : "CU_DEVICE_P2P_ATTRIBUTE_NATIVE_ATOMIC_SUPPORTED")},
+      {"CU_CTX_BLOCKING_SYNC", std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_COREDUMP_ENABLE", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_LMEM_RESIZE_TO_MAX", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_MAP_HOST", std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SCHED_AUTO", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_SCHED_BLOCKING_SYNC", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_SCHED_SPIN", std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SCHED_YIELD", std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SYNC_MEMOPS", std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_USER_COREDUMP_ENABLE", std::make_shared<EnumNameRule>("0")},
       {"CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK",
        std::make_shared<EnumNameRule>("get_device_info().get_local_mem_size",
                                       HelperFeatureEnum::device_ext)},
@@ -1203,9 +1323,6 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "pointer_attributes::type::device_id")},
       {"CU_POINTER_ATTRIBUTE_IS_LEGACY_CUDA_IPC_CAPABLE",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "pointer_attributes::type::unsupported")},
-      {"CU_POINTER_ATTRIBUTE_RANGE_START_ADDR",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "pointer_attributes::type::unsupported")},
       {"CU_POINTER_ATTRIBUTE_RANGE_SIZE",
@@ -1516,6 +1633,46 @@ void MapNames::setExplicitNamespaceMap(
                ? getExpNamespace() +
                      "external_mem_handle_type::win32_nt_dx12_resource"
                : "cudaExternalMemoryHandleTypeD3D12Resource")},
+      // enum cudaExternalSemaphoreHandleType
+      {"cudaExternalSemaphoreHandleTypeOpaqueFd",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() + "external_semaphore_handle_type::opaque_fd"
+               : "cudaExternalSemaphoreHandleTypeOpaqueFd")},
+      {"cudaExternalSemaphoreHandleTypeOpaqueWin32",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_semaphore_handle_type::win32_nt_handle"
+               : "cudaExternalSemaphoreHandleTypeOpaqueWin32")},
+      {"cudaExternalSemaphoreHandleTypeD3D12Fence",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_semaphore_handle_type::win32_nt_dx12_fence"
+               : "cudaExternalSemaphoreHandleTypeD3D12Fence")},
+      {"cudaExternalSemaphoreHandleTypeTimelineSemaphoreFd",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_semaphore_handle_type::timeline_fd"
+               : "cudaExternalSemaphoreHandleTypeTimelineSemaphoreFd")},
+      {"cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getExpNamespace() +
+                     "external_semaphore_handle_type::timeline_win32_nt_handle"
+               : "cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32")},
+      {"NVSHMEM_TEAM_WORLD",
+       std::make_shared<EnumNameRule>("ISHMEM_TEAM_WORLD")},
+      {"NVSHMEM_TEAM_SHARED",
+       std::make_shared<EnumNameRule>("ISHMEM_TEAM_SHARED")},
+      {"NVSHMEM_TEAM_INVALID",
+       std::make_shared<EnumNameRule>("ISHMEM_TEAM_INVALID")},
+      {"NVSHMEMX_INIT_WITH_MPI_COMM",
+       std::make_shared<EnumNameRule>("ISHMEMX_RUNTIME_MPI")},
+      {"NVSHMEMX_INIT_WITH_SHMEM",
+       std::make_shared<EnumNameRule>("ISHMEMX_RUNTIME_OPENSHMEM")},
       // ...
   };
 

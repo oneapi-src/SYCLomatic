@@ -51,7 +51,6 @@ int main() {
   // CHECK-NEXT: */
   captureStatus = cudaStreamCaptureStatusInvalidated;
 
-
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaStreamIsCapturing is not supported, please try to remigrate with option: --use-experimental-features=graph.
   // CHECK-NEXT: */
@@ -71,6 +70,16 @@ int main() {
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphAddDependencies is not supported, please try to remigrate with option: --use-experimental-features=graph.
   // CHECK-NEXT: */
   cudaGraphAddDependencies(graph, NULL, NULL, 0);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphGetNodes is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphGetNodes(graph, NULL, nullptr);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphGetRootNodes is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphGetRootNodes(graph, NULL, nullptr);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphInstantiate is not supported, please try to remigrate with option: --use-experimental-features=graph.
@@ -96,6 +105,26 @@ int main() {
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphExecDestroy is not supported, please try to remigrate with option: --use-experimental-features=graph.
   // CHECK-NEXT: */
   cudaGraphExecDestroy(execGraph);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphNodeType is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphNodeType nodeType;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphNodeGetType is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphNodeGetType(node, &nodeType);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphNodeTypeKernel is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  nodeType = cudaGraphNodeTypeKernel;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphDestroy is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphDestroy(graph);
 
   return 0;
 }

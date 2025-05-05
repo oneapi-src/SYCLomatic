@@ -189,13 +189,43 @@ inline auto UseBFloat16 = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useBFloat16();
 };
 
+inline auto IsDirectCallerPureDevice = [](const CallExpr *C) -> bool {
+  auto ContextFD = getImmediateOuterFuncDecl(C);
+  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
+    ContextFD = getImmediateOuterFuncDecl(LE);
+  }
+  if (!ContextFD)
+    return false;
+  if ((ContextFD->getAttr<CUDADeviceAttr>() &&
+       !ContextFD->getAttr<CUDAHostAttr>()) ||
+      ContextFD->getAttr<CUDAGlobalAttr>()) {
+    return true;
+  }
+  return false;
+};
+
+inline auto IsDirectCallerPureHost = [](const CallExpr *C) -> bool {
+  auto ContextFD = getImmediateOuterFuncDecl(C);
+  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
+    ContextFD = getImmediateOuterFuncDecl(LE);
+  }
+  if (!ContextFD)
+    return false;
+  if (!ContextFD->getAttr<CUDADeviceAttr>() &&
+      !ContextFD->getAttr<CUDAGlobalAttr>()) {
+    return true;
+  }
+  return false;
+};
+
 inline auto IsPureHost = [](const CallExpr *C) -> bool {
   const FunctionDecl *FD = C->getDirectCallee();
   if (!FD)
     return false;
+  if (!IsDirectCallerPureHost(C))
+    return false;
   if (!(FD->hasAttr<CUDADeviceAttr>()))
     return true;
-
   SourceLocation DeclLoc =
       dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
           FD->getLocation());
@@ -209,22 +239,12 @@ inline auto IsPureHost = [](const CallExpr *C) -> bool {
   }
   return false;
 };
-inline auto IsPureDevice = makeCheckAnd(
-    HasDirectCallee(),
-    makeCheckAnd(IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
-                 makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>())));
-
-inline auto IsDirectCallerPureDevice = [](const CallExpr *C) -> bool {
-  auto ContextFD = getImmediateOuterFuncDecl(C);
-  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
-    ContextFD = getImmediateOuterFuncDecl(LE);
-  }
-  if (!ContextFD)
+inline auto IsPureDevice = [](const CallExpr *C) -> bool {
+  if (!HasDirectCallee()(C))
     return false;
-  if (ContextFD->getAttr<CUDADeviceAttr>() &&
-      !ContextFD->getAttr<CUDAHostAttr>()) {
+  if (IsDirectCalleeHasAttribute<CUDADeviceAttr>()(C) &&
+      !IsDirectCalleeHasAttribute<CUDAHostAttr>()(C))
     return true;
-  }
   return false;
 };
 inline auto IsUnresolvedLookupExpr = [](const CallExpr *C) -> bool {
@@ -251,6 +271,7 @@ enum class Tag : size_t {
   ext_experimental, // device API using experimental feature
   host_perf,        // host API for performance
   host_normal,      // host API
+  host_device,      // host deivce API
   unsupported_warning,
   no_rewrite,
   tag_size
@@ -280,6 +301,8 @@ private:
       MathAPIRewriters[static_cast<size_t>(math::Tag::math_libdevice)];
   element_t &DeviceStdRewriter =
       MathAPIRewriters[static_cast<size_t>(math::Tag::device_std)];
+  element_t &HostDeviceRewriter =
+      MathAPIRewriters[static_cast<size_t>(math::Tag::host_device)];
   element_t &EmulationRewriter =
       MathAPIRewriters[static_cast<size_t>(math::Tag::emulation)];
   element_t &ExtExperimentalRewriter =
@@ -341,8 +364,9 @@ public:
   //   4. math_libdevice
   //   5. device_std
   // c. Host and device
-  //   1. emulation
-  //   2. unsupported_warning
+  //   1. host_device
+  //   2. emulation
+  //   3. unsupported_warning
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     if (math::IsPureHost(C)) {
       // HOST
@@ -352,6 +376,8 @@ public:
           return HostPerfRewriter.value().second.second->create(C);
         if (HostNormalRewriter && HostNormalRewriter.value().first(C))
           return HostNormalRewriter.value().second.second->create(C);
+      } else {
+        return NoRewriteRewriter.value().second.second->create(C);
       }
     } else {
       // DEVICE
@@ -362,26 +388,29 @@ public:
             return Rewriter.value();
         }
       }
-      if (math::IsUnresolvedLookupExpr(C)) {
-        if (math::IsDirectCallerPureDevice(C)) {
-          if (Rewriter = getDeviceRewriter(C))
-            return Rewriter.value();
-        }
-      }
       if (math::IsDefinedInCUDA()(C)) {
         if (Rewriter = getDeviceRewriter(C))
           return Rewriter.value();
       }
     }
-
-    // Host and device
-    if (EmulationRewriter && EmulationRewriter.value().first(C))
-      return EmulationRewriter.value().second.second->create(C);
-
-    if (UnsupportedWarningRewriter &&
-        UnsupportedWarningRewriter.value().first(C))
-      return UnsupportedWarningRewriter.value().second.second->create(C);
-
+    if (math::IsUnresolvedLookupExpr(C)) {
+      if (math::IsDirectCallerPureDevice(C)) {
+        if (auto Rewriter = getDeviceRewriter(C))
+          return Rewriter.value();
+      } else if (math::IsDirectCallerPureHost(C)) {
+        return NoRewriteRewriter.value().second.second->create(C);
+      }
+    }
+    if (!math::IsDefinedByUser()(C)) {
+      // Host and device
+      if (HostDeviceRewriter && HostDeviceRewriter.value().first(C))
+        return HostDeviceRewriter.value().second.second->create(C);
+      if (EmulationRewriter && EmulationRewriter.value().first(C))
+        return EmulationRewriter.value().second.second->create(C);
+      if (UnsupportedWarningRewriter &&
+          UnsupportedWarningRewriter.value().first(C))
+        return UnsupportedWarningRewriter.value().second.second->create(C);
+    }
     return NoRewriteRewriter.value().second.second->create(C);
   }
 };

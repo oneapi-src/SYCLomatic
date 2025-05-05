@@ -20,6 +20,7 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/OperationKinds.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
 #include <deque>
@@ -325,16 +326,22 @@ private:
 
   static const FreeQueriesNames &getNames(FreeQueriesKind);
   static std::shared_ptr<FreeQueriesInfo> getInfo(const FunctionDecl *);
-  static void printFreeQueriesFunctionName(llvm::raw_ostream &OS,
-                                           FreeQueriesKind K,
-                                           unsigned Dimension) {
+  template <typename T>
+  static typename std::enable_if<std::is_same_v<T, unsigned> ||
+                                 std::is_same_v<T, std::string>>::type
+  printFreeQueriesFunctionName(llvm::raw_ostream &OS, FreeQueriesKind K,
+                               T Dimension) {
     OS << getNames(K).FreeQueriesFuncName;
     if (K != FreeQueriesKind::SubGroup) {
       OS << '<';
-      if (Dimension) {
-        OS << Dimension;
+      if constexpr (std::is_same_v<T, unsigned>) {
+        if (Dimension) {
+          OS << Dimension;
+        } else {
+          OS << "dpct_placeholder /* Fix the dimension manually */";
+        }
       } else {
-        OS << "dpct_placeholder /* Fix the dimension manually */";
+        OS << Dimension;
       }
       OS << '>';
     }
@@ -829,6 +836,19 @@ void DpctFileInfo::setFirstIncludeOffset(unsigned Offset) {
     HasInclusionDirectiveSet.insert(std::move(MF));
   }
 }
+void DpctFileInfo::setHeaderInserted(HeaderType Header) {
+  DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][Header] = true;
+}
+void DpctFileInfo::setMathHeaderInserted(bool B) {
+  DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][HeaderType::HT_Math] = B;
+}
+void DpctFileInfo::setAlgorithmHeaderInserted(bool B) {
+  DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath]
+                                           [HeaderType::HT_Algorithm] = B;
+}
+void DpctFileInfo::setTimeHeaderInserted(bool B) {
+  DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][HeaderType::HT_Time] = B;
+}
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS) {}
 template <class FirstT, class... Args>
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS, FirstT &&First,
@@ -862,9 +882,9 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
             Type, FirstIncludeOffset.at(MF));
       }
   }
-  if (HeaderInsertedBitMap[Type])
+  if (DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][Type])
     return;
-  HeaderInsertedBitMap[Type] = true;
+  DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][Type] = true;
   std::string ReplStr;
   llvm::raw_string_ostream OS(ReplStr);
   std::string MigratedMacroDefinitionStr;
@@ -891,6 +911,9 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     // Add the label for profiling macro "DPCT_PROFILING_ENABLED", which will be
     // replaced by "#define DPCT_PROFILING_ENABLED" or not in the post
     // replacement.
+    if (DpctGlobalInfo::useExtLevelZero())
+      OS << "#define ONEAPI_BACKEND_LEVEL_ZERO_EXT" << getNL();
+
     OS << "{{NEEDREPLACEP0}}";
 
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
@@ -898,10 +921,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     concatHeader(OS, getHeaderSpelling(Type));
     if (DpctGlobalInfo::useSYCLCompat()) {
       concatHeader(OS, getHeaderSpelling(HT_COMPAT_SYCLcompat));
-      HeaderInsertedBitMap[HT_COMPAT_SYCLcompat] = true;
+      DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath]
+                                               [HT_COMPAT_SYCLcompat] = true;
     } else {
       concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
-      HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
+      DpctGlobalInfo::getHeaderInsertedBitMap()[FilePath][HT_DPCT_Dpct] = true;
     }
     DpctGlobalInfo::printUsingNamespace(OS);
     if (DpctGlobalInfo::useNoQueueDevice()) {
@@ -1456,8 +1480,8 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
     return getStringForRegexDefaultQueueAndDevice(
         HelperFuncType::HFT_DefaultQueuePtr, Index);
   case 'E': {
-    auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileInfo();
-    return Vec[Index]->hasCUDASyntax()
+    auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileList();
+    return DpctGlobalInfo::hasCUDASyntax(Vec[Index])
                ? ("c" + DpctGlobalInfo::getSYCLSourceExtension())
                : "c";
   }
@@ -2493,7 +2517,7 @@ bool DpctGlobalInfo::CVersionCUDALaunchUsedFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
-std::vector<std::shared_ptr<DpctFileInfo>> DpctGlobalInfo::CSourceFileInfo;
+std::vector<tooling::UnifiedPath> DpctGlobalInfo::CSourceFileList;
 bool DpctGlobalInfo::OptimizeMigrationFlag = false;
 std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
     DpctGlobalInfo::PriorityReplInfoMap;
@@ -2520,6 +2544,8 @@ std::vector<std::pair<std::string, std::vector<std::string>>>
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 std::unordered_set<std::string>
     DpctGlobalInfo::CustomHelperFunctionAddtionalIncludes = {};
+std::unordered_map<clang::tooling::UnifiedPath, std::bitset<32>>
+    DpctGlobalInfo::HeaderInsertedBitMap = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
                                   llvm::raw_ostream &OS) {
@@ -2608,6 +2634,9 @@ CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold) : CtTypeInfo() {
     auto TL = D->getTypeSourceInfo()->getTypeLoc();
     IsConstantQualified = D->hasAttr<CUDAConstantAttr>();
     setTypeInfo(TL, NeedSizeFold);
+    if (IsAutoSpecified) {
+      DeducedTypeStr = DpctGlobalInfo::getReplacedTypeName(D->getType());
+    }
     if (TL.getTypeLocClass() == TypeLoc::IncompleteArray) {
       if (auto CAT = dyn_cast<ConstantArrayType>(D->getType())) {
         Range[0] = std::to_string(CAT->getSize().getZExtValue());
@@ -2805,6 +2834,12 @@ void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
 }
 void CtTypeInfo::setName(const TypeLoc &TL) {
   ExprAnalysis EA;
+  QualType QT = TL.getType();
+  if (const Type *TP = QT.getTypePtr()) {
+    if (isa<AutoType>(TP)) {
+      IsAutoSpecified = true;
+    }
+  }
   EA.analyze(TL);
   TDSI = EA.getTemplateDependentStringInfo();
   auto SetFromTL = EA.getHelperFeatureSet();
@@ -2921,7 +2956,7 @@ void MemVarInfo::migrateToDeviceGlobal(const VarDecl *MemVar) {
   auto &Ctx = DpctGlobalInfo::getContext();
   auto &MacroArgMap = DpctGlobalInfo::getMacroArgRecordMap();
   auto TSI = MemVar->getTypeSourceInfo();
-  auto OriginTL = TSI->getTypeLoc();
+  auto OriginTL = TSI->getTypeLoc().getUnqualifiedLoc().getAs<TypeLoc>();
   auto TL = OriginTL;
   auto BegLoc = MemVar->getBeginLoc();
   if (BegLoc.isMacroID()) {
@@ -3002,7 +3037,11 @@ void MemVarInfo::migrateToDeviceGlobal(const VarDecl *MemVar) {
     }
   }
   if (BaseTypeStr.empty()) {
-    BaseTypeStr = getType()->getBaseNameWithoutQualifiers();
+    if (getType()->isAutoSpecified()) {
+      BaseTypeStr = getType()->getDeducedTypeStr();
+    } else {
+      BaseTypeStr = getType()->getBaseNameWithoutQualifiers();
+    }
     TypeReplLoc = TL.getBeginLoc();
     TypeReplLen =
         SM.getFileOffset(TL.getEndLoc()) - SM.getFileOffset(TL.getBeginLoc()) +
@@ -4616,7 +4655,7 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
           !DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) ||
           DRE->getQualifier() || CallDecl->isOverloadedOperator())
         return;
-      for (unsigned i = 0; i < NumArgs; i++) {
+      for (unsigned i = 0; i < CallDecl->getNumParams(); i++) {
         auto Type = CallDecl->getParamDecl(i)
                         ->getOriginalType()
                         .getCanonicalType()
@@ -4806,6 +4845,8 @@ DeviceFunctionDecl::DeviceFunctionDecl(
       FuncInfo(getFuncInfo(FD)) {
   if (FD->isFunctionTemplateSpecialization()) {
     SourceRange ReturnTypeRange = FD->getReturnTypeSourceRange();
+    ReturnTypeRange = clang::dpct::getDefinitionRange(
+        ReturnTypeRange.getBegin(), ReturnTypeRange.getEnd());
     OffsetForAttr =
         DpctGlobalInfo::getLocInfo(ReturnTypeRange.getBegin()).second;
   }
@@ -4841,6 +4882,11 @@ DeviceFunctionDecl::DeviceFunctionDecl(
           Specialization->getMostRecentDecl()->getMinRequiredArguments()),
       FuncInfo(getFuncInfo(Specialization)) {
   IsDefFilePathNeeded = false;
+
+  auto ReturnLoc = FTL.getReturnLoc();
+  auto ReturnRange = clang::dpct::getDefinitionRange(ReturnLoc.getBeginLoc(),
+                                                     ReturnLoc.getEndLoc());
+  OffsetForAttr = DpctGlobalInfo::getLocInfo(ReturnRange.getBegin()).second;
 
   buildReplaceLocInfo(FTL, Attrs);
   buildTextureObjectParamsInfo(FTL.getParams());
@@ -5232,7 +5278,9 @@ void DeviceFunctionDecl::insertWrapper() {
         Printer << ">";
         Printer.newLine();
       }
-      Printer << "void " << FuncName << "_wrapper(";
+      Printer << (IsStaticSpecified ? "static " : "")
+              << (IsInlineSpecified ? "inline " : "") << "void " << FuncName
+              << "_wrapper(";
       for (size_t i = 0; i < ParamsInfo.size(); i++) {
         Printer << (i == 0 ? "" : " ,") << ParamsInfo[i].first << " "
                 << ParamsInfo[i].second << ParameterDefaultValueMap[i];
@@ -5312,7 +5360,8 @@ void DeviceFunctionDecl::collectInfoForWrapper(const FunctionDecl *FD) {
   if (HasBody && FD != Def) {
     HasBody = false;
   }
-
+  IsInlineSpecified = FD->isInlineSpecified();
+  IsStaticSpecified = FD->isStatic();
   if (auto FTD = FD->getDescribedFunctionTemplate()) {
     if (auto TemplateParmsList = FTD->getTemplateParameters()) {
       for (size_t i = 0; i < TemplateParmsList->size(); ++i) {
@@ -6073,9 +6122,14 @@ void KernelCallExpr::addAccessorDecl() {
     Tex.second->addDecl(OuterStmts.InitList, SubmitStmts.TextureList,
                         SubmitStmts.SamplerList, getQueueStr());
   }
-  for (auto &Tmp : VM.getTempStorageMap()) {
-    Tmp.second->addAccessorDecl(SubmitStmts.AccessorList,
-                                ExecutionConfig.LocalSize);
+  if (!VM.getTempStorageMap().empty()) {
+    DpctGlobalInfo::getInstance()
+        .insertFile(getFilePath())
+        ->insertHeader(HT_DPCT_GROUP_Utils, RT_ForSYCLMigration);
+    for (auto &Tmp : VM.getTempStorageMap()) {
+      Tmp.second->addAccessorDecl(SubmitStmts.AccessorList,
+                                  ExecutionConfig.LocalSize);
+    }
   }
 }
 void KernelCallExpr::buildInfo() {
@@ -6667,19 +6721,25 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
       Printer.line("cgh.depends_on(dpct::get_current_device().get_in_order_"
                    "queues_last_events());");
     } else {
-      Printer.line("#ifdef __INTEL_LLVM_COMPILER");
-      Printer.newLine();
-      Printer.line("cgh.depends_on(dpct::get_default_queue().ext_oneapi_get_"
-                   "last_event());");
-      Printer.newLine();
-      Printer.line("#else");
-      Printer.newLine();
-      Printer.line("auto e_opt = dpct::get_default_queue().ext_oneapi_get_last_"
-                   "event();");
-      Printer.newLine();
-      Printer.line("if (e_opt) cgh.depends_on(*e_opt);");
-      Printer.newLine();
-      Printer.line("#endif");
+      Printer.line("auto last_event = "
+                   "dpct::get_default_queue().ext_oneapi_get_last_event();");
+      Printer.line("[&](auto &&_e) {");
+      {
+        Printer.indent();
+        Printer.line("if constexpr "
+                     "(std::is_same_v<std::remove_reference_t<decltype(last_"
+                     "event)>, sycl::event>)");
+        {
+          Printer.indent();
+          Printer.line("cgh.depends_on(_e);");
+        }
+        Printer.line("else if (_e.has_value())");
+        {
+          Printer.indent();
+          Printer.line("cgh.depends_on(_e.value());");
+        }
+      }
+      Printer.line("}(last_event);");
     }
     Printer.newLine();
   }
@@ -7461,11 +7521,13 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
       return Info->printImmediateText(OS, S->getBeginLoc(), K);
     }
 
-#ifdef DPCT_DEBUG_BUILD
-    llvm::errs() << "Can not get FreeQueriesInfo for this FunctionDecl\n";
-    assert(0);
-#endif // DPCT_DEBUG_BUILD
-
+    auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+    if (!DFI)
+      return;
+    auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+    DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+    printFreeQueriesFunctionName<std::string>(
+        OS, K, "{{NEEDREPLACEG" + std::to_string(Index) + "}}");
   } else {
     if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD))
       DFI->setItem();
@@ -7495,6 +7557,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS,
     (*Iter)->Infos.push_back(Idx);
     Index = Iter - MacroInfos.begin();
   } else {
+    IsMacro = false;
     auto SLocInfo = DpctGlobalInfo::getLocInfo(SL);
     if (SLocInfo.first != FilePath)
       return;
@@ -7525,7 +7588,7 @@ void FreeQueriesInfo::emplaceExtraDecl() {
     auto &KindNames =
         getNames(static_cast<FreeQueriesKind>(FreeQueriesKind::NdItem));
     OS << "auto " << KindNames.ExtraVariableName << " = ";
-    printFreeQueriesFunctionName(
+    printFreeQueriesFunctionName<unsigned>(
         OS, static_cast<FreeQueriesKind>(FreeQueriesKind::NdItem), Dimension);
     OS << ';' << NL << Indent;
   }
@@ -7539,12 +7602,12 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
   bool IsMacro = isMacro(Num);
   if (IsMacro) {
     if (Index < MacroInfos.size()) {
-      return buildStringFromPrinter(printFreeQueriesFunctionName, Kind,
-                                    MacroInfos[Index]->Dimension);
+      return buildStringFromPrinter(printFreeQueriesFunctionName<unsigned>,
+                                    Kind, MacroInfos[Index]->Dimension);
     }
 #ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "FreeQueriesInfo index[" << Index
-                 << "]is larger than list size[" << InfoList.size() << "]\n";
+                 << "] is larger than list size[" << MacroInfos.size() << "]\n";
     assert(0);
 #endif // DPCT_DEBUG_BUILD
   }
@@ -7552,7 +7615,7 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
     return InfoList[Index]->getReplaceString(getKind(Num));
 #ifdef DPCT_DEBUG_BUILD
   llvm::errs() << "FreeQueriesInfo index[" << Index
-               << "]is larger than list size[" << InfoList.size() << "]\n";
+               << "] is larger than list size[" << InfoList.size() << "]\n";
   assert(0);
 #endif // DPCT_DEBUG_BUILD
   return "";
@@ -7560,7 +7623,8 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
 
 std::string FreeQueriesInfo::getReplaceString(FreeQueriesKind K) {
   if (K != FreeQueriesKind::NdItem || Counter[K] < 2)
-    return buildStringFromPrinter(printFreeQueriesFunctionName, K, Dimension);
+    return buildStringFromPrinter(printFreeQueriesFunctionName<unsigned>, K,
+                                  Dimension);
   else
     return getNames(K).ExtraVariableName;
 }

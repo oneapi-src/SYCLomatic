@@ -34,7 +34,7 @@
   Kind: Macro
   Priority: Takeover
   In: AT_CUDA_CHECK
-  Out: |
+  Out: ""
 
 # c10::cuda macro rules
 - Rule: rule_c10_cuda_CUDAMacros_h
@@ -87,7 +87,7 @@
   Out: c10::xpu::XPUStream
   Methods:
     - In: stream
-      Out: \&static_cast<sycl::queue &>($method_base queue())
+      Out: \&($method_base queue())
 
 - Rule: rule_c10_cuda_getCurrentCUDAStream
   Kind: API
@@ -155,8 +155,7 @@
 - Rule: rule_torch_Tensor
   Kind: Class
   Priority: Takeover
-  In: torch::Tensor
-  Out: torch::Tensor
+  In: at::Tensor # The underlying type of torch::Tensor is at::Tensor
   Methods:
     - In: is_cuda
       Out: $method_base is_xpu()
@@ -166,5 +165,30 @@
   Kind: HelperFunction
   Priority: Takeover
   In: get_in_order_queue
-  Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
+  Out: c10::xpu::getCurrentXPUStream().queue()
   Includes: [<c10/xpu/XPUStream.h>]
+
+- Rule: rule_THC_THCAtomics_cuh
+  Kind: Header
+  Priority: Takeover
+  In: THC/THCAtomics.cuh
+  Out: ""
+
+- Rule: rule_ATen_cuda_Exceptions_h
+  Kind: Header
+  Priority: Takeover
+  In: ATen/cuda/Exceptions.h
+  Out: ""
+
+- Rule: rule_remove_C10_CUDA_CHECK
+  Kind: Macro
+  Priority: Takeover
+  In: C10_CUDA_CHECK
+  Out: ""
+
+- Rule: rule_at_cuda_CUDAGuard
+  Kind: Type
+  Priority: Takeover
+  In: c10::cuda::CUDAGuard
+  Out: c10::DeviceGuard
+  Includes: [<c10/core/DeviceGuard.h>]

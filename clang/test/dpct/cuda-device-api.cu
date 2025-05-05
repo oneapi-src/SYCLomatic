@@ -11,13 +11,17 @@ void foo() {
   int peerDevice;
   int *canAccessPeer;
   int device;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcMemHandle_t is not supported, please try to
+  // CHECK-NEXT: remigrate with option: --use-experimental-features=level_zero.
+  // CHECK-NEXT: */
   cudaIpcEventHandle_t *handleEvent;
   cudaEvent_t event;
   cudaIpcMemHandle_t *handleMem;
   void *devPtr;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1029:0: SYCL currently does not support getting device resource limits.
+  // CHECK-NEXT: DPCT1029:{{[0-9]+}}: SYCL currently does not support getting device resource limits.
   // CHECK-NEXT: The output parameter(s) are set to 0.
   // CHECK-NEXT: */
   // CHECK-NEXT: *pValue = 0;
@@ -48,33 +52,31 @@ void foo() {
   cudaDeviceCanAccessPeer(canAccessPeer, device, peerDevice);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: SYCL currently does not support inter-process communication (IPC)
-  // CHECK-NEXT: operations. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaIpcGetEventHandle is not supported.
   // CHECK-NEXT: */
 
   cudaIpcGetEventHandle(handleEvent, event);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: SYCL currently does not support inter-process communication (IPC)
-  // CHECK-NEXT: operations. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaIpcOpenEventHandle is not supported.
   // CHECK-NEXT: */
   cudaIpcOpenEventHandle(&event, *handleEvent);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: SYCL currently does not support inter-process communication (IPC)
-  // CHECK-NEXT: operations. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcGetMemHandle is not supported, please try to
+  // CHECK-NEXT: remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcGetMemHandle(handleMem, devPtr);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: SYCL currently does not support inter-process communication (IPC)
-  // CHECK-NEXT: operations. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcOpenMemHandle is not supported, please try to
+  // CHECK-NEXT:  remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcOpenMemHandle(&devPtr, *handleMem, flags);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: SYCL currently does not support inter-process communication (IPC)
-  // CHECK-NEXT: operations. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaIpcCloseMemHandle is not supported, please try to
+  // CHECK-NEXT: remigrate with option: --use-experimental-features=level_zero.
   // CHECK-NEXT: */
   cudaIpcCloseMemHandle(devPtr);
 

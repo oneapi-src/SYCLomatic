@@ -54,11 +54,11 @@ __global__ void kernelFuncHalf(__half *deviceArrayHalf) {
 
   // Half2 Comparison Functions
 
-  // CHECK: h2_2 = sycl::half2(sycl::fmax(h2[0], h2_1[0]), sycl::fmax(h2[1], h2_1[1]));
+  // CHECK: h2_2 = sycl::half2(sycl::fmax(h2.x(), h2_1.x()), sycl::fmax(h2.y(), h2_1.y()));
   h2_2 = __hmax2(h2, h2_1);
   // CHECK: h2_2 = dpct::fmax_nan(h2, h2_1);
   h2_2 = __hmax2_nan(h2, h2_1);
-  // CHECK: h2_2 = sycl::half2(sycl::fmin(h2[0], h2_1[0]), sycl::fmin(h2[1], h2_1[1]));
+  // CHECK: h2_2 = sycl::half2(sycl::fmin(h2.x(), h2_1.x()), sycl::fmin(h2.y(), h2_1.y()));
   h2_2 = __hmin2(h2, h2_1);
   // CHECK: h2_2 = dpct::fmin_nan(h2, h2_1);
   h2_2 = __hmin2_nan(h2, h2_1);

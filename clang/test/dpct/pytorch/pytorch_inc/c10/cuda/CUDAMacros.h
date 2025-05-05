@@ -3,3 +3,7 @@
 #define C10_CUDA_IMPORT
 #define C10_CUDA_API
 #define C10_CUDA_BUILD_MAIN_LIB
+#define C10_CUDA_CHECK(EXPR)                                        \
+  do {                                                              \
+    const cudaError_t __err = EXPR;                                 \
+  } while (0)

@@ -1,5 +1,10 @@
 name: 'clang-format'
 description: 'Run clang-format on pull request'
+inputs:
+  github_token:
+    description: 'GitHub Token'
+    required: true
+
 runs:
   using: "composite"
   steps:
@@ -12,36 +17,57 @@ runs:
 
     - name: Get changed files
       id: changed-files
-      uses: tj-actions/changed-files@v44
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        PR_NUMBER=${{ github.event.pull_request.number }}
+        REPO_FULL_NAME=${{ github.repository }}
+        echo "Fetching changed files for PR #$PR_NUMBER in $REPO_FULL_NAME"
+
+        # Use GitHub API to get the list of changed files
+        CHANGED_FILES=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/$REPO_FULL_NAME/pulls/$PR_NUMBER/files" \
+          | jq -r '.[].filename')
+
+        echo "Changed files:"
+        echo "$CHANGED_FILES"
+
+        CHANGED_FILES_JOINED=$(echo "$CHANGED_FILES" | tr '\n' ' ')
+
+        # Set the output for the next steps using environment files
+        echo "all_changed_files=$CHANGED_FILES_JOINED" >> $GITHUB_ENV
 
     - name: List Files
       shell: bash
       env:
-        CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        CHANGED_FILES: ${{ env.all_changed_files }}
       run: |
-         pattern_to_exclude_from_clang=".*clang/test/dpct"
-         files_to_be_check=""
-         echo "changed files are $CHANGED_FILES"
-         
-         for i in $CHANGED_FILES
-         do
-            if [[ "$i" =~ ${pattern_to_exclude_from_clang} ]];then
-                echo "${i} will be excluded from format checking"
-            else
-                files_to_be_check="${files_to_be_check} $i" 
-            fi
+        pattern_to_exclude_from_clang=".*clang/test/dpct"
+        files_to_be_check=""
+        echo "changed files are $CHANGED_FILES"
+        
+        for i in $CHANGED_FILES
+        do
+          if [[ "$i" =~ ${pattern_to_exclude_from_clang} ]]; then
+              echo "${i} will be excluded from format checking"
+          else
+              files_to_be_check="${files_to_be_check} $i" 
+          fi
+        done
 
-         done
- 
-         echo "git clang-format ${{ github.event.pull_request.base.sha }} ${files_to_be_check}"
-         git clang-format ${{ github.event.pull_request.base.sha }} ${files_to_be_check} || echo "Files need to be formated are detected."
-         echo "before git diff"
-         git diff > ./clang-format.patch
-      # Add patch with formatting fixes to CI job artifacts
+        echo "git clang-format ${{ github.event.pull_request.base.sha }} ${files_to_be_check}"
+        git clang-format ${{ github.event.pull_request.base.sha }} ${files_to_be_check} || echo "Files need to be formatted are detected."
+        echo "before git diff"
+        git diff > ./clang-format.patch
+
+    # Add patch with formatting fixes to CI job artifacts
     - uses: actions/upload-artifact@v4
       with:
         name: clang-format-patch
         path: ./clang-format.patch
+
     - name: Check if clang-format patch is empty
       shell: bash
       run: bash -c "if [ -s ./clang-format.patch ]; then cat ./clang-format.patch; exit 1; fi"

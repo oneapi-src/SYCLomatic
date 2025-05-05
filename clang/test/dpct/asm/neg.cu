@@ -6,6 +6,7 @@
 
 // clang-format off
 #include <cuda_runtime.h>
+#include <cuda_fp16.h>
 #include <cstdint>
 
 __global__ void neg() {
@@ -22,6 +23,19 @@ __global__ void neg() {
 
   // CHECK: i64 = -x;
   asm("neg.s64 %0, %1;" : "=r"(i64) : "r"(x));
+}
+
+// CHECK: inline void negate_half2(sycl::half2 *addr) {
+// CHECK-NEXT:    unsigned reg[2];
+// CHECK-NEXT:    reg[0] = *reinterpret_cast<unsigned int*>(addr);
+// CHECK-NEXT:    reg[0] = (-sycl::vec<int, 1>(reg[0]).as<sycl::vec<sycl::half, 2>>()).as<sycl::vec<int, 1>>().x();
+// CHECK-NEXT:    *reinterpret_cast<unsigned int*>(addr) = reg[0];
+// CHECK-NEXT:}
+__device__ inline void negate_half2(__half2 *addr) {
+    unsigned reg[2];
+    reg[0] = *reinterpret_cast<unsigned int*>(addr);
+    asm volatile("neg.f16x2 %0, %0;" : "+r"(reg[0]));
+    *reinterpret_cast<unsigned int*>(addr) = reg[0];
 }
 
 // clang-format on

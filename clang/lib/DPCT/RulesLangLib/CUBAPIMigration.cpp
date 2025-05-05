@@ -247,6 +247,9 @@ void CubMemberCallRule::runRule(
   if (const auto *BlockMC =
           getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
     EA.analyze(BlockMC);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+
     StringRef Name = BlockMC->getMethodDecl()->getName();
     bool isBlockRadixSort = Name == "Sort" || Name == "SortDescending" ||
                             Name == "SortBlockedToStriped" ||
@@ -258,8 +261,9 @@ void CubMemberCallRule::runRule(
         Name == "BlockedToWarpStriped";
     bool isBlockShuffle =
         Name == "Offset" || Name == "Rotate" || Name == "Up" || Name == "Down";
+    bool isBlockLoadStore = Name == "Load" || Name == "Store";
     if (isBlockRadixSort || isBlockExchange || isBlockShuffle ||
-        Name == "Load" || Name == "Store") {
+        isBlockLoadStore) {
       std::string HelpFuncName;
       if (isBlockRadixSort)
         HelpFuncName = "group_radix_sort";
@@ -281,11 +285,10 @@ void CubMemberCallRule::runRule(
           CanTy->getAs<RecordType>()->getDecl());
       const auto &ValueTyArg = ClassSpecDecl->getTemplateArgs()[0];
 
-      ValueTyArg.getAsType().getAsString();
       std::string Fn;
       llvm::raw_string_ostream OS(Fn);
       OS << MapNames::getDpctNamespace() << "group::" << HelpFuncName << "<"
-         << ValueTyArg.getAsType().getAsString();
+         << DpctGlobalInfo::getReplacedTypeName(ValueTyArg.getAsType());
       if (isBlockShuffle) {
         if (!ClassSpecDecl->getTemplateArgs()[1].getIsDefaulted()) {
           OS << ", " << ClassSpecDecl->getTemplateArgs()[1].getAsIntegral();
@@ -299,6 +302,32 @@ void CubMemberCallRule::runRule(
       } else {
         const auto &ItemsPreThreadArg = ClassSpecDecl->getTemplateArgs()[2];
         OS << ", " << ItemsPreThreadArg.getAsIntegral();
+      }
+      if (isBlockLoadStore &&
+          !ClassSpecDecl->getTemplateArgs()[3].getIsDefaulted()) {
+        int AlgoType =
+            ClassSpecDecl->getTemplateArgs()[3].getAsIntegral().getExtValue();
+        if (Name == "Load") {
+          if (AlgoType == 3) {
+            OS << ", "
+               << MapNames::getDpctNamespace() +
+                      "group::group_load_algorithm::transpose";
+          } else if (AlgoType == 4) {
+            OS << ", "
+               << MapNames::getDpctNamespace() +
+                      "group::group_load_algorithm::sub_group_transpose";
+          }
+        } else {
+          if (AlgoType == 3) {
+            OS << ", "
+               << MapNames::getDpctNamespace() +
+                      "group::group_store_algorithm::transpose";
+          } else if (AlgoType == 4) {
+            OS << ", "
+               << MapNames::getDpctNamespace() +
+                      "group::group_store_algorithm::sub_group_transpose";
+          }
+        }
       }
       OS << ">::get_local_memory_size";
       if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
@@ -316,9 +345,9 @@ void CubMemberCallRule::runRule(
     }
   } else if (const auto *E2 = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
     EA.analyze(E2);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
-  emplaceTransformation(EA.getReplacement());
-  EA.applyAllSubExprRepl();
 }
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -332,7 +361,8 @@ void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                          "SmVersionUncached", "RowMajorTid",
                          "LoadDirectBlocked", "LoadDirectStriped",
                          "StoreDirectBlocked", "StoreDirectStriped",
-                         "ShuffleDown", "ShuffleUp", "Debug"),
+                         "ShuffleDown", "ShuffleUp", "Debug",
+                         "LoadDirectWarpStriped", "StoreDirectWarpStriped"),
               hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
@@ -760,6 +790,13 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("TypeDefDecl"),
       this);
 
+  MF.addMatcher(
+      typeAliasDecl(
+          hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(hasAnyName(
+              "WarpScan", "WarpReduce", "BlockScan", "BlockReduce")))))))
+          .bind("UsingDecl"),
+      this);
+
   auto isTempStorage = hasDeclaration(namedDecl(hasAnyName("TempStorage")));
   MF.addMatcher(declStmt(has(varDecl(anyOf(
                              hasType(hasCanonicalType(qualType(isTempStorage))),
@@ -919,7 +956,7 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
     }
   }
 }
-void CubRule::processCubTypeDef(const TypedefDecl *TD) {
+void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
   auto CanonicalType = TD->getUnderlyingType().getCanonicalType();
   std::string CanonicalTypeStr = CanonicalType.getAsString();
   if (isTypeInAnalysisScope(CanonicalType.getTypePtr()))
@@ -944,20 +981,9 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   // Currently, typedef decl can be deleted in following cases
   for (auto &Element : TypeLocMatchResult) {
     if (auto TL = Element.getNodeAs<TypeLoc>("typeLoc")) {
-      // 1. Used in TempStorage variable declaration
-      if (auto AncestorVD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
-        auto VarType = AncestorVD->getType().getCanonicalType();
-        std::string VarTypeStr =
-            AncestorVD->getType().getCanonicalType().getAsString();
-        if (isTypeInAnalysisScope(VarType.getTypePtr()) ||
-            !(VarTypeStr.find("TempStorage") != std::string::npos &&
-              VarTypeStr.find("struct cub::") == 0)) {
-          DeleteFlag = false;
-          break;
-        }
-      } // 2. Used in temporary class constructor
-      else if (auto AncestorMTE =
-                   DpctGlobalInfo::findAncestor<MaterializeTemporaryExpr>(TL)) {
+      // 1. Used in temporary class constructor
+      if (auto AncestorMTE =
+              DpctGlobalInfo::findAncestor<MaterializeTemporaryExpr>(TL)) {
         auto MC = DpctGlobalInfo::findAncestor<CXXMemberCallExpr>(AncestorMTE);
         if (MC) {
           auto ObjType = MC->getObjectType().getCanonicalType();
@@ -971,9 +997,21 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
             break;
           }
         }
-      } // 3. Used in self typedef decl
+      } // 2. Used in TempStorage variable declaration
+      else if (auto AncestorVD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
+        auto VarType = AncestorVD->getType().getCanonicalType();
+        std::string VarTypeStr =
+            AncestorVD->getType().getCanonicalType().getAsString();
+        if (isTypeInAnalysisScope(VarType.getTypePtr()) ||
+            !(VarTypeStr.find("TempStorage") != std::string::npos &&
+              VarTypeStr.find("struct cub::") == 0)) {
+          DeleteFlag = false;
+          break;
+        }
+      }
+      // 3. Used in self typedef decl
       else if (auto AncestorTD =
-                   DpctGlobalInfo::findAncestor<TypedefDecl>(TL)) {
+                   DpctGlobalInfo::findAncestor<TypedefNameDecl>(TL)) {
         if (AncestorTD != TD) {
           DeleteFlag = false;
           break;
@@ -1072,17 +1110,16 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
     if (!TA)
       return;
     WarpSize = TA->get(0).getAsIntegral().getExtValue();
-    std::string ValueType =
-        TA->get(1).getAsType().getUnqualifiedType().getAsString();
     const auto *MemberMask = CE->getArg(2);
-    const auto *Mask = dyn_cast<IntegerLiteral>(MemberMask);
     const Expr *Value = CE->getArg(0);
     const Expr *Lane = CE->getArg(1);
     const auto *DeviceFuncDecl = getImmediateOuterFuncDecl(CE);
     ExprAnalysis ValueEA(Value);
     ExprAnalysis LaneEA(Lane);
     llvm::raw_string_ostream OS(Repl);
-    if (Mask) {
+
+    if (const auto *Mask =
+            dyn_cast<IntegerLiteral>(MemberMask->IgnoreImplicitAsWritten())) {
       if (Mask->getValue().getZExtValue() == 0xffffffff) {
         OS << MapNames::getDpctNamespace() << "select_from_sub_group("
            << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
@@ -1090,20 +1127,26 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
         if (WarpSize != 32)
           OS << ", " << WarpSize;
         OS << ')';
-      } else {
-        OS << MapNames::getDpctNamespace() << "experimental::"
-           << "select_from_sub_group(" << getStmtSpelling(Mask) << ", "
-           << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
-           << ValueEA.getReplacedString() << ", " << LaneEA.getReplacedString();
-        if (WarpSize != 32)
-          OS << ", " << WarpSize;
-        OS << ')';
+        emplaceTransformation(new ReplaceStmt(CE, Repl));
+        return;
       }
+    }
+    if (DpctGlobalInfo::useExpNonUniformGroups()) {
+      ExprAnalysis MaskEA(MemberMask);
+      OS << MapNames::getDpctNamespace() << "experimental::"
+         << "select_from_sub_group(" << MaskEA.getReplacedString() << ", "
+         << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
+         << ValueEA.getReplacedString() << ", " << LaneEA.getReplacedString();
+      if (WarpSize != 32)
+        OS << ", " << WarpSize;
+      OS << ')';
       emplaceTransformation(new ReplaceStmt(CE, Repl));
     } else {
-      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             GetFunctionName(CE));
+      report(CE->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+             "cub::ShuffleIndex",
+             "--use-experimental-features=non-uniform-groups");
     }
+    return;
   }
 }
 
@@ -1436,7 +1479,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
          << ValidItemsEA.getReplacedString() << ") ? "
          << InEA.getReplacedString() << " : " << MapNames::getClNamespace()
          << "known_identity_v<" << StringRef(OpRepl).drop_back(2) << ", "
-         << DpctGlobalInfo::getTypeName(InData->getType()) << ">";
+         << DpctGlobalInfo::getReplacedTypeName(InData->getType()) << ">";
       In = std::move(tmp);
     } else
       In = InEA.getReplacedString();
@@ -1686,7 +1729,10 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processCubFuncCall(CE, true);
   } else if (const TypedefDecl *TD =
                  getNodeAsType<TypedefDecl>(Result, "TypeDefDecl")) {
-    processCubTypeDef(TD);
+    processCubTypeDefOrUsing(TD);
+  } else if (const TypeAliasDecl *TAD =
+                 getNodeAsType<TypeAliasDecl>(Result, "UsingDecl")) {
+    processCubTypeDefOrUsing(TAD);
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
     processTypeLoc(TL);
   } else if (auto *UDD = getNodeAsType<UsingDirectiveDecl>(

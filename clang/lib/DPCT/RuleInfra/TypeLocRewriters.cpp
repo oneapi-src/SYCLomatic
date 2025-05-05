@@ -114,7 +114,7 @@ public:
         return Num == Count;
       }
       size_t NoneDefaultNum = 0;
-      for (int i = 0; i < Num; i++) {
+      for (size_t i = 0; i < Num; i++) {
         if (!TSTL.getArgLoc(i).getArgument().getIsDefaulted()) {
           NoneDefaultNum++;
         }
@@ -360,6 +360,10 @@ void initTypeLocSYCLCompatRewriterMap(
   SYCLCOMPAT_UNSUPPORT("cudaExternalMemoryHandleDesc")
   SYCLCOMPAT_UNSUPPORT("cudaExternalMemoryMipmappedArrayDesc")
   SYCLCOMPAT_UNSUPPORT("cudaExternalMemoryBufferDesc")
+  SYCLCOMPAT_UNSUPPORT("cudaExternalSemaphore_t")
+  SYCLCOMPAT_UNSUPPORT("cudaExternalSemaphoreHandleDesc")
+  SYCLCOMPAT_UNSUPPORT("cudaExternalSemaphoreSignalParams")
+  SYCLCOMPAT_UNSUPPORT("cudaExternalSemaphoreWaitParams")
   SYCLCOMPAT_UNSUPPORT("thrust::system::cuda::experimental::pinned_allocator")
   SYCLCOMPAT_UNSUPPORT("thrust::cuda::experimental::pinned_allocator")
   SYCLCOMPAT_UNSUPPORT("thrust::device_allocator")

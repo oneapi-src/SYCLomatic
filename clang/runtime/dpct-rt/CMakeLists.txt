@@ -12,6 +12,7 @@ set(dpct_rt_files
   include/dpct/dnnl_utils.hpp
   include/dpct/dpl_utils.hpp
   include/dpct/rng_utils.hpp
+  include/dpct/ze_utils.hpp
   include/dpct/lib_common_utils.hpp
   include/dpct/ccl_utils.hpp
   include/dpct/sparse_utils.hpp

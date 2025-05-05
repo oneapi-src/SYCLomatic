@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 
 // CHECK: #if (DPCT_COMPATIBILITY_TEMP >= 320)
 // CHECK-NEXT: /*

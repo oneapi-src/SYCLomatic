@@ -1,3 +1,4 @@
+// UNSUPPORTED: system-windows
 // RUN: mkdir -p %T/common
 // RUN: cd %T
 // RUN: cat %S/compile_commands.json > %T/compile_commands.json

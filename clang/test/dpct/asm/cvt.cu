@@ -400,4 +400,21 @@ __global__ void cvt() {
 }
 #endif
 
+// CHECK: inline uint32_t float2_to_half2(sycl::float2 f) {
+// CHECK-NEXT:   union {
+// CHECK-NEXT:     uint32_t u32;
+// CHECK-NEXT:     uint16_t u16[2];
+// CHECK-NEXT:   } tmp;
+// CHECK-NEXT:   tmp.u32 = (sycl::ushort2(sycl::vec<float, 1>(f.x()).convert<sycl::half, sycl::rounding_mode::rte>().as<sycl::vec<uint16_t, 1>>().x(),sycl::vec<float, 1>(f.y()).convert<sycl::half, sycl::rounding_mode::rte>().as<sycl::vec<uint16_t, 1>>().x())).as<sycl::vec<int, 1>>().x();
+// CHECK-NEXT:   return tmp.u32;
+// CHECK-NEXT: }
+inline __device__ uint32_t float2_to_half2(float2 f) {
+  union {
+    uint32_t u32;
+    uint16_t u16[2];
+  } tmp;
+  asm volatile("cvt.rn.f16x2.f32 %0, %1, %2;\n" : "=r"(tmp.u32) : "f"(f.y), "f"(f.x));
+  return tmp.u32;
+}
+
 // clang-format on

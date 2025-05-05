@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 #ifndef TEST_CUH__
 #define TEST_CUH__
 

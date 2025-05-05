@@ -12,6 +12,34 @@ using namespace clang::dpct;
 
 RewriterMap dpct::createSinglePrecisionMathematicalFunctionsRewriterMap() {
   return RewriterMap{
+      // fabsf
+      MATH_API_REWRITERS_V2(
+          "fabsf", MATH_API_REWRITER_PAIR(
+                       math::Tag::host_device,
+                       CALL_FACTORY_ENTRY(
+                           "fabsf", CALL(MapNames::getClNamespace() + "fabs",
+                                         CAST_IF_NOT_SAME(makeLiteral("float"),
+                                                          ARG(0))))))
+      // fmaxf
+      MATH_API_REWRITERS_V2(
+          "fmaxf",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::host_device,
+              CALL_FACTORY_ENTRY(
+                  "fmaxf",
+                  CALL(MapNames::getClNamespace() + "fmax",
+                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
+                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(1))))))
+      // fminf
+      MATH_API_REWRITERS_V2(
+          "fminf",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::host_device,
+              CALL_FACTORY_ENTRY(
+                  "fminf",
+                  CALL(MapNames::getClNamespace() + "fmin",
+                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
+                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(1))))))
       // cyl_bessel_i0f
       MATH_API_REWRITER_DEVICE(
           "cyl_bessel_i0f",
@@ -294,6 +322,29 @@ RewriterMap dpct::createSinglePrecisionMathematicalFunctionsRewriterMap() {
               CALL_FACTORY_ENTRY(
                   "sinpif",
                   CALL(MapNames::getClNamespace() + "sinpi",
+                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))))
+      // cospif
+      MATH_API_REWRITERS_V2(
+          "cospif", MATH_API_REWRITER_PAIR(
+                        math::Tag::host_device,
+                        CALL_FACTORY_ENTRY(
+                            "cospif", CALL(MapNames::getClNamespace() + "cospi",
+                                           CAST_IF_NOT_SAME(
+                                               makeLiteral("float"), ARG(0))))))
+      // tanhf
+      MATH_API_REWRITERS_V2(
+          "tanhf",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::host_normal,
+              CALL_FACTORY_ENTRY(
+                  "tanhf",
+                  CALL(MapNames::getClNamespace() + "tanh",
+                       CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::device_normal,
+              CALL_FACTORY_ENTRY(
+                  "tanhf",
+                  CALL(MapNames::getClNamespace() + "tanh",
                        CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))))
       // y0f
       MATH_API_REWRITER_DEVICE(

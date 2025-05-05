@@ -1,30 +1,30 @@
-// RUN: dpct --format-range=none -out-root %T/function_pointer %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct  --format-range=none -out-root %T/function_pointer %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/function_pointer/function_pointer.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/function_pointer/function_pointer.dp.cpp -o %T/function_pointer/function_pointer.dp.o %}
 
 #include <cuda_runtime.h>
 #include <iostream>
 
-__global__ void vectorAdd(const int *A, int *B, int *C, int N) {
+__global__ static inline void vectorAdd(const int *A, int *B, int *C, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) {
         C[i] = A[i] + B[i];
     }
 }
 
-// CHECK:  void vectorAdd_wrapper(const int * A ,int * B ,int * C ,int N) {
+// CHECK:  static inline void vectorAdd_wrapper(const int * A ,int * B ,int * C ,int N) {
 // CHECK:        sycl::queue queue = *dpct::kernel_launcher::_que;
 // CHECK:        unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
 // CHECK:        sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
 // CHECK:        queue.parallel_for(
 // CHECK:          nr,
 // CHECK:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK:            vectorAdd(A, B, C, N, item_ct1);
+// CHECK:            vectorAdd(A, B, C, N);
 // CHECK:          });
 // CHECK:  }
 
 template<typename T>
-__global__ void vectorTemplateAdd(const T *A, T *B, T *C, int N) {
+__global__ static inline void vectorTemplateAdd(const T *A, T *B, T *C, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) {
         C[i] = A[i] + B[i];
@@ -32,14 +32,14 @@ __global__ void vectorTemplateAdd(const T *A, T *B, T *C, int N) {
 }
 
 // CHECK:  template<typename T>
-// CHECK:  void vectorTemplateAdd_wrapper(const T * A ,T * B ,T * C ,int N) {
+// CHECK:  static inline void vectorTemplateAdd_wrapper(const T * A ,T * B ,T * C ,int N) {
 // CHECK:      sycl::queue queue = *dpct::kernel_launcher::_que;
 // CHECK:      unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
 // CHECK:      sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
 // CHECK:      queue.parallel_for(
 // CHECK:        nr,
 // CHECK:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK:          vectorTemplateAdd<T>(A, B, C, N, item_ct1);
+// CHECK:          vectorTemplateAdd<T>(A, B, C, N);
 // CHECK:        });
 // CHECK:  }
 

@@ -34,6 +34,19 @@
       In: ${arg}.cpp
       Out: ${arg}.${rewrite_extention_name}
 
+- Rule: rule_cpp_file_in_dict
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cpp_file_in_dict
+  In: "{${value}}"
+  Out: "{${value}}"
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cpp
+      Out: ${arg}.${rewrite_extention_name}
+
 - Rule: rule_cu_file_in_func
   Kind: PythonRule
   Priority: Fallback
@@ -54,6 +67,19 @@
   PythonSyntax: cu_file_in_list
   In: "[${value}]"
   Out: "[${value}]"
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.${rewrite_extention_name}
+
+- Rule: rule_cu_file_in_dict
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cu_file_in_dict
+  In: "{${value}}"
+  Out: "{${value}}"
   Subrules:
     value:
       MatchMode: Full
@@ -221,3 +247,35 @@
   PythonSyntax: CUDA_HOME
   In: CUDA_HOME
   Out: SYCL_HOME
+
+- Rule: rule_cuda_flag_use_fast_math
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_flag_use_fast_math
+  In: '--use_fast_math'
+  Out: ''
+
+- Rule: rule_cuda_flag_allow-unsupported-compiler
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_flag_allow-unsupported-compiler
+  In: '--allow-unsupported-compiler'
+  Out: ''
+
+- Rule: rule_cuda_default_stream
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Full
+  PythonSyntax: cuda_default_stream
+  In: torch.cuda.default_stream
+  Out: torch.xpu.current_stream
+
+- Rule: rule_torch_device_cuda
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Full
+  PythonSyntax: torch_device_cuda
+  In: torch.device('cuda')
+  Out: torch.device('xpu')

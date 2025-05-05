@@ -502,21 +502,20 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
                                ARG(0)))))),
           MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
               "__hisnan2",
-              CALL_FACTORY_ENTRY("__hisnan2",
-                                 CALL(MapNames::getClNamespace(false, true) +
-                                          "ext::oneapi::experimental::isnan",
-                                      ARG(0))),
+              UNARY_OP_FACTORY_ENTRY(
+                  "__hisnan2", UnaryOperatorKind::UO_Minus,
+                  CALL(MapNames::getClNamespace(false, true) +
+                           "ext::oneapi::experimental::isnan",
+                       ARG(0))),
               CALL_FACTORY_ENTRY(
                   "__hisnan2",
-                  CALL(MapNames::getClNamespace() + "marray<" +
+                  CALL(MapNames::getClNamespace() + "vec<" +
                            MapNames::getClNamespace() +
                            "ext::oneapi::bfloat16, 2>",
                        CALL(MapNames::getClNamespace() + "isnan",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")))),
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x"))),
                        CALL(MapNames::getClNamespace() + "isnan",
-                            CALL("float",
-                                 ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))))))
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")))))))
       // __hle2
       MATH_API_REWRITER_DEVICE(
           "__hle2",
@@ -678,14 +677,13 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
                                               ARG(0), ARG(1)))),
                   EMPTY_FACTORY_ENTRY("__hmax2"),
                   CALL_FACTORY_ENTRY(
-                      "__hmax2",
-                      CALL(MapNames::getClNamespace() + "half2",
-                           CALL(MapNames::getClNamespace() + "fmax",
-                                ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
-                                ARRAY_SUBSCRIPT(ARG(1), LITERAL("0"))),
-                           CALL(MapNames::getClNamespace() + "fmax",
-                                ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
-                                ARRAY_SUBSCRIPT(ARG(1), LITERAL("1"))))))),
+                      "__hmax2", CALL(MapNames::getClNamespace() + "half2",
+                                      CALL(MapNames::getClNamespace() + "fmax",
+                                           MEMBER_CALL(ARG(0), false, "x"),
+                                           MEMBER_CALL(ARG(1), false, "x")),
+                                      CALL(MapNames::getClNamespace() + "fmax",
+                                           MEMBER_CALL(ARG(0), false, "y"),
+                                           MEMBER_CALL(ARG(1), false, "y")))))),
           MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
               "__hmax2",
               CALL_FACTORY_ENTRY("__hmax2",
@@ -694,18 +692,15 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
                                       ARG(0), ARG(1))),
               CALL_FACTORY_ENTRY(
                   "__hmax2",
-                  CALL(
-                      MapNames::getClNamespace() + "marray<" +
-                          MapNames::getClNamespace() +
-                          "ext::oneapi::bfloat16, 2>",
-                      CALL(
-                          MapNames::getClNamespace() + "fmax",
-                          CALL("float", ARRAY_SUBSCRIPT(ARG(0), LITERAL("0"))),
-                          CALL("float", ARRAY_SUBSCRIPT(ARG(1), LITERAL("0")))),
-                      CALL(MapNames::getClNamespace() + "fmax",
-                           CALL("float", ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))),
-                           CALL("float",
-                                ARRAY_SUBSCRIPT(ARG(1), LITERAL("1"))))))))
+                  CALL(MapNames::getClNamespace() + "vec<" +
+                           MapNames::getClNamespace() +
+                           "ext::oneapi::bfloat16, 2>",
+                       CALL(MapNames::getClNamespace() + "fmax",
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x")),
+                            CALL("float", MEMBER_CALL(ARG(1), false, "x"))),
+                       CALL(MapNames::getClNamespace() + "fmax",
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")),
+                            CALL("float", MEMBER_CALL(ARG(1), false, "y")))))))
       // __hmax2_nan
       MATH_API_REWRITER_DEVICE(
           "__hmax2_nan",
@@ -744,14 +739,13 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
                                               ARG(0), ARG(1)))),
                   EMPTY_FACTORY_ENTRY("__hmin2"),
                   CALL_FACTORY_ENTRY(
-                      "__hmin2",
-                      CALL(MapNames::getClNamespace() + "half2",
-                           CALL(MapNames::getClNamespace() + "fmin",
-                                ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
-                                ARRAY_SUBSCRIPT(ARG(1), LITERAL("0"))),
-                           CALL(MapNames::getClNamespace() + "fmin",
-                                ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
-                                ARRAY_SUBSCRIPT(ARG(1), LITERAL("1"))))))),
+                      "__hmin2", CALL(MapNames::getClNamespace() + "half2",
+                                      CALL(MapNames::getClNamespace() + "fmin",
+                                           MEMBER_CALL(ARG(0), false, "x"),
+                                           MEMBER_CALL(ARG(1), false, "x")),
+                                      CALL(MapNames::getClNamespace() + "fmin",
+                                           MEMBER_CALL(ARG(0), false, "y"),
+                                           MEMBER_CALL(ARG(1), false, "y")))))),
           MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
               "__hmin2",
               CALL_FACTORY_ENTRY("__hmin2",
@@ -760,18 +754,15 @@ RewriterMap dpct::createHalf2ComparisonFunctionsRewriterMap() {
                                       ARG(0), ARG(1))),
               CALL_FACTORY_ENTRY(
                   "__hmin2",
-                  CALL(
-                      MapNames::getClNamespace() + "marray<" +
-                          MapNames::getClNamespace() +
-                          "ext::oneapi::bfloat16, 2>",
-                      CALL(
-                          MapNames::getClNamespace() + "fmin",
-                          CALL("float", ARRAY_SUBSCRIPT(ARG(0), LITERAL("0"))),
-                          CALL("float", ARRAY_SUBSCRIPT(ARG(1), LITERAL("0")))),
-                      CALL(MapNames::getClNamespace() + "fmin",
-                           CALL("float", ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))),
-                           CALL("float",
-                                ARRAY_SUBSCRIPT(ARG(1), LITERAL("1"))))))))
+                  CALL(MapNames::getClNamespace() + "vec<" +
+                           MapNames::getClNamespace() +
+                           "ext::oneapi::bfloat16, 2>",
+                       CALL(MapNames::getClNamespace() + "fmin",
+                            CALL("float", MEMBER_CALL(ARG(0), false, "x")),
+                            CALL("float", MEMBER_CALL(ARG(1), false, "x"))),
+                       CALL(MapNames::getClNamespace() + "fmin",
+                            CALL("float", MEMBER_CALL(ARG(0), false, "y")),
+                            CALL("float", MEMBER_CALL(ARG(1), false, "y")))))))
       // __hmin2_nan
       MATH_API_REWRITER_DEVICE(
           "__hmin2_nan",

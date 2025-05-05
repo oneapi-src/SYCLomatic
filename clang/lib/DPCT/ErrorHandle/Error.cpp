@@ -220,6 +220,10 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorInvalidInstallPath:
     StatusString = "Error: " + Message + " not found.";
     break;
+  case MigrationErrorReadWriteCMakeHelperFile:
+    StatusString =
+        "Error: " + Message + ". Please check the file access permission.";
+    break;
   default:
     DpctLog() << "Unknown error.\n";
     dpctExit(-1);

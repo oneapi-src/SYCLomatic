@@ -2,6 +2,8 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/test_inc_included %s --cuda-include-path="%cuda-path/include" -extra-arg="-I %S/inc"   -- -x cuda --cuda-host-only
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/test_inc_included %s --cuda-include-path="%cuda-path/include" -extra-arg="-I%S/inc"   -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/test_inc_included/test_inc_included.dp.cpp
+// RUN: FileCheck %S/inc/foo.cuh --match-full-lines --input-file %T/test_inc_included/inc/foo.dp.hpp
+// RUN: FileCheck %S/inc/no_cuda_syntax.cuh --match-full-lines --input-file %T/test_inc_included/inc/no_cuda_syntax.dp.hpp
 
 // CHECK:#include "foo.dp.hpp"
 #include "foo.cuh"

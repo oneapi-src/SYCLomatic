@@ -145,13 +145,19 @@ public:
       : TypeInfo(std::forward<std::string>(T)),
         SubExpr(std::forward<SubExprT>(S)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    const Expr *InputArg = SubExpr->IgnoreImpCasts();
+    const Expr *InputArg = SubExpr->IgnoreUnlessSpelledInSource();
     clang::QualType ArgType = InputArg->getType().getCanonicalType();
     ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
+    bool NeedParen = false;
     if (ArgType.getAsString() != TypeInfo) {
+      NeedParen = needExtraParens(SubExpr);
       Stream << "(" << TypeInfo << ")";
     }
+    if (NeedParen)
+      Stream << "(";
     dpct::print(Stream, SubExpr);
+    if (NeedParen)
+      Stream << ")";
   }
 };
 
@@ -1817,6 +1823,10 @@ inline auto UseExtBindlessImages = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExtBindlessImages();
 };
 
+inline auto UseExtLevelZero = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExtLevelZero();
+};
+
 inline auto UseExtGraph = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExtGraph();
 };
@@ -2126,6 +2136,16 @@ public:
     return isFromCUDA(FD);
   }
 };
+class IsDefinedByUser {
+public:
+  IsDefinedByUser() {}
+  bool operator()(const CallExpr *C) {
+    auto FD = C->getDirectCallee();
+    if (!FD)
+      return false;
+    return isUserDefinedDecl(FD);
+  }
+};
 } // namespace math
 } // namespace dpct
 
@@ -2185,7 +2205,7 @@ const std::string MipmapNeedBindlessImage =
                                         DOES_FIRST_LEVEL_POINTER_NEED_CONST)
 #define NEW(...) makeNewDeleteExprCreator(true, __VA_ARGS__)
 #define DELETE(...) makeNewDeleteExprCreator(false, __VA_ARGS__)
-#define DECL(TYPE, VAR, ...) makeDeclCreator(TYPE, VAR, __VA_ARGS__)
+#define DECLARE(TYPE, VAR, ...) makeDeclCreator(TYPE, VAR, __VA_ARGS__)
 #define TYPENAME(SUBEXPR) makeTypenameExprCreator(SUBEXPR)
 #define ZERO_INITIALIZER(SUBEXPR) makeZeroInitializerCreator(SUBEXPR)
 #define SUBGROUP                                                               \

@@ -37,8 +37,8 @@ void print_data(T* data, int num) {
   }
   std::cout << std::endl;
 }
-//CHECK:  void SumKernel(int* data, const sycl::nd_item<3> &item_ct1) {
-
+//CHECK:  void SumKernel(int* data) {
+//CHECK:    auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
 //CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
@@ -80,7 +80,8 @@ __global__ void SumKernel(int* data) {
 
 }
 
-//CHECK:  void ReduceKernel(int* data, const sycl::nd_item<3> &item_ct1) {
+//CHECK:  void ReduceKernel(int* data) {
+//CHECK:    auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -148,7 +149,7 @@ int main() {
   //CHECK:  q_ct1.parallel_for(
   //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
-  //CHECK:      SumKernel(dev_data, item_ct1);
+  //CHECK:      SumKernel(dev_data);
   //CHECK:    });
   SumKernel<<<GridSize, BlockSize>>>(dev_data);
 
@@ -178,7 +179,7 @@ int main() {
   //CHECK:  q_ct1.parallel_for(
   //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
-  //CHECK:      ReduceKernel(dev_data, item_ct1);
+  //CHECK:      ReduceKernel(dev_data);
   //CHECK:    });
   ReduceKernel<<<GridSize, BlockSize>>>(dev_data);
 
@@ -201,6 +202,6 @@ __global__ void foo() {
   float v = 0.0f;
   typedef cub::BlockReduce<float, 1024> BlockReduce;
   __shared__ typename BlockReduce::TempStorage m;
-  // CHECK: v = sycl::reduce_over_group(item_ct1.get_group(), (item_ct1.get_group().get_local_linear_id() < item_ct1.get_local_range(2)) ? v : sycl::known_identity_v<sycl::plus<>, float>, sycl::plus<>());
+  // CHECK: v = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), (sycl::ext::oneapi::this_work_item::get_work_group<3>().get_local_linear_id() < sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_range(2)) ? v : sycl::known_identity_v<sycl::plus<>, float>, sycl::plus<>());
   v = BlockReduce(m).Reduce(v, cub::Sum{}, blockDim.x);
 }

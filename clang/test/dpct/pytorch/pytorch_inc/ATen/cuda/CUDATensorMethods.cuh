@@ -1,3 +1,5 @@
+// RUN: echo "empty command"
+
 #pragma once
 
 #include <ATen/Tensor.h>

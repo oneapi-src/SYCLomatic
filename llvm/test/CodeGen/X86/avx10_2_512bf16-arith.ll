@@ -223,7 +223,7 @@ define <32 x bfloat> @test_int_x86_avx10_maskz_div_bf16_512(<32 x bfloat> %src, 
 define i32 @test_int_x86_avx10_vcmpbf16512(<32 x bfloat> %x1, <32 x bfloat> %x2) {
 ; CHECK-LABEL: test_int_x86_avx10_vcmpbf16512:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    vcmpunordpbf16 %zmm1, %zmm0, %k0 # encoding: [0x62,0xf3,0x7f,0x48,0xc2,0xc1,0x03]
+; CHECK-NEXT:    vcmpunordbf16 %zmm1, %zmm0, %k0 # encoding: [0x62,0xf3,0x7f,0x48,0xc2,0xc1,0x03]
 ; CHECK-NEXT:    kmovd %k0, %eax # encoding: [0xc5,0xfb,0x93,0xc0]
 ; CHECK-NEXT:    vzeroupper # encoding: [0xc5,0xf8,0x77]
 ; CHECK-NEXT:    ret{{[l|q]}} # encoding: [0xc3]
@@ -236,7 +236,7 @@ define i32 @test_int_x86_avx10_vcmpbf16512(<32 x bfloat> %x1, <32 x bfloat> %x2)
 define i32 @test_int_x86_avx10_vcmpbf16512_mask2(<32 x bfloat> %x1, <32 x bfloat> %x2) {
 ; CHECK-LABEL: test_int_x86_avx10_vcmpbf16512_mask2:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    vcmpeqpbf16 %zmm1, %zmm0, %k0 # encoding: [0x62,0xf3,0x7f,0x48,0xc2,0xc1,0x00]
+; CHECK-NEXT:    vcmpeqbf16 %zmm1, %zmm0, %k0 # encoding: [0x62,0xf3,0x7f,0x48,0xc2,0xc1,0x00]
 ; CHECK-NEXT:    kmovd %k0, %eax # encoding: [0xc5,0xfb,0x93,0xc0]
 ; CHECK-NEXT:    andl $3, %eax # encoding: [0x83,0xe0,0x03]
 ; CHECK-NEXT:    vzeroupper # encoding: [0xc5,0xf8,0x77]

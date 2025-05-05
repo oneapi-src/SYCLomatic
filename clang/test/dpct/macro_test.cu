@@ -67,8 +67,8 @@ __global__ void foo_kernel() {}
 //CHECK-NEXT:   #ifdef MACRO_CC
 //CHECK-NEXT:   , int c
 //CHECK-NEXT:   #endif
-//CHECK-NEXT:   , const sycl::nd_item<3> &item_ct1) {
-//CHECK-NEXT:     int x = item_ct1.get_group(2);
+//CHECK-NEXT:   ) {
+//CHECK-NEXT:     int x = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2);
 //CHECK-NEXT:   }
 __global__ void foo_kernel2(int a, int b
 #ifdef MACRO_CC
@@ -288,7 +288,7 @@ int b;
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2),
   //CHECK-NEXT:                         sycl::range<3>(1, 1, 2)),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:         foo_kernel2(3, 3, item_ct1);
+  //CHECK-NEXT:         foo_kernel2(3, 3);
   //CHECK-NEXT:       });
   foo_kernel2<<<2, 2, 0>>>(3,3
     #ifdef MACRO_CC
@@ -435,13 +435,14 @@ FFF
 
 }
 
-// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
+// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
 #define FFFFF(aaa,bbb) __device__ void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB)
 
 // CHECK: FFFFF(pos, q)
 // CHECK-NEXT: {
 // CHECK-EMPTY:
-// CHECK-NEXT: const int tid = item_ct1.get_local_id(2);
+// CHECK-NEXT:   const int tid =
+// CHECK-NEXT:       sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 // CHECK-NEXT: }
 FFFFF(pos, q)
 {
@@ -452,13 +453,14 @@ FFFFF(pos, q)
   const int tid = threadIdx.x;
 }
 
-// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
+// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
 #define FFFFFF(aaa,bbb) __device__ void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb)
 
 // CHECK: FFFFFF(pos, q)
 // CHECK-NEXT: {
 // CHECK-EMPTY:
-// CHECK-NEXT: const int tid = item_ct1.get_local_id(2);
+// CHECK-NEXT:   const int tid =
+// CHECK-NEXT:       sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 // CHECK-NEXT: }
 FFFFFF(pos, q)
 {
@@ -483,8 +485,12 @@ __device__ void foo6(AAA, BBB)
 
 //CHECK: #define MM __umul24
 //CHECK-NEXT: #define MUL(a, b) sycl::mul24((unsigned int)a, (unsigned int)b)
-//CHECK-NEXT: void foo7(const sycl::nd_item<3> &item_ct1) {
-//CHECK-NEXT:   unsigned int tid = MUL(item_ct1.get_local_range(2), item_ct1.get_group(2)) +
+//CHECK-NEXT: void foo7() {
+//CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+//CHECK-NEXT:   unsigned int tid =
+//CHECK-NEXT:       MUL(sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_range(
+//CHECK-NEXT:               2),
+//CHECK-NEXT:           sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_group(2)) +
 //CHECK-NEXT:       item_ct1.get_local_range(2);
 //CHECK-NEXT:   unsigned int tid2 = sycl::mul24((unsigned int)item_ct1.get_local_range(2),
 //CHECK-NEXT:                                   (unsigned int)item_ct1.get_group_range(2));
@@ -573,7 +579,7 @@ void templatefoo2(){
   CALL_KERNEL2(8, AAA)
 }
 
-//CHECK: void foo11(const sycl::nd_item<3> &item_ct1){
+//CHECK: void foo11(){
 //CHECK-NEXT:   sycl::exp((double)(THREAD_IDX_X));
 //CHECK-NEXT: }
 __global__ void foo11(){
@@ -746,7 +752,7 @@ int foo14(){
   ALL2(const, ALL3(int2), *) lll;
 }
 
-//CHECK: #define FABS(a) (sycl::fabs((float)((a).x())) + sycl::fabs((float)((a).y())))
+//CHECK: #define FABS(a) (sycl::fabs((a).x()) + sycl::fabs((a).y()))
 //CHECK-NEXT: static inline double foo16(const sycl::float2 &x) { return FABS(x); }
 #define FABS(a)       (fabs((a).x) + fabs((a).y))
 __host__ __device__ static inline double foo16(const float2 &x) { return FABS(x); }
@@ -915,13 +921,14 @@ void foo20() {
 }
 
 //CHECK: #define CALLSHFLSYNC(x)                                                        \
-//CHECK-NEXT: dpct::select_from_sub_group(item_ct1.get_sub_group(), x, 3 ^ 1);
+//CHECK-NEXT:   dpct::select_from_sub_group(                                                 \
+//CHECK-NEXT:       sycl::ext::oneapi::this_work_item::get_sub_group(), x, 3 ^ 1);
 #define CALLSHFLSYNC(x) __shfl_sync(0xffffffff, x, 3 ^ 1);
 //CHECK: #define CALLANYSYNC(x)                                                         \
 //CHECK-NEXT:   sycl::any_of_group(                                                          \
-//CHECK-NEXT:       item_ct1.get_sub_group(),                                                \
-//CHECK-NEXT:       (0xffffffff &                                                            \
-//CHECK-NEXT:        (0x1 << item_ct1.get_sub_group().get_local_linear_id())) &&             \
+//CHECK-NEXT:       sycl::ext::oneapi::this_work_item::get_sub_group(),                      \
+//CHECK-NEXT:       (0xffffffff & (0x1 << sycl::ext::oneapi::this_work_item::get_sub_group() \
+//CHECK-NEXT:                                 .get_local_linear_id())) &&                    \
 //CHECK-NEXT:           x != 0.0f);
 #define CALLANYSYNC(x) __any_sync(0xffffffff, x != 0.0f);
 
@@ -964,7 +971,8 @@ foo23(void)
 }
 
 //CHECK: #define SHFL(x, y, z)                                                          \
-//CHECK-NEXT: dpct::select_from_sub_group(item_ct1.get_sub_group(), (x), (y), (z))
+//CHECK-NEXT:   dpct::select_from_sub_group(                                                 \
+//CHECK-NEXT:       sycl::ext::oneapi::this_work_item::get_sub_group(), (x), (y), (z))
 #define SHFL(x, y, z) __shfl((x), (y), (z))
 __global__ void foo24(){
   int i;
@@ -1519,5 +1527,14 @@ extern EXPLICIT_DECL(half);
 #undef TODEV2
 #undef FROMDEV3
 #undef FROMDEV2
+
+// CHECK: #define VLLM_LDG(arg) *(arg)
+// CHECK-NEXT: void foo46(const float *__restrict__ input) {
+// CHECK-NEXT:   const float x = VLLM_LDG(&input[13]);
+// CHECK-NEXT: }
+#define VLLM_LDG(arg) __ldg(arg)
+__global__ void foo46(const float *__restrict__ input) {
+  const float x = VLLM_LDG(&input[13]);
+}
 
 #endif

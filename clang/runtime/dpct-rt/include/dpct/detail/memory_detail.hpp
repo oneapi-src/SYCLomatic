@@ -124,6 +124,11 @@ public:
     return it->second;
   }
 
+  void *get_base_addr(const void *ptr) {
+    allocation alloc = translate_ptr(ptr);
+    return alloc.alloc_ptr;
+  }
+
   /// Check if the pointer represents device pointer or not.
   bool is_device_ptr(const void *ptr) const {
     std::lock_guard<std::mutex> lock(m_mutex);

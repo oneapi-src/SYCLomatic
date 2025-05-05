@@ -68,6 +68,7 @@ enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_DeviceInfo,
   ExtDE_BFloat16,
   ExtDE_PeerAccess,
+  ExtDE_FreeQueries,
   ExtDE_Assert,
   ExtDE_QueueEmpty,
   ExtDE_DPCPPExtensionsDefaultEnabledEnumSize,
@@ -101,6 +102,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_ExperimentalFeaturesEnumSize,
   Exp_NonStandardSYCLBuiltins,
   Exp_Prefetch,
+  Exp_LevelZero,
   Exp_All
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };

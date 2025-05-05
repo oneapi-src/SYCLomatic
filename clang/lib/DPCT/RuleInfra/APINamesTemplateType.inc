@@ -437,10 +437,18 @@ TYPE_REWRITE_ENTRY("csrsv2Info_t",
                    TYPE_FACTORY(STR("std::shared_ptr<" +
                                     MapNames::getLibraryHelperNamespace() +
                                     "sparse::optimize_info>")))
+TYPE_REWRITE_ENTRY("csrsm2Info_t",
+                   TYPE_FACTORY(STR("std::shared_ptr<" +
+                                    MapNames::getLibraryHelperNamespace() +
+                                    "sparse::optimize_info>")))
 TYPE_REWRITE_ENTRY("cusparseSolvePolicy_t", TYPE_FACTORY(STR("int")))
 TYPE_REWRITE_ENTRY("cusparseAction_t",
                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
                                     "sparse::conversion_scope")))
+TYPE_REWRITE_ENTRY("csrgemm2Info_t",
+                   TYPE_FACTORY(STR("std::shared_ptr<" +
+                                    MapNames::getLibraryHelperNamespace() +
+                                    "sparse::csrgemm2_info>")))
 
 TYPE_REWRITE_ENTRY(
     "cooperative_groups::__v1::coalesced_group",
@@ -590,6 +598,63 @@ TYPE_REWRITE_ENTRY(
             checkEnableBindlessImagesForType(),
             TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                              "experimental::external_mem_buf_desc")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+// External Semaphore Handle Descs
+TYPE_REWRITE_ENTRY(
+    "cudaExternalSemaphore_t",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalSemaphore_t")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_sem_wrapper_ptr")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaExternalSemaphoreHandleDesc",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalSemaphoreHandleDesc")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_sem_handle_desc")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaExternalSemaphoreSignalParams",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalSemaphoreSignalParams")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_sem_params")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaExternalSemaphoreWaitParams",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalSemaphoreWaitParams")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_sem_params")),
             WARNING_FACTORY(
                 Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                 STR("--use-experimental-features=bindless_images")))))

@@ -247,8 +247,8 @@ struct wrap {
 };
 
 
-// CHECK: void kernel_foo(float *a, wrap *mt, unsigned int N,
-// CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
+// CHECK: void kernel_foo(float *a, wrap *mt, unsigned int N) {
+// CHECK-NEXT:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK-NEXT:   const unsigned int i = item_ct1.get_group(2)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2);
 // CHECK-NEXT:   if (i<N) {
 // CHECK-NEXT:     dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&mt[i].f3.x(), a[i]);

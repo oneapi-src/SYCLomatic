@@ -29,11 +29,11 @@ void print_data(int* data, int num) {
   std::cout << std::endl;
 }
 
-//CHECK: void SumKernel(int* data, const sycl::nd_item<3> &item_ct1) {
-//CHECK:  int threadid = item_ct1.get_local_id(2);
+//CHECK: void SumKernel(int* data) {
+//CHECK:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK:  int input = data[threadid];
 //CHECK:  int output = 0;
-//CHECK:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::plus<>());
+//CHECK:  output = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), input, sycl::plus<>());
 //CHECK:  data[threadid] = output;
 //CHECK:}
 __global__ void SumKernel(int* data) {
@@ -49,11 +49,11 @@ __global__ void SumKernel(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel(int* data, const sycl::nd_item<3> &item_ct1) {
-//CHECK:  int threadid = item_ct1.get_local_id(2);
+//CHECK: void ReduceKernel(int* data) {
+//CHECK:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK:  int input = data[threadid];
 //CHECK:  int output = 0;
-//CHECK:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::plus<>());
+//CHECK:  output = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), input, sycl::plus<>());
 //CHECK:  data[threadid] = output;
 //CHECK:}
 __global__ void ReduceKernel(int* data) {
@@ -69,11 +69,11 @@ __global__ void ReduceKernel(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel_Max(int* data, const sycl::nd_item<3> &item_ct1) {
-//CHECK:  int threadid = item_ct1.get_local_id(2);
+//CHECK: void ReduceKernel_Max(int* data) {
+//CHECK:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::maximum<>());
+//CHECK-NEXT:  output = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), input, sycl::maximum<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void ReduceKernel_Max(int* data) {
@@ -86,11 +86,11 @@ __global__ void ReduceKernel_Max(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel_Min(int* data, const sycl::nd_item<3> &item_ct1) {
-//CHECK:  int threadid = item_ct1.get_local_id(2);
+//CHECK: void ReduceKernel_Min(int* data) {
+//CHECK:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::minimum<>());
+//CHECK-NEXT:  output = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), input, sycl::minimum<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void ReduceKernel_Min(int* data) {
@@ -103,11 +103,11 @@ __global__ void ReduceKernel_Min(int* data) {
   data[threadid] = output;
 }
 
-//CHECK: void ReduceKernel2(int* data, int valid_items, const sycl::nd_item<3> &item_ct1) {
-//CHECK:  int threadid = item_ct1.get_local_id(2);
+//CHECK: void ReduceKernel2(int* data, int valid_items) {
+//CHECK:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 //CHECK:  int input = data[threadid];
 //CHECK:  int output = 0;
-//CHECK:  output = dpct::group::reduce_over_partial_group(item_ct1, input, valid_items, sycl::plus<>());
+//CHECK:  output = dpct::group::reduce_over_partial_group(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), input, valid_items, sycl::plus<>());
 //CHECK:  data[threadid] = output;
 //CHECK:}
 __global__ void ReduceKernel2(int* data, int valid_items) {
@@ -123,11 +123,11 @@ __global__ void ReduceKernel2(int* data, int valid_items) {
   data[threadid] = output;
 }
 
-// CHECK: void SumKernel2(int* data, int valid_items, const sycl::nd_item<3> &item_ct1) {
-// CHECK:  int threadid = item_ct1.get_local_id(2);
+// CHECK: void SumKernel2(int* data, int valid_items) {
+// CHECK:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
 // CHECK:  int input = data[threadid];
 // CHECK:  int output = 0;
-// CHECK:  output = dpct::group::reduce_over_partial_group(item_ct1, input, valid_items, sycl::plus<>());
+// CHECK:  output = dpct::group::reduce_over_partial_group(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), input, valid_items, sycl::plus<>());
 // CHECK:  data[threadid] = output;
 // CHECK: }
 __global__ void SumKernel2(int* data, int valid_items) {
@@ -156,7 +156,7 @@ int main() {
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-//CHECK-NEXT:         SumKernel(dev_data, item_ct1);
+//CHECK-NEXT:         SumKernel(dev_data);
 //CHECK-NEXT:       });
   SumKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -166,7 +166,7 @@ int main() {
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-//CHECK-NEXT:         ReduceKernel(dev_data, item_ct1);
+//CHECK-NEXT:         ReduceKernel(dev_data);
 //CHECK-NEXT:       });
   ReduceKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -176,7 +176,7 @@ int main() {
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-//CHECK-NEXT:         ReduceKernel_Max(dev_data, item_ct1);
+//CHECK-NEXT:         ReduceKernel_Max(dev_data);
 //CHECK-NEXT:       });
   ReduceKernel_Max<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -186,7 +186,7 @@ int main() {
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-//CHECK-NEXT:         ReduceKernel_Min(dev_data, item_ct1);
+//CHECK-NEXT:         ReduceKernel_Min(dev_data);
 //CHECK-NEXT:       });
   ReduceKernel_Min<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
@@ -196,7 +196,7 @@ int main() {
 //CHECK: q_ct1.parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-//CHECK-NEXT:         ReduceKernel2(dev_data, 4, item_ct1);
+//CHECK-NEXT:         ReduceKernel2(dev_data, 4);
 //CHECK-NEXT:       });
   ReduceKernel2<<<GridSize, BlockSize>>>(dev_data, 4);
   cudaDeviceSynchronize();
@@ -205,7 +205,7 @@ int main() {
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:         SumKernel2(dev_data, 4, item_ct1);
+  // CHECK-NEXT:         SumKernel2(dev_data, 4);
   // CHECK-NEXT:       });
   SumKernel2<<<GridSize, BlockSize>>>(dev_data, 4);
   cudaDeviceSynchronize();

@@ -72,9 +72,12 @@ SYCLCOMPAT_UNSUPPORT("cub::LoadDirectBlocked")
 SYCLCOMPAT_UNSUPPORT("cub::LoadDirectStriped")
 SYCLCOMPAT_UNSUPPORT("cub::StoreDirectBlocked")
 SYCLCOMPAT_UNSUPPORT("cub::StoreDirectStriped")
+SYCLCOMPAT_UNSUPPORT("cub::LoadDirectWarpStriped")
+SYCLCOMPAT_UNSUPPORT("cub::StoreDirectWarpStriped")
 SYCLCOMPAT_UNSUPPORT("cub::ShuffleDown")
 SYCLCOMPAT_UNSUPPORT("cub::ShuffleUp")
 SYCLCOMPAT_UNSUPPORT("cuPointerGetAttributes")
+SYCLCOMPAT_UNSUPPORT("cuPointerGetAttribute")
   });
   // clang-format on
   initRewriterMethodMapCooperativeGroupsSYCLcompat(RewriterMap);
