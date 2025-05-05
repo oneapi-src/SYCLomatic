@@ -944,7 +944,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
                "--use-experimental-features=graph");
       }
     }
-    
+
     if (CanonicalTypeStr == "cudaGraphicsRegisterFlags" ||
         CanonicalTypeStr == "cudaGraphicsMapFlags") {
       if (!DpctGlobalInfo::useExtBindlessImages()) {
@@ -2737,8 +2737,8 @@ const VarDecl *getAssignTargetDecl(const Stmt *E) {
   return nullptr;
 }
 
-const Expr *getParentAsAssignedBO(const Expr *E,
-                                             ASTContext &Context, MigrationRule *Rule) {
+const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context,
+                                  MigrationRule *Rule) {
   auto Parents = Context.getParents(*E);
   if (Parents.size() > 0)
     return getAssignedBO(Parents[0].get<Expr>(), Context, Rule);
@@ -2747,7 +2747,8 @@ const Expr *getParentAsAssignedBO(const Expr *E,
 
 // Return the binary operator if E is the lhs of an assign expression,
 // otherwise nullptr.
-const Expr *getAssignedBO(const Expr *E, ASTContext &Context, MigrationRule *Rule) {
+const Expr *getAssignedBO(const Expr *E, ASTContext &Context,
+                          MigrationRule *Rule) {
   if (dyn_cast<MemberExpr>(E)) {
     // Continue finding parents when E is MemberExpr.
     return getParentAsAssignedBO(E, Context, Rule);

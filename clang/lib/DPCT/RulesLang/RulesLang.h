@@ -40,8 +40,10 @@ TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
                                                  StringRef ExtraArg = "",
                                                  StringRef ExtraFeild = "");
 
-const Expr *getAssignedBO(const Expr *E, ASTContext &Context, MigrationRule *Rule);
-const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context, MigrationRule *Rule);
+const Expr *getAssignedBO(const Expr *E, ASTContext &Context,
+                          MigrationRule *Rule);
+const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context,
+                                  MigrationRule *Rule);
 
 /// Migration rule for iteration space built-in variables (threadIdx, etc).
 class IterationSpaceBuiltinRule
