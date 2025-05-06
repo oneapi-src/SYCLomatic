@@ -439,32 +439,32 @@ inline std::function<std::string(const CallExpr *)> makeDeviceStr() {
   };
 }
 
-template <class BaseT, bool HasExplicitTemplateArg, class... CallArgsT>
+template <class BaseT, bool NeedDisambiguator, class... CallArgsT>
 using MemberCallPrinterCreator = PrinterCreator<
-    MemberCallPrinter<BaseT, StringRef, HasExplicitTemplateArg, CallArgsT...>,
+    MemberCallPrinter<BaseT, StringRef, NeedDisambiguator, CallArgsT...>,
     std::function<BaseT(const CallExpr *)>, bool, std::string,
     std::function<CallArgsT(const CallExpr *)>...>;
 
-template <bool HasExplicitTemplateArg, class BaseT, class... CallArgsT>
-inline std::function<MemberCallPrinter<BaseT, StringRef, HasExplicitTemplateArg,
+template <bool NeedDisambiguator, class BaseT, class... CallArgsT>
+inline std::function<MemberCallPrinter<BaseT, StringRef, NeedDisambiguator,
                                        CallArgsT...>(const CallExpr *)>
 makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                       bool IsArrow, std::string Member,
                       std::function<CallArgsT(const CallExpr *)>... Args) {
-  return MemberCallPrinterCreator<BaseT, HasExplicitTemplateArg, CallArgsT...>(
+  return MemberCallPrinterCreator<BaseT, NeedDisambiguator, CallArgsT...>(
       BaseFunc, IsArrow, Member, Args...);
 }
 
-template <bool HasExplicitTemplateArg, class BaseT, class MemberT>
+template <bool NeedDisambiguator, class BaseT, class MemberT>
 inline std::function<
-    MemberCallPrinter<BaseT, MemberT, HasExplicitTemplateArg>(const CallExpr *)>
+    MemberCallPrinter<BaseT, MemberT, NeedDisambiguator>(const CallExpr *)>
 makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                       bool IsArrow,
                       std::function<MemberT(const CallExpr *)> Member) {
-  return PrinterCreator<
-      MemberCallPrinter<BaseT, MemberT, HasExplicitTemplateArg>,
-      std::function<BaseT(const CallExpr *)>, bool,
-      std::function<MemberT(const CallExpr *)>>(BaseFunc, IsArrow, Member);
+  return PrinterCreator<MemberCallPrinter<BaseT, MemberT, NeedDisambiguator>,
+                        std::function<BaseT(const CallExpr *)>, bool,
+                        std::function<MemberT(const CallExpr *)>>(
+      BaseFunc, IsArrow, Member);
 }
 
 template <class... StmtT>
@@ -1344,7 +1344,7 @@ createTemplatedCallExprRewriterFactory(
 /// \p BaseCreator use to get base expr from original call expr.
 /// \p IsArrow the member operator is arrow or dot as default.
 /// \p ArgsCreator use to get call args from original call expr.
-template <bool HasExplicitTemplateArg, class BaseT, class... ArgsT>
+template <bool NeedDisambiguator, class BaseT, class... ArgsT>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMemberCallExprRewriterFactory(
     const std::string &SourceName,
@@ -1352,7 +1352,7 @@ createMemberCallExprRewriterFactory(
     std::string MemberName,
     std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
   return std::make_shared<CallExprRewriterFactory<
-      MemberCallExprRewriter<BaseT, HasExplicitTemplateArg, ArgsT...>,
+      MemberCallExprRewriter<BaseT, NeedDisambiguator, ArgsT...>,
       std::function<BaseT(const CallExpr *)>, bool, std::string,
       std::function<ArgsT(const CallExpr *)>...>>(
       SourceName,
@@ -1361,7 +1361,7 @@ createMemberCallExprRewriterFactory(
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
 
-template <bool HasExplicitTemplateArg, class BaseT, class... ArgsT>
+template <bool NeedDisambiguator, class BaseT, class... ArgsT>
 inline std::shared_ptr<std::enable_if_t<
     !std::is_invocable_v<BaseT, const CallExpr *>, CallExprRewriterFactoryBase>>
 createMemberCallExprRewriterFactory(
@@ -1369,8 +1369,8 @@ createMemberCallExprRewriterFactory(
     std::string MemberName,
     std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
   return std::make_shared<CallExprRewriterFactory<
-      MemberCallExprRewriter<BaseT, HasExplicitTemplateArg, ArgsT...>, BaseT,
-      bool, std::string, std::function<ArgsT(const CallExpr *)>...>>(
+      MemberCallExprRewriter<BaseT, NeedDisambiguator, ArgsT...>, BaseT, bool,
+      std::string, std::function<ArgsT(const CallExpr *)>...>>(
       SourceName, BaseCreator, IsArrow, MemberName,
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
@@ -2252,7 +2252,7 @@ const std::string MipmapNeedBindlessImage =
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
   std::make_pair(FuncName, createMemberCallExprRewriterFactory<false>(         \
                                FuncName, __VA_ARGS__)),
-#define MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG_FACTORY_ENTRY(FuncName, ...)         \
+#define MEMBER_CALL_WITH_DISAMBIGUATOR_FACTORY_ENTRY(FuncName, ...)            \
   std::make_pair(FuncName, createMemberCallExprRewriterFactory<true>(          \
                                FuncName, __VA_ARGS__)),
 #define ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(FuncName, ...)                       \
