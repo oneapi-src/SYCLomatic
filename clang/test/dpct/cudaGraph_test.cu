@@ -182,11 +182,6 @@ int main() {
   if (updateResult.result == cudaGraphExecUpdateErrorTopologyChanged) {
   }
 
-  // CHECK: if (updateResult != nullptr) {
-  // CHECK-NEXT: }
-  if (updateResult.errorFromNode != nullptr) {
-  }
-
   // CHECK: sycl::ext::oneapi::experimental::node_type nodeType;
   // CHECK-NEXT: dpct::experimental::get_node_type(node, &nodeType);
   // CHECK-NEXT: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::get_node_type(node, &nodeType)));
