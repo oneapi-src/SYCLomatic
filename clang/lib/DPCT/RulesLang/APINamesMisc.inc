@@ -180,3 +180,29 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                                 Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                                 ARG("cudaIpcOpenMemHandle"),
                                 ARG("--use-experimental-features=level_zero")))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CONDITIONAL_FACTORY_ENTRY(
+        clang::dpct::UseExtLevelZero,
+        CALL_FACTORY_ENTRY("cudaIpcOpenEventHandle",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::open_event_pool_ipc_handle",
+                                ARG(0), ARG(1))),
+        UNSUPPORT_FACTORY_ENTRY(
+            "cudaIpcOpenEventHandle", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+            ARG("cudaIpcOpenEventHandle"),
+            ARG("--use-experimental-features=level_zero")))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CONDITIONAL_FACTORY_ENTRY(
+        clang::dpct::UseExtLevelZero,
+        CALL_FACTORY_ENTRY("cudaIpcGetEventHandle",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::get_event_pool_ipc_handle",
+                                ARG(1), ARG(0))),
+        UNSUPPORT_FACTORY_ENTRY(
+            "cudaIpcGetEventHandle", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+            ARG("cudaIpcGetEventHandle"),
+            ARG("--use-experimental-features=level_zero")))))

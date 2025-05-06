@@ -366,6 +366,9 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaIpcMemHandle_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
                                       "experimental::ipc_mem_handle_ext_t")},
+      {"cudaIpcEventHandle_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "experimental::ipc_event_pool_handle_ext_t")},
       {"char1", std::make_shared<TypeNameRule>("int8_t")},
       {"char2", std::make_shared<TypeNameRule>(getClNamespace() + "char2")},
       {"char3", std::make_shared<TypeNameRule>(getClNamespace() + "char3")},

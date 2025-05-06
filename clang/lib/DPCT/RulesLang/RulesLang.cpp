@@ -348,7 +348,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
               "cudaExternalSemaphoreHandleType", "CUstreamCallback",
               "cudaHostFn_t", "__nv_half2", "__nv_half", "cudaGraphNodeType",
-              "CUsurfref", "CUdevice_P2PAttribute", "cudaIpcMemHandle_t"))))))
+              "CUsurfref", "CUdevice_P2PAttribute", "cudaIpcMemHandle_t",
+              "cudaIpcEventHandle_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -929,6 +930,13 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
     if (CanonicalTypeStr == "cudaIpcMemHandle_st") {
+      if (!DpctGlobalInfo::useExtLevelZero()) {
+        report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               "cudaIpcMemHandle_t", "--use-experimental-features=level_zero");
+        return;
+      }
+    }
+    if (CanonicalTypeStr == "cudaIpcEventHandle_st") {
       if (!DpctGlobalInfo::useExtLevelZero()) {
         report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
                "cudaIpcMemHandle_t", "--use-experimental-features=level_zero");
