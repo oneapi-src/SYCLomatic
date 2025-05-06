@@ -54,7 +54,7 @@ max,YES,
 mbarrier,NO,
 membar,YES, Partial
 min,YES,
-mma,NO,
+mma,YES, Partial
 mov,YES,
 movmatrix,NO,
 mul,YES, Partial
