@@ -102,7 +102,8 @@ int main() {
   // CHECK-NEXT: */
   cudaGraphLaunch(execGraph, stream);
 
-    // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphExecUpdateResultInfo is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphExecUpdateResultInfo is not supported, please try to remigrate with option: --use-experimental-features=graph.
   // CHECK-NEXT: */
   cudaGraphExecUpdateResultInfo updateResult;
 

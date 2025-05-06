@@ -125,6 +125,12 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
         if (!RHS_DRE) {
           return;
         }
+        if (auto RhsVarDecl = dyn_cast<VarDecl>(RHS_DRE->getDecl())) {
+          StringRef ReplacedArg = "";
+          emplaceTransformation(
+              ReplaceMemberAssignAsSetMethod(BO, ME, FieldName, ReplacedArg));
+          return;
+        }
         auto *FD = dyn_cast<FunctionDecl>(RHS_DRE->getDecl());
         if (!FD) {
           return;
@@ -154,7 +160,9 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto ME = getNodeAsType<MemberExpr>(Result, "execUpdateResult")) {
     auto MD = ME->getMemberDecl();
     const Expr *Base = ME->getBase();
-    if (MD->getNameAsString() == "result") {
+    if (MD->getNameAsString() == "result" ||
+        MD->getNameAsString() == "errorNode" ||
+        MD->getNameAsString() == "errorFromNode") {
       if (auto *DRE = dyn_cast<DeclRefExpr>(Base)) {
         SourceLocation StartLoc = Base->getBeginLoc();
         SourceLocation EndLoc = ME->getEndLoc();
