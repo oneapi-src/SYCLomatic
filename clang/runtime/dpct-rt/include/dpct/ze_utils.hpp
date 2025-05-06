@@ -69,6 +69,7 @@ ze_event_pool_handle_t create_event_in_pool(sycl::event *event) {
         sycl::get_native<sycl::backend::ext_oneapi_level_zero>(context),
         &default_event_pool_desc, 1, &device, &h_event_pool);
   }
+
   ze_event_handle_t ze_event = {};
   zeEventCreate(h_event_pool, &default_event_desc, &ze_event);
   zeEventHostReset(ze_event);
