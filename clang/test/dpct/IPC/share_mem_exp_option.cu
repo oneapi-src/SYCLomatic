@@ -200,7 +200,7 @@ int parentProcess(char *app) {
     }
   }
   std::cout << "verified Pass.\n";
-  // CHECK: dpct::experimental::close_mem_ipc_handle(ptr);
+  // CHECK: zeMemCloseIpcHandle(sycl::get_native<sycl::backend::ext_oneapi_level_zero>(dpct::get_current_device().get_context()), ptr);
   cudaIpcCloseMemHandle(ptr);
   return 0;
 }
