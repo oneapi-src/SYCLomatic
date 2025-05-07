@@ -25,7 +25,6 @@
 #include "clang/AST/StmtCXX.h"
 #include "clang/AST/TypeLoc.h"
 #include "llvm/Support/raw_ostream.h"
-#include <optional>
 
 extern clang::tooling::UnifiedPath DpctInstallPath;
 namespace clang {
