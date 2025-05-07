@@ -78,6 +78,7 @@ public:
   }
   inline size_t getOffset() const { return Offset; }
   inline size_t getLength() const { return Length; }
+  inline size_t getTemplateIndex() const { return TemplateIndex; }
   const TemplateArgumentInfo &
   getTargetArgument(const std::vector<TemplateArgumentInfo> &TemplateList);
   void replace(const std::vector<TemplateArgumentInfo> &TemplateList);
@@ -118,6 +119,10 @@ public:
     HelperFeatureSet = Set;
   }
   bool containsTemplateDependentMacro() const { return ContainsTemplateDependentMacro; }
+  const std::vector<std::shared_ptr<TemplateDependentReplacement>> &
+  getTDRs() const {
+    return TDRs;
+  }
 };
 
 /// Store an expr source string which may need replaced and its replacements
@@ -152,12 +157,17 @@ public:
     TDRs.insert(std::make_pair(Offset + Shift, TDR));
   }
 
-  inline void addTemplateDependentReplacement(size_t Offset, std::string String,
-                                              unsigned TemplateIndex) {
-    auto TDR = std::make_shared<TemplateDependentReplacement>(
-        String, Offset, String.size(), TemplateIndex);
-    TDRs.insert(std::make_pair(Offset, TDR));
+  inline void addTemplateDependentReplacement(
+      size_t Offset, std::string String,
+      std::shared_ptr<TemplateDependentStringInfo> TDSI) {
+    for (const auto &Item : TDSI->getTDRs()) {
+      Offset += Item->getOffset();
+      auto TDR = std::make_shared<TemplateDependentReplacement>(
+          String, Offset, String.size(), Item->getTemplateIndex());
+      TDRs.insert(std::make_pair(Offset, TDR));
+    }
   }
+
   // Add a string replacement
   void addStringReplacement(size_t Offset, size_t Length, std::string Text) {
     auto Result = ReplMap.insert(std::make_pair(
@@ -609,9 +619,10 @@ protected:
     ReplSet.addTemplateDependentReplacement(Offset, Length, TemplateIndex);
   }
 
-  inline void addReplacement(size_t Offset, std::string String,
-                             unsigned TemplateIndex) {
-    ReplSet.addTemplateDependentReplacement(Offset, String, TemplateIndex);
+  inline void
+  addReplacement(size_t Offset, std::string String,
+                 std::shared_ptr<TemplateDependentStringInfo> TDSI) {
+    ReplSet.addTemplateDependentReplacement(Offset, String, TDSI);
   }
 
   // Analyze the expression, jump to corresponding analysis function according

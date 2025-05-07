@@ -553,33 +553,20 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     RefString = DRE->getNameInfo().getAsString();
   }
   if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
-    if (ConstExprExpansionInfo) {
-      auto Loc = ConstExprExpansionInfo.value().first.find(
-          TemplateDecl->getNameAsString());
-      // TODO: more than 1 substrings matched
-      if (Loc != std::string::npos) {
-        // Offset is relative to the final migrated string
-        addReplacement(Loc + ConstExprExpansionInfo.value().second,
-                       TemplateDecl->getNameAsString(),
-                       TemplateDecl->getIndex());
-      }
-    } else
-      addReplacement(DRE, TemplateDecl->getIndex());
+    addReplacement(DRE, TemplateDecl->getIndex());
   else if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl());
            VD && VD->isConstexpr() &&
            IsAnalyzingCtTypeInfo /*FIXME: && IsDependent*/) {
     if (VD->getInit() && VD->getInit()->getBeginLoc().isValid()) {
       ExprAnalysis EA(VD->getInit());
-      std::string VDInitStr = EA.getReplacedString();
+      auto TDSI = EA.getTemplateDependentStringInfo();
       std::string VDStr = VD->getNameAsString();
-
+      std::string VDInitStr = EA.getReplacedString();
       auto Loc = ReplSet.getSourceStr().find(VDStr);
       // TODO: more than 1 substrings matched
       if (Loc != std::string::npos) {
         addReplacement(Loc, VDStr.size(), VDInitStr);
-        ConstExprExpansionInfo = std::make_pair(VDInitStr, Loc);
-        dispatch(VD->getInit());
-        ConstExprExpansionInfo = std::nullopt;
+        addReplacement(Loc, "ThreadsPerBlock" /*FIXME*/, TDSI);
       }
     }
   } else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
