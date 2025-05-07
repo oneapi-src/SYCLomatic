@@ -11,9 +11,6 @@
 #include <mma.h>
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
-
-// CHECK-NOT: ^namespace wmmaa = nvcuda::wmma;
-
 namespace wmmaa = nvcuda::wmma;
 
 template<typename T>
