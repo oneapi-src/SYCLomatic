@@ -27,7 +27,7 @@ __global__ void mma_kernel_m16n8k16(int *a, int *b, int *c, float *fc, int *d) {
   // CHECK-NEXT:   sycl::vec<int32_t, 4> AMatrix_ct1(a[0], a[1], a[2], a[3]);
   // CHECK-NEXT:   sycl::vec<int32_t, 2> BMatrix_ct1(b[0], b[1]);
   // CHECK-NEXT:   sycl::vec<float, 4> CMatrix_ct1(fc[0], fc[1], fc[2], fc[3]);
-  // CHECK-NEXT:   dpct::experimental::matrix::mma<16, 8, 16, sycl::half>(DMatrix_ct1, reinterpret_cast<int32_t *>(&AMatrix_ct1), reinterpret_cast<int32_t *>(&BMatrix_ct1), reinterpret_cast<float *>(&CMatrix_ct1));
+  // CHECK-NEXT:   dpct::experimental::matrix::mma<16, 8, 16, sycl::half, int32_t, float>(reinterpret_cast<void **>(DMatrix_ct1), &AMatrix_ct1, &BMatrix_ct1, &CMatrix_ct1);
   // CHECK-NEXT: }
   asm("mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32 "
         " { %0, %1, %2, %3 }, "
@@ -43,7 +43,7 @@ __global__ void mma_kernel_m16n8k16(int *a, int *b, int *c, float *fc, int *d) {
   // CHECK-NEXT:   sycl::vec<int32_t, 2> AMatrix_ct1(a[0], a[1]);
   // CHECK-NEXT:   sycl::vec<int32_t, 1> BMatrix_ct1(b[0]);
   // CHECK-NEXT:   sycl::vec<int32_t, 4> CMatrix_ct1(c[0], c[1], c[2], c[3]);
-  // CHECK-NEXT:   dpct::experimental::matrix::mma<16, 8, 16, int8_t>(DMatrix_ct1, reinterpret_cast<int32_t *>(&AMatrix_ct1), reinterpret_cast<int32_t *>(&BMatrix_ct1), reinterpret_cast<int32_t *>(&CMatrix_ct1));
+  // CHECK-NEXT:   dpct::experimental::matrix::mma<16, 8, 16, int8_t, int32_t, int32_t>(reinterpret_cast<void **>(DMatrix_ct1), &AMatrix_ct1, &BMatrix_ct1, &CMatrix_ct1);
   // CHECK-NEXT: }
   asm("mma.sync.aligned.m16n8k16.row.col.s32.s8.s8.s32 "
       " { %0, %1, %2, %3 }, "

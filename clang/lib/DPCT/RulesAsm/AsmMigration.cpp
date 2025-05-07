@@ -1514,13 +1514,12 @@ protected:
     OS() << MapNames::getDpctNamespace() << "experimental::matrix::mma";
     OS() << "<";
     OS() << M << ", " << N << ", " << K << ", ";
-    OS() << ABType;
+    OS() << ABType << ", " << InMatrixType[0] << ", " << InMatrixType[2];
     OS() << ">(";
 
-    OS() << "DMatrix_ct1";
+    OS() << "reinterpret_cast<void **>(DMatrix_ct1)";
     for (int i = 0; i < 3; i++)
-      OS() << ", reinterpret_cast<" << InMatrixType[i] << " *>(&"
-           << InMatrixName[i] << "Matrix_ct1)";
+      OS() << ", &" << InMatrixName[i] << "Matrix_ct1";
     OS() << ")";
     endstmt();
     OS() << "}";

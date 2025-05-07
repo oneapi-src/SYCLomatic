@@ -2227,25 +2227,33 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
 /// \tparam [in] MulType The type used to multiply A and B matrix elements as
 /// \tparam [in] ABType The type of the input matrix (A & B) elements
 /// \tparam [in] CDType The type of the output matrix (C & D) elements
-/// \param [out] d The elements of the output D matrix to store the result to
-/// \param [in] a The elements of the input A matrix to be multiplied with B
+/// \param [out] d_mat The elements of the output D matrix to store the result
+/// of A* B + C
+/// \param [in] a_mat The elements of the input A matrix to be multiplied with B
 /// matrix elements
-/// \param [in] b The elements of the input B matrix to be multiplied with A
+/// \param [in] b_mat The elements of the input B matrix to be multiplied with A
 /// matrix elements
-/// \param [in] c The elements of the input C matrix to be added with the result
-/// of A * B
+/// \param [in] c_mat The elements of the input C matrix to be added with the
+/// result of A * B
 template <int M, int N, int K, typename MulType, typename ABType,
           typename CDType>
-void mma(CDType **d, ABType *a, ABType *b, CDType *c) {
+void mma(void **d_mat, void *a_mat, void *b_mat, void *c_mat) {
+  auto d = reinterpret_cast<CDType **>(d_mat);
+  auto a = reinterpret_cast<ABType *>(a_mat);
+  auto b = reinterpret_cast<ABType *>(b_mat);
+  auto c = reinterpret_cast<CDType *>(c_mat);
+
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int lane = sg.get_local_linear_id();
+
+  static_assert(M == 16 && N == 8 && K == 16,
+                "Only m16n8k16 shape is supported!");
 
   short ROW_LOAD_OFFSET = 4 * (lane >> 2);
   short COL_LOAD_OFFSET = 8 * (lane % 4);
 
   if constexpr (M == 16 && N == 8 && K == 16) {
     if constexpr (std::is_floating_point_v<CDType>) {
-      // f32.f16.f16.f32
       for (int i = 0; i < 4; i++) {
         ABType recv_a[4], recv_b[4];
 
@@ -2278,7 +2286,6 @@ void mma(CDType **d, ABType *a, ABType *b, CDType *c) {
       *d[2] = c[2];
       *d[3] = c[3];
     } else if constexpr (std::is_integral_v<MulType>) {
-      // s32.s8.s8.s32
       for (int i = 0; i < 4; i++) {
         ABType recv_a[2], recv_b[2];
 
