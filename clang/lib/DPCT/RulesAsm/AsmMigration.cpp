@@ -1390,7 +1390,7 @@ protected:
     if (Inst->getAttr(3) != InstAttr::row || Inst->getAttr(4) != InstAttr::col)
       return SYCLGenError();
 
-    // Only f16 type is supported for A and B matrix data
+    // Data types of D, A, B & C matrices respectively in the PTX instruction
     const auto *DType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
     const auto *AType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(1));
     const auto *BType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(2));
@@ -1418,15 +1418,18 @@ protected:
     // Sizes of A & B matrices
     std::string M, N, K;
 
-    // Data type used to multiply A & B matrices
-    std::string MulType;
+    // Data types of A, B & C matrices respectively in the PTX arguments
+    std::string InMatrixType[3];
+
     if (Inst->hasAttr(InstAttr::m16n8k16)) {
       M = "16";
       N = "8";
       K = "16";
+
       // Only f16/s8 types are supported for A and B matrices of m16n8k16
       if (AType->getKind() == InlineAsmBuiltinType::f16) {
-        MulType = "sycl::half";
+        InMatrixType[0] = "int32_t"; // A type is .f16x2
+        InMatrixType[1] = "int32_t"; // B type is .f16x2
 
         // If A matrix type is f16, then C&D matrix types can only be f32
         if (CType->getKind() == InlineAsmBuiltinType::f32) {
@@ -1437,7 +1440,8 @@ protected:
         } else
           return SYCLGenError();
       } else if (AType->getKind() == InlineAsmBuiltinType::s8) {
-        MulType = "int8_t";
+        InMatrixType[0] = "int32_t"; // A type is .s8x4
+        InMatrixType[1] = "int32_t"; // B type is .s8x4
 
         // If A matrix type is s8, then C&D matrix types can only be s32
         if (CType->getKind() == InlineAsmBuiltinType::s32) {
@@ -1452,6 +1456,8 @@ protected:
     } else
       return SYCLGenError();
 
+    InMatrixType[2] = CDType;
+
     // Check the register sizes for vector elements of A, B, C & D matrices
     for (unsigned InputOp = 0; InputOp < Inst->getNumInputOperands();
          InputOp++) {
@@ -1465,13 +1471,9 @@ protected:
     if (DMatVE->getNumElements() != NumVecElements[3])
       return SYCLGenError();
 
-    OS() << MapNames::getDpctNamespace() << "experimental::matrix::mma";
-    OS() << "<";
-    OS() << M << ", " << N << ", " << K << ", ";
-    OS() << MulType;
-    OS() << ">(";
-
-    // Add D matrix address values to store the MAD result
+    // Declare and init an array for storing the addresses of D matrix elements
+    OS() << "{\n";
+    OS() << CDType << " *DMatrix_ct1[" << DMatVE->getNumElements() << "] = { ";
     for (unsigned Inst = 0; Inst != DMatVE->getNumElements(); ++Inst) {
       if (isa<InlineAsmDiscardExpr>(DMatVE->getElement(Inst)))
         continue;
@@ -1481,25 +1483,44 @@ protected:
       if ((Inst + 1) != DMatVE->getNumElements())
         OS() << ", ";
     }
+    OS() << " }";
+    endstmt();
 
-    // Add A, B & C matrix values to compute MAD
+    // Declare and init vectors for storing the values of A, B & C matrix elements
+    std::string InMatrixName[3] = {"A", "B", "C"};
     for (unsigned InputOp = 0; InputOp < Inst->getNumInputOperands();
          InputOp++) {
       if (auto VE =
               dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(InputOp))) {
+        OS() << "sycl::vec<" << InMatrixType[InputOp] << ", " << VE->getNumElements() << "> " << InMatrixName[InputOp] << "Matrix_ct1(";
         for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
           if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
             continue;
-          OS() << ", ";
           if (emitStmt(VE->getElement(Inst)))
             return SYCLGenError();
+          if ((Inst + 1) != VE->getNumElements())
+            OS() << ", ";
         }
+        OS() << ")";
+        endstmt();
       } else {
         return SYCLGenError();
       }
     }
 
-    OS() << ");";
+    OS() << MapNames::getDpctNamespace() << "experimental::matrix::mma";
+    OS() << "<";
+    OS() << M << ", " << N << ", " << K << ", ";
+    OS() << ABType;
+    OS() << ">(";
+
+    OS() << "DMatrix_ct1";
+    for (int i = 0; i < 3; i++)
+      OS() << ", reinterpret_cast<" << InMatrixType[i] << " *>(&" << InMatrixName[i] << "Matrix_ct1)";
+    OS() << ")";
+    endstmt();
+    OS() << "}";
+    endstmt();
 
     const auto *KernelDecl = getImmediateOuterFuncDecl(GAS);
     if (KernelDecl) {

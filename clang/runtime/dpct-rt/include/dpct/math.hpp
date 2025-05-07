@@ -2218,6 +2218,22 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
   ldmatrix(addr, m4, trans, 3);
 }
 
+/// Multiplies 2 matrices (A & B) and adds the result to C matrix and
+/// accumulates the result to a D matrix (MAD). Requires the sub-group size of
+/// kernel calling this function to be 32.
+/// \tparam [in] M The rows of A, C & D matrix
+/// \tparam [in] N The columns of B, C, D matrix
+/// \tparam [in] K The columns & rows of A & B matrices respectively
+/// \tparam [in] MulType The type used to multiply A and B matrix elements as
+/// \tparam [in] ABType The type of the input matrix (A & B) elements
+/// \tparam [in] CDType The type of the output matrix (C & D) elements
+/// \param [in] d The elements of the output D matrix to store the result to
+/// \param [in] a The elements of the input A matrix to be multiplied with B
+/// matrix elements
+/// \param [in] b The elements of the input B matrix to be multiplied with A
+/// matrix elements
+/// \param [in] c The elements of the input C matrix to be added with the result
+/// of A * B
 template <int M, int N, int K, typename MulType, typename ABType,
           typename CDType, typename Op = sycl::bit_and<>>
 void mma(CDType **d, ABType *a, ABType *b, CDType *c, Op op = Op{}) {
@@ -2228,12 +2244,8 @@ void mma(CDType **d, ABType *a, ABType *b, CDType *c, Op op = Op{}) {
   short COL_LOAD_OFFSET = 8 * (lane % 4);
 
   if (M == 16 && N == 8 && K == 16) {
-    if constexpr (std::is_same_v<CDType, sycl::half>) {
+    if constexpr (std::is_floating_point_v<CDType>) {
       // f32.f16.f16.f32
-      auto c_h = reinterpret_cast<MulType *>(c);
-
-      float c_f[4] = {c_h[0], c_h[1], c_h[2], c_h[3]};
-
       for (int i = 0; i < 4; i++) {
         ABType recv_a[4], recv_b[4];
 
@@ -2245,50 +2257,45 @@ void mma(CDType **d, ABType *a, ABType *b, CDType *c, Op op = Op{}) {
         recv_b[0] = dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i);
         recv_b[1] = dpct::select_from_sub_group(sg, b[1], COL_LOAD_OFFSET + i);
         recv_b[2] =
-            dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i + 4);
+            dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + 4 + i);
         recv_b[3] =
-            dpct::select_from_sub_group(sg, b[1], COL_LOAD_OFFSET + i + 4);
+            dpct::select_from_sub_group(sg, b[1], COL_LOAD_OFFSET + 4 + i);
 
         auto ra = reinterpret_cast<MulType *>(recv_a);
         auto rb = reinterpret_cast<MulType *>(recv_b);
 
         for (int j = 0; j < 4; j++) {
-          c_f[0] += static_cast<float>(ra[j]) * static_cast<float>(rb[j]);
-          c_f[1] += static_cast<float>(ra[j]) * static_cast<float>(rb[j + 4]);
-          c_f[2] += static_cast<float>(ra[j + 4]) * static_cast<float>(rb[j]);
-          c_f[3] +=
-              static_cast<float>(ra[j + 4]) * static_cast<float>(rb[j + 4]);
+          c[0] += static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[j]);
+          c[1] += static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[j + 4]);
+          c[2] += static_cast<CDType>(ra[j + 4]) * static_cast<CDType>(rb[j]);
+          c[3] +=
+              static_cast<CDType>(ra[j + 4]) * static_cast<CDType>(rb[j + 4]);
         }
       }
 
-      c_h[0] = c_f[0];
-      c_h[1] = c_f[1];
-      c_h[2] = c_f[2];
-      c_h[3] = c_f[3];
-
       *d[0] = c[0];
       *d[1] = c[1];
+      *d[2] = c[2];
+      *d[3] = c[3];
     } else if constexpr (std::is_integral_v<MulType>) {
       // s32.s8.s8.s32
-      ABType recv_a[4 * 2], recv_b[4 * 2];
-
       for (int i = 0; i < 4; i++) {
-        recv_a[i] = dpct::select_from_sub_group(sg, a[0], ROW_LOAD_OFFSET + i);
-        recv_a[i + 4] =
-            dpct::select_from_sub_group(sg, a[1], ROW_LOAD_OFFSET + i);
+        ABType recv_a[2], recv_b[2];
 
-        recv_b[i] = dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i);
-        recv_b[i + 4] =
+        recv_a[0] = dpct::select_from_sub_group(sg, a[0], ROW_LOAD_OFFSET + i);
+        recv_a[1] = dpct::select_from_sub_group(sg, a[1], ROW_LOAD_OFFSET + i);
+        recv_b[0] = dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i);
+        recv_b[1] =
             dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i + 4);
-      }
 
-      MulType *a = reinterpret_cast<MulType *>(recv_a);
-      MulType *b = reinterpret_cast<MulType *>(recv_b);
-      for (int i = 0; i < 16; i++) {
-        c[0] += a[i] * b[i];
-        c[1] += a[i] * b[i + 16];
-        c[2] += a[i + 16] * b[i];
-        c[3] += a[i + 16] * b[i + 16];
+        auto ra = reinterpret_cast<MulType *>(recv_a);
+        auto rb = reinterpret_cast<MulType *>(recv_b);
+        for (int i = 0; i < 4; i++) {
+          c[0] += ra[i] * rb[i];
+          c[1] += ra[i] * rb[i + 4];
+          c[2] += ra[i + 4] * rb[i];
+          c[3] += ra[i + 4] * rb[i + 4];
+        }
       }
 
       *d[0] = c[0];

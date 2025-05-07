@@ -14,15 +14,21 @@ As per PTX ASM 8.1, below is the status of supported configurations
 ---------     ---------   ----------   -----------   -------------
 | Shape |     |   A   |   |    B   |   |  C / D  |   | Supported |
 ---------     ---------   ----------   -----------   -------------
-m16n8k16     .f16/.bf16   .f16/.bf16    .f16/.f32        Partial (.f16.f16.f16.f16 / .f32.f16.f16.f32)
-              .s8/.u8      .s8/.u8        .s32           Yes
+m16n8k16        .f16         .f16       .f16/.f32        Yes
+                .s8          .s8          .s32           Yes
 
 A Layout: row
 B Layout: col
 */
 
 __global__ void mma_kernel_m16n8k16(int *a, int *b, int *c, float *fc, int *d) {
-  // CHECK: dpct::experimental::matrix::mma<16, 8, 16, sycl::half>(&fc[0], &fc[1], &fc[2], &fc[3], a[0], a[1], a[2], a[3], b[0], b[1], fc[0], fc[1], fc[2], fc[3]);
+  // CHECK: {
+  // CHECK-NEXT:   float *DMatrix_ct1[4] = { &fc[0], &fc[1], &fc[2], &fc[3] };
+  // CHECK-NEXT:   sycl::vec<int32_t, 4> AMatrix_ct1(a[0], a[1], a[2], a[3]);
+  // CHECK-NEXT:   sycl::vec<int32_t, 2> BMatrix_ct1(b[0], b[1]);
+  // CHECK-NEXT:   sycl::vec<float, 4> CMatrix_ct1(fc[0], fc[1], fc[2], fc[3]);
+  // CHECK-NEXT:   dpct::experimental::matrix::mma<16, 8, 16, sycl::half>(DMatrix_ct1, reinterpret_cast<int32_t *>(&AMatrix_ct1), reinterpret_cast<int32_t *>(&BMatrix_ct1), reinterpret_cast<float *>(&CMatrix_ct1));
+  // CHECK-NEXT: }
   asm("mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32 "
         " { %0, %1, %2, %3 }, "
         " { %4, %5, %6, %7 }, "
@@ -32,7 +38,13 @@ __global__ void mma_kernel_m16n8k16(int *a, int *b, int *c, float *fc, int *d) {
         : "r"(a[0]), "r"(a[1]), "r"(a[2]), "r"(a[3]),
           "r"(b[0]), "r"(b[1]));
 
-  // CHECK: dpct::experimental::matrix::mma<16, 8, 16, int8_t>(&d[0], &d[1], &d[2], &d[3], a[0], a[1], b[0], c[0], c[1], c[2], c[3]);
+  // CHECK: {
+  // CHECK-NEXT:   int32_t *DMatrix_ct1[4] = { &d[0], &d[1], &d[2], &d[3] };
+  // CHECK-NEXT:   sycl::vec<int32_t, 2> AMatrix_ct1(a[0], a[1]);
+  // CHECK-NEXT:   sycl::vec<int32_t, 1> BMatrix_ct1(b[0]);
+  // CHECK-NEXT:   sycl::vec<int32_t, 4> CMatrix_ct1(c[0], c[1], c[2], c[3]);
+  // CHECK-NEXT:   dpct::experimental::matrix::mma<16, 8, 16, int8_t>(DMatrix_ct1, reinterpret_cast<int32_t *>(&AMatrix_ct1), reinterpret_cast<int32_t *>(&BMatrix_ct1), reinterpret_cast<int32_t *>(&CMatrix_ct1));
+  // CHECK-NEXT: }
   asm("mma.sync.aligned.m16n8k16.row.col.s32.s8.s8.s32 "
       " { %0, %1, %2, %3 }, "
       " { %4, %5 }, "
