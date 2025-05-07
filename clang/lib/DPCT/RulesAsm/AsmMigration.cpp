@@ -1486,13 +1486,16 @@ protected:
     OS() << " }";
     endstmt();
 
-    // Declare and init vectors for storing the values of A, B & C matrix elements
+    // Declare and init vectors for storing the values of A, B & C matrix
+    // elements
     std::string InMatrixName[3] = {"A", "B", "C"};
     for (unsigned InputOp = 0; InputOp < Inst->getNumInputOperands();
          InputOp++) {
       if (auto VE =
               dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(InputOp))) {
-        OS() << "sycl::vec<" << InMatrixType[InputOp] << ", " << VE->getNumElements() << "> " << InMatrixName[InputOp] << "Matrix_ct1(";
+        OS() << "sycl::vec<" << InMatrixType[InputOp] << ", "
+             << VE->getNumElements() << "> " << InMatrixName[InputOp]
+             << "Matrix_ct1(";
         for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
           if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
             continue;
@@ -1516,7 +1519,8 @@ protected:
 
     OS() << "DMatrix_ct1";
     for (int i = 0; i < 3; i++)
-      OS() << ", reinterpret_cast<" << InMatrixType[i] << " *>(&" << InMatrixName[i] << "Matrix_ct1)";
+      OS() << ", reinterpret_cast<" << InMatrixType[i] << " *>(&"
+           << InMatrixName[i] << "Matrix_ct1)";
     OS() << ")";
     endstmt();
     OS() << "}";

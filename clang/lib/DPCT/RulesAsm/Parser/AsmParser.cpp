@@ -757,9 +757,9 @@ InlineAsmParser::ActOnVectorExpr(ArrayRef<InlineAsmExpr *> Vec) {
     // Vector size must be 2, 4, or 8.
     switch (Vec.size()) {
     case 1:
-    Kind = InlineAsmVectorType::v1;
-    break;
-  case 2:
+      Kind = InlineAsmVectorType::v1;
+      break;
+    case 2:
       Kind = InlineAsmVectorType::v2;
       break;
     case 4:

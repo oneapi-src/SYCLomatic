@@ -2227,7 +2227,7 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
 /// \tparam [in] MulType The type used to multiply A and B matrix elements as
 /// \tparam [in] ABType The type of the input matrix (A & B) elements
 /// \tparam [in] CDType The type of the output matrix (C & D) elements
-/// \param [in] d The elements of the output D matrix to store the result to
+/// \param [out] d The elements of the output D matrix to store the result to
 /// \param [in] a The elements of the input A matrix to be multiplied with B
 /// matrix elements
 /// \param [in] b The elements of the input B matrix to be multiplied with A
@@ -2235,15 +2235,15 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
 /// \param [in] c The elements of the input C matrix to be added with the result
 /// of A * B
 template <int M, int N, int K, typename MulType, typename ABType,
-          typename CDType, typename Op = sycl::bit_and<>>
-void mma(CDType **d, ABType *a, ABType *b, CDType *c, Op op = Op{}) {
+          typename CDType>
+void mma(CDType **d, ABType *a, ABType *b, CDType *c) {
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int lane = sg.get_local_linear_id();
 
   short ROW_LOAD_OFFSET = 4 * (lane >> 2);
   short COL_LOAD_OFFSET = 8 * (lane % 4);
 
-  if (M == 16 && N == 8 && K == 16) {
+  if constexpr (M == 16 && N == 8 && K == 16) {
     if constexpr (std::is_floating_point_v<CDType>) {
       // f32.f16.f16.f32
       for (int i = 0; i < 4; i++) {
