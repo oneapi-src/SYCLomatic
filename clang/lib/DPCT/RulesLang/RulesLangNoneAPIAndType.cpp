@@ -1123,8 +1123,10 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (auto NAD = getAssistNodeAsType<NamespaceAliasDecl>(
                  Result, "namespaceAlias")) {
     std::string Namespace = NAD->getNamespace()->getNameAsString();
-    if (Namespace == "cooperative_groups" || Namespace == "placeholders")
+    if (Namespace == "cooperative_groups" || Namespace == "placeholders" ||
+        Namespace == "wmma") {
       emplaceTransformation(new ReplaceDecl(NAD, ""));
+    }
   } else if (auto UD = getAssistNodeAsType<UsingDecl>(Result, "using")) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     SourceLocation Beg, End;
