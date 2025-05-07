@@ -554,18 +554,19 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
     addReplacement(DRE, TemplateDecl->getIndex());
   else if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl());
-           VD && VD->isConstexpr() &&
-           IsAnalyzingCtTypeInfo /*FIXME: && IsDependent*/) {
+           VD && VD->isConstexpr() && IsAnalyzingCtTypeInfo) {
     if (VD->getInit() && VD->getInit()->getBeginLoc().isValid()) {
       ExprAnalysis EA(VD->getInit());
       auto TDSI = EA.getTemplateDependentStringInfo();
-      std::string VDStr = VD->getNameAsString();
-      std::string VDInitStr = EA.getReplacedString();
-      auto Loc = ReplSet.getSourceStr().find(VDStr);
-      // TODO: more than 1 substrings matched
-      if (Loc != std::string::npos) {
-        addReplacement(Loc, VDStr.size(), VDInitStr);
-        addReplacement(Loc, "ThreadsPerBlock" /*FIXME*/, TDSI);
+      if (!TDSI->getTDRs().empty()) {
+        std::string VDStr = VD->getNameAsString();
+        std::string VDInitStr = EA.getReplacedString();
+        auto Loc = ReplSet.getSourceStr().find(VDStr);
+        // TODO: more than 1 substrings matched
+        if (Loc != std::string::npos) {
+          addReplacement(Loc, VDStr.size(), VDInitStr);
+          addReplacement(Loc, TDSI);
+        }
       }
     }
   } else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {

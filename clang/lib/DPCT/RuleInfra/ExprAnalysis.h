@@ -76,6 +76,7 @@ public:
     return std::make_shared<TemplateDependentReplacement>(
         SrcStr, Offset, Length, TemplateIndex);
   }
+  inline const std::string & getSourceStr() const { return SourceStr; }
   inline size_t getOffset() const { return Offset; }
   inline size_t getLength() const { return Length; }
   inline size_t getTemplateIndex() const { return TemplateIndex; }
@@ -158,13 +159,14 @@ public:
   }
 
   inline void addTemplateDependentReplacement(
-      size_t Offset, std::string String,
-      std::shared_ptr<TemplateDependentStringInfo> TDSI) {
+      size_t Offset, std::shared_ptr<TemplateDependentStringInfo> TDSI) {
     for (const auto &Item : TDSI->getTDRs()) {
-      Offset += Item->getOffset();
+      std::string String =
+          Item->getSourceStr().substr(Item->getOffset(), Item->getLength());
+      size_t NewOffset = Offset + Item->getOffset();
       auto TDR = std::make_shared<TemplateDependentReplacement>(
-          String, Offset, String.size(), Item->getTemplateIndex());
-      TDRs.insert(std::make_pair(Offset, TDR));
+          String, NewOffset, String.size(), Item->getTemplateIndex());
+      TDRs.insert(std::make_pair(NewOffset, TDR));
     }
   }
 
@@ -620,9 +622,9 @@ protected:
   }
 
   inline void
-  addReplacement(size_t Offset, std::string String,
+  addReplacement(size_t Offset,
                  std::shared_ptr<TemplateDependentStringInfo> TDSI) {
-    ReplSet.addTemplateDependentReplacement(Offset, String, TDSI);
+    ReplSet.addTemplateDependentReplacement(Offset, TDSI);
   }
 
   // Analyze the expression, jump to corresponding analysis function according
