@@ -76,7 +76,7 @@ public:
     return std::make_shared<TemplateDependentReplacement>(
         SrcStr, Offset, Length, TemplateIndex);
   }
-  inline const std::string & getSourceStr() const { return SourceStr; }
+  inline const std::string &getSourceStr() const { return SourceStr; }
   inline size_t getOffset() const { return Offset; }
   inline size_t getLength() const { return Length; }
   inline size_t getTemplateIndex() const { return TemplateIndex; }
