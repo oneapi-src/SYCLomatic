@@ -846,7 +846,6 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
   auto processOperatorExpr = [&](const Expr *Obj) {
     std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
         Obj->getType().getCanonicalType());
-        std::cout << "1OpType:" << OpType << std::endl;
     if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
       OpRepl = MapNames::getClNamespace() + "plus<>()";
     } else if (OpType == "cub::Max" || OpType == "cuda::maximum<void>") {
@@ -867,7 +866,6 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
           return OpRepl;
         std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
             D->getType().getCanonicalType());
-        std::cout << "2OpType:" << OpType << std::endl;
         if (OpType == "cub::Sum" || OpType == "cub::Max" ||
             OpType == "cub::Min" || OpType == "cuda::std::plus<void>" ||
             OpType == "cuda::maximum<void>" ||
