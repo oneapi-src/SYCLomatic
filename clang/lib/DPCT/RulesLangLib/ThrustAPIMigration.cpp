@@ -54,6 +54,12 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "THRUST_200700___CUDA_ARCH_LIST___NS::system");
   };
 
+  auto thrustFuncNameCuda129 = [&]() {
+    return hasAnyName("THRUST_200802_SM___CUDA_ARCH_LIST___NS",
+                      "THRUST_200802_SM___CUDA_ARCH_LIST___NS::detail",
+                      "THRUST_200802_SM___CUDA_ARCH_LIST___NS::system");
+  };
+
   auto thrustFuncNameCudaCommon = [&]() {
     return hasAnyName("thrust", "thrust::detail", "thrust::system", "__4");
   };
@@ -115,6 +121,20 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                   callee(unresolvedLookupExpr(
                       hasAnyDeclaration(namedDecl(hasDeclContext(namespaceDecl(
                           anyOf(thrustFuncNameCuda128(),
+                                thrustFuncNameCudaCommon())))))))))
+            .bind("thrustFuncCall"),
+        this);
+  } else if (ThrustMajorVersion == 2 && ThrustMinorVersion == 8) {
+    // For CUDA-12.9
+    MF.addMatcher(
+        callExpr(
+            anyOf(callee(functionDecl(anyOf(
+                      hasDeclContext(namespaceDecl(thrustFuncNameCuda129())),
+                      hasDeclContext(namespaceDecl(thrustFuncNameCudaCommon())),
+                      functionName()))),
+                  callee(unresolvedLookupExpr(
+                      hasAnyDeclaration(namedDecl(hasDeclContext(namespaceDecl(
+                          anyOf(thrustFuncNameCuda129(),
                                 thrustFuncNameCudaCommon())))))))))
             .bind("thrustFuncCall"),
         this);
