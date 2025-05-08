@@ -2221,6 +2221,8 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
 /// Multiplies 2 matrices (A & B) and adds the result to C matrix and
 /// accumulates the result to a D matrix (MAD). Requires the sub-group size of
 /// kernel calling this function to be 32.
+/// Current supported shapes & types:
+/// - m16n8k16 (f32.f16.f16.f32 & s32.s8.s8.s32)
 /// \tparam [in] M The rows of A, C & D matrix
 /// \tparam [in] N The columns of B, C, D matrix
 /// \tparam [in] K The columns & rows of A & B matrices respectively
