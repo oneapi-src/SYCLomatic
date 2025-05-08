@@ -495,6 +495,16 @@ bool isCGAPI(std::string Name) {
   return MapNamesLang::CooperativeGroupsAPISet.count(Name);
 }
 
+void ExprAnalysis::analyzeExpr(const DependentScopeDeclRefExpr *DRE) {
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  DRE->getQualifier()->dump(OS);
+  std::string cuda_std_prefix = "cuda::std::";
+  if (Result.find(cuda_std_prefix) == 0) {
+    addReplacement(DRE->getBeginLoc(), cuda_std_prefix.length(), "std::");
+  }
+}
+
 void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   std::string CTSName;
   auto Qualifier = DRE->getQualifier();
