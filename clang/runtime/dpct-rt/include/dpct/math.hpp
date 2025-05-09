@@ -2226,7 +2226,7 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
 /// \tparam [in] M The rows of A, C & D matrix
 /// \tparam [in] N The columns of B, C, D matrix
 /// \tparam [in] K The columns & rows of A & B matrices respectively
-/// \tparam [in] MulType The type used to multiply A and B matrix elements as
+/// \tparam [in] MulType The type of A and B matrices in MMA ASM instruction
 /// \tparam [in] ABType The type of the input matrix (A & B) elements
 /// \tparam [in] CDType The type of the output matrix (C & D) elements
 /// \param [out] d_mat The elements of the output D matrix to store the result
@@ -2239,8 +2239,8 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
 /// result of A * B
 template <int M, int N, int K, typename MulType, typename ABType,
           typename CDType>
-void mma(void **d_mat, void *a_mat, void *b_mat, void *c_mat) {
-  auto d = reinterpret_cast<CDType **>(d_mat);
+void mma(volatile void **d_mat, void *a_mat, void *b_mat, void *c_mat) {
+  auto d = reinterpret_cast<volatile CDType **>(d_mat);
   auto a = reinterpret_cast<ABType *>(a_mat);
   auto b = reinterpret_cast<ABType *>(b_mat);
   auto c = reinterpret_cast<CDType *>(c_mat);
@@ -2256,61 +2256,101 @@ void mma(void **d_mat, void *a_mat, void *b_mat, void *c_mat) {
 
   if constexpr (M == 16 && N == 8 && K == 16) {
     if constexpr (std::is_floating_point_v<CDType>) {
+      // Init D matrix with elements of C matrix
+      *d[0] = c[0];
+      *d[1] = c[1];
+      *d[2] = c[2];
+      *d[3] = c[3];
+
+      // Iterate through 4 neighbouring work items to gather the A & B matix
+      // elements of the rows and cols associated with each work item
+      // WI0: { row0: a0 .. a15 & row8: a0 .. a15 } and
+      //      { col0: b0 .. b15 & col1: b0 .. b15 }
       for (int i = 0; i < 4; i++) {
         ABType recv_a[4], recv_b[4];
 
+        // WI0 loads row0: { a0, a1 }, { a2, a3 }, { a4, a5 }, { a6, a7 }
         recv_a[0] = dpct::select_from_sub_group(sg, a[0], ROW_LOAD_OFFSET + i);
+        // WI0 loads row0: { a8, a9 }, { a10, a11 }, { a12, a13 }, { a14, a15 }
         recv_a[1] = dpct::select_from_sub_group(sg, a[2], ROW_LOAD_OFFSET + i);
+        // WI0 loads row8: { a0, a1 }, { a2, a3 }, { a4, a5 }, { a6, a7 }
         recv_a[2] = dpct::select_from_sub_group(sg, a[1], ROW_LOAD_OFFSET + i);
+        // WI0 loads row8: { a8, a9 }, { a10, a11 }, { a12, a13 }, { a14, a15 }
         recv_a[3] = dpct::select_from_sub_group(sg, a[3], ROW_LOAD_OFFSET + i);
 
+        // WI0 loads col0: { b0, b1 }, { b2, b3 }, { b4, b5 }, { b6, b7 }
         recv_b[0] = dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i);
+        // WI0 loads col0: { b8, b9 }, { b10, b11 }, { b12, b13 }, { b14, b15 }
         recv_b[1] = dpct::select_from_sub_group(sg, b[1], COL_LOAD_OFFSET + i);
+        // WI0 loads col1: { b0, b1 }, { b2, b3 }, { b4, b5 }, { b6, b7 }
         recv_b[2] =
             dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + 4 + i);
+        // WI0 loads col1: { b8, b9 }, { b10, b11 }, { b12, b13 }, { b14, b15 }
         recv_b[3] =
             dpct::select_from_sub_group(sg, b[1], COL_LOAD_OFFSET + 4 + i);
 
         auto ra = reinterpret_cast<MulType *>(recv_a);
         auto rb = reinterpret_cast<MulType *>(recv_b);
 
+        // Calculate partial product of 4 A & B matrix elements
+        // For each iteration of i, work-item calculates D matrix values as
+        // below:
+        // d0 += row0{ a0, a1, a8, a9 } * col0{ b0, b1, b8, b9 }
+        // d1 += row0{ a0, a1, a8, a9 } * col1{ b0, b1, b8, b9 }
+        // d2 += row8{ a0, a1, a8, a9 } * col0{ b0, b1, b8, b9 }
+        // d3 += row8{ a1, a1, a8, a9 } * col1{ b0, b1, b8, b9 }
         for (int j = 0; j < 4; j++) {
-          c[0] += static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[j]);
-          c[1] += static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[j + 4]);
-          c[2] += static_cast<CDType>(ra[j + 4]) * static_cast<CDType>(rb[j]);
-          c[3] +=
+          *d[0] += static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[j]);
+          *d[1] += static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[j + 4]);
+          *d[2] += static_cast<CDType>(ra[j + 4]) * static_cast<CDType>(rb[j]);
+          *d[3] +=
               static_cast<CDType>(ra[j + 4]) * static_cast<CDType>(rb[j + 4]);
         }
       }
-
+    } else if constexpr (std::is_integral_v<MulType>) {
+      // Init D matrix with elements of C matrix
       *d[0] = c[0];
       *d[1] = c[1];
       *d[2] = c[2];
       *d[3] = c[3];
-    } else if constexpr (std::is_integral_v<MulType>) {
+
+      // Iterate through 4 neighbouring work items to gather the A & B matix
+      // elements of the rows and cols associated with each work item
+      // WI0: { row0: a0 .. a15 & row8: a0 .. a15 } and
+      //      { col0: b0 .. b15 & col1: b0 .. b15 }
       for (int i = 0; i < 4; i++) {
         ABType recv_a[2], recv_b[2];
 
+        // WI0 loads row0: { a0, a1, a2, a3 }, { a4, a5, a6, a7 },
+        // { a8, a9, a10, a11 }, { a12, a13, a14, a15 }
         recv_a[0] = dpct::select_from_sub_group(sg, a[0], ROW_LOAD_OFFSET + i);
+        // WI0 loads row8: { a0, a1, a2, a3 }, { a4, a5, a6, a7 },
+        // { a8, a9, a10, a11 }, { a12, a13, a14, a15 }
         recv_a[1] = dpct::select_from_sub_group(sg, a[1], ROW_LOAD_OFFSET + i);
+        // WI0 loads col0: { b0, b1, b2, b3 }, { b4, b5, b6, b7 },
+        // { b8, b9, b10, b11 }, { b12, b13, b14, b15 }
         recv_b[0] = dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i);
+        // WI0 loads col1: { b0, b1, b2, b3 }, { b4, b5, b6, b7 },
+        // { b8, b9, b10, b11 }, { b12, b13, b14, b15 }
         recv_b[1] =
             dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i + 4);
 
         auto ra = reinterpret_cast<MulType *>(recv_a);
         auto rb = reinterpret_cast<MulType *>(recv_b);
+
+        // Calculate partial product of 4 A & B matrix elements
+        // For each iteration of i, WI0 calculates D matrix values as below:
+        // d0 += row0{ a0, a1, a2, a3 } * col0{ b0, b1, b2, b3 }
+        // d1 += row0{ a0, a1, a2, a3 } * col1{ b0, b1, b2, b3 }
+        // d2 += row8{ a0, a1, a2, a3 } * col0{ b0, b1, b2, b3 }
+        // d3 += row8{ a0, a1, a2, a3 } * col1{ b0, b1, b2, b3 }
         for (int i = 0; i < 4; i++) {
-          c[0] += ra[i] * rb[i];
-          c[1] += ra[i] * rb[i + 4];
-          c[2] += ra[i + 4] * rb[i];
-          c[3] += ra[i + 4] * rb[i + 4];
+          *d[0] += ra[i] * rb[i];
+          *d[1] += ra[i] * rb[i + 4];
+          *d[2] += ra[i + 4] * rb[i];
+          *d[3] += ra[i + 4] * rb[i + 4];
         }
       }
-
-      *d[0] = c[0];
-      *d[1] = c[1];
-      *d[2] = c[2];
-      *d[3] = c[3];
     }
   }
 }

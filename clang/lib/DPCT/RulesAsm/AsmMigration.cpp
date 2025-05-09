@@ -1473,7 +1473,8 @@ protected:
 
     // Declare and init an array for storing the addresses of D matrix elements
     OS() << "{\n";
-    OS() << CDType << " *DMatrix_ct1[" << DMatVE->getNumElements() << "] = { ";
+    OS() << "volatile " << CDType << " *DMatrix_ct1["
+         << DMatVE->getNumElements() << "] = { ";
     for (unsigned Inst = 0; Inst != DMatVE->getNumElements(); ++Inst) {
       if (isa<InlineAsmDiscardExpr>(DMatVE->getElement(Inst)))
         continue;
@@ -1517,7 +1518,7 @@ protected:
     OS() << ABType << ", " << InMatrixType[0] << ", " << InMatrixType[2];
     OS() << ">(";
 
-    OS() << "reinterpret_cast<void **>(DMatrix_ct1)";
+    OS() << "reinterpret_cast<volatile void **>(DMatrix_ct1)";
     for (int i = 0; i < 3; i++)
       OS() << ", &" << InMatrixName[i] << "Matrix_ct1";
     OS() << ")";
