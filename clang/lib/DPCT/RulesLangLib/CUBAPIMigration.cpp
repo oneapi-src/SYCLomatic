@@ -129,15 +129,9 @@ void CubTypeRule::runRule(
 
 bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
   return OpTypeName == "cub::Sum" || OpTypeName == "cub::Max" ||
-         OpTypeName == "cub::Min";
-}
-
-bool CubTypeRule::CanMappingToSyclType(StringRef OpTypeName) {
-  return CanMappingToSyclNativeBinaryOp(OpTypeName) ||
-         OpTypeName == "cub::Equality" || OpTypeName == "cub::NullType" ||
-
-         // Ignore template arguments, .e.g cub::KeyValuePair<int, int>
-         OpTypeName.starts_with("cub::KeyValuePair");
+         OpTypeName == "cub::Min" || OpTypeName == "cuda::std::plus<void>" ||
+         OpTypeName == "cuda::maximum<void>" ||
+         OpTypeName == "cuda::minimum<void>";
 }
 
 void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -854,9 +848,9 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
         Obj->getType().getCanonicalType());
     if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
       OpRepl = MapNames::getClNamespace() + "plus<>()";
-    } else if (OpType == "cub::Max") {
+    } else if (OpType == "cub::Max" || OpType == "cuda::maximum<void>") {
       OpRepl = MapNames::getClNamespace() + "maximum<>()";
-    } else if (OpType == "cub::Min") {
+    } else if (OpType == "cub::Min" || OpType == "cuda::minimum<void>") {
       OpRepl = MapNames::getClNamespace() + "minimum<>()";
     }
   };
@@ -873,7 +867,9 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
         std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
             D->getType().getCanonicalType());
         if (OpType == "cub::Sum" || OpType == "cub::Max" ||
-            OpType == "cub::Min" || OpType == "cuda::std::plus<void>") {
+            OpType == "cub::Min" || OpType == "cuda::std::plus<void>" ||
+            OpType == "cuda::maximum<void>" ||
+            OpType == "cuda::minimum<void>") {
           ExprAnalysis EA(Operator);
           OpRepl = EA.getReplacedString();
         }
