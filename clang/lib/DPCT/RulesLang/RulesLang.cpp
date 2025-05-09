@@ -285,8 +285,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   int ThrustMinorVersion = ThrustVersion / 100 % 1000;
 
   auto thrustNamespace = [=]() -> std::string {
-    if (ThrustMajorVersion == 2 && ThrustMinorVersion == 8) {
-      // For CUDA-12.9
+    if (ThrustMajorVersion >= 2 && ThrustMinorVersion >= 8) {
+      // For CUDA-12.9 or later
       return "cuda::std::";
     }
     return "thrust::";
