@@ -53,6 +53,7 @@ using namespace clang::tooling;
 extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
 extern DpctOption<opt, bool> ProcessAll;
 extern DpctOption<opt, bool> AsyncHandler;
+extern int ThrustVersion;
 
 namespace clang{
 namespace dpct{
@@ -280,6 +281,17 @@ void MiscAPIRule::runRule(const MatchFinder::MatchResult &Result) {
 
 // Rule for types migration in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
+  int ThrustMajorVersion = ThrustVersion / 100000;
+  int ThrustMinorVersion = ThrustVersion / 100 % 1000;
+
+  auto thrustNamespace = [=]() -> std::string {
+    if (ThrustMajorVersion >= 2 && ThrustMinorVersion >= 8) {
+      // For CUDA-12.9 or later
+      return "cuda::std::";
+    }
+    return "thrust::";
+  };
+
   MF.addMatcher(
       typeLoc(
           loc(qualType(hasDeclaration(namedDecl(hasAnyName(
@@ -294,7 +306,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "thrust::permutation_iterator", "thrust::iterator_difference",
               "cusolverDnHandle_t", "cusolverDnParams_t", "gesvdjInfo_t",
               "syevjInfo_t", "thrust::device_malloc_allocator",
-              "thrust::divides", "thrust::tuple", "thrust::maximum",
+              "thrust::divides", thrustNamespace() + "tuple", "thrust::maximum",
               "thrust::multiplies", "thrust::plus", "cudaDataType_t",
               "cudaError_t", "CUresult", "CUdevice", "cudaEvent_t",
               "cublasStatus_t", "cuComplex", "cuFloatComplex",
@@ -316,15 +328,16 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "curandRngType_t", "curandOrdering_t", "cufftHandle", "cufftReal",
               "cufftDoubleReal", "cufftComplex", "cufftDoubleComplex",
               "cufftResult_t", "cufftResult", "cufftType_t", "cufftType",
-              "thrust::pair", "CUdeviceptr", "cudaDeviceAttr", "CUmodule",
-              "CUjit_option", "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
-              "__nv_bfloat16", "cooperative_groups::__v1::thread_group",
+              thrustNamespace() + "pair", "CUdeviceptr", "cudaDeviceAttr",
+              "CUmodule", "CUjit_option", "CUfunction", "cudaMemcpyKind",
+              "cudaComputeMode", "__nv_bfloat16",
+              "cooperative_groups::__v1::thread_group",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
               "cublasComputeType_t", "cublasAtomicsMode_t", "cublasMath_t",
               "CUmem_advise_enum", "CUmem_advise", "CUmemorytype",
-              "CUmemorytype_enum", "thrust::tuple_element",
-              "thrust::tuple_size", "thrust::zip_iterator",
+              "CUmemorytype_enum", thrustNamespace() + "tuple_element",
+              thrustNamespace() + "tuple_size", "thrust::zip_iterator",
               "cudaPointerAttributes", "CUpointer_attribute",
               "cusolverEigRange_t", "cudaUUID_t", "cusolverDnFunction_t",
               "cusolverAlgMode_t", "cusparseIndexType_t", "cusparseFormat_t",

@@ -15,7 +15,7 @@ __global__ void kernelFuncHalfConversion() {
   unsigned u;
   unsigned long long ull;
   unsigned short us;
-  // CHECK: h2 = f2.convert<sycl::half, sycl::rounding_mode::rte>();
+  // CHECK: h2 = f2.template convert<sycl::half, sycl::rounding_mode::rte>();
   h2 = __float22half2_rn(f2);
   // CHECK: h = sycl::vec<float, 1>(f).convert<sycl::half, sycl::rounding_mode::automatic>()[0];
   h = __float2half(f);
@@ -31,7 +31,7 @@ __global__ void kernelFuncHalfConversion() {
   h = __float2half_rz(f);
   // CHECK: h2 = sycl::float2(f, f).convert<sycl::half, sycl::rounding_mode::rte>();
   h2 = __floats2half2_rn(f, f);
-  // CHECK: f2 = h2.convert<float, sycl::rounding_mode::automatic>();
+  // CHECK: f2 = h2.template convert<float, sycl::rounding_mode::automatic>();
   f2 = __half22float2(h2);
   // CHECK: f = sycl::vec<sycl::half, 1>(h).convert<float, sycl::rounding_mode::automatic>()[0];
   f = __half2float(h);

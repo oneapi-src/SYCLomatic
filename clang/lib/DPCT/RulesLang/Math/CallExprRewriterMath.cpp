@@ -288,75 +288,24 @@ std::optional<std::string> MathTypeCastRewriter::rewrite() {
   const StringRef &FuncName = SourceCalleeName;
   std::string ReplStr;
   llvm::raw_string_ostream OS(ReplStr);
-
   auto MigratedArg0 = getMigratedArgWithExtraParens(0);
-  if (FuncName == "__float22half2_rn") {
-    OS << MigratedArg0
-       << ".convert<" + MapNames::getClNamespace() + "half, " +
-              MapNames::getClNamespace() + "rounding_mode::rte>()";
-  } else if (FuncName == "__float2half2_rn") {
-    OS << MapNames::getClNamespace() + "float2{" << MigratedArg0 << ","
-       << MigratedArg0
-       << "}.convert<" + MapNames::getClNamespace() + "half, " +
-              MapNames::getClNamespace() + "rounding_mode::rte>()";
-  } else if (FuncName == "__floats2half2_rn") {
-    auto MigratedArg1 = getMigratedArg(1);
-    OS << MapNames::getClNamespace() + "float2{" << MigratedArg0 << ","
-       << MigratedArg1
-       << "}.convert<" + MapNames::getClNamespace() + "half, " +
-              MapNames::getClNamespace() + "rounding_mode::rte>()";
-  } else if (FuncName == "__half22float2") {
-    OS << MigratedArg0
-       << ".convert<float, " + MapNames::getClNamespace() +
-              "rounding_mode::automatic>()";
-  } else if (FuncName == "__half2half2") {
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << ","
-       << MigratedArg0 << "}";
-  } else if (FuncName == "__halves2half2") {
-    auto MigratedArg1 = getMigratedArg(1);
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << ","
-       << MigratedArg1 << "}";
-  } else if (FuncName == "__high2half") {
-    OS << MigratedArg0 << "[0]";
-  } else if (FuncName == "__high2half2") {
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[0], "
-       << MigratedArg0 << "[0]}";
-  } else if (FuncName == "__highs2half2") {
-    auto MigratedArg1 = getMigratedArgWithExtraParens(1);
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[0], "
-       << MigratedArg1 << "[0]}";
-  } else if (FuncName == "__low2half") {
-    OS << MigratedArg0 << "[1]";
-  } else if (FuncName == "__low2half2") {
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
-       << MigratedArg0 << "[1]}";
-  } else if (FuncName == "__lowhigh2highlow") {
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
-       << MigratedArg0 << "[0]}";
-  } else if (FuncName == "__lows2half2") {
-    auto MigratedArg1 = getMigratedArgWithExtraParens(1);
-    OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
-       << MigratedArg1 << "[1]}";
-  } else {
-    //__half2short_rd and __half2float
-    static SSMap TypeMap{{"ll", "long long"},
-                         {"ull", "unsigned long long"},
-                         {"ushort", "unsigned short"},
-                         {"uint", "unsigned int"},
-                         {"half", MapNames::getClNamespace() + "half"}};
-    std::string RoundingMode;
-    if (FuncName[FuncName.size() - 3] == '_')
-      RoundingMode = FuncName.substr(FuncName.size() - 2).str();
-    auto FN = FuncName.substr(2, FuncName.find('_', 2) - 2).str();
-    auto Types = split(FN, '2');
-    assert(Types.size() == 2);
-    MapNames::replaceName(TypeMap, Types[0]);
-    MapNames::replaceName(TypeMap, Types[1]);
-    OS << MapNames::getClNamespace() + "vec<" << Types[0] << ", 1>{"
-       << MigratedArg0 << "}.convert<" << Types[1]
-       << ", " + MapNames::getClNamespace() + "rounding_mode::"
-       << RoundingModeMap[RoundingMode] << ">()[0]";
-  }
+  static SSMap TypeMap{{"ll", "long long"},
+                       {"ull", "unsigned long long"},
+                       {"ushort", "unsigned short"},
+                       {"uint", "unsigned int"},
+                       {"half", MapNames::getClNamespace() + "half"}};
+  std::string RoundingMode;
+  if (FuncName[FuncName.size() - 3] == '_')
+    RoundingMode = FuncName.substr(FuncName.size() - 2).str();
+  auto FN = FuncName.substr(2, FuncName.find('_', 2) - 2).str();
+  auto Types = split(FN, '2');
+  assert(Types.size() == 2);
+  MapNames::replaceName(TypeMap, Types[0]);
+  MapNames::replaceName(TypeMap, Types[1]);
+  OS << MapNames::getClNamespace() + "vec<" << Types[0] << ", 1>{"
+     << MigratedArg0 << "}.convert<" << Types[1]
+     << ", " + MapNames::getClNamespace() + "rounding_mode::"
+     << RoundingModeMap[RoundingMode] << ">()[0]";
   OS.flush();
   return ReplStr;
 }
