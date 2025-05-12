@@ -7762,10 +7762,9 @@ void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
 }
 
 bool SyncThreadsMigrationRule::noCorrespondingCEInInstantiatedTemplates(
-    const FunctionTemplateDecl *FTD, const CallExpr *CE) {
+    const FunctionTemplateDecl *FTD, const CallExpr *CE,
+    const std::string &FuncName) {
   const auto &SM = DpctGlobalInfo::getSourceManager();
-  std::string FuncName =
-      CE->getDirectCallee()->getNameInfo().getName().getAsString();
   auto CEMatcher = ast_matchers::findAll(
       ast_matchers::callExpr(callee(functionDecl(hasName(FuncName))))
           .bind("call"));
@@ -7835,7 +7834,7 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
     if (FTD) {
       if (FTD->specializations().empty() ||
-          noCorrespondingCEInInstantiatedTemplates(FTD, CE)) {
+          noCorrespondingCEInInstantiatedTemplates(FTD, CE, FuncName)) {
         emplaceReplacement(A.analyze(CE), CE);
       }
     } else {
