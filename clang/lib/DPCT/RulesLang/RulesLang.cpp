@@ -7769,7 +7769,6 @@ bool SyncThreadsMigrationRule::noCorrespondingCEInInstantiatedTemplates(
       ast_matchers::callExpr(callee(functionDecl(hasName(FuncName))))
           .bind("call"));
   SourceLocation CELocation = SM.getSpellingLoc(CE->getBeginLoc());
-  auto DecomposedCELocation = SM.getDecomposedLoc(CELocation);
   for (const auto &Spec : FTD->specializations()) {
     if (!(Spec->hasBody()))
       continue;
@@ -7779,13 +7778,8 @@ bool SyncThreadsMigrationRule::noCorrespondingCEInInstantiatedTemplates(
       if (const auto *MatchedCE = Node.getNodeAs<CallExpr>("call")) {
         SourceLocation MatchedCELocation =
             SM.getSpellingLoc(MatchedCE->getBeginLoc());
-        auto DecomposedMatchedCELocation =
-            SM.getDecomposedLoc(MatchedCELocation);
-        if ((DecomposedCELocation.first == DecomposedMatchedCELocation.first) &&
-            (DecomposedCELocation.second ==
-             DecomposedMatchedCELocation.second)) {
+        if (CELocation == MatchedCELocation)
           return false;
-        }
       }
     }
   }
