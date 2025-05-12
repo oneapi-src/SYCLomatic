@@ -169,7 +169,6 @@ public:
     replaceString();
     return SourceStr;
   }
-  inline const std::string &getSourceStr() { return SourceStr; }
 
 private:
   StringReplacements(const StringReplacements &) = delete;
