@@ -21,6 +21,7 @@
 #include "clang/Frontend/CompilerInstance.h"
 
 #include <algorithm>
+#include <string>
 #include <unordered_set>
 
 namespace clang {
@@ -809,6 +810,9 @@ class SyncThreadsMigrationRule
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+  bool noCorrespondingCEInInstantiatedTemplates(const FunctionTemplateDecl *FTD,
+                                                const CallExpr *CE,
+                                                const std::string &FuncName);
 };
 
 /// Migrate Function Attributes to Sycl kernel info, defined in

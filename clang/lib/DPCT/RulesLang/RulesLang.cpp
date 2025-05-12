@@ -7761,6 +7761,31 @@ void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
+bool SyncThreadsMigrationRule::noCorrespondingCEInInstantiatedTemplates(
+    const FunctionTemplateDecl *FTD, const CallExpr *CE,
+    const std::string &FuncName) {
+  const auto &SM = DpctGlobalInfo::getSourceManager();
+  auto CEMatcher = ast_matchers::findAll(
+      ast_matchers::callExpr(callee(functionDecl(hasName(FuncName))))
+          .bind("call"));
+  SourceLocation CELocation = SM.getSpellingLoc(CE->getBeginLoc());
+  for (const auto &Spec : FTD->specializations()) {
+    if (!(Spec->hasBody()))
+      continue;
+    auto MatchedResults = ast_matchers::match(CEMatcher, *(Spec->getBody()),
+                                              DpctGlobalInfo::getContext());
+    for (auto &Node : MatchedResults) {
+      if (const auto *MatchedCE = Node.getNodeAs<CallExpr>("call")) {
+        SourceLocation MatchedCELocation =
+            SM.getSpellingLoc(MatchedCE->getBeginLoc());
+        if (CELocation == MatchedCELocation)
+          return false;
+      }
+    }
+  }
+  return true;
+}
+
 void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
   static std::map<std::string, bool> LocationResultMapForTemplate;
   auto emplaceReplacement = [&](BarrierFenceSpaceAnalyzerResult Res,
@@ -7802,7 +7827,8 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     BarrierFenceSpaceAnalyzer A;
     const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
     if (FTD) {
-      if (FTD->specializations().empty()) {
+      if (FTD->specializations().empty() ||
+          noCorrespondingCEInInstantiatedTemplates(FTD, CE, FuncName)) {
         emplaceReplacement(A.analyze(CE), CE);
       }
     } else {
