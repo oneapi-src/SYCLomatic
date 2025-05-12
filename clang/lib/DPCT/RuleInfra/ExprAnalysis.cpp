@@ -421,6 +421,42 @@ void StringReplacements::replaceString() {
   ReplMap.clear();
 }
 
+void StringReplacements::addStringReplacement(size_t Offset, size_t Length,
+                                              std::string Text) {
+  auto Result = ReplMap.insert(std::make_pair(
+      Offset,
+      std::make_shared<StringReplacement>(SourceStr, Offset, Length, Text)));
+  if (Result.second) {
+    auto Shift = Result.first->second->getReplacedText().length() - Length;
+    ShiftLength += Shift;
+    auto TDRItr = TDRs.upper_bound(Result.first->first);
+    while (TDRItr != TDRs.end()) {
+      TDRItr->second->shift(Shift);
+      ++TDRItr;
+    }
+  }
+}
+
+void StringReplacements::addTemplateDependentReplacement(
+    size_t Offset, size_t Length, unsigned TemplateIndex) {
+  // Find items in ReplMap whose offset <= Offset.
+  // Then check length, is there is overlap, ignore this insertion.
+  // Finally calculate the shift length.
+  int Shift = 0;
+  auto UpperBound = ReplMap.upper_bound(Offset);
+  for (auto It = ReplMap.begin(); It != UpperBound; ++It) {
+    if ((It->first + It->second->getLength()) > Offset) {
+      // overlap
+      return;
+    }
+    Shift += (It->second->getReplacedText().length() - It->second->getLength());
+  }
+  auto TDR = std::make_shared<TemplateDependentReplacement>(
+      SourceStr, Offset, Length, TemplateIndex);
+  TDR->shift(Shift);
+  TDRs.insert(std::make_pair(Offset + Shift, TDR));
+}
+
 ExprAnalysis::ExprAnalysis(const Expr *Expression)
     : Context(DpctGlobalInfo::getContext()),
       SM(DpctGlobalInfo::getSourceManager()) {
@@ -558,15 +594,9 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     if (VD->getInit() && VD->getInit()->getBeginLoc().isValid()) {
       ExprAnalysis EA(VD->getInit());
       auto TDSI = EA.getTemplateDependentStringInfo();
-      if (!TDSI->getTDRs().empty()) {
-        std::string VDStr = VD->getNameAsString();
-        std::string VDInitStr = EA.getReplacedString();
-        auto Loc = ReplSet.getSourceStr().find(VDStr);
-        // TODO: more than 1 substrings matched
-        if (Loc != std::string::npos) {
-          addReplacement(Loc, VDStr.size(), VDInitStr);
-          addReplacement(Loc, TDSI);
-        }
+      if (TDSI->getTDRs().size() == 1) {
+        auto LocInfo = getOffsetAndLength(DRE);
+        addReplacement(LocInfo.first, LocInfo.second, TDSI);
       }
     }
   } else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {

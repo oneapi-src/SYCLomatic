@@ -57,14 +57,14 @@ class TemplateArgumentInfo;
 
 /// Store replacement dependent on template args
 class TemplateDependentReplacement {
-  std::string &SourceStr;
+  std::string SourceStr;
   size_t Offset;
   size_t Length;
   unsigned TemplateIndex;
 
 public:
-  TemplateDependentReplacement(std::string &SrcStr, size_t Offset,
-                               size_t Length, unsigned TemplateIndex)
+  TemplateDependentReplacement(std::string SrcStr, size_t Offset, size_t Length,
+                               unsigned TemplateIndex)
       : SourceStr(SrcStr), Offset(Offset), Length(Length),
         TemplateIndex(TemplateIndex) {}
   TemplateDependentReplacement(const TemplateDependentReplacement &rhs)
@@ -72,7 +72,7 @@ public:
                                      rhs.TemplateIndex) {}
 
   inline std::shared_ptr<TemplateDependentReplacement>
-  alterSource(std::string &SrcStr) {
+  alterSource(std::string SrcStr) {
     return std::make_shared<TemplateDependentReplacement>(
         SrcStr, Offset, Length, TemplateIndex);
   }
@@ -137,54 +137,26 @@ public:
   inline void reset() { ReplMap.clear(); }
 
   // Add a template dependent replacement
-  inline void addTemplateDependentReplacement(size_t Offset, size_t Length,
-                                              unsigned TemplateIndex) {
-    // Find items in ReplMap whose offset <= Offset.
-    // Then check length, is there is overlap, ignore this insertion.
-    // Finally calculate the shift length.
-    int Shift = 0;
-    auto UpperBound = ReplMap.upper_bound(Offset);
-    for (auto It = ReplMap.begin(); It != UpperBound; ++It) {
-      if ((It->first + It->second->getLength()) > Offset) {
-        // overlap
-        return;
-      }
-      Shift +=
-          (It->second->getReplacedText().length() - It->second->getLength());
-    }
-    auto TDR = std::make_shared<TemplateDependentReplacement>(
-        SourceStr, Offset, Length, TemplateIndex);
-    TDR->shift(Shift);
-    TDRs.insert(std::make_pair(Offset + Shift, TDR));
-  }
+  void addTemplateDependentReplacement(size_t Offset, size_t Length,
+                                       unsigned TemplateIndex);
 
   inline void addTemplateDependentReplacement(
-      size_t Offset, std::shared_ptr<TemplateDependentStringInfo> TDSI) {
-    for (const auto &Item : TDSI->getTDRs()) {
-      std::string String =
-          Item->getSourceStr().substr(Item->getOffset(), Item->getLength());
-      size_t NewOffset = Offset + Item->getOffset();
-      auto TDR = std::make_shared<TemplateDependentReplacement>(
-          String, NewOffset, String.size(), Item->getTemplateIndex());
-      TDRs.insert(std::make_pair(NewOffset, TDR));
-    }
+      size_t Offset, size_t Length,
+      std::shared_ptr<TemplateDependentStringInfo> TDSI) {
+    if (TDSI->getTDRs().size() != 1)
+      return;
+    const auto &Item = TDSI->getTDRs()[0];
+    addStringReplacement(Offset, Length, Item->getSourceStr());
+    std::string String =
+        Item->getSourceStr().substr(Item->getOffset(), Item->getLength());
+    size_t NewOffset = Offset + Item->getOffset();
+    auto TDR = std::make_shared<TemplateDependentReplacement>(
+        String, NewOffset, String.size(), Item->getTemplateIndex());
+    TDRs.insert(std::make_pair(NewOffset, TDR));
   }
 
   // Add a string replacement
-  void addStringReplacement(size_t Offset, size_t Length, std::string Text) {
-    auto Result = ReplMap.insert(std::make_pair(
-        Offset,
-        std::make_shared<StringReplacement>(SourceStr, Offset, Length, Text)));
-    if (Result.second) {
-      auto Shift = Result.first->second->getReplacedText().length() - Length;
-      ShiftLength += Shift;
-      auto TDRItr = TDRs.upper_bound(Result.first->first);
-      while (TDRItr != TDRs.end()) {
-        TDRItr->second->shift(Shift);
-        ++TDRItr;
-      }
-    }
-  }
+  void addStringReplacement(size_t Offset, size_t Length, std::string Text);
 
   // Generate replacement text info which dependent on template args.
   std::shared_ptr<TemplateDependentStringInfo>
@@ -622,9 +594,9 @@ protected:
   }
 
   inline void
-  addReplacement(size_t Offset,
+  addReplacement(size_t Offset, size_t Length,
                  std::shared_ptr<TemplateDependentStringInfo> TDSI) {
-    ReplSet.addTemplateDependentReplacement(Offset, TDSI);
+    ReplSet.addTemplateDependentReplacement(Offset, Length, TDSI);
   }
 
   // Analyze the expression, jump to corresponding analysis function according
