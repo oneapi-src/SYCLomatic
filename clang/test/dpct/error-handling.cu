@@ -705,7 +705,7 @@ void foo12() {
 // CHECK-NEXT:   sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
 // CHECK-NEXT:   oneapi::mkl::blas::column_major::iamax(
 // CHECK-NEXT:       dpct::blas::descriptor::get_saved_queue(), 10, ct_0_buf_ct{{[0-9]+}}, 0,
-// CHECK-NEXT:       res_temp_buf_ct{{[0-9]+}});
+// CHECK-NEXT:       res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
 // CHECK-NEXT:   res = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
 // CHECK-NEXT:   }
 // CHECK-NEXT: }

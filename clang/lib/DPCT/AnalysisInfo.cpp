@@ -326,16 +326,22 @@ private:
 
   static const FreeQueriesNames &getNames(FreeQueriesKind);
   static std::shared_ptr<FreeQueriesInfo> getInfo(const FunctionDecl *);
-  static void printFreeQueriesFunctionName(llvm::raw_ostream &OS,
-                                           FreeQueriesKind K,
-                                           unsigned Dimension) {
+  template <typename T>
+  static typename std::enable_if<std::is_same_v<T, unsigned> ||
+                                 std::is_same_v<T, std::string>>::type
+  printFreeQueriesFunctionName(llvm::raw_ostream &OS, FreeQueriesKind K,
+                               T Dimension) {
     OS << getNames(K).FreeQueriesFuncName;
     if (K != FreeQueriesKind::SubGroup) {
       OS << '<';
-      if (Dimension) {
-        OS << Dimension;
+      if constexpr (std::is_same_v<T, unsigned>) {
+        if (Dimension) {
+          OS << Dimension;
+        } else {
+          OS << "dpct_placeholder /* Fix the dimension manually */";
+        }
       } else {
-        OS << "dpct_placeholder /* Fix the dimension manually */";
+        OS << Dimension;
       }
       OS << '>';
     }
@@ -905,6 +911,9 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     // Add the label for profiling macro "DPCT_PROFILING_ENABLED", which will be
     // replaced by "#define DPCT_PROFILING_ENABLED" or not in the post
     // replacement.
+    if (DpctGlobalInfo::useExtLevelZero())
+      OS << "#define ONEAPI_BACKEND_LEVEL_ZERO_EXT" << getNL();
+
     OS << "{{NEEDREPLACEP0}}";
 
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
@@ -7513,11 +7522,13 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
       return Info->printImmediateText(OS, S->getBeginLoc(), K);
     }
 
-#ifdef DPCT_DEBUG_BUILD
-    llvm::errs() << "Can not get FreeQueriesInfo for this FunctionDecl\n";
-    assert(0);
-#endif // DPCT_DEBUG_BUILD
-
+    auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+    if (!DFI)
+      return;
+    auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+    DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+    printFreeQueriesFunctionName<std::string>(
+        OS, K, "{{NEEDREPLACEG" + std::to_string(Index) + "}}");
   } else {
     if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD))
       DFI->setItem();
@@ -7547,6 +7558,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS,
     (*Iter)->Infos.push_back(Idx);
     Index = Iter - MacroInfos.begin();
   } else {
+    IsMacro = false;
     auto SLocInfo = DpctGlobalInfo::getLocInfo(SL);
     if (SLocInfo.first != FilePath)
       return;
@@ -7577,7 +7589,7 @@ void FreeQueriesInfo::emplaceExtraDecl() {
     auto &KindNames =
         getNames(static_cast<FreeQueriesKind>(FreeQueriesKind::NdItem));
     OS << "auto " << KindNames.ExtraVariableName << " = ";
-    printFreeQueriesFunctionName(
+    printFreeQueriesFunctionName<unsigned>(
         OS, static_cast<FreeQueriesKind>(FreeQueriesKind::NdItem), Dimension);
     OS << ';' << NL << Indent;
   }
@@ -7591,12 +7603,12 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
   bool IsMacro = isMacro(Num);
   if (IsMacro) {
     if (Index < MacroInfos.size()) {
-      return buildStringFromPrinter(printFreeQueriesFunctionName, Kind,
-                                    MacroInfos[Index]->Dimension);
+      return buildStringFromPrinter(printFreeQueriesFunctionName<unsigned>,
+                                    Kind, MacroInfos[Index]->Dimension);
     }
 #ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "FreeQueriesInfo index[" << Index
-                 << "]is larger than list size[" << InfoList.size() << "]\n";
+                 << "] is larger than list size[" << MacroInfos.size() << "]\n";
     assert(0);
 #endif // DPCT_DEBUG_BUILD
   }
@@ -7604,7 +7616,7 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
     return InfoList[Index]->getReplaceString(getKind(Num));
 #ifdef DPCT_DEBUG_BUILD
   llvm::errs() << "FreeQueriesInfo index[" << Index
-               << "]is larger than list size[" << InfoList.size() << "]\n";
+               << "] is larger than list size[" << InfoList.size() << "]\n";
   assert(0);
 #endif // DPCT_DEBUG_BUILD
   return "";
@@ -7612,7 +7624,8 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
 
 std::string FreeQueriesInfo::getReplaceString(FreeQueriesKind K) {
   if (K != FreeQueriesKind::NdItem || Counter[K] < 2)
-    return buildStringFromPrinter(printFreeQueriesFunctionName, K, Dimension);
+    return buildStringFromPrinter(printFreeQueriesFunctionName<unsigned>, K,
+                                  Dimension);
   else
     return getNames(K).ExtraVariableName;
 }

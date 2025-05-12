@@ -41,7 +41,7 @@ griddepcontrol,NO,
 isspacep,NO,
 istypep,NO,
 ld,YES, Partial
-ldmatrix,NO,
+ldmatrix,YES,Partial
 ldu,NO,
 lg2,YES,
 lop3,YES,

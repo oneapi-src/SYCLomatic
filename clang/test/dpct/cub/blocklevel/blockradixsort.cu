@@ -30,6 +30,28 @@ __global__ void Sort(int *data) {
   BlockStore(temp_storage_store).Store(data, thread_keys);
 }
 
+__global__ void SortHalf(__half *data) {
+  // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<sycl::half, 4>;
+  // CHECK-NEXT: using BlockLoad = dpct::group::group_load<sycl::half, 4>;
+  // CHECK-NEXT: using BlockStore = dpct::group::group_store<sycl::half, 4>;
+  // CHECK-NOT:  __shared__ typename BlockLoad::TempStorage temp_storage_load;
+  // CHECK-NOT:  __shared__ typename BlockStore::TempStorage temp_storage_store;
+  // CHECK-NOT:  __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  using BlockRadixSort = cub::BlockRadixSort<__half, 128, 4>;
+  using BlockLoad = cub::BlockLoad<__half, 128, 4>;
+  using BlockStore = cub::BlockStore<__half, 128, 4>;
+  __shared__ typename BlockLoad::TempStorage temp_storage_load;
+  __shared__ typename BlockStore::TempStorage temp_storage_store;
+  __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  __half thread_keys[4];
+  // CHECK: BlockLoad(temp_storage_load).load(item_ct1, data, thread_keys);
+  // CHECK-NEXT: BlockRadixSort(temp_storage).sort(item_ct1, thread_keys);
+  // CHECK-NEXT: BlockStore(temp_storage_store).store(item_ct1, data, thread_keys);
+  BlockLoad(temp_storage_load).Load(data, thread_keys);
+  BlockRadixSort(temp_storage).Sort(thread_keys);
+  BlockStore(temp_storage_store).Store(data, thread_keys);
+}
+
 __global__ void SortDescending(int *data) {
   // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
   // CHECK-NEXT: using BlockLoad = dpct::group::group_load<int, 4, dpct::group::group_load_algorithm::blocked>;
@@ -171,8 +193,9 @@ __global__ void test_unsupported(int *data) {
 
 template <typename T, int N>
 void print_array(T (&arr)[N]) {
-  for (int i = 0; i < N; ++i)
-    printf("%d%c", arr[i], (i == N - 1 ? '\n' : ','));
+  for (int i = 0; i < N; ++i) {
+    std::cout << (int)arr[i] << (i == N - 1 ? '\n' : ',');
+  }
 }
 
 bool test_sort() {
@@ -208,6 +231,42 @@ bool test_sort() {
       return false;
     }
   printf("test_sort pass\n");
+  return true;
+}
+
+bool test_sorthalf() {
+  __half data[512] = {0}, *d_data = nullptr;
+  cudaMalloc(&d_data, sizeof(__half) * 512);
+  for (int i = 0, x = 0, y = 511; i < 128; ++i) {
+    data[i * 4 + 0] = x++;
+    data[i * 4 + 1] = y--;
+    data[i * 4 + 2] = x++;
+    data[i * 4 + 3] = y--;
+  }
+  cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
+  // CHECK: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_load_acc(dpct::group::group_load<sycl::half, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_store_acc(dpct::group::group_store<sycl::half, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<sycl::half, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         SortHalf(d_data, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  SortHalf<<<1, 128>>>(d_data);
+  cudaDeviceSynchronize();
+  cudaMemcpy(data, d_data, sizeof(data), cudaMemcpyDeviceToHost);
+  cudaFree(d_data);
+  for (int i = 0; i < 512; ++i)
+    if ((int)data[i] != i) {
+      printf("test_sorthalf failed\n");
+      print_array(data);
+      return false;
+    }
+  printf("test_sorthalf pass\n");
   return true;
 }
 
@@ -610,7 +669,7 @@ bool test_sort_descending_blocked_to_striped_bit() {
 }
 
 int main() {
-  return !(test_sort() && test_sort_descending() &&
+  return !(test_sort() && test_sorthalf() && test_sort_descending() &&
            test_sort_blocked_to_striped() &&
            test_sort_descending_blocked_to_striped() && test_sort_bit() &&
            test_sort_descending_bit() && test_sort_blocked_to_striped_bit() &&
