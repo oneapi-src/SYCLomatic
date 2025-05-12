@@ -1428,8 +1428,8 @@ protected:
 
       // Only f16/s8 types are supported for A and B matrices of m16n8k16
       if (AType->getKind() == InlineAsmBuiltinType::f16) {
-        InMatrixType[0] = "int32_t"; // A type is .f16x2
-        InMatrixType[1] = "int32_t"; // B type is .f16x2
+        InMatrixType[0] = "uint32_t"; // A type is .f16x2
+        InMatrixType[1] = "uint32_t"; // B type is .f16x2
 
         // If A matrix type is f16, then C&D matrix types can only be f32
         if (CType->getKind() == InlineAsmBuiltinType::f32) {
@@ -1440,8 +1440,8 @@ protected:
         } else
           return SYCLGenError();
       } else if (AType->getKind() == InlineAsmBuiltinType::s8) {
-        InMatrixType[0] = "int32_t"; // A type is .s8x4
-        InMatrixType[1] = "int32_t"; // B type is .s8x4
+        InMatrixType[0] = "uint32_t"; // A type is .f16x2
+        InMatrixType[1] = "uint32_t"; // B type is .f16x2
 
         // If A matrix type is s8, then C&D matrix types can only be s32
         if (CType->getKind() == InlineAsmBuiltinType::s32) {
@@ -1473,7 +1473,7 @@ protected:
 
     // Declare and init an array for storing the addresses of D matrix elements
     OS() << "{\n";
-    OS() << "volatile " << CDType << " *DMatrix_ct1["
+    OS() << "volatile " << CDType << " *d_mat_frag_ct1["
          << DMatVE->getNumElements() << "] = { ";
     for (unsigned Inst = 0; Inst != DMatVE->getNumElements(); ++Inst) {
       if (isa<InlineAsmDiscardExpr>(DMatVE->getElement(Inst)))
@@ -1489,14 +1489,14 @@ protected:
 
     // Declare and init vectors for storing the values of A, B & C matrix
     // elements
-    std::string InMatrixName[3] = {"A", "B", "C"};
+    std::string InMatrixName[3] = {"a", "b", "c"};
     for (unsigned InputOp = 0; InputOp < Inst->getNumInputOperands();
          InputOp++) {
       if (auto VE =
               dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(InputOp))) {
         OS() << "sycl::vec<" << InMatrixType[InputOp] << ", "
              << VE->getNumElements() << "> " << InMatrixName[InputOp]
-             << "Matrix_ct1(";
+             << "_mat_frag_ct1(";
         for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
           if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
             continue;
@@ -1515,12 +1515,12 @@ protected:
     OS() << MapNames::getDpctNamespace() << "experimental::matrix::mma";
     OS() << "<";
     OS() << M << ", " << N << ", " << K << ", ";
-    OS() << ABType << ", " << InMatrixType[0] << ", " << InMatrixType[2];
+    OS() << ABType << ", " << CDType;
     OS() << ">(";
 
-    OS() << "reinterpret_cast<volatile void **>(DMatrix_ct1)";
+    OS() << "reinterpret_cast<volatile void **>(d_mat_frag_ct1)";
     for (int i = 0; i < 3; i++)
-      OS() << ", &" << InMatrixName[i] << "Matrix_ct1";
+      OS() << ", &" << InMatrixName[i] << "_mat_frag_ct1";
     OS() << ")";
     endstmt();
     OS() << "}";
