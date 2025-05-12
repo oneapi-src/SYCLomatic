@@ -468,7 +468,7 @@ template <typename T, const bool B> __device__ void test_22_d() {
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
   // CHECK-NEXT:   */
-  // CHECK-NEXT:   item_ct1.barrier();
+  // CHECK-NEXT:   sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
   // CHECK-NEXT: }
   if constexpr (B) {
     __syncthreads();
