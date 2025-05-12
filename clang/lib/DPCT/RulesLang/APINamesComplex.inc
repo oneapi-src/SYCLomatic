@@ -95,5 +95,7 @@ BINARY_OP_FACTORY_ENTRY("cuCfmaf", BinaryOperatorKind::BO_Add,
                              makeCallArgCreatorWithCall(1)),
                         makeCallArgCreatorWithCall(2))
 
-MEMBER_CALL_FACTORY_ENTRY("cuComplexDoubleToFloat", ARG(0), false, "convert<float>")
-MEMBER_CALL_FACTORY_ENTRY("cuComplexFloatToDouble", ARG(0), false, "convert<double>")
+MEMBER_CALL_WITH_DISAMBIGUATOR_FACTORY_ENTRY("cuComplexDoubleToFloat", ARG(0),
+                                             false, "convert<float>")
+MEMBER_CALL_WITH_DISAMBIGUATOR_FACTORY_ENTRY("cuComplexFloatToDouble", ARG(0),
+                                             false, "convert<double>")

@@ -64,6 +64,7 @@ Advanced DPCT options
     =in_order_queue_events                -   Experimental extension that allows placing the event from the last command submission into the queue and setting an external event as an implicit dependence on the next command submitted to the queue.
     =non-stdandard-sycl-builtins          -   Experimental extension that allows use of non standard SYCL builtin functions.
     =prefetch                             -   Experimental extension that allows use of SYCL prefetch APIs.
+    =level_zero                           -   Experimental migration feature that enables the use of Level Zero APIs to migrate target code, like CUDA Inter-Process Communication (IPC) APIs.
     =all                                  -   Enable all experimental extensions listed in this option.
 
 <source0> ... Paths of input source files. These paths are looked up in the compilation database.

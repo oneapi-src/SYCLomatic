@@ -139,3 +139,44 @@ REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuFuncSetAttribute",
 
 REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuGetExportTable",
                          getRemovedAPIWarningMessage("cuGetExportTable"))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CONDITIONAL_FACTORY_ENTRY(
+        clang::dpct::UseExtLevelZero,
+        CALL_FACTORY_ENTRY("cudaIpcGetMemHandle",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::get_mem_ipc_handle",
+                                ARG(1), ARG(0))),
+        UNSUPPORT_FACTORY_ENTRY(
+            "cudaIpcGetMemHandle", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+            ARG("cudaIpcGetMemHandle"),
+            ARG("--use-experimental-features=level_zero")))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CONDITIONAL_FACTORY_ENTRY(
+        clang::dpct::UseExtLevelZero,
+        CALL_FACTORY_ENTRY("cudaIpcCloseMemHandle",
+                           CALL("zeMemCloseIpcHandle",
+                               CALL("sycl::get_native<sycl::backend::ext_oneapi_level_zero>",  MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                                 "get_current_device"),
+                                            false, "get_context")),
+                                ARG(0))),
+        UNSUPPORT_FACTORY_ENTRY(
+            "cudaIpcCloseMemHandle", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+            ARG("cudaIpcCloseMemHandle"),
+            ARG("--use-experimental-features=level_zero")))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CONDITIONAL_FACTORY_ENTRY(
+        clang::dpct::UseExtLevelZero,
+        CALL_FACTORY_ENTRY("cudaIpcOpenMemHandle",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::open_mem_ipc_handle",
+                                ARG(1), ARG(0))),
+        UNSUPPORT_FACTORY_ENTRY("cudaIpcOpenMemHandle",
+                                Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                                ARG("cudaIpcOpenMemHandle"),
+                                ARG("--use-experimental-features=level_zero")))))

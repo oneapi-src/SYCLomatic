@@ -116,7 +116,7 @@ public:
 // This class is used for device asm vector types.
 class InlineAsmVectorType : public InlineAsmType {
 public:
-  enum VecKind { v2, v4, v8 };
+  enum VecKind { v2, v4, v8, x1, x2, x4 };
 
 private:
   VecKind Kind;

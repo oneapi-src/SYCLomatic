@@ -723,13 +723,20 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           ReplInfo.BufferTypeInfo[ReplInfo.BufferTypeInfo.size() - 1];
       std::string ReturnValueParamsStr;
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
+        CallExprReplStr = CallExprReplStr + ", " + ResultTempPtr;
+        if (FuncName == "cublasIsamax" || FuncName == "cublasIdamax" ||
+            FuncName == "cublasIcamax" || FuncName == "cublasIzamax" ||
+            FuncName == "cublasIsamin" || FuncName == "cublasIdamin" ||
+            FuncName == "cublasIcamin" || FuncName == "cublasIzamin") {
+          CallExprReplStr = CallExprReplStr + ", oneapi::mkl::index_base::one";
+        }
         requestFeature(HelperFeatureEnum::device_ext);
         auto DefaultQueue = DpctGlobalInfo::getDefaultQueue(CE);
         PrefixInsertStr = PrefixInsertStr + ResultType + "* " + ResultTempPtr +
                           " = " + MapNames::getClNamespace() +
-                          "malloc_shared<" + ResultType + ">(1, " + DefaultQueue + ");" +
-                          getNL() + IndentStr + CallExprReplStr + ", " +
-                          ResultTempPtr + ").wait();" + getNL() + IndentStr;
+                          "malloc_shared<" + ResultType + ">(1, " +
+                          DefaultQueue + ");" + getNL() + IndentStr +
+                          CallExprReplStr + ").wait();" + getNL() + IndentStr;
 
         ReturnValueParamsStr =
             "(" + ResultTempPtr + "->real(), " + ResultTempPtr + "->imag())";
@@ -748,11 +755,18 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                             ResultTempPtr + ", " + DefaultQueue + ");";
         }
       } else {
+        CallExprReplStr = CallExprReplStr + ", " + ResultTempBuf;
+        if (FuncName == "cublasIsamax" || FuncName == "cublasIdamax" ||
+            FuncName == "cublasIcamax" || FuncName == "cublasIzamax" ||
+            FuncName == "cublasIsamin" || FuncName == "cublasIdamin" ||
+            FuncName == "cublasIcamin" || FuncName == "cublasIzamin") {
+          CallExprReplStr = CallExprReplStr + ", oneapi::mkl::index_base::one";
+        }
         PrefixInsertStr = PrefixInsertStr + MapNames::getClNamespace() +
                           "buffer<" + ResultType + "> " + ResultTempBuf + "(" +
                           MapNames::getClNamespace() + "range<1>(1));" +
-                          getNL() + IndentStr + CallExprReplStr + ", " +
-                          ResultTempBuf + ");" + getNL() + IndentStr;
+                          getNL() + IndentStr + CallExprReplStr + ");" +
+                          getNL() + IndentStr;
         ReturnValueParamsStr =
             "(" + ResultTempBuf + ".get_host_access(" +
             MapNames::getClNamespace() + "read_only)[0].real(), " +
