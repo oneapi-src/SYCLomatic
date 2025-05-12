@@ -66,22 +66,22 @@ int main() {
 
   // CHECK: int res;
   // CHECK-NEXT: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   int res = cublasIsamax(n, x_S, incx);
   // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_D, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_D, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   res = cublasIdamax(n, x_D, incx);
   // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<float>*)x_C, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<float>*)x_C, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   res = cublasIcamax(n, x_C, incx);
   // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   res = cublasIzamax(n, x_Z, incx);
@@ -89,7 +89,7 @@ int main() {
   // Because the return value of origin API is the result value, not the status, so keep using lambda here.
   // CHECK: if([&](){
   // CHECK-NEXT: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
   // CHECK-NEXT: int64_t res_temp_val_ct{{[0-9]+}} = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   // CHECK-NEXT: return res_temp_val_ct{{[0-9]+}};
@@ -98,7 +98,7 @@ int main() {
 
   // CHECK: if(0!=[&](){
   // CHECK-NEXT: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
   // CHECK-NEXT: int64_t res_temp_val_ct{{[0-9]+}} = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   // CHECK-NEXT: return res_temp_val_ct{{[0-9]+}};
@@ -233,7 +233,7 @@ int main() {
 //CHECK:int foo(){
 //CHECK-NEXT:  return [&](){
 //CHECK-NEXT:  int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_in_order_queue());
-//CHECK-NEXT:  oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+//CHECK-NEXT:  oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
 //CHECK-NEXT:  int64_t res_temp_val_ct{{[0-9]+}} = *res_temp_ptr_ct{{[0-9]+}};
 //CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
 //CHECK-NEXT:  return res_temp_val_ct{{[0-9]+}};

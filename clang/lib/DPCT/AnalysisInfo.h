@@ -1349,6 +1349,9 @@ public:
     return getUsingExperimental<
         ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();
   }
+  static bool useExtLevelZero() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_LevelZero>();
+  }
   static bool useExtPrefetch() {
     return getUsingExperimental<ExperimentalFeatures::Exp_Prefetch>();
   }
@@ -1390,7 +1393,8 @@ public:
   getCustomHelperFunctionAddtionalIncludes() {
     return CustomHelperFunctionAddtionalIncludes;
   }
-  static std::unordered_map<clang::tooling::UnifiedPath, std::bitset<32>> &
+  static std::unordered_map<clang::tooling::UnifiedPath,
+                            std::bitset<HeaderType::NUM_HEADERS>> &
   getHeaderInsertedBitMap() {
     return HeaderInsertedBitMap;
   }
@@ -1728,7 +1732,8 @@ private:
       CodePinDumpFuncDepsVec;
   static std::unordered_set<std::string> NeedParenAPISet;
   static std::unordered_set<std::string> CustomHelperFunctionAddtionalIncludes;
-  static std::unordered_map<clang::tooling::UnifiedPath, std::bitset<32>>
+  static std::unordered_map<clang::tooling::UnifiedPath,
+                            std::bitset<HeaderType::NUM_HEADERS>>
       HeaderInsertedBitMap;
   // `IsAfterBitsStdcxx` is used as a flag. It is set to true when PP meet
   // <bits/stdc++.h>. It is reset to false when starting to process a new

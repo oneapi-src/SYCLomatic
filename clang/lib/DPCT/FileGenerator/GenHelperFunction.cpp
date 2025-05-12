@@ -150,6 +150,10 @@ const std::string CodePinSerializationBasicAllContentStr =
 #include "clang/DPCT/codepin/serialization/basic.hpp.inc"
     ;
 
+const std::string ZEUtilsAllContentStr =
+#include "clang/DPCT/ze_utils.hpp.inc"
+    ;
+
 const std::string CmakeAllContentStr =
 #include "clang/DPCT/dpct.cmake.inc"
     ;
@@ -206,6 +210,7 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(Util, ".", util.hpp)
   GENERATE_ALL_FILE_CONTENT(RngUtils, ".", rng_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(LibCommonUtils, ".", lib_common_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(ZEUtils, ".", ze_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(CclUtils, ".", ccl_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(SparseUtils, ".", sparse_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(FftUtils, ".", fft_utils.hpp)

@@ -36,9 +36,9 @@ public:
 
   radix_rank(uint8_t *local_memory) : _local_memory(local_memory) {}
 
-  template <typename Item, int VALUES_PER_THREAD>
+  template <typename Item, typename KT, int VALUES_PER_THREAD>
   __dpct_inline__ void
-  rank_keys(const Item &item, uint32_t (&keys)[VALUES_PER_THREAD],
+  rank_keys(const Item &item, KT (&keys)[VALUES_PER_THREAD],
             int (&ranks)[VALUES_PER_THREAD], int current_bit, int num_bits) {
 
     digit_counter_type thread_prefixes[VALUES_PER_THREAD];
@@ -204,10 +204,23 @@ template <typename U> struct base_traits<float, U> {
   }
 };
 
+template <typename U> struct base_traits<sycl::half, U> {
+  static constexpr U HIGH_BIT = U(1) << ((sizeof(U) * 8) - 1);
+  static __dpct_inline__ U twiddle_in(U key) {
+    U mask = (key & HIGH_BIT) ? U(-1) : HIGH_BIT;
+    return key ^ mask;
+  }
+  static __dpct_inline__ U twiddle_out(U key) {
+    U mask = (key & HIGH_BIT) ? HIGH_BIT : U(-1);
+    return key ^ mask;
+  }
+};
+
 template <typename T> struct traits : base_traits<T, T> {};
 template <> struct traits<uint32_t> : base_traits<uint32_t, uint32_t> {};
 template <> struct traits<int> : base_traits<int, uint32_t> {};
 template <> struct traits<float> : base_traits<float, uint32_t> {};
+template <> struct traits<sycl::half> : base_traits<sycl::half, uint16_t> {};
 
 template <int N> struct power_of_two {
   enum { VALUE = ((N & (N - 1)) == 0) };

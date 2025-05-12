@@ -21,6 +21,8 @@
 
 // RUN: diff %T/check_header_files/out/include/dpct/rng_utils.hpp  %S/../../runtime/dpct-rt/include/dpct/rng_utils.hpp >> %T/check_header_files/diff_res.txt
 
+// RUN: diff %T/check_header_files/out/include/dpct/ze_utils.hpp  %S/../../runtime/dpct-rt/include/dpct/ze_utils.hpp >> %T/check_header_files/diff_res.txt
+
 // RUN: diff %T/check_header_files/out/include/dpct/lib_common_utils.hpp  %S/../../runtime/dpct-rt/include/dpct/lib_common_utils.hpp >> %T/check_header_files/diff_res.txt
 
 // RUN: diff %T/check_header_files/out/include/dpct/ccl_utils.hpp  %S/../../runtime/dpct-rt/include/dpct/ccl_utils.hpp >> %T/check_header_files/diff_res.txt
