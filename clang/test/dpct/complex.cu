@@ -290,9 +290,9 @@ int main() {
     auto a24 = COMPLEX_F_FMA(f1, f2, f3);
     r = r && check(a24, expect, index);
 
-    // CHECK: f1 = d1.convert<float>();
+    // CHECK: f1 = d1.template convert<float>();
     f1 = cuComplexDoubleToFloat(d1);
-    // CHECK: d1 = f1.convert<double>();
+    // CHECK: d1 = f1.template convert<double>();
     d1 = cuComplexFloatToDouble(f1);
 
     int *result = nullptr;
