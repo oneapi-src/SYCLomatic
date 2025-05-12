@@ -60,7 +60,7 @@ int main() {
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
   // CHECK-NEXT: res = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   int res = cublasIcamax(n, x_C, incx);
@@ -68,7 +68,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
   // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result = cublasIzamax(n, x_Z, incx);
@@ -77,7 +77,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(dpct::blas::descriptor::get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(dpct::blas::descriptor::get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
   // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result = cublasIcamin(n, x_C, incx);
@@ -85,7 +85,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(dpct::blas::descriptor::get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamin(dpct::blas::descriptor::get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
   // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_host_access(sycl::read_only)[0];
   // CHECK-NEXT: }
   *result = cublasIzamin(n, x_Z, incx);

@@ -1349,6 +1349,9 @@ public:
     return getUsingExperimental<
         ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();
   }
+  static bool useExtLevelZero() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_LevelZero>();
+  }
   static bool useExtPrefetch() {
     return getUsingExperimental<ExperimentalFeatures::Exp_Prefetch>();
   }

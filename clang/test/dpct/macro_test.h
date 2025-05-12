@@ -1,4 +1,5 @@
-//CHECK: #define THREAD_IDX_X item_ct1.get_local_id(2)
+//CHECK: #define THREAD_IDX_X                                                           \
+//CHECK-NEXT:   sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2)
 #define THREAD_IDX_X threadIdx.x
 
 #define STRINGIFY_(...) #__VA_ARGS__

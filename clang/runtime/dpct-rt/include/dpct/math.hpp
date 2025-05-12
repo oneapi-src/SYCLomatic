@@ -9,8 +9,8 @@
 #ifndef __DPCT_MATH_HPP__
 #define __DPCT_MATH_HPP__
 
-#include <limits>
 #include <climits>
+#include <limits>
 #include <sycl/sycl.hpp>
 #include <type_traits>
 
@@ -2055,6 +2055,167 @@ public:
   matrix_accessor x;
   const size_t num_elements;
 };
+
+/// Collectively loads 1 8x8 b16 (128 bytes) matrix from private memory to local
+/// memory per sub-group. Requires the sub-group size of kernel calling this
+/// function to be 32.
+/// 'mat' specifies the matrix index to be loaded. The first '(mat + 1) * 8'
+/// work items of sub-group contain the starting address of their respective
+/// matrix row in 'addr'.
+/// After distributing addresses to other work items, each of the 32 work items
+/// load 32-bits (2 packed 16-bit data) into 'm' for a total of 128 bytes.
+/// 'trans' specifies to perform a transposed/non-transposed load by each work
+/// item like below
+/// Row Major: Each row of the matrix is loaded by a group of 4 work items(wi)
+/// row-0: wi0 wi0 wi1 wi1 ... wi3 wi3
+/// row-1: wi4 wi4 wi5 wi5 ... wi7 wi7
+/// ...
+/// row-6: wi24 wi24 wi25 wi25 ... wi27 wi27
+/// row-7: wi28 wi28 wi29 wi29 ... wi31 wi31
+/// Col Major: Each col of the matrix is loaded by a group of 4 work items(wi)
+/// row-0: wi0 wi4 wi8 ... wi28
+/// row-1: wi0 wi4 wi8 ... wi28
+/// ...
+/// row-6: wi3 wi7 wi11 ... wi31
+/// row-7: wi3 wi7 wi11 ... wi31
+/// \tparam [in] T Type of result variable (currently only supports 16-bit type)
+/// \param [in] addr The starting address of corresponding matrix row for a work
+/// item in local memory
+/// \param [in] m The private memory to store the matrix. It points to 2 b16
+/// type elements.
+/// \param [in] trans Indicates whether the matrix to be loaded transposed
+/// \param [in] mat The matrix index to be loaded
+template <typename T>
+void ldmatrix(uintptr_t addr, T *m, bool trans = false, unsigned mat = 0) {
+  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
+  int lane = sg.get_local_linear_id();
+
+  int lane_group8_row = lane / 8;
+  int lane_group8_col = lane % 8;
+
+  if (!trans) {
+    // calculate the source lane
+    int src_lane = 2 * lane_group8_row;
+    if (lane_group8_col >= 4)
+      src_lane += 1;
+
+    // Broadcast the address from the source lane
+    auto recv_addr_uintp =
+        dpct::select_from_sub_group(sg, addr, mat * 8 + src_lane);
+
+    // Cast the received address from uintptr_t to the type of 'm'
+    auto recv_addr = reinterpret_cast<T *>(recv_addr_uintp);
+
+    // Non-transposed load
+    *m = recv_addr[lane_group8_col % 4];
+  } else {
+    // calculate the source lane
+    int src_lane = (lane % 4) * 2;
+
+    // Broadcast the address from the source lane
+    auto recv_addr_uintp_1 =
+        dpct::select_from_sub_group(sg, addr, mat * 8 + src_lane);
+    auto recv_addr_uintp_2 =
+        dpct::select_from_sub_group(sg, addr, mat * 8 + src_lane + 1);
+
+    // Cast the received address from uintptr_t to 'half *'
+    auto recv_addr_1 = reinterpret_cast<sycl::half *>(recv_addr_uintp_1);
+    auto recv_addr_2 = reinterpret_cast<sycl::half *>(recv_addr_uintp_2);
+
+    // Transposed load
+    int index = lane / 4;
+    sycl::half val0 = recv_addr_1[index];
+    sycl::half val1 = recv_addr_2[index];
+
+    // Combine the two 16-bits into one 32-bit value
+    sycl::half2 val = sycl::half2(val0, val1);
+    *m = *reinterpret_cast<T *>(&val);
+  }
+}
+
+/// Collectively loads 2 8x8 b16 (256 bytes) matrix from private memory to local
+/// memory per sub-group. Requires the sub-group size of kernel calling this
+/// function to be 32.
+/// The first 16 work items of sub-group contain the starting address of their
+/// respective matrix row in 'addr'.
+/// After distributing addresses to other work items, each of the 32 work items
+/// load 64-bits (32-bits per matrix) into 'm1' & 'm2' for a total of 256 bytes.
+/// 'trans' specifies to perform a transposed/non-transposed load by each work
+/// item like below
+/// Row Major: Each row of the matrices is loaded by a group of 4 work items(wi)
+/// row-0: wi0 wi0 wi1 wi1 ... wi3 wi3
+/// row-1: wi4 wi4 wi5 wi5 ... wi7 wi7
+/// ...
+/// row-6: wi24 wi24 wi25 wi25 ... wi27 wi27
+/// row-7: wi28 wi28 wi29 wi29 ... wi31 wi31
+/// Col Major: Each col of the matrices is loaded by a group of 4 work items(wi)
+/// row-0: wi0 wi4 wi8 ... wi28
+/// row-1: wi0 wi4 wi8 ... wi28
+/// ...
+/// row-6: wi3 wi7 wi11 ... wi31
+/// row-7: wi3 wi7 wi11 ... wi31
+/// \tparam [in] T Type of result variable (currently only supports 16-bit type)
+/// \param [in] addr The starting address of corresponding matrix row for a work
+/// item in local memory
+/// \param [in] m1 The private memory to store the data of 1st matrix. It points
+/// to 2 b16 type elements.
+/// \param [in] m2 The private memory to store the data of 2nd matrix. It points
+/// to 2 b16 type elements.
+/// \param [in] trans Indicates whether the matrix to be loaded transposed
+template <typename T>
+void ldmatrix(uintptr_t addr, T *m1, T *m2, bool trans = false) {
+  // Load 1st matrix
+  ldmatrix(addr, m1, trans, 0);
+  // Load 2nd matrix
+  ldmatrix(addr, m2, trans, 1);
+}
+
+/// Collectively loads 4 8x8 b16 (512 bytes) matrix from private memory to local
+/// memory per sub-group. Requires the sub-group size of kernel calling this
+/// function to be 32.
+/// Each work item of sub-group contains the starting address of their
+/// respective matrix row in 'addr'.
+/// After distributing addresses to other work items, each of the 32 work items
+/// load 128-bits (32-bits per matrix) into 'm1', 'm2', 'm3' & 'm4' for a total
+/// of 512 bytes.
+/// 'trans' specifies to perform a transposed/non-transposed load by each work
+/// item like below
+/// Row Major: Each row of the matrices is loaded by a group of 4 work items(wi)
+/// row-0: wi0 wi0 wi1 wi1 ... wi3 wi3
+/// row-1: wi4 wi4 wi5 wi5 ... wi7 wi7
+/// ...
+/// row-6: wi24 wi24 wi25 wi25 ... wi27 wi27
+/// row-7: wi28 wi28 wi29 wi29 ... wi31 wi31
+/// Col Major: Each col of the matrices is loaded by a group of 4 work items(wi)
+/// row-0: wi0 wi4 wi8 ... wi28
+/// row-1: wi0 wi4 wi8 ... wi28
+/// ...
+/// row-6: wi3 wi7 wi11 ... wi31
+/// row-7: wi3 wi7 wi11 ... wi31
+/// \tparam [in] T Type of result variable (currently only supports 16-bit type)
+/// \param [in] addr The starting address of corresponding matrix row for a work
+/// item in local memory
+/// \param [in] m1 The private memory to store the data of 1st matrix. It points
+/// to 2 b16 type elements.
+/// \param [in] m2 The private memory to store the data of 2nd matrix. It points
+/// to 2 b16 type elements.
+/// \param [in] m3 The private memory to store the data of 3rd matrix. It points
+/// to 2 b16 type elements.
+/// \param [in] m4 The private memory to store the data of 4th matrix. It points
+/// to 2 b16 type elements.
+/// \param [in] trans Indicates whether the matrix to be loaded transposed
+template <typename T>
+void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
+  // Load 1st matrix
+  ldmatrix(addr, m1, trans, 0);
+  // Load 2nd matrix
+  ldmatrix(addr, m2, trans, 1);
+  // Load 3rd matrix
+  ldmatrix(addr, m3, trans, 2);
+  // Load 4th matrix
+  ldmatrix(addr, m4, trans, 3);
+}
+
 } // namespace matrix
 } // namespace experimental
 
