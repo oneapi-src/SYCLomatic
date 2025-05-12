@@ -2511,7 +2511,12 @@ public:
   CharUnits getTypeSizeInChars(const Type *T) const;
 
   std::optional<CharUnits> getTypeSizeInCharsIfKnown(QualType Ty) const {
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (Ty->isIncompleteType() || Ty->isDependentType() ||
+        Ty->isUndeducedType())
+#else
     if (Ty->isIncompleteType() || Ty->isDependentType())
+#endif
       return std::nullopt;
     return getTypeSizeInChars(Ty);
   }
