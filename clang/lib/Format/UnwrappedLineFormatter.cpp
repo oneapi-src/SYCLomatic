@@ -1673,7 +1673,7 @@ static auto computeNewlines(const AnnotatedLine &Line,
       if (Style.WrapNamespaceBodyWithEmptyLines == FormatStyle::WNBWELS_Never)
         Newlines = 1;
 #ifdef SYCLomatic_CUSTOMIZATION
-      else if (PreviousLine && PreviousLine->startsWith(TT_NamespaceRBrace))
+      else if (PreviousLine && !PreviousLine->startsWith(TT_NamespaceRBrace))
 #else
       else if (!PreviousLine->startsWith(TT_NamespaceRBrace))
 #endif
