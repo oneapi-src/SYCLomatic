@@ -110,9 +110,34 @@ __device__ void bar(float *a, float *b) {
   copy(a, b, 10)
 }
 
+
+// CHECK: __dpct_inline__ void foo2(float *a) {
+// CHECK:   auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK:   #pragma unroll
+// CHECK:   for(int i = 0; i < 10; i++) {
+// CHECK:     a[i] = item_ct1.get_local_id(2);
+// CHECK:   }
+// CHECK:   #pragma unroll
+// CHECK:   for(int i = 0; i < 10; i++) {
+// CHECK:     a[i] = item_ct1.get_local_id(1);
+// CHECK:   }
+// CHECK: }
+__global__ void foo2(float *a) {
+  for(int i = 0; i < 10; i++) {
+    a[i] = threadIdx.x;
+  }
+
+  for(int i = 0; i < 10; i++) {
+    a[i] = threadIdx.y;
+  }
+
+}
+
+
 int main(){
     float *a, *b, *c;
     kernel<<<10, 10>>>(a, b, c);
+    foo2<<<10, 10>>>(a);
     return 0;
 }
 #endif
