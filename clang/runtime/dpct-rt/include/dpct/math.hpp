@@ -2228,24 +2228,24 @@ template <typename T> struct MMAType {
 };
 
 /// Each work item of a sub-group (limited to size 32) calling this function
-/// calculates a subset fragment for the output D matrix using MAD operation on
+/// calculates a subset fragment for the output matrix D using MAD operation on
 /// A, B & C matrix fragments (D = A * B + C).
 /// Current supported shapes & types:
 /// - m16n8k16 (f32.f16.f16.f32 & s32.s8.s8.s32)
 /// Here, m, n & k define the shapes of A, B & C matrices respectively
 /// (A = [m x k], B = [k x n], C = [m x n]).
-/// \tparam [in] M The rows of A, C & D matrix
-/// \tparam [in] N The columns of B, C, D matrix
+/// \tparam [in] M The rows of A, C & D matrices
+/// \tparam [in] N The columns of B, C, D matrices
 /// \tparam [in] K The columns & rows of A & B matrices respectively
 /// \tparam [in] ABType The type of the input matrix (A & B) fragment
 /// \tparam [in] CDType The type of the output matrix (C & D) fragment
-/// \param [out] d_mat_frag The fragment of the output D matrix to store the
+/// \param [out] d_mat_frag The fragment of the output matrix D to store the
 /// result of A * B + C
-/// \param [in] a_mat_frag The fragment of the input A matrix to be multiplied
+/// \param [in] a_mat_frag The fragment of the input matrix A to be multiplied
 /// with B matrix fragment
-/// \param [in] b_mat_frag The fragment of the input B matrix to be multiplied
+/// \param [in] b_mat_frag The fragment of the input matrix B to be multiplied
 /// with A matrix fragment
-/// \param [in] c_mat_frag The fragment of the input C matrix to be added with
+/// \param [in] c_mat_frag The fragment of the input matrix C to be added with
 /// the result of A * B fragments
 template <int M, int N, int K, typename ABType, typename CDType>
 void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
@@ -2261,8 +2261,8 @@ void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
   static_assert(M == 16 && N == 8 && K == 16,
                 "Only m16n8k16 shape is supported!");
 
-  short ROW_LOAD_OFFSET = 4 * (lane >> 2);
-  short COL_LOAD_OFFSET = 8 * (lane % 4);
+  short row_load_offset = 4 * (lane >> 2);
+  short col_load_offset = 8 * (lane % 4);
 
   if constexpr (M == 16 && N == 8 && K == 16) {
     if constexpr (std::is_floating_point_v<CDType>) {
@@ -2272,34 +2272,38 @@ void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
       *d[2] = c[2];
       *d[3] = c[3];
 
-      // Each work item Wi (i=0...31) gathers 2 row & 2 col matrix fragments
-      // of length k (8) from A & B matrices respectively into recv_a & recv_b
-      // across 4 iterations using 4 neighboring work items with below mapping
-      // logic:
+      // Each sub-group is responsible for computing a fragment size of 16*8
+      // elements of matrix D.
+      // Each work item computes 4 elements of matrix D by gathering
+      // their corresponding row & col matrix fragments of length k (8)
+      // from A & B matrices respectively using below mapping logic:
       // row0 = (lane >> 2)    & row1 = (lane >> 2) + 8
       // col0 = (lane % 4) * 2 & col1 = (lane % 4) * 2 + 1
+      // As each row & col fragment of A & B matrices is distributed across
+      // 4 work items, each iteration of below loop loads a partial fragment of
+      // matrix A (row) and matrix B (col) using the row & col offsets.
       for (int i = 0; i < 4; i++) {
         typename MMAType<ABType>::PackType recv_a[4], recv_b[4];
 
         // Load partial fragment from row0 of matrix A ({a0, a1})
-        recv_a[0] = dpct::select_from_sub_group(sg, a[0], ROW_LOAD_OFFSET + i);
+        recv_a[0] = dpct::select_from_sub_group(sg, a[0], row_load_offset + i);
         // Load partial fragment from row0 of matrix A ({a2, a3})
-        recv_a[1] = dpct::select_from_sub_group(sg, a[2], ROW_LOAD_OFFSET + i);
+        recv_a[1] = dpct::select_from_sub_group(sg, a[2], row_load_offset + i);
         // Load partial fragment from row1 of matrix A ({a0, a1})
-        recv_a[2] = dpct::select_from_sub_group(sg, a[1], ROW_LOAD_OFFSET + i);
+        recv_a[2] = dpct::select_from_sub_group(sg, a[1], row_load_offset + i);
         // Load partial fragment from row1 of matrix A ({a2, a3})
-        recv_a[3] = dpct::select_from_sub_group(sg, a[3], ROW_LOAD_OFFSET + i);
+        recv_a[3] = dpct::select_from_sub_group(sg, a[3], row_load_offset + i);
 
         // Load partial fragment from col0 of matrix B ({b0, b1})
-        recv_b[0] = dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i);
+        recv_b[0] = dpct::select_from_sub_group(sg, b[0], col_load_offset + i);
         // Load partial fragment from col0 of matrix B ({b2, b3})
-        recv_b[1] = dpct::select_from_sub_group(sg, b[1], COL_LOAD_OFFSET + i);
+        recv_b[1] = dpct::select_from_sub_group(sg, b[1], col_load_offset + i);
         // Load partial fragment from col1 of matrix B ({b0, b1})
         recv_b[2] =
-            dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + 4 + i);
+            dpct::select_from_sub_group(sg, b[0], col_load_offset + 4 + i);
         // Load partial fragment from col1 of matrix B ({b2, b3})
         recv_b[3] =
-            dpct::select_from_sub_group(sg, b[1], COL_LOAD_OFFSET + 4 + i);
+            dpct::select_from_sub_group(sg, b[1], col_load_offset + 4 + i);
 
         auto ra = reinterpret_cast<ABType *>(recv_a);
         auto rb = reinterpret_cast<ABType *>(recv_b);
@@ -2309,7 +2313,7 @@ void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
         // d0 += row0{ a0, a1, a2, a3 } * col0{ b0, b1, b2, b3 }
         // d1 += row0{ a0, a1, a2, a3 } * col1{ b0, b1, b2, b3 }
         // d2 += row1{ a0, a1, a2, a3 } * col0{ b0, b1, b2, b3 }
-        // d3 += row1{ a1, a1, a2, a3 } * col1{ b0, b1, b2, b3 }
+        // d3 += row1{ a0, a1, a2, a3 } * col1{ b0, b1, b2, b3 }
         for (int j = 0; j < 4; j++) {
           *d[0] += static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[j]);
           *d[1] += static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[j + 4]);
@@ -2325,24 +2329,28 @@ void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
       *d[2] = c[2];
       *d[3] = c[3];
 
-      // Each work item Wi (i=0...31) gathers 2 row & 2 col matrix fragments
-      // of length k (8) from A & B matrices respectively into recv_a & recv_b
-      // across 4 iterations using 4 neighboring work items with below mapping
-      // logic:
+      // Each sub-group is responsible for computing a fragment size of 16*8
+      // elements of matrix D.
+      // Each work item computes 4 elements of matrix D by gathering
+      // their corresponding row & col matrix fragments of length k (8)
+      // from A & B matrices respectively using below mapping logic:
       // row0 = (lane >> 2)    & row1 = (lane >> 2) + 8
       // col0 = (lane % 4) * 2 & col1 = (lane % 4) * 2 + 1
+      // As each row & col fragment of A & B matrices is distributed across
+      // 4 work items, each iteration of below loop loads a partial fragment of
+      // matrix A (row) and matrix B (col) using the row & col offsets.
       for (int i = 0; i < 4; i++) {
         typename MMAType<ABType>::PackType recv_a[2], recv_b[2];
 
         // Load partial fragment from row0 of matrix A ({a0, a1, a2, a3})
-        recv_a[0] = dpct::select_from_sub_group(sg, a[0], ROW_LOAD_OFFSET + i);
+        recv_a[0] = dpct::select_from_sub_group(sg, a[0], row_load_offset + i);
         // Load partial fragment from row1 of matrix A ({a4, a5, a6, a7})
-        recv_a[1] = dpct::select_from_sub_group(sg, a[1], ROW_LOAD_OFFSET + i);
+        recv_a[1] = dpct::select_from_sub_group(sg, a[1], row_load_offset + i);
         // Load partial fragment from col0 of matrix B ({b0, b1, b2, b3})
-        recv_b[0] = dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i);
+        recv_b[0] = dpct::select_from_sub_group(sg, b[0], col_load_offset + i);
         // Load partial fragment from col1 of matrix B ({b4, b5, b6, b7})
         recv_b[1] =
-            dpct::select_from_sub_group(sg, b[0], COL_LOAD_OFFSET + i + 4);
+            dpct::select_from_sub_group(sg, b[0], col_load_offset + i + 4);
 
         auto ra = reinterpret_cast<ABType *>(recv_a);
         auto rb = reinterpret_cast<ABType *>(recv_b);
