@@ -4534,6 +4534,40 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
+void BinaryOperatorCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(binaryOperator(isComparisonOperator()).bind("binOp"), this);
+}
+void BinaryOperatorCallRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  auto BO = getNodeAsType<BinaryOperator>(Result, "binOp");
+  if (!BO)
+    return;
+  auto InsertEnumCast = [&](const Expr *E) {
+    QualType EType = E->getType();
+    if (EType->isEnumeralType()) {
+      if (const auto *EnumType = EType->getAs<clang::EnumType>()) {
+        const clang::EnumDecl *EnumDecl = EnumType->getDecl();
+        clang::SourceLocation EnumLoc = EnumDecl->getLocation();
+        if (dpct::DpctGlobalInfo::isInCudaPath(EnumLoc) &&
+            !EnumDecl->isScoped()) {
+          SourceLocation EndLoc = Lexer::getLocForEndOfToken(
+              E->getEndLoc(), 0, DpctGlobalInfo::getSourceManager(),
+              LangOptions());
+          DpctGlobalInfo::getInstance().addReplacement(
+              std::make_shared<ExtReplacement>(
+                  DpctGlobalInfo::getSourceManager(), E->getBeginLoc(), 0,
+                  "static_cast<int>(", nullptr));
+          DpctGlobalInfo::getInstance().addReplacement(
+              std::make_shared<ExtReplacement>(
+                  DpctGlobalInfo::getSourceManager(), EndLoc, 0, ")", nullptr));
+        }
+      }
+    }
+  };
+  InsertEnumCast(BO->getLHS()->IgnoreImpCasts());
+  InsertEnumCast(BO->getRHS()->IgnoreImpCasts());
+}
+
 void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       functionDecl(
