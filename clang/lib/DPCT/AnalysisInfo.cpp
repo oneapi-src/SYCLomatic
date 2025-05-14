@@ -2544,7 +2544,8 @@ std::vector<std::pair<std::string, std::vector<std::string>>>
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 std::unordered_set<std::string>
     DpctGlobalInfo::CustomHelperFunctionAddtionalIncludes = {};
-std::unordered_map<clang::tooling::UnifiedPath, std::bitset<32>>
+std::unordered_map<clang::tooling::UnifiedPath,
+                   std::bitset<HeaderType::NUM_HEADERS>>
     DpctGlobalInfo::HeaderInsertedBitMap = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
