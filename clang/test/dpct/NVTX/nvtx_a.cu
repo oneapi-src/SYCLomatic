@@ -1,8 +1,8 @@
 // UNSUPPORTED: system-windows
-// UNSUPPORTED: cuda-12.9
-// RUN: dpct --format-range=none --out-root %T/nvtx %s --cuda-include-path="%cuda-path/include"
-// RUN: FileCheck %s --match-full-lines --input-file %T/nvtx/nvtx.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/nvtx/nvtx.dp.cpp -o %T/nvtx/nvtx.dp.o %}
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-12.9
+// RUN: dpct --format-range=none --out-root %T %s --cuda-include-path="%cuda-path/include"
+// RUN: FileCheck %s --match-full-lines --input-file %T/nvtx_a.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/nvtx_a.dp.cpp -o %T/nvtx_a.dp.o %}
 
 #include "nvToolsExt.h"
 #include "nvToolsExtCudaRt.h"

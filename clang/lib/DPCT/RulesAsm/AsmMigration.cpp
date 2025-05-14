@@ -514,14 +514,17 @@ bool SYCLGenBase::emitType(const InlineAsmType *T) {
 bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
   switch (T->getKind()) {
     // clang-format off
+  case InlineAsmBuiltinType::b1:     OS() << "uint8_t"; break;
   case InlineAsmBuiltinType::b8:     OS() << "uint8_t"; break;
   case InlineAsmBuiltinType::b16:    OS() << "uint16_t"; break;
   case InlineAsmBuiltinType::b32:    OS() << "uint32_t"; break;
   case InlineAsmBuiltinType::b64:    OS() << "uint64_t"; break;
+  case InlineAsmBuiltinType::u4:     OS() << "uint8_t"; break;
   case InlineAsmBuiltinType::u8:     OS() << "uint8_t"; break;
   case InlineAsmBuiltinType::u16:    OS() << "uint16_t"; break;
   case InlineAsmBuiltinType::u32:    OS() << "uint32_t"; break;
   case InlineAsmBuiltinType::u64:    OS() << "uint64_t"; break;
+  case InlineAsmBuiltinType::s4:     OS() << "int8_t"; break;
   case InlineAsmBuiltinType::s8:     OS() << "int8_t"; break;
   case InlineAsmBuiltinType::s16:    OS() << "int16_t"; break;
   case InlineAsmBuiltinType::s32:    OS() << "int32_t"; break;
@@ -557,6 +560,9 @@ bool SYCLGenBase::emitVectorType(const InlineAsmVectorType *T) {
   OS() << ", ";
   switch (T->getKind()) {
   case InlineAsmVectorType::x1:
+    OS() << 1;
+    break;
+  case InlineAsmVectorType::v1:
     OS() << 1;
     break;
   case InlineAsmVectorType::v2:
@@ -1359,6 +1365,167 @@ protected:
     if (Inst->hasAttr(InstAttr::trans))
       OS() << ", true";
     OS() << ");";
+    const auto *KernelDecl = getImmediateOuterFuncDecl(GAS);
+    if (KernelDecl) {
+      auto FuncInfo = DeviceFunctionDecl::LinkRedecls(KernelDecl);
+      if (FuncInfo)
+        FuncInfo->addSubGroupSizeRequest(32, GAS->getBeginLoc(),
+                                         DpctGlobalInfo::getSubGroup(GAS));
+    }
+
+    return SYCLGenSuccess();
+  }
+
+  bool handle_mma(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 3)
+      return SYCLGenError();
+
+    const InlineAsmVectorExpr *DMatVE =
+        dyn_cast<InlineAsmVectorExpr>(Inst->getOutputOperand());
+    if (!DMatVE)
+      return SYCLGenError();
+
+    // Only row Layout is supported for of A matrix and
+    // only col Layout is supported for of B matrix
+    if (Inst->getAttr(3) != InstAttr::row || Inst->getAttr(4) != InstAttr::col)
+      return SYCLGenError();
+
+    // Data types of D, A, B & C matrices respectively in the PTX instruction
+    const auto *DType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+    const auto *AType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(1));
+    const auto *BType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(2));
+    const auto *CType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(3));
+
+    if (!(AType && BType && CType && DType))
+      return SYCLGenError();
+
+    // Data types of matrix elements for A&B and C&D matrices should be same
+    if ((AType->getKind() != BType->getKind()) ||
+        (CType->getKind() != DType->getKind()))
+      return SYCLGenError();
+
+    // Check the validity of AB & CD types
+    std::string ABType, CDType;
+    if (tryEmitType(ABType, AType))
+      return SYCLGenError();
+
+    if (tryEmitType(CDType, CType))
+      return SYCLGenError();
+
+    // Register sizes for vector elements of A, B, C & D matrices
+    unsigned NumVecElements[4] = {0};
+
+    // Sizes of A & B matrices
+    std::string M, N, K;
+
+    // Data types of A, B & C matrices respectively in the PTX arguments
+    std::string InMatrixType[3];
+
+    if (Inst->hasAttr(InstAttr::m16n8k16)) {
+      M = "16";
+      N = "8";
+      K = "16";
+
+      // Only f16/s8 types are supported for A and B matrices of m16n8k16
+      if (AType->getKind() == InlineAsmBuiltinType::f16) {
+        InMatrixType[0] = "uint32_t"; // A type is .f16x2
+        InMatrixType[1] = "uint32_t"; // B type is .f16x2
+
+        // If A matrix type is f16, then C&D matrix types can only be f32
+        if (CType->getKind() == InlineAsmBuiltinType::f32) {
+          NumVecElements[0] = 4; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else if (AType->getKind() == InlineAsmBuiltinType::s8) {
+        InMatrixType[0] = "uint32_t"; // A type is .f16x2
+        InMatrixType[1] = "uint32_t"; // B type is .f16x2
+
+        // If A matrix type is s8, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else
+      return SYCLGenError();
+
+    InMatrixType[2] = CDType;
+
+    // Check the register sizes for vector elements of A, B, C & D matrices
+    for (unsigned InputOp = 0; InputOp < Inst->getNumInputOperands();
+         InputOp++) {
+      if (auto VE =
+              dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(InputOp))) {
+        if (VE->getNumElements() != NumVecElements[InputOp])
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    }
+    if (DMatVE->getNumElements() != NumVecElements[3])
+      return SYCLGenError();
+
+    // Declare and init an array for storing the addresses of D matrix elements
+    OS() << "{\n";
+    OS() << "volatile " << CDType << " *d_mat_frag_ct1["
+         << DMatVE->getNumElements() << "] = { ";
+    for (unsigned Inst = 0; Inst != DMatVE->getNumElements(); ++Inst) {
+      if (isa<InlineAsmDiscardExpr>(DMatVE->getElement(Inst)))
+        continue;
+      OS() << "&";
+      if (emitStmt(DMatVE->getElement(Inst)))
+        return SYCLGenError();
+      if ((Inst + 1) != DMatVE->getNumElements())
+        OS() << ", ";
+    }
+    OS() << " }";
+    endstmt();
+
+    // Declare and init vectors for storing the values of A, B & C matrix
+    // elements
+    std::string InMatrixName[3] = {"a", "b", "c"};
+    for (unsigned InputOp = 0; InputOp < Inst->getNumInputOperands();
+         InputOp++) {
+      if (auto VE =
+              dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(InputOp))) {
+        OS() << "sycl::vec<" << InMatrixType[InputOp] << ", "
+             << VE->getNumElements() << "> " << InMatrixName[InputOp]
+             << "_mat_frag_ct1(";
+        for (unsigned Inst = 0; Inst != VE->getNumElements(); ++Inst) {
+          if (isa<InlineAsmDiscardExpr>(VE->getElement(Inst)))
+            continue;
+          if (emitStmt(VE->getElement(Inst)))
+            return SYCLGenError();
+          if ((Inst + 1) != VE->getNumElements())
+            OS() << ", ";
+        }
+        OS() << ")";
+        endstmt();
+      } else {
+        return SYCLGenError();
+      }
+    }
+
+    OS() << MapNames::getDpctNamespace() << "experimental::matrix::mma";
+    OS() << "<";
+    OS() << M << ", " << N << ", " << K << ", ";
+    OS() << ABType << ", " << CDType;
+    OS() << ">(";
+
+    OS() << "reinterpret_cast<volatile void **>(d_mat_frag_ct1)";
+    for (int i = 0; i < 3; i++)
+      OS() << ", &" << InMatrixName[i] << "_mat_frag_ct1";
+    OS() << ")";
+    endstmt();
+    OS() << "}";
+    endstmt();
+
     const auto *KernelDecl = getImmediateOuterFuncDecl(GAS);
     if (KernelDecl) {
       auto FuncInfo = DeviceFunctionDecl::LinkRedecls(KernelDecl);
@@ -2595,11 +2762,10 @@ protected:
       Op = std::move(NewOp);
     }
 
-    bool HasHalfOrBfloat16 =
-        SrcType->getKind() == InlineAsmBuiltinType::f16 ||
-        DesType->getKind() == InlineAsmBuiltinType::f16 ||
-        SrcType->getKind() == InlineAsmBuiltinType::bf16 ||
-        DesType->getKind() == InlineAsmBuiltinType::bf16;
+    bool HasHalfOrBfloat16 = SrcType->getKind() == InlineAsmBuiltinType::f16 ||
+                             DesType->getKind() == InlineAsmBuiltinType::f16 ||
+                             SrcType->getKind() == InlineAsmBuiltinType::bf16 ||
+                             DesType->getKind() == InlineAsmBuiltinType::bf16;
     if (DpctGlobalInfo::useIntelDeviceMath() && HasHalfOrBfloat16) {
       insertHeader(HeaderType::HT_SYCL_Math);
       if (SrcNeedBitCast)
