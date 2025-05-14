@@ -22,116 +22,44 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   // API register
   auto functionName = [&]() { return hasAnyName("on"); };
 
-  // THRUST_200302___CUDA_ARCH_LIST___NS is newly imported inline
-  // namespace by thrust library in CUDA header file 12.4.
-  auto thrustFuncNameCuda124 = [&]() {
-    return hasAnyName("THRUST_200302___CUDA_ARCH_LIST___NS",
-                      "THRUST_200302___CUDA_ARCH_LIST___NS::detail",
-                      "THRUST_200302___CUDA_ARCH_LIST___NS::system");
-  };
-
-  // THRUST_200400___CUDA_ARCH_LIST___NS is newly imported inline
-  // namespace by thrust library in CUDA header file 12.5.
-  auto thrustFuncNameCuda125 = [&]() {
-    return hasAnyName("THRUST_200400___CUDA_ARCH_LIST___NS",
-                      "THRUST_200400___CUDA_ARCH_LIST___NS::detail",
-                      "THRUST_200400___CUDA_ARCH_LIST___NS::system");
-  };
-
-  // THRUST_200500___CUDA_ARCH_LIST___NS is newly imported inline
-  // namespace by thrust library in CUDA header file 12.6.
-  auto thrustFuncNameCuda126 = [&]() {
-    return hasAnyName("THRUST_200500___CUDA_ARCH_LIST___NS",
-                      "THRUST_200500___CUDA_ARCH_LIST___NS::detail",
-                      "THRUST_200500___CUDA_ARCH_LIST___NS::system");
-  };
-
-  // THRUST_200700___CUDA_ARCH_LIST___NS is newly imported inline
-  // namespace by thrust library in CUDA header file 12.6.
-  auto thrustFuncNameCuda128 = [&]() {
-    return hasAnyName("THRUST_200700___CUDA_ARCH_LIST___NS",
-                      "THRUST_200700___CUDA_ARCH_LIST___NS::detail",
-                      "THRUST_200700___CUDA_ARCH_LIST___NS::system");
-  };
-
-  auto thrustFuncNameCudaCommon = [&]() {
-    return hasAnyName("thrust", "thrust::detail", "thrust::system", "__4");
-  };
-
   int ThrustMajorVersion = ThrustVersion / 100000;
   int ThrustMinorVersion = ThrustVersion / 100 % 1000;
 
-  if (ThrustMajorVersion == 2 && ThrustMinorVersion == 3) {
-    // For CUDA-12.4
-    MF.addMatcher(
-        callExpr(
-            anyOf(callee(functionDecl(anyOf(
-                      hasDeclContext(namespaceDecl(thrustFuncNameCuda124())),
-                      hasDeclContext(namespaceDecl(thrustFuncNameCudaCommon())),
-                      functionName()))),
-                  callee(unresolvedLookupExpr(
-                      hasAnyDeclaration(namedDecl(hasDeclContext(namespaceDecl(
-                          anyOf(thrustFuncNameCuda124(),
-                                thrustFuncNameCudaCommon())))))))))
-            .bind("thrustFuncCall"),
-        this);
+  auto thrustFuncName = [&]() {
+#define COMMON "thrust", "thrust::detail", "thrust::system", "__4"
+    if (ThrustMajorVersion == 2 && ThrustMinorVersion == 3)
+      return hasAnyName("THRUST_200302___CUDA_ARCH_LIST___NS",
+                        "THRUST_200302___CUDA_ARCH_LIST___NS::detail",
+                        "THRUST_200302___CUDA_ARCH_LIST___NS::system", COMMON);
+    if (ThrustMajorVersion == 2 && ThrustMinorVersion == 4)
+      return hasAnyName("THRUST_200400___CUDA_ARCH_LIST___NS",
+                        "THRUST_200400___CUDA_ARCH_LIST___NS::detail",
+                        "THRUST_200400___CUDA_ARCH_LIST___NS::system", COMMON);
+    if (ThrustMajorVersion == 2 && ThrustMinorVersion == 5)
+      return hasAnyName("THRUST_200500___CUDA_ARCH_LIST___NS",
+                        "THRUST_200500___CUDA_ARCH_LIST___NS::detail",
+                        "THRUST_200500___CUDA_ARCH_LIST___NS::system", COMMON);
+    if (ThrustMajorVersion == 2 && ThrustMinorVersion == 7)
+      return hasAnyName("THRUST_200700___CUDA_ARCH_LIST___NS",
+                        "THRUST_200700___CUDA_ARCH_LIST___NS::detail",
+                        "THRUST_200700___CUDA_ARCH_LIST___NS::system", COMMON);
+    if (ThrustMajorVersion == 2 && ThrustMinorVersion == 8)
+      return hasAnyName("THRUST_200802_SM___CUDA_ARCH_LIST___NS",
+                        "THRUST_200802_SM___CUDA_ARCH_LIST___NS::detail",
+                        "THRUST_200802_SM___CUDA_ARCH_LIST___NS::system",
+                        COMMON);
+    return hasAnyName(COMMON);
+#undef COMMON
+  };
 
-  } else if (ThrustMajorVersion == 2 && ThrustMinorVersion == 4) {
-    // For CUDA-12.5
-    MF.addMatcher(
-        callExpr(
-            anyOf(callee(functionDecl(anyOf(
-                      hasDeclContext(namespaceDecl(thrustFuncNameCuda125())),
-                      hasDeclContext(namespaceDecl(thrustFuncNameCudaCommon())),
-                      functionName()))),
-                  callee(unresolvedLookupExpr(
-                      hasAnyDeclaration(namedDecl(hasDeclContext(namespaceDecl(
-                          anyOf(thrustFuncNameCuda125(),
-                                thrustFuncNameCudaCommon())))))))))
-            .bind("thrustFuncCall"),
-        this);
-  } else if (ThrustMajorVersion == 2 && ThrustMinorVersion == 5) {
-    // For CUDA-12.6
-    MF.addMatcher(
-        callExpr(
-            anyOf(callee(functionDecl(anyOf(
-                      hasDeclContext(namespaceDecl(thrustFuncNameCuda126())),
-                      hasDeclContext(namespaceDecl(thrustFuncNameCudaCommon())),
-                      functionName()))),
-                  callee(unresolvedLookupExpr(
-                      hasAnyDeclaration(namedDecl(hasDeclContext(namespaceDecl(
-                          anyOf(thrustFuncNameCuda126(),
-                                thrustFuncNameCudaCommon())))))))))
-            .bind("thrustFuncCall"),
-        this);
-  } else if (ThrustMajorVersion == 2 && ThrustMinorVersion == 7) {
-    // For CUDA-12.8
-    MF.addMatcher(
-        callExpr(
-            anyOf(callee(functionDecl(anyOf(
-                      hasDeclContext(namespaceDecl(thrustFuncNameCuda128())),
-                      hasDeclContext(namespaceDecl(thrustFuncNameCudaCommon())),
-                      functionName()))),
-                  callee(unresolvedLookupExpr(
-                      hasAnyDeclaration(namedDecl(hasDeclContext(namespaceDecl(
-                          anyOf(thrustFuncNameCuda128(),
-                                thrustFuncNameCudaCommon())))))))))
-            .bind("thrustFuncCall"),
-        this);
-  } else {
-    // For CUDA SDK versions before CUDA-12.4
-    MF.addMatcher(
-        callExpr(
-            anyOf(callee(functionDecl(anyOf(
-                      hasDeclContext(namespaceDecl(thrustFuncNameCudaCommon())),
-
-                      functionName()))),
-                  callee(unresolvedLookupExpr(
-                      hasAnyDeclaration(namedDecl(hasDeclContext(
-                          namespaceDecl(thrustFuncNameCudaCommon()))))))))
-            .bind("thrustFuncCall"),
-        this);
-  }
+  MF.addMatcher(
+      callExpr(anyOf(callee(functionDecl(
+                         anyOf(hasDeclContext(namespaceDecl(thrustFuncName())),
+                               functionName()))),
+                     callee(unresolvedLookupExpr(hasAnyDeclaration(namedDecl(
+                         hasDeclContext(namespaceDecl(thrustFuncName()))))))))
+          .bind("thrustFuncCall"),
+      this);
 
   // THRUST_STATIC_ASSERT macro register
   MF.addMatcher(staticAssertDecl(isExpandedFromMacro("THRUST_STATIC_ASSERT"))

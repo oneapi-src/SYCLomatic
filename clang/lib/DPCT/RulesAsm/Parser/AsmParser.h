@@ -247,6 +247,8 @@ class InlineAsmParser {
   };
 
 public:
+  InlineAsmIdentifierInfo *Opcode;
+
   InlineAsmParser(InlineAsmContext &Ctx, SourceMgr &Mgr)
       : Lexer(*Mgr.getMemoryBuffer(Mgr.getMainFileID())), Context(Ctx),
         SrcMgr(Mgr), CurScope(nullptr) {
@@ -496,7 +498,7 @@ public:
   ///           .reg .sreg .const .local .param .shared .tex
   ///
   ///   vector-specifier: one of
-  ///           .v2 .v4 .v8
+  ///           .v1 .v2 .v4 .v8
   ///
   ///   type-specifier: one of
   ///           .b8 .b16 .b32 .b64 .s8 .s16 .s32 .s64

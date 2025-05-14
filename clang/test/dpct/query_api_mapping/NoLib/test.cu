@@ -89,13 +89,13 @@
 // CUCOMPLEXDOUBLETOFLOAT: CUDA API:
 // CUCOMPLEXDOUBLETOFLOAT-NEXT:   cuComplexDoubleToFloat(c /*cuDoubleComplex*/);
 // CUCOMPLEXDOUBLETOFLOAT-NEXT: Is migrated to:
-// CUCOMPLEXDOUBLETOFLOAT-NEXT:   c.convert<float>();
+// CUCOMPLEXDOUBLETOFLOAT-NEXT:   c.template convert<float>();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuComplexFloatToDouble | FileCheck %s -check-prefix=CUCOMPLEXFLOATTODOUBLE
 // CUCOMPLEXFLOATTODOUBLE: CUDA API:
 // CUCOMPLEXFLOATTODOUBLE-NEXT:   cuComplexFloatToDouble(c /*cuFloatComplex*/);
 // CUCOMPLEXFLOATTODOUBLE-NEXT: Is migrated to:
-// CUCOMPLEXFLOATTODOUBLE-NEXT:   c.convert<double>();
+// CUCOMPLEXFLOATTODOUBLE-NEXT:   c.template convert<double>();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuConj | FileCheck %s -check-prefix=CUCONJ
 // CUCONJ: CUDA API:

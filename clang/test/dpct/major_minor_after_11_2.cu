@@ -5,7 +5,7 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/major_minor_after_11_2/major_minor_after_11_2.dp.cpp -o %T/major_minor_after_11_2/major_minor_after_11_2.dp.o %}
 
 // CHECK: #define DPCT_COMPAT_RT_MAJOR_VERSION {{11|12}}
-// CHECK-NEXT: #define DPCT_COMPAT_RT_MINOR_VERSION {{[0-8]}}
+// CHECK-NEXT: #define DPCT_COMPAT_RT_MINOR_VERSION {{[0-9]}}
 // CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 
