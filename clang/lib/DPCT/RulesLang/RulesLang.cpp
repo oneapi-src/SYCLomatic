@@ -298,15 +298,15 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "dim3", "cudaError", "curandStatus", "cublasStatus", "CUstream",
               "CUstream_st", "thrust::complex", "thrust::device_vector",
               "thrust::device_ptr", "thrust::device_reference",
-              "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
-              "half", "__half2", "half2", "cudaMemoryAdvise", "cudaError_enum",
-              "cudaDeviceProp", "cudaStreamCaptureStatus",
-              "cudaGraphExecUpdateResult", "cudaPitchedPtr",
-              "thrust::counting_iterator", "thrust::transform_iterator",
-              "thrust::permutation_iterator", "thrust::iterator_difference",
-              "cusolverDnHandle_t", "cusolverDnParams_t", "gesvdjInfo_t",
-              "syevjInfo_t", "thrust::device_malloc_allocator",
-              "thrust::divides", thrustNamespace() + "tuple", "thrust::maximum",
+              "thrust::host_vector", "cublasHandle_t", "CUevent_st",
+              "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
+              "cudaStreamCaptureStatus", "cudaGraphExecUpdateResult",
+              "cudaPitchedPtr", "thrust::counting_iterator",
+              "thrust::transform_iterator", "thrust::permutation_iterator",
+              "thrust::iterator_difference", "cusolverDnHandle_t",
+              "cusolverDnParams_t", "gesvdjInfo_t", "syevjInfo_t",
+              "thrust::device_malloc_allocator", "thrust::divides",
+              thrustNamespace() + "tuple", "thrust::maximum",
               "thrust::multiplies", "thrust::plus", "cudaDataType_t",
               "cudaError_t", "CUresult", "CUdevice", "cudaEvent_t",
               "cublasStatus_t", "cuComplex", "cuFloatComplex",
@@ -330,8 +330,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cufftResult_t", "cufftResult", "cufftType_t", "cufftType",
               thrustNamespace() + "pair", "CUdeviceptr", "cudaDeviceAttr",
               "CUmodule", "CUjit_option", "CUfunction", "cudaMemcpyKind",
-              "cudaComputeMode", "__nv_bfloat16",
-              "cooperative_groups::__v1::thread_group",
+              "cudaComputeMode", "cooperative_groups::__v1::thread_group",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
               "cublasComputeType_t", "cublasAtomicsMode_t", "cublasMath_t",
@@ -360,8 +359,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
               "cudaExternalSemaphoreHandleType", "CUstreamCallback",
-              "cudaHostFn_t", "__nv_half2", "__nv_half", "cudaGraphNodeType",
-              "CUsurfref", "CUdevice_P2PAttribute", "cudaIpcMemHandle_t"))))))
+              "cudaHostFn_t", "cudaGraphNodeType", "CUsurfref",
+              "CUdevice_P2PAttribute", "cudaIpcMemHandle_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -1300,7 +1299,11 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       if (!DpctGlobalInfo::isInCudaPath(RecDeclRepr->getBeginLoc()))
         return;
     }
-
+    auto TypePtr = TL->getTypePtr();
+    const auto *TT = dyn_cast<TypedefType>(TypePtr);
+    if (TT && !isRedeclInCUDAHeader(TT)) {
+      return;
+    }
     auto BeginLoc =
         getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin();
 
