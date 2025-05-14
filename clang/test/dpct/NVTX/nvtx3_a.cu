@@ -1,4 +1,5 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --format-range=none --out-root %T %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/nvtx3_a.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/nvtx3_a.dp.cpp -o %T/nvtx3_a.dp.o %}
