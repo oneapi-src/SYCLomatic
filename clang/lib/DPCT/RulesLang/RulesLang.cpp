@@ -4542,12 +4542,23 @@ void BinaryOperatorCallRule::runRule(
   auto BO = getNodeAsType<BinaryOperator>(Result, "binOp");
   if (!BO)
     return;
+  std::vector<std::string> SkipType = {"cudaMemoryType", "cufftResult_t",
+                                       "cudaError", "CUresult", "cudaError_enum"};
+
   auto InsertEnumCast = [&](const Expr *E) {
     QualType EType = E->getType();
     if (EType->isEnumeralType()) {
-      if (const auto *EnumType = EType->getAs<clang::EnumType>()) {
+
+      if (const auto *EnumType =
+              EType.getCanonicalType()->getAs<clang::EnumType>()) {
+
         const clang::EnumDecl *EnumDecl = EnumType->getDecl();
+        std::string EnumName = EnumDecl->getNameAsString();
         clang::SourceLocation EnumLoc = EnumDecl->getLocation();
+        auto it = std::find(SkipType.begin(), SkipType.end(), EnumName);
+        if (it != SkipType.end() ||
+            EnumName.empty()) // Empty means the enum is Anonymous
+          return;
         if (dpct::DpctGlobalInfo::isInCudaPath(EnumLoc) &&
             !EnumDecl->isScoped()) {
           SourceLocation EndLoc = Lexer::getLocForEndOfToken(
@@ -4564,6 +4575,11 @@ void BinaryOperatorCallRule::runRule(
       }
     }
   };
+  auto LHSType = BO->getLHS()->IgnoreCasts()->getType();
+  auto RHSType = BO->getRHS()->IgnoreCasts()->getType();
+  if (LHSType->isEnumeralType() && RHSType->isEnumeralType()) {
+    return;
+  }
   InsertEnumCast(BO->getLHS()->IgnoreImpCasts());
   InsertEnumCast(BO->getRHS()->IgnoreImpCasts());
 }
