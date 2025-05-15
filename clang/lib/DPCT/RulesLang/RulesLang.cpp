@@ -4542,8 +4542,11 @@ void BinaryOperatorCallRule::runRule(
   auto BO = getNodeAsType<BinaryOperator>(Result, "binOp");
   if (!BO)
     return;
-  std::vector<std::string> SkipType = {"cudaMemoryType", "cufftResult_t",
-                                       "cudaError", "CUresult", "cudaError_enum"};
+
+  // The migration rule covered these test type, no need to cast.
+  std::vector<std::string> MigratedEnumType = {"cudaMemoryType", "cufftResult_t",
+                                       "cudaError",      "CUresult",
+                                       "cudaError_enum", "cudaComputeMode"};
 
   auto InsertEnumCast = [&](const Expr *E) {
     QualType EType = E->getType();
@@ -4555,8 +4558,9 @@ void BinaryOperatorCallRule::runRule(
         const clang::EnumDecl *EnumDecl = EnumType->getDecl();
         std::string EnumName = EnumDecl->getNameAsString();
         clang::SourceLocation EnumLoc = EnumDecl->getLocation();
-        auto it = std::find(SkipType.begin(), SkipType.end(), EnumName);
-        if (it != SkipType.end() ||
+        auto it = std::find(MigratedEnumType.begin(), MigratedEnumType.end(),
+                            EnumName);
+        if (it != MigratedEnumType.end() ||
             EnumName.empty()) // Empty means the enum is Anonymous
           return;
         if (dpct::DpctGlobalInfo::isInCudaPath(EnumLoc) &&
@@ -4575,8 +4579,8 @@ void BinaryOperatorCallRule::runRule(
       }
     }
   };
-  auto LHSType = BO->getLHS()->IgnoreCasts()->getType();
-  auto RHSType = BO->getRHS()->IgnoreCasts()->getType();
+  auto LHSType = BO->getLHS()->IgnoreImpCasts()->getType();
+  auto RHSType = BO->getRHS()->IgnoreImpCasts()->getType();
   if (LHSType->isEnumeralType() && RHSType->isEnumeralType()) {
     return;
   }
