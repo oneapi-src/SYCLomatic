@@ -4543,45 +4543,43 @@ void CastScopedEnumTypeRule::runRule(
   if (!BO)
     return;
 
+  // List the types don't need to explicit cast type after migration.
+  const std::unordered_set<std::string> TypeNoCast = {
+      "int", MapNames::getDpctNamespace() + "err0",
+      MapNames::getDpctNamespace() + "err1",
+      MapNames::getDpctNamespace() + "pointer_attributes"};
+
+  auto IsReplacedTypeNoCast = [&](const std::string &Type) {
+    return TypeNoCast.count(Type) > 0;
+  };
+
   auto InsertEnumCast = [&](const Expr *E) {
-    QualType EType = E->getType();
-    if (EType->isEnumeralType()) {
-      if (const auto *EnumType =
-              EType.getCanonicalType()->getAs<clang::EnumType>()) {
+    const clang::EnumDecl *EnumDecl =
+        E->getType().getCanonicalType()->getAs<clang::EnumType>()->getDecl();
 
-        const clang::EnumDecl *EnumDecl = EnumType->getDecl();
-        std::string EnumName = EnumDecl->getNameAsString();
-        clang::SourceLocation EnumLoc = EnumDecl->getLocation();
-        std::string ReplacedName =
-            MapNames::findReplacedName(MapNames::TypeNamesMap, EnumName);
+    std::string EnumName = EnumDecl->getNameAsString();
+    std::string ReplacedName =
+        MapNames::findReplacedName(MapNames::TypeNamesMap, EnumName);
 
-        if (!ReplacedName.empty() || ReplacedName == EnumName ||
-            EnumName.empty()) // Empty means the enum is Anonymous
-          return;
-        if (dpct::DpctGlobalInfo::isInCudaPath(EnumLoc) &&
-            !EnumDecl->isScoped()) {
-          SourceLocation EndLoc = Lexer::getLocForEndOfToken(
-              E->getEndLoc(), 0, DpctGlobalInfo::getSourceManager(),
-              LangOptions());
-          DpctGlobalInfo::getInstance().addReplacement(
-              std::make_shared<ExtReplacement>(
-                  DpctGlobalInfo::getSourceManager(), E->getBeginLoc(), 0,
-                  "static_cast<int>(", nullptr));
-          DpctGlobalInfo::getInstance().addReplacement(
-              std::make_shared<ExtReplacement>(
-                  DpctGlobalInfo::getSourceManager(), EndLoc, 0, ")", nullptr));
-        }
-      }
+    if (IsReplacedTypeNoCast(ReplacedName) || ReplacedName == EnumName ||
+        EnumName.empty()) // Empty means the enum is Anonymous
+      return;
+    if (dpct::DpctGlobalInfo::isInCudaPath(EnumDecl->getLocation()) &&
+        !EnumDecl->isScoped()) {
+
+      insertAroundStmt(E, "static_cast<int>(", ")");
     }
   };
   auto LHSExpr = BO->getLHS()->IgnoreImpCasts();
   auto RHSExpr = BO->getRHS()->IgnoreImpCasts();
-  if (LHSExpr->getType()->isEnumeralType() &&
-      RHSExpr->getType()->isEnumeralType()) {
-    return;
+  if (LHSExpr->getType()->isEnumeralType() && !dyn_cast<CallExpr>(LHSExpr) &&
+      !RHSExpr->getType()->isEnumeralType()) {
+    InsertEnumCast(LHSExpr);
   }
-  InsertEnumCast(LHSExpr);
-  InsertEnumCast(RHSExpr);
+  if (!LHSExpr->getType()->isEnumeralType() &&
+      RHSExpr->getType()->isEnumeralType() && !dyn_cast<CallExpr>(RHSExpr)) {
+    InsertEnumCast(RHSExpr);
+  }
 }
 
 void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {
