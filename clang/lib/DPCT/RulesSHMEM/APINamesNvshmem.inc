@@ -10,9 +10,13 @@
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("nvshmem_init", CALL("ishmem_init")))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        CALL_FACTORY_ENTRY("nvshmemx_init_attr",
-                                           CALL("ishmemx_init_attr", ARG(1))))
+HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_SHMEM_Utils,
+                      FEATURE_REQUEST_FACTORY(
+                          HelperFeatureEnum::device_ext,
+                          CALL_FACTORY_ENTRY("nvshmemx_init_attr",
+                                             CALL(MapNames::getDpctNamespace() +
+                                                      "shmemx::init_attr",
+                                                  ARG(0), ARG(1)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("nvshmem_my_pe",
@@ -91,3 +95,30 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         CALL_FACTORY_ENTRY("nvshmem_team_destroy",
                                            CALL("ishmem_team_destroy", ARG(0))))
+
+// Nonblocking RMA
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        CALL_FACTORY_ENTRY("nvshmem_putmem_nbi",
+                                           CALL("ishmem_putmem_nbi", ARG(0),
+                                                ARG(1), ARG(2), ARG(3))))
+
+// Signalling Operations
+HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_SHMEM_Utils,
+                      FEATURE_REQUEST_FACTORY(
+                          HelperFeatureEnum::device_ext,
+                          CALL_FACTORY_ENTRY("nvshmemx_signal_op",
+                                             CALL(MapNames::getDpctNamespace() +
+                                                      "shmemx::signal_op",
+                                                  ARG(0), ARG(1), ARG(2),
+                                                  ARG(3)))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        CALL_FACTORY_ENTRY("nvshmem_signal_wait_until",
+                                           CALL("ishmem_signal_wait_until",
+                                                ARG(0), ARG(1), ARG(2))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        CALL_FACTORY_ENTRY("nvshmem_putmem_signal_nbi",
+                                           CALL("ishmem_putmem_signal_nbi",
+                                                ARG(0), ARG(1), ARG(2), ARG(3),
+                                                ARG(4), ARG(5), ARG(6))))
