@@ -48,7 +48,10 @@ void LIBCURule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       .bind("MemberCall"),
                   this);
   }
-
+  {
+    MF.addMatcher(dependentScopeDeclRefExpr().bind("DependentScope"),
+                  this);
+  }
   {
     auto LIBCUTypesNames = [&]() {
       return hasAnyName("atomic", "cuda::std::complex", "cuda::std::array",
@@ -76,6 +79,12 @@ void LIBCURule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void LIBCURule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
+  if (const auto *DSDRE =
+          getNodeAsType<DependentScopeDeclRefExpr>(Result, "DependentScope")) {
+    EA.analyze(DSDRE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
   if (const CXXMemberCallExpr *MC =
           getNodeAsType<CXXMemberCallExpr>(Result, "MemberCall")) {
     EA.analyze(MC);

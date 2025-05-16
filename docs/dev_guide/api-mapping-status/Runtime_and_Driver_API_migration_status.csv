@@ -27,11 +27,11 @@ cudaGetDeviceFlags,NO,
 cudaGetDeviceProperties,YES,
 cudaGetDeviceProperties_v2,YES,
 cudaInitDevice,NO,
-cudaIpcCloseMemHandle,NO,
+cudaIpcCloseMemHandle,YES,:ref:`DPCT1119`
 cudaIpcGetEventHandle,NO,
-cudaIpcGetMemHandle,NO,
+cudaIpcGetMemHandle,YES,:ref:`DPCT1119`
 cudaIpcOpenEventHandle,NO,
-cudaIpcOpenMemHandle,NO,
+cudaIpcOpenMemHandle,YES,:ref:`DPCT1119`
 cudaSetDevice,YES,:ref:`DPCT1093`
 cudaSetDeviceFlags,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaSetValidDevices,NO,
