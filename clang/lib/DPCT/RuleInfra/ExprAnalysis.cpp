@@ -531,6 +531,16 @@ bool isCGAPI(std::string Name) {
   return MapNamesLang::CooperativeGroupsAPISet.count(Name);
 }
 
+void ExprAnalysis::analyzeExpr(const DependentScopeDeclRefExpr *DRE) {
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  DRE->getQualifier()->dump(OS);
+  std::string cuda_std_prefix = "cuda::std::";
+  if (Result.find(cuda_std_prefix) == 0) {
+    addReplacement(DRE->getBeginLoc(), cuda_std_prefix.length(), "std::");
+  }
+}
+
 void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   std::string CTSName;
   auto Qualifier = DRE->getQualifier();
@@ -560,6 +570,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       if (const auto *NSD =
               dyn_cast<NamespaceDecl>(Qualifier->getAsNamespace())) {
         CTSName = getNameSpace(NSD) + "::" + DRE->getNameInfo().getAsString();
+      }
+    } else if (Qualifier->getAsNamespaceAlias() &&
+               Qualifier->getAsNamespaceAlias()->getNamespace() &&
+               (Qualifier->getAsNamespaceAlias()->getNamespace()->getName() ==
+                "wmma")) {
+      auto ND = Qualifier->getAsNamespaceAlias()->getNamespace();
+      if (dpct::DpctGlobalInfo::isInCudaPath(ND->getBeginLoc())) {
+        CTSName = getNameSpace(ND) + "::" + DRE->getNameInfo().getAsString();
       }
     } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
       if (DRE->getDecl()->isCXXClassMember()) {

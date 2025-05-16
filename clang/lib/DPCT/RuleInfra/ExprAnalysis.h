@@ -633,7 +633,7 @@ protected:
   }
 
   inline void analyzeExpr(const DeclRefExpr *DRE);
-
+  inline void analyzeExpr(const DependentScopeDeclRefExpr *DRE);
   inline void analyzeExpr(const ParenExpr *PE) { dispatch(PE->getSubExpr()); }
 
   inline void analyzeExpr(const ArraySubscriptExpr *ASE) {

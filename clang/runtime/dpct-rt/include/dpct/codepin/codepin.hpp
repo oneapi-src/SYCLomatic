@@ -49,8 +49,7 @@
 #pragma message(                                                               \
     "CodePin data sampling feature is enabled for data dump. As follow list 3 configs for data sampling:")
 #pragma message("CODEPIN_RAND_SEED: " CODEPIN_TO_STR(CODEPIN_RAND_SEED))
-#pragma message("CODEPIN_SAMPLING_THRESHOLD: " CODEPIN_TO_STR(                \
-    CODEPIN_SAMPLING_THRESHOLD))
+#pragma message("CODEPIN_SAMPLING_THRESHOLD: " CODEPIN_TO_STR(CODEPIN_SAMPLING_THRESHOLD))
 #pragma message("CODEPIN_SAMPLING_PERCENT: " CODEPIN_TO_STR(CODEPIN_SAMPLING_PERCENT))
 #pragma message(                                                               \
     "Define the macros in the build command to change sampling configs. Also refer to codepin.hpp for definitions and default value of the macros.")
