@@ -1141,6 +1141,14 @@ template <class ET> class ParenExprPrinter {
 public:
   ParenExprPrinter(ET &&E) : E(std::forward<ET>(E)) {}
   template <class StreamT> void print(StreamT &Stream) const {
+    if constexpr (std::is_base_of_v<
+                      clang::Stmt,
+                      std::remove_cv_t<std::remove_pointer_t<ET>>>) {
+      if (isa<DeclRefExpr>(E->IgnoreImpCasts())) {
+        dpct::print(Stream, E);
+        return;
+      }
+    }
     PairedPrinter PP(Stream, "(", ")");
     dpct::print(Stream, E);
   }
