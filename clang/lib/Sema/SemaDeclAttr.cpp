@@ -5464,10 +5464,16 @@ Sema::CreateLaunchBoundsAttr(const AttributeCommonInfo &CI, Expr *MaxThreads,
 
   if (MaxBlocks) {
     // '.maxclusterrank' ptx directive requires .target sm_90 or higher.
+#ifdef SYCLomatic_CUSTOMIZATION
+    auto SM = OffloadArch::UNKNOWN;
+#else
     auto SM = SYCL().getOffloadArch(Context.getTargetInfo());
+#endif // SYCLomatic_CUSTOMIZATION
     if (SM == OffloadArch::UNKNOWN || SM < OffloadArch::SM_90) {
+#ifndef SYCLomatic_CUSTOMIZATION
       Diag(MaxBlocks->getBeginLoc(), diag::warn_cuda_maxclusterrank_sm_90)
           << OffloadArchToString(SM) << CI << MaxBlocks->getSourceRange();
+#endif // SYCLomatic_CUSTOMIZATION
       // Ignore it by setting MaxBlocks to null;
       MaxBlocks = nullptr;
     } else {

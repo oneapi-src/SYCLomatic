@@ -65,3 +65,6 @@ ENTRY(ncclRedOpCreatePreMulSum, ncclRedOpCreatePreMulSum, false, NO_FLAG, P4, "c
 ENTRY(ncclRedOpDestroy, ncclRedOpDestroy, false, NO_FLAG, P4, "comment")
 ENTRY(ncclBcast, ncclBcast, true, NO_FLAG, P4, "comment")
 ENTRY(ncclGetErrorString, ncclGetErrorString, true, NO_FLAG, P4, "DPCT1009")
+
+ENTRY(ncclCommInitRankConfig, ncclCommInitRankConfig, false, NO_FLAG, P4, "comment")
+ENTRY(ncclCommInitRankScalable, ncclCommInitRankScalable, false, NO_FLAG, P4, "comment")
