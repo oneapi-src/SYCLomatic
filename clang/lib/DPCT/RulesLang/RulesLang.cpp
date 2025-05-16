@@ -4534,33 +4534,28 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-void BinaryOperatorCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+void CastScopedEnumTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(binaryOperator(isComparisonOperator()).bind("binOp"), this);
 }
-void BinaryOperatorCallRule::runRule(
+void CastScopedEnumTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   auto BO = getNodeAsType<BinaryOperator>(Result, "binOp");
   if (!BO)
     return;
 
-  // The migration rule covered these test type, no need to cast.
-  std::vector<std::string> MigratedEnumType = {"cudaMemoryType", "cufftResult_t",
-                                       "cudaError",      "CUresult",
-                                       "cudaError_enum", "cudaComputeMode"};
-
   auto InsertEnumCast = [&](const Expr *E) {
     QualType EType = E->getType();
     if (EType->isEnumeralType()) {
-
       if (const auto *EnumType =
               EType.getCanonicalType()->getAs<clang::EnumType>()) {
 
         const clang::EnumDecl *EnumDecl = EnumType->getDecl();
         std::string EnumName = EnumDecl->getNameAsString();
         clang::SourceLocation EnumLoc = EnumDecl->getLocation();
-        auto it = std::find(MigratedEnumType.begin(), MigratedEnumType.end(),
-                            EnumName);
-        if (it != MigratedEnumType.end() ||
+        std::string ReplacedName =
+            MapNames::findReplacedName(MapNames::TypeNamesMap, EnumName);
+
+        if (!ReplacedName.empty() || ReplacedName == EnumName ||
             EnumName.empty()) // Empty means the enum is Anonymous
           return;
         if (dpct::DpctGlobalInfo::isInCudaPath(EnumLoc) &&
@@ -4579,13 +4574,14 @@ void BinaryOperatorCallRule::runRule(
       }
     }
   };
-  auto LHSType = BO->getLHS()->IgnoreImpCasts()->getType();
-  auto RHSType = BO->getRHS()->IgnoreImpCasts()->getType();
-  if (LHSType->isEnumeralType() && RHSType->isEnumeralType()) {
+  auto LHSExpr = BO->getLHS()->IgnoreImpCasts();
+  auto RHSExpr = BO->getRHS()->IgnoreImpCasts();
+  if (LHSExpr->getType()->isEnumeralType() &&
+      RHSExpr->getType()->isEnumeralType()) {
     return;
   }
-  InsertEnumCast(BO->getLHS()->IgnoreImpCasts());
-  InsertEnumCast(BO->getRHS()->IgnoreImpCasts());
+  InsertEnumCast(LHSExpr);
+  InsertEnumCast(RHSExpr);
 }
 
 void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {

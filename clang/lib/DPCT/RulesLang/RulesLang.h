@@ -435,7 +435,7 @@ public:
 };
 
 /// Migration rule for binary operator calls
-class BinaryOperatorCallRule : public NamedMigrationRule<BinaryOperatorCallRule> {
+class CastScopedEnumTypeRule : public NamedMigrationRule<CastScopedEnumTypeRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
