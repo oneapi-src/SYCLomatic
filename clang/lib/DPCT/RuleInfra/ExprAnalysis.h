@@ -43,7 +43,6 @@ public:
   inline size_t getLength() { return Length; }
 
 private:
-public:
   // SourceStr is the string which need replaced.
   // Offset is the position where replacement happen.
   // Length is the replaced substring length
@@ -58,7 +57,6 @@ class TemplateArgumentInfo;
 
 /// Store replacement dependent on template args
 class TemplateDependentReplacement {
-public:
   std::string SourceStr;
   size_t Offset;
   size_t Length;
@@ -140,7 +138,11 @@ public:
 
   // Add a template dependent replacement
   void addTemplateDependentReplacement(size_t Offset, size_t Length,
-                                       unsigned TemplateIndex);
+                                       unsigned TemplateIndex) {
+    TDRs2.insert(
+        std::make_pair(Offset, std::make_shared<TemplateDependentReplacement>(
+                                   SourceStr, Offset, Length, TemplateIndex)));
+  }
 
   inline void addTemplateDependentReplacement(
       size_t Offset, size_t Length,
@@ -157,7 +159,11 @@ public:
   }
 
   // Add a string replacement
-  void addStringReplacement(size_t Offset, size_t Length, std::string Text);
+  void addStringReplacement(size_t Offset, size_t Length, std::string Text) {
+    ReplMap.insert(std::make_pair(
+        Offset,
+        std::make_shared<StringReplacement>(SourceStr, Offset, Length, Text)));
+  }
 
   // Generate replacement text info which dependent on template args.
   std::shared_ptr<TemplateDependentStringInfo>

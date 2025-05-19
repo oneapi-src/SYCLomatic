@@ -427,7 +427,7 @@ void StringReplacements::replaceString() {
           (It->second->getReplacedText().length() - It->second->getLength());
     }
     auto NewTDR = std::make_shared<TemplateDependentReplacement>(
-        TDR.second->SourceStr, TDR.first, TDR.second->getLength(),
+        TDR.second->getSourceStr(), TDR.first, TDR.second->getLength(),
         TDR.second->getTemplateIndex());
     NewTDR->shift(Shift);
     TDRs.insert(std::make_pair(TDR.first + Shift, NewTDR));
@@ -439,19 +439,6 @@ void StringReplacements::replaceString() {
     ++Itr;
   }
   ReplMap.clear();
-}
-
-void StringReplacements::addStringReplacement(size_t Offset, size_t Length,
-                                              std::string Text) {
-  ReplMap.insert(std::make_pair(Offset, std::make_shared<StringReplacement>(
-                                            SourceStr, Offset, Length, Text)));
-}
-
-void StringReplacements::addTemplateDependentReplacement(
-    size_t Offset, size_t Length, unsigned TemplateIndex) {
-  TDRs2.insert(
-      std::make_pair(Offset, std::make_shared<TemplateDependentReplacement>(
-                                 SourceStr, Offset, Length, TemplateIndex)));
 }
 
 ExprAnalysis::ExprAnalysis(const Expr *Expression)

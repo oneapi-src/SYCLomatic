@@ -228,12 +228,12 @@ void fooh() {
 
 constexpr int kWarpSize = 32;
 
-template <int ThreadsPerBlock, int NumWarpQ> __global__ void kerfunc() {
-  constexpr int kNumWarps = (2 * ThreadsPerBlock / kWarpSize);
+template <int ThreadsPerBlock, int NumWarpQ, int ccc> __global__ void kerfunc() {
+  constexpr int kNumWarps = (2 * ThreadsPerBlock / kWarpSize * ccc);
   __shared__ int smem[kNumWarps * NumWarpQ];
 }
 
 void foo2() {
-  // CHECK: sycl::local_accessor<int, 1> smem_acc_ct1(sycl::range<1>((2 * 128 / kWarpSize) * 8), cgh);
-  kerfunc<128, 8><<<32, 32>>>();
+  // CHECK: sycl::local_accessor<int, 1> smem_acc_ct1(sycl::range<1>((2 * 128 / kWarpSize * 16) * 8), cgh);
+  kerfunc<128, 8, 16><<<32, 32>>>();
 }
