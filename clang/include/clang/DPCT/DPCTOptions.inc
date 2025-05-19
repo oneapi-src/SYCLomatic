@@ -811,11 +811,12 @@ DPCT_ENUM_OPTION(
             "be accessed within a kernel using syntax similar to C++ global "
             "variables.\n",
             false),
-        DPCT_OPTION_ENUM_VALUE(
-            "virtual_mem", int(ExperimentalFeatures::Exp_VirtualMemory),
-            "Experimental extension that allows for mapping of an address range onto "
-            "multiple allocations of physical memory.",
-            false),
+        DPCT_OPTION_ENUM_VALUE("virtual_mem",
+                               int(ExperimentalFeatures::Exp_VirtualMemory),
+                               "Experimental extension that allows for mapping "
+                               "of an address range onto "
+                               "multiple allocations of physical memory.",
+                               false),
         DPCT_OPTION_ENUM_VALUE(
             "in_order_queue_events",
             int(ExperimentalFeatures::Exp_InOrderQueueEvents),
@@ -838,7 +839,13 @@ DPCT_ENUM_OPTION(
             "level_zero", int(ExperimentalFeatures::Exp_LevelZero),
             "Experimental migration feature that enables the use of Level Zero "
             "APIs to migrate target code, like CUDA Inter-Process "
-            "Communication (IPC) APIs.\n", false),
+            "Communication (IPC) APIs.\n",
+            false),
+        DPCT_OPTION_ENUM_VALUE("async_alloc",
+                               int(ExperimentalFeatures::Exp_AsyncAlloc),
+                               "Experimental extension that allows use of SYCL "
+                               "async allocation APIs.\n",
+                               false),
         DPCT_OPTION_ENUM_VALUE(
             "all", int(ExperimentalFeatures::Exp_All),
             "Enable all experimental extensions listed in this option.\n",

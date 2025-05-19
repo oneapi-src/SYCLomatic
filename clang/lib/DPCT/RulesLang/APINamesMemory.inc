@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "RuleInfra/CallExprRewriterCommon.h"
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
     CONDITIONAL_FACTORY_ENTRY(
@@ -992,6 +993,42 @@ CONDITIONAL_FACTORY_ENTRY(
             "cudaMemcpy", CALL(MemoryMigrationRule::getMemoryHelperFunctionName(
                                    "memcpy", false),
                                MEM_ARG(0), MEM_ARG(1), ARG(2), ARG(3))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    CONDITIONAL_FACTORY_ENTRY(
+        UseExtAsyncAlloc,
+        ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
+            HeaderType::HT_AsyncAlloc,
+            ASSIGN_FACTORY_ENTRY(
+                "cudaMallocAsync", DEREF(0),
+                CALL(MapNames::getClNamespace() +
+                         "ext::oneapi::experimental::async_malloc",
+                     DEREF(2),
+                     ARG(MapNames::getClNamespace() + "usm::alloc::device"),
+                     ARG(1))))),
+        UNSUPPORT_FACTORY_ENTRY(
+            "cudaMallocAsync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+            ARG("cudaMallocAsync"),
+            ARG("--use-experimental-features=virtual_mem"))),
+    UNSUPPORT_FACTORY_ENTRY("cudaMallocAsync", Diagnostics::API_NOT_MIGRATED,
+                            ARG("cudaMallocAsync")))
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    CONDITIONAL_FACTORY_ENTRY(
+        UseExtAsyncAlloc,
+        ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
+            HeaderType::HT_AsyncAlloc,
+            CALL_FACTORY_ENTRY("cudaFreeAsync",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::oneapi::experimental::async_free",
+                                    DEREF(1), ARG(0))))),
+        UNSUPPORT_FACTORY_ENTRY(
+            "cudaFreeAsync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+            ARG("cudaFreeAsync"),
+            ARG("--use-experimental-features=virtual_mem"))),
+    UNSUPPORT_FACTORY_ENTRY("cudaFreeAsync", Diagnostics::API_NOT_MIGRATED,
+                            ARG("cudaFreeAsync")))
 
 #define CUDA_FREE(NAME)                                                        \
   CONDITIONAL_FACTORY_ENTRY(                                                   \

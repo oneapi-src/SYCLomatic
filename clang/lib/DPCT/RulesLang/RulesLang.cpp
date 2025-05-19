@@ -5784,7 +5784,7 @@ void MemoryMigrationRule::mallocMigration(
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
              Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch" ||
-             Name == "cudaMallocMipmappedArray") {
+             Name == "cudaMallocMipmappedArray" || Name == "cudaMallocAsync") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -6815,7 +6815,7 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemsetD8_v2", "cuMemsetD8Async", "cudaMallocMipmappedArray",
         "cudaGetMipmappedArrayLevel", "cudaFreeMipmappedArray",
         "cudaMemcpyPeer", "cudaMemcpyPeerAsync", "cuMemcpyPeer",
-        "cuMemcpyPeerAsync");
+        "cuMemcpyPeerAsync", "cudaMallocAsync", "cudaFreeAsync");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -6905,7 +6905,8 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cudaMallocMipmappedArray") &&
         Name.compare("cudaGetMipmappedArrayLevel") &&
         Name.compare("cudaFreeMipmappedArray") && Name.compare("cudaMemcpy") &&
-        Name.compare("cudaFree") && Name.compare("cublasFree")) {
+        Name.compare("cudaFree") && Name.compare("cublasFree") &&
+        Name.compare("cudaMallocAsync") && Name.compare("cudaFreeAsync")) {
       requestFeature(HelperFeatureEnum::device_ext);
       insertAroundStmt(C, MapNames::getCheckErrorMacroName() + "(", ")");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -6968,6 +6969,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
                          const CallExpr *, const UnresolvedLookupExpr *, bool)>>
       Dispatcher{
           {"cudaMalloc", &MemoryMigrationRule::mallocMigration},
+          {"cudaMallocAsync", &MemoryMigrationRule::mallocMigration},
           {"cuMemAlloc_v2", &MemoryMigrationRule::mallocMigration},
           {"cudaHostAlloc", &MemoryMigrationRule::mallocMigration},
           {"cudaMallocHost", &MemoryMigrationRule::mallocMigration},
@@ -7030,6 +7032,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemcpyDtoA_v2", &MemoryMigrationRule::arrayMigration},
           {"cuMemcpyAtoA_v2", &MemoryMigrationRule::arrayMigration},
           {"cudaFree", &MemoryMigrationRule::freeMigration},
+          {"cudaFreeAsync", &MemoryMigrationRule::freeMigration},
           {"cuMemFree_v2", &MemoryMigrationRule::freeMigration},
           {"cudaFreeArray", &MemoryMigrationRule::freeMigration},
           {"cudaFreeMipmappedArray", &MemoryMigrationRule::freeMigration},

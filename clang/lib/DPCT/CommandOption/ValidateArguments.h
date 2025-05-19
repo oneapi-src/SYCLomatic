@@ -103,6 +103,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_NonStandardSYCLBuiltins,
   Exp_Prefetch,
   Exp_LevelZero,
+  Exp_AsyncAlloc,
   Exp_All
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
