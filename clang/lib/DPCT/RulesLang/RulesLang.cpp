@@ -4562,7 +4562,8 @@ void CastScopedEnumTypeRule::runRule(
         MapNames::findReplacedName(MapNames::TypeNamesMap, EnumName);
 
     if (IsReplacedTypeNoCast(ReplacedName) || ReplacedName == EnumName ||
-        EnumName.empty()) // Empty means the enum is Anonymous
+        EnumName.empty() ||
+        ReplacedName.empty()) // EnumName Empty means the enum is Anonymous
       return;
     if (dpct::DpctGlobalInfo::isInCudaPath(EnumDecl->getLocation()) &&
         !EnumDecl->isScoped()) {
