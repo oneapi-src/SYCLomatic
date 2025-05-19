@@ -2826,7 +2826,7 @@ void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
   auto TDSI = EA.getTemplateDependentStringInfo();
   if (TDSI->containsTemplateDependentMacro())
     TemplateDependentMacro = true;
-  Range.emplace_back(EA.getTemplateDependentStringInfo());
+  Range.emplace_back(TDSI);
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
 }
 void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
