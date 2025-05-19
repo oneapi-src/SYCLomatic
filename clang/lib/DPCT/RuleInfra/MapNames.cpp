@@ -1115,8 +1115,6 @@ void MapNames::setExplicitNamespaceMap(
                ? getClNamespace() +
                      "ext::oneapi::experimental::queue_state::recording"
                : "cudaStreamCaptureStatusActive")},
-      {"cudaStreamCaptureStatusInvalidated",
-       std::make_shared<EnumNameRule>("cudaStreamCaptureStatusInvalidated")},
       // enum cudaGraphNodeType
       {"cudaGraphNodeTypeKernel",
        std::make_shared<EnumNameRule>(
