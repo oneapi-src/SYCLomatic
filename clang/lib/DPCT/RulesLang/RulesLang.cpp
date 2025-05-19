@@ -4549,10 +4549,6 @@ void CastScopedEnumTypeRule::runRule(
       MapNames::getDpctNamespace() + "err1",
       MapNames::getDpctNamespace() + "pointer_attributes"};
 
-  auto IsReplacedTypeNoCast = [&](const std::string &Type) {
-    return TypeNoCast.count(Type) > 0;
-  };
-
   auto InsertEnumCast = [&](const Expr *E) {
     const clang::EnumDecl *EnumDecl =
         E->getType().getCanonicalType()->getAs<clang::EnumType>()->getDecl();
@@ -4561,24 +4557,23 @@ void CastScopedEnumTypeRule::runRule(
     std::string ReplacedName =
         MapNames::findReplacedName(MapNames::TypeNamesMap, EnumName);
 
-    if (IsReplacedTypeNoCast(ReplacedName) || ReplacedName == EnumName ||
+    if (TypeNoCast.count(ReplacedName) || ReplacedName == EnumName ||
         EnumName.empty() ||
         ReplacedName.empty()) // EnumName Empty means the enum is Anonymous
       return;
-    if (dpct::DpctGlobalInfo::isInCudaPath(EnumDecl->getLocation()) &&
-        !EnumDecl->isScoped()) {
-
+    if (dpct::DpctGlobalInfo::isInCudaPath(EnumDecl->getLocation())) {
       insertAroundStmt(E, "static_cast<int>(", ")");
     }
   };
   auto LHSExpr = BO->getLHS()->IgnoreImpCasts();
   auto RHSExpr = BO->getRHS()->IgnoreImpCasts();
+
   if (LHSExpr->getType()->isEnumeralType() && !dyn_cast<CallExpr>(LHSExpr) &&
       !RHSExpr->getType()->isEnumeralType()) {
     InsertEnumCast(LHSExpr);
-  }
-  if (!LHSExpr->getType()->isEnumeralType() &&
-      RHSExpr->getType()->isEnumeralType() && !dyn_cast<CallExpr>(RHSExpr)) {
+  } else if (!LHSExpr->getType()->isEnumeralType() &&
+             RHSExpr->getType()->isEnumeralType() &&
+             !dyn_cast<CallExpr>(RHSExpr)) {
     InsertEnumCast(RHSExpr);
   }
 }
