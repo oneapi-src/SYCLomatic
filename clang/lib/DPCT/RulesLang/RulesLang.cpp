@@ -955,15 +955,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    if (CanonicalTypeStr == "cudaGraphicsRegisterFlags" ||
-        CanonicalTypeStr == "cudaGraphicsMapFlags") {
-      if (!DpctGlobalInfo::useExtBindlessImages()) {
-        report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
-               CanonicalTypeStr,
-               "--use-experimental-features=bindless_images");
-      }
-    }
-
     if (CanonicalTypeStr == "CUdevice_P2PAttribute") {
       if (!DpctGlobalInfo::usePeerAccess()) {
         report(TL->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
@@ -1954,7 +1945,9 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                           "cufftType", "cudaMemoryType", "CUctx_flags_enum",
                           "CUpointer_attribute_enum", "CUmemorytype_enum",
                           "cudaGraphicsMapFlags", "cudaGraphicsRegisterFlags",
-                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum"))),
+                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum",
+                          "cudaExternalMemoryHandleType",
+                          "cudaExternalSemaphoreHandleType"))),
                       matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
       this);
