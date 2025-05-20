@@ -6,7 +6,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "RuleInfra/CallExprRewriterCommon.h"
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
     CONDITIONAL_FACTORY_ENTRY(
@@ -997,20 +996,25 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
     CONDITIONAL_FACTORY_ENTRY(
-        UseExtAsyncAlloc,
-        ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
-            HeaderType::HT_AsyncAlloc,
-            ASSIGN_FACTORY_ENTRY(
-                "cudaMallocAsync", DEREF(0),
-                CALL(MapNames::getClNamespace() +
-                         "ext::oneapi::experimental::async_malloc",
-                     DEREF(2),
-                     ARG(MapNames::getClNamespace() + "usm::alloc::device"),
-                     ARG(1))))),
-        UNSUPPORT_FACTORY_ENTRY(
-            "cudaMallocAsync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-            ARG("cudaMallocAsync"),
-            ARG("--use-experimental-features=virtual_mem"))),
+        CheckArgCount(3),
+        CONDITIONAL_FACTORY_ENTRY(
+            UseExtAsyncAlloc,
+            ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
+                HeaderType::HT_AsyncAlloc,
+                ASSIGN_FACTORY_ENTRY(
+                    "cudaMallocAsync", DEREF(0),
+                    CALL(MapNames::getClNamespace() +
+                             "ext::oneapi::experimental::async_malloc",
+                         DEREF(2),
+                         ARG(MapNames::getClNamespace() + "usm::alloc::device"),
+                         ARG(1))))),
+            UNSUPPORT_FACTORY_ENTRY(
+                "cudaMallocAsync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                ARG("cudaMallocAsync"),
+                ARG("--use-experimental-features=virtual_mem"))),
+        UNSUPPORT_FACTORY_ENTRY("cudaMallocAsync",
+                                Diagnostics::API_NOT_MIGRATED,
+                                ARG("cudaMallocAsync"))),
     UNSUPPORT_FACTORY_ENTRY("cudaMallocAsync", Diagnostics::API_NOT_MIGRATED,
                             ARG("cudaMallocAsync")))
 CONDITIONAL_FACTORY_ENTRY(
