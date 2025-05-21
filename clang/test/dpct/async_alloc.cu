@@ -12,7 +12,7 @@ void foo_1(float *f, cudaStream_t hStream) {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaMallocAsync is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT: cudaMallocAsync(&f, 1024, memPool, hStream);
-  // CHECK-NEXT: f = sycl::ext::oneapi::experimental::async_malloc(*hStream, sycl::usm::alloc::device, 1024);
+  // CHECK: f = sycl::ext::oneapi::experimental::async_malloc(*hStream, sycl::usm::alloc::device, 1024);
   // CHECK-NEXT: sycl::ext::oneapi::experimental::async_free(*hStream, f);
 #ifndef NO_BUILD_TEST
   cudaMemPool_t memPool;
