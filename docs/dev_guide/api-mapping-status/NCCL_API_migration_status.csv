@@ -30,3 +30,5 @@ ncclRedOpCreatePreMulSum,NO,
 ncclRedOpDestroy,NO,
 ncclBcast,YES,
 ncclGetErrorString,YES,:ref:`DPCT1009`
+ncclCommInitRankConfig,NO,
+ncclCommInitRankScalable,NO,

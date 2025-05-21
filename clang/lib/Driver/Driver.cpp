@@ -1822,7 +1822,11 @@ bool Driver::loadDefaultConfigFiles(llvm::cl::ExpansionContext &ExpCtx) {
     llvm::Triple PrefixTriple{ClangNameParts.TargetPrefix};
     if (PrefixTriple.getArch() == llvm::Triple::UnknownArch ||
         PrefixTriple.isOSUnknown())
+#ifdef SYCLomatic_CUSTOMIZATION
+      Triple = std::move(PrefixTriple);
+#else
       Triple = PrefixTriple;
+#endif
   }
 
   // Otherwise, use the real triple as used by the driver.
@@ -1876,7 +1880,11 @@ bool Driver::loadDefaultConfigFiles(llvm::cl::ExpansionContext &ExpCtx) {
   }
 
   // Try loading <triple>.cfg and return if we find a match.
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (findTripleConfigFile(ExpCtx, CfgFilePath, std::move(Triple), ".cfg"))
+#else
   if (findTripleConfigFile(ExpCtx, CfgFilePath, Triple, ".cfg"))
+#endif
     return readConfigFile(CfgFilePath, ExpCtx);
 
   // If we were unable to find a config file deduced from executable name,

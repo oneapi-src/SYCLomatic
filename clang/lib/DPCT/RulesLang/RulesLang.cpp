@@ -4926,10 +4926,12 @@ void KernelCallRule::runRule(
     const auto *LaunchKernelCall = getNodeAsType<CallExpr>(Result, "launch");
     if (!LaunchKernelCall) {
       LaunchKernelCall = getNodeAsType<CallExpr>(Result, "launchUsed");
+      if(!LaunchKernelCall)
+        return;
       IsAssigned = true;
     }
     auto FD = LaunchKernelCall->getDirectCallee();
-    if (!LaunchKernelCall || !FD)
+    if (!FD)
       return;
     std::string FuncName = FD->getNameAsString();
     if (FuncName == "cudaLaunchHostFunc") {
