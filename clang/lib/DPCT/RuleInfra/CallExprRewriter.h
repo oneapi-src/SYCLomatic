@@ -586,6 +586,7 @@ public:
   std::optional<std::string> rewrite() override { return NewFuncName; }
 };
 
+// No replacement generated
 class EmptyRewriter : public CallExprRewriter {
 public:
   EmptyRewriter(const CallExpr *, StringRef, StringRef)
