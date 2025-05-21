@@ -3584,3 +3584,15 @@ template <typename T> class AAA_st {
     return 0;
   }
 };
+
+template <typename t1> void saturate() { printf("default saturate\n"); }
+template <> void saturate<int>() { printf("int saturate\n"); }
+
+// CHECK: void foo11() {
+// CHECK-NEXT:   saturate<int>();
+// CHECK-NEXT:   saturate<float>();
+// CHECK-NEXT: }
+void foo11() {
+  saturate<int>();
+  saturate<float>();
+}
