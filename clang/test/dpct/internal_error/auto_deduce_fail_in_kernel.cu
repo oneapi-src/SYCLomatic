@@ -9,3 +9,31 @@ __device__ void test_auto() {
 
   auto tid = get_tid();
 }
+
+ namespace test {
+
+ enum norm_type_ {
+   NORM1,
+   NORM2,
+   ABS_MAX,
+   ABS_MIN
+ };
+
+ template <typename T, bool fixed, int nColor, int... N>
+ double norm(const GaugeField &u, int d, norm_type_ type, IntList<nColor, N...>) {
+   double norm_ = 0.0;
+   if (nColor) {
+     norm_ = norm<T, fixed, nColor>(u, d, type);
+   } else if (nColor) {
+     norm_ = norm<T, fixed, 2 * nColor>(u, d, type); // factor of two to account for spin with MG fields
+   } else {
+     if constexpr (sizeof...(N) > 0) {
+       norm_ = norm<T, fixed>(u, d, type, IntList<N...>());
+     } else {
+       errorQuda("Nc = %d has not been instantiated", u.Ncolor());
+     }
+   }
+   return norm_;
+ }
+
+ } // namespace test
