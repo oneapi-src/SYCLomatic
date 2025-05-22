@@ -1386,9 +1386,16 @@ protected:
       return SYCLGenError();
 
     // Only row Layout is supported for of A matrix and
-    // only col Layout is supported for of B matrix
-    if (Inst->getAttr(3) != InstAttr::row || Inst->getAttr(4) != InstAttr::col)
-      return SYCLGenError();
+    // only col Layout is supported for of B matrix (except for m8n8k4)
+    if (Inst->hasAttr(InstAttr::m8n8k4)) {
+      if (Inst->getAttr(3) != InstAttr::col ||
+          Inst->getAttr(4) != InstAttr::row)
+        return SYCLGenError();
+    } else {
+      if (Inst->getAttr(3) != InstAttr::row ||
+          Inst->getAttr(4) != InstAttr::col)
+        return SYCLGenError();
+    }
 
     // Data types of D, A, B & C matrices respectively in the PTX instruction
     const auto *DType = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
@@ -1421,7 +1428,68 @@ protected:
     // Data types of A, B & C matrices respectively in the PTX arguments
     std::string InMatrixType[3];
 
-    if (Inst->hasAttr(InstAttr::m16n8k16)) {
+    if (Inst->hasAttr(InstAttr::m8n8k4)) {
+      M = "8";
+      N = "8";
+      K = "4";
+
+      // Only f16 type is supported for A and B matrices of m8n8k4
+      if (AType->getKind() == InlineAsmBuiltinType::f16) {
+        InMatrixType[0] = "uint32_t"; // A type is .f16x2
+        InMatrixType[1] = "uint32_t"; // B type is .f16x2
+
+        // If A matrix type is f16, then C&D matrix types can only be f32
+        if (CType->getKind() == InlineAsmBuiltinType::f32) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 8; // C
+          NumVecElements[3] = 8; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m8n8k16)) {
+      M = "8";
+      N = "8";
+      K = "16";
+
+      // Only s8 type is supported for A and B matrices of m8n8k16
+      if (AType->getKind() == InlineAsmBuiltinType::s8) {
+        InMatrixType[0] = "uint32_t"; // A type is .s8x4
+        InMatrixType[1] = "uint32_t"; // B type is .s8x4
+
+        // If A matrix type is s8, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 1; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 2; // C
+          NumVecElements[3] = 2; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m16n8k8)) {
+      M = "16";
+      N = "8";
+      K = "8";
+
+      // Only f16/bf16 types are supported for A and B matrices of m16n8k8
+      if (AType->getKind() == InlineAsmBuiltinType::f16 ||
+          AType->getKind() == InlineAsmBuiltinType::bf16) {
+        InMatrixType[0] = "uint32_t"; // A type is .f16x2
+        InMatrixType[1] = "uint32_t"; // B type is .f16x2
+
+        // If A matrix type is f16/bf16, then C&D matrix types can only be f32
+        if (CType->getKind() == InlineAsmBuiltinType::f32) {
+          NumVecElements[0] = 2; // A
+          NumVecElements[1] = 1; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m16n8k16)) {
       M = "16";
       N = "8";
       K = "16";
@@ -1440,13 +1508,33 @@ protected:
         } else
           return SYCLGenError();
       } else if (AType->getKind() == InlineAsmBuiltinType::s8) {
-        InMatrixType[0] = "uint32_t"; // A type is .f16x2
-        InMatrixType[1] = "uint32_t"; // B type is .f16x2
+        InMatrixType[0] = "uint32_t"; // A type is .s8x4
+        InMatrixType[1] = "uint32_t"; // B type is .s8x4
 
         // If A matrix type is s8, then C&D matrix types can only be s32
         if (CType->getKind() == InlineAsmBuiltinType::s32) {
           NumVecElements[0] = 2; // A
           NumVecElements[1] = 1; // B
+          NumVecElements[2] = 4; // C
+          NumVecElements[3] = 4; // D
+        } else
+          return SYCLGenError();
+      } else
+        return SYCLGenError();
+    } else if (Inst->hasAttr(InstAttr::m16n8k32)) {
+      M = "16";
+      N = "8";
+      K = "32";
+
+      // Only s8 type is supported for A and B matrices of m16n8k32
+      if (AType->getKind() == InlineAsmBuiltinType::s8) {
+        InMatrixType[0] = "uint32_t"; // A type is .s8x4
+        InMatrixType[1] = "uint32_t"; // B type is .s8x4
+
+        // If A matrix type is s8, then C&D matrix types can only be s32
+        if (CType->getKind() == InlineAsmBuiltinType::s32) {
+          NumVecElements[0] = 4; // A
+          NumVecElements[1] = 2; // B
           NumVecElements[2] = 4; // C
           NumVecElements[3] = 4; // D
         } else
@@ -1472,7 +1560,9 @@ protected:
       return SYCLGenError();
 
     // Declare and init an array for storing the addresses of D matrix elements
-    OS() << "{\n";
+    OS() << "{" << getNL();
+    incIndent();
+    indent();
     OS() << "volatile " << CDType << " *d_mat_frag_ct1["
          << DMatVE->getNumElements() << "] = { ";
     for (unsigned Inst = 0; Inst != DMatVE->getNumElements(); ++Inst) {
@@ -1494,6 +1584,7 @@ protected:
          InputOp++) {
       if (auto VE =
               dyn_cast<InlineAsmVectorExpr>(Inst->getInputOperand(InputOp))) {
+        indent();
         OS() << "sycl::vec<" << InMatrixType[InputOp] << ", "
              << VE->getNumElements() << "> " << InMatrixName[InputOp]
              << "_mat_frag_ct1(";
@@ -1512,6 +1603,7 @@ protected:
       }
     }
 
+    indent();
     OS() << MapNames::getDpctNamespace() << "experimental::matrix::mma";
     OS() << "<";
     OS() << M << ", " << N << ", " << K << ", ";
@@ -1523,6 +1615,8 @@ protected:
       OS() << ", &" << InMatrixName[i] << "_mat_frag_ct1";
     OS() << ")";
     endstmt();
+    decIndent();
+    indent();
     OS() << "}";
     endstmt();
 
