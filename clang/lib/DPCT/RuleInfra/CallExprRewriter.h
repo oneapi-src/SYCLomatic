@@ -1264,7 +1264,8 @@ public:
 
   MultiStmtsPrinter(std::string Indent, std::string NL, bool IsInMacroDef,
                     FirstPrinter &&First, RestPrinter &&...Rest)
-      : Base(Indent, NL, IsInMacroDef, std::move(Rest)...),
+      : Base(std::move(Indent), std::move(NL), IsInMacroDef,
+             std::move(Rest)...),
         First(std::move(First)) {}
 
   template <class StreamT> void print(StreamT &Stream) const {

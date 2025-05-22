@@ -54,30 +54,17 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
   llvm::SmallString<512> RealPath;
   // We need make sure the input `Path` for llvm::sys::fs::real_path is
   // exsiting, or else the behavior of real_path() is unexpected.
-  if (llvm::sys::fs::exists(Path)) {
-    llvm::sys::fs::real_path(Path, RealPath, true);
-  } else {
-    llvm::SmallString<512> Suffix;
-    if (llvm::sys::path::has_filename(Path)) {
-      Suffix = llvm::sys::path::filename(Path).str();
-      llvm::sys::path::remove_filename(Path);
+  llvm::StringRef ParentPath = Path;
+  while (!llvm::sys::fs::exists(ParentPath)) {
+    ParentPath = llvm::sys::path::parent_path(ParentPath);
+    if (ParentPath.empty()) {
+      assert(0 && "no real directory found");
+      return;
     }
-    while (!llvm::sys::fs::exists(Path)) {
-      if (!llvm::sys::path::has_parent_path(Path)) {
-        assert(0 && "no real directory found");
-        return;
-      }
-      llvm::sys::path::reverse_iterator RI =
-          llvm::sys::path::rbegin(llvm::StringRef(Path));
-      llvm::SmallString<512> SuffixTemp(*RI);
-      llvm::sys::path::append(SuffixTemp, llvm::sys::path::Style::native,
-                              Suffix);
-      Suffix = SuffixTemp;
-      Path = llvm::SmallString<512>(llvm::sys::path::parent_path(Path).str());
-    }
-    llvm::sys::fs::real_path(Path, RealPath, true);
-    llvm::sys::path::append(RealPath, llvm::sys::path::Style::native, Suffix);
   }
+  llvm::sys::fs::real_path(ParentPath, RealPath, true);
+  if (auto Suffix = Path.substr(ParentPath.size()); !Suffix.empty())
+    llvm::sys::path::append(RealPath, llvm::sys::path::Style::native, Suffix);
   _CanonicalPath = RealPath.str();
 #if defined(_WIN32)
   if (_CanonicalPath.size() >= 3 &&

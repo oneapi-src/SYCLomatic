@@ -18951,8 +18951,13 @@ void Sema::ActOnLastBitfield(SourceLocation DeclLoc,
   // All conditions are met. Add a new bitfield to the tail end of ivars.
   llvm::APInt Zero(Context.getTypeSize(Context.IntTy), 0);
   Expr * BW = IntegerLiteral::Create(Context, Zero, Context.IntTy, DeclLoc);
+#ifdef SYCLomatic_CUSTOMIZATION
+  Expr *BitWidth =
+      ConstantExpr::Create(Context, BW, APValue(llvm::APSInt(std::move(Zero))));
+#else
   Expr *BitWidth =
       ConstantExpr::Create(Context, BW, APValue(llvm::APSInt(Zero)));
+#endif
 
   Ivar = ObjCIvarDecl::Create(
       Context, cast<ObjCContainerDecl>(CurContext), DeclLoc, DeclLoc, nullptr,

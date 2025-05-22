@@ -1668,8 +1668,11 @@ Decl *TemplateDeclInstantiator::VisitDecompositionDecl(DecompositionDecl *D) {
   if (!NewDD || NewDD->isInvalidDecl())
     for (auto *NewBD : NewBindings)
       NewBD->setInvalidDecl();
-
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (NewDD && OldResolvedPack) {
+#else
   if (OldResolvedPack) {
+#endif
     // Mark the holding vars (if any) in the pack as instantiated since
     // they are created implicitly.
     auto Bindings = NewDD->bindings();
