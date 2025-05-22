@@ -588,21 +588,17 @@ createMathAPIRewriterDevice(
       createConditionalFactory(
           math::IsDefinedInCUDA(),
           std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
-          {Name,
-           std::make_shared<EmptyRewriterFactory>(Name, Name)}),
+          {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)}),
       createConditionalFactory(
           math::IsUnresolvedLookupExpr,
           createConditionalFactory(
               math::IsDirectCallerPureDevice,
               std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
-              {Name,
-               std::make_shared<EmptyRewriterFactory>(Name, Name)}),
+              {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)}),
           createConditionalFactory(
               math::IsDefinedInCUDA(),
-              std::move(
-                  createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
-              {Name, std::make_shared<EmptyRewriterFactory>(
-                         Name, Name)})));
+              std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
+              {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)})));
 }
 
 template <class T>
@@ -618,13 +614,11 @@ createMathAPIRewriterExperimentalBfloat16(
     if (math::useExtBFloat16Math() && Rewriter1.second)
       return createConditionalFactory(
           math::IsDefinedInCUDA(), std::move(Rewriter1),
-          {Name,
-           std::make_shared<EmptyRewriterFactory>(Name, Name)});
+          {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)});
     if (Rewriter2.second)
       return createConditionalFactory(
           math::IsDefinedInCUDA(), std::move(Rewriter2),
-          {Name,
-           std::make_shared<EmptyRewriterFactory>(Name, Name)});
+          {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)});
   }
   // report unsupport
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
