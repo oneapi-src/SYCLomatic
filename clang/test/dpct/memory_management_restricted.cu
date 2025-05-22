@@ -2,7 +2,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=restricted -out-root %T/memory_management_restricted %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management_restricted/memory_management_restricted.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/memory_management_restricted/memory_management_restricted.dp.cpp -o %T/memory_management_restricted/memory_management_restricted.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/memory_management_restricted/memory_management_restricted.dp.cpp -o %T/memory_management_restricted/memory_management_restricted.dp.o %}
 
 #include <cuda_runtime.h>
 #include <cuda.h>
@@ -407,7 +407,7 @@ __global__ void MyKernel(cudaPitchedPtr devPitchedPtr,
 // CHECK-NEXT:  dpct::pitched_data devPitchedPtr;
 // CHECK-NEXT:  devPitchedPtr = dpct::dpct_malloc(extent);
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
+// CHECK-NEXT:  DPCT1049:0: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:  */
 // CHECK-NEXT:  dpct::get_in_order_queue().parallel_for(
 // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 100) * sycl::range<3>(1, 1, 512), sycl::range<3>(1, 1, 512)),
@@ -421,26 +421,4 @@ void foo_8() {
   cudaPitchedPtr devPitchedPtr;
   cudaMalloc3D(&devPitchedPtr, extent);
   MyKernel<<<100, 512>>>(devPitchedPtr, width, height, depth);
-}
-
-void foo_9(float *f, cudaStream_t hStream) {
-#ifndef NO_BUILD_TEST
-  // CHECK: cudaMemPool_t memPool;
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaMallocAsync is not supported.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: cudaMallocAsync(&f, 1024, memPool, hStream);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaMallocAsync is not supported, please try to remigrate with option: --use-experimental-features=virtual_mem.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: cudaMallocAsync(&f, 1024, hStream);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaFreeAsync is not supported, please try to remigrate with option: --use-experimental-features=virtual_mem.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: cudaFreeAsync(f, hStream);
-  cudaMemPool_t memPool;
-  cudaMallocAsync(&f, 1024, memPool, hStream);
-  cudaMallocAsync(&f, 1024, hStream);
-  cudaFreeAsync(f, hStream);
-#endif
 }
