@@ -360,7 +360,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
               "cudaExternalSemaphoreHandleType", "CUstreamCallback",
               "cudaHostFn_t", "cudaGraphNodeType", "CUsurfref",
-              "CUdevice_P2PAttribute", "cudaIpcMemHandle_t"))))))
+              "CUdevice_P2PAttribute", "cudaIpcMemHandle_t", "nvshmemi_amo_t",
+              "nvshmemi_cmp_type"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -4926,10 +4927,12 @@ void KernelCallRule::runRule(
     const auto *LaunchKernelCall = getNodeAsType<CallExpr>(Result, "launch");
     if (!LaunchKernelCall) {
       LaunchKernelCall = getNodeAsType<CallExpr>(Result, "launchUsed");
+      if(!LaunchKernelCall)
+        return;
       IsAssigned = true;
     }
     auto FD = LaunchKernelCall->getDirectCallee();
-    if (!LaunchKernelCall || !FD)
+    if (!FD)
       return;
     std::string FuncName = FD->getNameAsString();
     if (FuncName == "cudaLaunchHostFunc") {

@@ -1029,9 +1029,14 @@ int runDPCT(int argc, const char **argv) {
     if (SourceCode.starts_with(OptionStr)) {
       QueryAPIMappingOpt += " (with the option";
       while (SourceCode.consume_front(OptionStr)) {
-        auto Option = SourceCode.substr(0, SourceCode.find_first_of('\n'));
-        Option = Option.trim(' ');
-        SourceCode = SourceCode.substr(SourceCode.find_first_of('\n') + 1);
+        auto Pos = SourceCode.find('\n');
+        StringRef Option;
+        if (Pos == StringRef::npos) {
+          std::swap(Option, SourceCode);
+        } else {
+          Option = SourceCode.substr(0, Pos).trim(' ');
+          SourceCode = SourceCode.substr(Pos + 1);
+        }
         QueryAPIMappingOpt += " ";
         QueryAPIMappingOpt += Option.str();
         if (Option.starts_with("--use-dpcpp-extensions")) {

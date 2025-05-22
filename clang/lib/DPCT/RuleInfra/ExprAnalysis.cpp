@@ -870,7 +870,8 @@ void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
 }
 
 inline void ExprAnalysis::analyzeExpr(const UnresolvedLookupExpr *ULE) {
-  RefString = ULE->decls().begin().getDecl()->getQualifiedNameAsString();
+  if (ULE != nullptr && !ULE->decls().empty())
+    RefString = ULE->decls().begin().getDecl()->getQualifiedNameAsString();
 }
 
 void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {

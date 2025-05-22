@@ -7536,7 +7536,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
     if (!DFI)
       return;
     auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-    DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+    DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, std::move(DFI));
     printFreeQueriesFunctionName<std::string>(
         OS, K, "{{NEEDREPLACEG" + std::to_string(Index) + "}}");
   } else {

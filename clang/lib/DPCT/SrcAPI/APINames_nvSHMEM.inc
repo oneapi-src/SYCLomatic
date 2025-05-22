@@ -781,7 +781,7 @@ ENTRY(nvshmemx_put32_nbi_warp, nvshmemx_put32_nbi_warp, false, NO_FLAG, P4, "com
 ENTRY(nvshmemx_put64_nbi_warp, nvshmemx_put64_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_nbi_warp, nvshmemx_put128_nbi_warp, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmem_putmem_nbi, nvshmem_putmem_nbi, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_putmem_nbi, nvshmem_putmem_nbi, true, NO_FLAG, P4, "Succeessful")
 ENTRY(nvshmemx_putmem_nbi_on_stream, nvshmemx_putmem_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_nbi_block, nvshmemx_putmem_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_nbi_warp, nvshmemx_putmem_nbi_warp, false, NO_FLAG, P4, "comment")
@@ -1300,7 +1300,7 @@ ENTRY(nvshmemx_put32_signal_nbi_warp, nvshmemx_put32_signal_nbi_warp, false, NO_
 ENTRY(nvshmemx_put64_signal_nbi_warp, nvshmemx_put64_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_signal_nbi_warp, nvshmemx_put128_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmem_putmem_signal_nbi, nvshmem_putmem_signal_nbi, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_putmem_signal_nbi, nvshmem_putmem_signal_nbi, true, NO_FLAG, P4, "Succeessful")
 ENTRY(nvshmemx_putmem_signal_nbi_on_stream, nvshmemx_putmem_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_signal_nbi_block, nvshmemx_putmem_signal_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_signal_nbi_warp, nvshmemx_putmem_signal_nbi_warp, false, NO_FLAG, P4, "comment")
@@ -1323,7 +1323,7 @@ ENTRY(nvshmem_signal_fetch, nvshmem_signal_fetch, false, NO_FLAG, P4, "comment")
 // ENTRY(nvshmemx_size_signal, nvshmemx_size_signal, false, NO_FLAG, P4, "comment")
 // ENTRY(nvshmemx_ptrdiff_signal, nvshmemx_ptrdiff_signal, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmemx_signal_op, nvshmemx_signal_op, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_signal_op, nvshmemx_signal_op, true, NO_FLAG, P4, "Succeessful")
 
 
 // Collective Operations
@@ -2534,7 +2534,7 @@ ENTRY(nvshmem_size_test_some_vector, nvshmem_size_test_some_vector, false, NO_FL
 ENTRY(nvshmem_ptrdiff_test_some_vector, nvshmem_ptrdiff_test_some_vector, false, NO_FLAG, P4, "comment")
 
 ENTRY(nvshmemx_signal_wait_until_on_stream, nvshmemx_signal_wait_until_on_stream, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_signal_wait_until, nvshmem_signal_wait_until, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_signal_wait_until, nvshmem_signal_wait_until, true, NO_FLAG, P4, "Succeessful")
 
 
 // Memory Ordering

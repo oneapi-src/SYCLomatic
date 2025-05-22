@@ -231,9 +231,11 @@ class InsertText : public TextModification {
 
 public:
   InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0,
-             ReplacementType IsForCodePin = RT_ForSYCLMigration)
+             ReplacementType IsForCodePin = RT_ForSYCLMigration,
+             InsertPosition IP = InsertPosition::IP_Left)
       : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID) {
     this->IsForCodePin = IsForCodePin;
+    setInsertPosition(IP);
   }
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
