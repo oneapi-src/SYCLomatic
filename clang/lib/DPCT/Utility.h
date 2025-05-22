@@ -524,6 +524,7 @@ bool isDefaultStream(const clang::Expr *StreamArg);
 bool isRedeclInCUDAHeader(const clang::TypedefType *T);
 bool isTypeInAnalysisScope(const clang::Type *TypePtr);
 bool isCubVar(const clang::VarDecl *VD);
+bool isPreserveCubVar(QualType T);
 bool isCubTempStorageType(QualType T);
 bool isCubCollectiveRecordType(QualType T);
 bool isExprUsed(const clang::Expr *E, bool &Result);

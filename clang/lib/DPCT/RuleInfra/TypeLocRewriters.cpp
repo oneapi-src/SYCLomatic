@@ -16,6 +16,12 @@ inline auto UseSYCLCompat() {
   return [](const TypeLoc) -> bool { return DpctGlobalInfo::useSYCLCompat(); };
 }
 
+inline auto UseGroupLocalMemory() {
+  return [](const TypeLoc) -> bool {
+    return DpctGlobalInfo::useGroupLocalMemory();
+  };
+}
+
 TemplateArgumentInfo getTemplateArg(const TypeLoc &TL, unsigned Idx) {
   if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
     if (TSTL.getNumArgs() > Idx) {
@@ -103,15 +109,18 @@ makeUserDefinedTypeStrCreator(MetaRuleObject &R,
 class CheckTemplateArgCount {
   unsigned Count;
   bool IsIncludeDefault;
+  std::function<bool(unsigned, unsigned)> CmpFunc;
 
 public:
-  CheckTemplateArgCount(unsigned I, bool D = true)
-      : Count(I), IsIncludeDefault(D) {}
+  CheckTemplateArgCount(
+      unsigned I, bool D = true,
+      std::function<bool(unsigned, unsigned)> F = std::equal_to<unsigned>())
+      : Count(I), IsIncludeDefault(D), CmpFunc(F) {}
   bool operator()(const TypeLoc TL) {
     if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
       size_t Num = TSTL.getNumArgs();
       if (IsIncludeDefault) {
-        return Num == Count;
+        return CmpFunc(Num, Count);
       }
       size_t NoneDefaultNum = 0;
       for (size_t i = 0; i < Num; i++) {
@@ -119,7 +128,7 @@ public:
           NoneDefaultNum++;
         }
       }
-      return NoneDefaultNum == Count;
+      return CmpFunc(NoneDefaultNum, Count);
     }
     return false;
   }

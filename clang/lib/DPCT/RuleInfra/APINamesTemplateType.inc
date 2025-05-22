@@ -116,9 +116,28 @@ TYPE_REWRITE_ENTRY(
         WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT, TYPESTR),
         HEADER_INSERTION_FACTORY(
             HeaderType::HT_DPCT_GROUP_Utils,
-            TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
-                             "group::group_radix_sort"),
-                         TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
+            TYPE_CONDITIONAL_FACTORY(
+                UseGroupLocalMemory(),
+                TYPE_CONDITIONAL_FACTORY(
+                    CheckTemplateArgCount(9, false, std::less<unsigned>()),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_radix_sort"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                 TEMPLATE_ARG(4)),
+                    TYPE_CONDITIONAL_FACTORY(
+                        CheckTemplateArgCount(10, false, std::less<unsigned>()),
+                        TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                         "group::group_radix_sort"),
+                                     TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                     TEMPLATE_ARG(4), TEMPLATE_ARG(8)),
+                        TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                         "group::group_radix_sort"),
+                                     TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                     TEMPLATE_ARG(4), TEMPLATE_ARG(8),
+                                     TEMPLATE_ARG(9)))),
+                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                 "group::group_radix_sort"),
+                             TEMPLATE_ARG(0), TEMPLATE_ARG(2))))))
 
 // cub::BlockExchange
 TYPE_REWRITE_ENTRY(
@@ -128,9 +147,28 @@ TYPE_REWRITE_ENTRY(
         WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT, TYPESTR),
         HEADER_INSERTION_FACTORY(
             HeaderType::HT_DPCT_GROUP_Utils,
-            TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
-                             "group::exchange"),
-                         TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
+            TYPE_CONDITIONAL_FACTORY(
+                UseGroupLocalMemory(),
+                TYPE_CONDITIONAL_FACTORY(
+                    CheckTemplateArgCount(5, false, std::less<unsigned>()),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::exchange"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                 TEMPLATE_ARG(1)),
+                    TYPE_CONDITIONAL_FACTORY(
+                        CheckTemplateArgCount(6, false, std::less<unsigned>()),
+                        TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                         "group::exchange"),
+                                     TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                     TEMPLATE_ARG(1), TEMPLATE_ARG(4)),
+                        TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                         "group::exchange"),
+                                     TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                     TEMPLATE_ARG(1), TEMPLATE_ARG(4),
+                                     TEMPLATE_ARG(5)))),
+                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                 "group::exchange"),
+                             TEMPLATE_ARG(0), TEMPLATE_ARG(2))))))
 
 // cub::BlockShuffle
 TYPE_REWRITE_ENTRY(
@@ -165,13 +203,45 @@ TYPE_REWRITE_ENTRY(
         HEADER_INSERTION_FACTORY(
             HeaderType::HT_DPCT_GROUP_Utils,
             TYPE_CONDITIONAL_FACTORY(
-                CheckTemplateArgCount(4),
-                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
-                                 "group::group_load"),
-                             TEMPLATE_ARG(0), TEMPLATE_ARG(2), TEMPLATE_ARG(3)),
-                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
-                                 "group::group_load"),
-                             TEMPLATE_ARG(0), TEMPLATE_ARG(2))))))
+                UseGroupLocalMemory(),
+                TYPE_CONDITIONAL_FACTORY(
+                    CheckTemplateArgCount(4, false, std::less<unsigned>()),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_load"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                 STR(MapNames::getDpctNamespace() +
+                                     "group::group_load_algorithm::blocked"),
+                                 TEMPLATE_ARG(1)),
+                    TYPE_CONDITIONAL_FACTORY(
+                        CheckTemplateArgCount(5, false, std::less<unsigned>()),
+                        TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                         "group::group_load"),
+                                     TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                     TEMPLATE_ARG(3), TEMPLATE_ARG(1)),
+                        TYPE_CONDITIONAL_FACTORY(
+                            CheckTemplateArgCount(6, false,
+                                                  std::less<unsigned>()),
+                            TYPE_FACTORY(
+                                STR(MapNames::getLibraryHelperNamespace() +
+                                    "group::group_load"),
+                                TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                TEMPLATE_ARG(3), TEMPLATE_ARG(1),
+                                TEMPLATE_ARG(4)),
+                            TYPE_FACTORY(
+                                STR(MapNames::getLibraryHelperNamespace() +
+                                    "group::group_load"),
+                                TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                TEMPLATE_ARG(3), TEMPLATE_ARG(1),
+                                TEMPLATE_ARG(4), TEMPLATE_ARG(5))))),
+                TYPE_CONDITIONAL_FACTORY(
+                    CheckTemplateArgCount(4),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_load"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                 TEMPLATE_ARG(3)),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_load"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))))
 // cub::BlockStore
 TYPE_REWRITE_ENTRY(
     "cub::BlockStore",
@@ -181,13 +251,45 @@ TYPE_REWRITE_ENTRY(
         HEADER_INSERTION_FACTORY(
             HeaderType::HT_DPCT_GROUP_Utils,
             TYPE_CONDITIONAL_FACTORY(
-                CheckTemplateArgCount(4),
-                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
-                                 "group::group_store"),
-                             TEMPLATE_ARG(0), TEMPLATE_ARG(2), TEMPLATE_ARG(3)),
-                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
-                                 "group::group_store"),
-                             TEMPLATE_ARG(0), TEMPLATE_ARG(2))))))
+                UseGroupLocalMemory(),
+                TYPE_CONDITIONAL_FACTORY(
+                    CheckTemplateArgCount(4, false, std::less<unsigned>()),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_store"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                 STR(MapNames::getDpctNamespace() +
+                                     "group::group_store_algorithm::blocked"),
+                                 TEMPLATE_ARG(1)),
+                    TYPE_CONDITIONAL_FACTORY(
+                        CheckTemplateArgCount(5, false, std::less<unsigned>()),
+                        TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                         "group::group_store"),
+                                     TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                     TEMPLATE_ARG(3), TEMPLATE_ARG(1)),
+                        TYPE_CONDITIONAL_FACTORY(
+                            CheckTemplateArgCount(6, false,
+                                                  std::less<unsigned>()),
+                            TYPE_FACTORY(
+                                STR(MapNames::getLibraryHelperNamespace() +
+                                    "group::group_store"),
+                                TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                TEMPLATE_ARG(3), TEMPLATE_ARG(1),
+                                TEMPLATE_ARG(4)),
+                            TYPE_FACTORY(
+                                STR(MapNames::getLibraryHelperNamespace() +
+                                    "group::group_store"),
+                                TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                TEMPLATE_ARG(3), TEMPLATE_ARG(1),
+                                TEMPLATE_ARG(4), TEMPLATE_ARG(5))))),
+                TYPE_CONDITIONAL_FACTORY(
+                    CheckTemplateArgCount(4),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_store"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                 TEMPLATE_ARG(3)),
+                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                     "group::group_store"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,

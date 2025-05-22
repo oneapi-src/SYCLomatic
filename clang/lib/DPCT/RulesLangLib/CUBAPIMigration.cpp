@@ -100,7 +100,7 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cub::ArgIndexInputIterator", "cub::DiscardOutputIterator",
         "cub::DoubleBuffer", "cub::NullType", "cub::ArgMax", "cub::ArgMin",
         "cub::BlockRadixSort", "cub::BlockExchange", "cub::BlockLoad",
-        "cub::BlockStore", "cub::BlockShuffle");
+        "cub::BlockStore", "cub::BlockShuffle", "TempStorage");
   };
 
   MF.addMatcher(
@@ -258,6 +258,9 @@ void CubMemberCallRule::runRule(
     bool isBlockLoadStore = Name == "Load" || Name == "Store";
     if (isBlockRadixSort || isBlockExchange || isBlockShuffle ||
         isBlockLoadStore) {
+      if (DpctGlobalInfo::useGroupLocalMemory()) {
+        return;
+      }
       std::string HelpFuncName;
       if (isBlockRadixSort)
         HelpFuncName = "group_radix_sort";
@@ -802,6 +805,10 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                     .bind("DeclStmt"),
                 this);
 
+  MF.addMatcher(fieldDecl(hasType(hasCanonicalType(qualType(isTempStorage))))
+                    .bind("FieldTempStorage"),
+                this);
+
   MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
                                       "InclusiveSum", "ExclusiveSum",
                                       "InclusiveScan", "ExclusiveScan",
@@ -887,6 +894,19 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
   }
   return OpRepl;
 }
+
+void CubRule::processFiledDecl(const FieldDecl *FD) {
+  if (!isPreserveCubVar(FD->getType())) {
+    auto P = FD->getParent();
+    if (P->isUnion()) {
+      emplaceTransformation(new ReplaceText(FD->getSourceRange().getBegin(),
+                                            FD->getLocation(), "void *"));
+    } else {
+      emplaceTransformation(new ReplaceDecl(FD, ""));
+    }
+  }
+}
+
 void CubRule::processCubDeclStmt(const DeclStmt *DS) {
   std::string Repl;
   for (auto Decl : DS->decls()) {
@@ -916,8 +936,9 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
       emplaceTransformation(new ReplaceDecl(RD, ""));
     }
 
-    // always remove TempStorage variable declaration
-    emplaceTransformation(new ReplaceStmt(DS, ""));
+    if (!isPreserveCubVar(VDecl->getType())) {
+      emplaceTransformation(new ReplaceStmt(DS, ""));
+    }
 
     // process TempStorage used in class constructor
     auto TempVarMatcher = compoundStmt(forEachDescendant(
@@ -1708,8 +1729,11 @@ void CubRule::processDependentMemberCall(
 int CubRule::PlaceholderIndex = 1;
 
 void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (const CXXMemberCallExpr *MC =
-          getNodeAsType<CXXMemberCallExpr>(Result, "MemberCall")) {
+  if (const FieldDecl *FD =
+          getNodeAsType<FieldDecl>(Result, "FieldTempStorage")) {
+    processFiledDecl(FD);
+  } else if (const CXXMemberCallExpr *MC =
+                 getNodeAsType<CXXMemberCallExpr>(Result, "MemberCall")) {
     processCubMemberCall(MC);
   } else if (const CXXDependentScopeMemberExpr *DMC =
                  getNodeAsType<CXXDependentScopeMemberExpr>(

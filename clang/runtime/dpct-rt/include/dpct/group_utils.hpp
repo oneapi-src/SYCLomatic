@@ -25,8 +25,29 @@ namespace group {
 /// \tparam T The type of the data elements.
 /// \tparam ElementsPerWorkItem The number of data elements assigned to a
 /// work-item.
-template <typename T, size_t ElementsPerWorkItem> class exchange {
+/// \tparam group_dim_0 The first dimension size of the work-group.
+/// \tparam group_dim_1 The second dimension size of the work-group.
+/// \tparam group_dim_2 The third dimension size of the work-group.
+template <typename T, size_t ElementsPerWorkItem, int group_dim_0 = 1,
+          int group_dim_1 = 1, int group_dim_2 = 1>
+class exchange {
+  static constexpr int LOG_LOCAL_MEMORY_BANKS = 4;
+  static constexpr bool INSERT_PADDING =
+      (ElementsPerWorkItem > 4) &&
+      (detail::power_of_two<ElementsPerWorkItem>::VALUE);
+
 public:
+  struct TempLocalMemory {
+    static constexpr int group_threads =
+        group_dim_0 * group_dim_1 * group_dim_2;
+    static constexpr int padding_values =
+        INSERT_PADDING
+            ? ((group_threads * ElementsPerWorkItem) >> LOG_LOCAL_MEMORY_BANKS)
+            : 0;
+    static constexpr int total_elements =
+        group_threads * ElementsPerWorkItem + padding_values;
+    uint8_t data[total_elements * sizeof(T)];
+  };
   static size_t get_local_memory_size(size_t group_threads) {
     size_t padding_values =
         (INSERT_PADDING)
@@ -36,7 +57,7 @@ public:
   }
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
-
+  exchange(TempLocalMemory &temp) { _local_memory = &(temp.data[0]); }
   // TODO: Investigate if padding is required for performance,
   // and if specializations are required for specific target hardware.
   static size_t adjust_by_padding(size_t offset) {
@@ -329,11 +350,6 @@ private:
     }
   }
 
-  static constexpr int LOG_LOCAL_MEMORY_BANKS = 4;
-  static constexpr bool INSERT_PADDING =
-      (ElementsPerWorkItem > 4) &&
-      (detail::power_of_two<ElementsPerWorkItem>::VALUE);
-
   uint8_t *_local_memory;
 };
 
@@ -344,13 +360,28 @@ private:
 /// \tparam ElementsPerWorkItem The number of data elements assigned to
 /// a work-item.
 /// \tparam RADIX_BITS The number of radix bits per digit place.
-template <typename T, int ElementsPerWorkItem, int RADIX_BITS = 4>
+/// \tparam group_dim_0 The first dimension size of the work-group.
+/// \tparam group_dim_1 The second dimension size of the work-group.
+/// \tparam group_dim_2 The third dimension size of the work-group.
+template <typename T, int ElementsPerWorkItem, int RADIX_BITS = 4,
+          int group_dim_0 = 1, int group_dim_1 = 1, int group_dim_2 = 1>
 class group_radix_sort {
   uint8_t *_local_memory;
 
 public:
+  struct TempLocalMemory {
+    static constexpr size_t radix_bytes =
+        sizeof(typename detail::radix_rank<RADIX_BITS, group_dim_0, group_dim_1,
+                                           group_dim_2>::TempLocalMemory);
+    static constexpr size_t exchange_bytes =
+        sizeof(typename exchange<T, ElementsPerWorkItem, group_dim_0,
+                                 group_dim_1, group_dim_2>::TempLocalMemory);
+    static constexpr size_t max_bytes =
+        (radix_bytes > exchange_bytes) ? radix_bytes : exchange_bytes;
+    uint8_t data[max_bytes];
+  };
   group_radix_sort(uint8_t *local_memory) : _local_memory(local_memory) {}
-
+  group_radix_sort(TempLocalMemory &temp) { _local_memory = &(temp.data[0]); }
   static size_t get_local_memory_size(size_t group_threads) {
     size_t ranks_size =
         detail::radix_rank<RADIX_BITS>::get_local_memory_size(group_threads);
@@ -1107,21 +1138,39 @@ enum class group_load_algorithm {
 /// \tparam ElementsPerWorkItem The number of data elements assigned to a
 /// work-item.
 /// \tparam LoadAlgorithm The data movement strategy, default is blocked.
+/// \tparam group_dim_0 The first dimension size of the work-group.
+/// \tparam group_dim_1 The second dimension size of the work-group.
+/// \tparam group_dim_2 The third dimension size of the work-group.
 template <typename T, size_t ElementsPerWorkItem,
-          group_load_algorithm LoadAlgorithm = group_load_algorithm::blocked>
+          group_load_algorithm LoadAlgorithm = group_load_algorithm::blocked,
+          int group_dim_0 = 1, int group_dim_1 = 1, int group_dim_2 = 1>
 class group_load {
+  struct _TempLocalMemory
+      : exchange<T, ElementsPerWorkItem, group_dim_0, group_dim_1,
+                 group_dim_2>::TempLocalMemory {};
+  struct _NullTempLocalMemory {};
+  static constexpr bool need_temp =
+      (LoadAlgorithm == group_load_algorithm::transpose) ||
+      (LoadAlgorithm == group_load_algorithm::sub_group_transpose);
+
 public:
+  using TempLocalMemory = typename std::conditional<need_temp, _TempLocalMemory,
+                                                    _NullTempLocalMemory>::type;
   static size_t get_local_memory_size(size_t work_group_size) {
-    if constexpr ((LoadAlgorithm == group_load_algorithm::transpose) ||
-                  (LoadAlgorithm ==
-                   group_load_algorithm::sub_group_transpose)) {
+    if constexpr (need_temp) {
       return dpct::group::exchange<
           T, ElementsPerWorkItem>::get_local_memory_size(work_group_size);
     }
     return 0;
   }
   group_load(uint8_t *local_memory) : _local_memory(local_memory) {}
-
+  group_load(TempLocalMemory &temp) {
+    if constexpr (need_temp) {
+      _local_memory = &(temp.data[0]);
+    } else {
+      _local_memory = nullptr;
+    }
+  }
   /// Load a linear segment of items from memory.
   ///
   /// Suppose 512 integer data elements partitioned across 128 work-items, where
@@ -1296,21 +1345,39 @@ enum class group_store_algorithm {
 /// \tparam ElementsPerWorkItem The number of data elements assigned to a
 /// work-item.
 /// \tparam StoreAlgorithm The data movement strategy, default is blocked.
+/// \tparam group_dim_0 The first dimension size of the work-group.
+/// \tparam group_dim_1 The second dimension size of the work-group.
+/// \tparam group_dim_2 The third dimension size of the work-group.
 template <typename T, size_t ElementsPerWorkItem,
-          group_store_algorithm StoreAlgorithm = group_store_algorithm::blocked>
+          group_store_algorithm StoreAlgorithm = group_store_algorithm::blocked,
+          int group_dim_0 = 1, int group_dim_1 = 1, int group_dim_2 = 1>
 class group_store {
+  struct _TempLocalMemory
+      : exchange<T, ElementsPerWorkItem, group_dim_0, group_dim_1,
+                 group_dim_2>::TempLocalMemory {};
+  struct _NullTempLocalMemory {};
+  static constexpr bool need_temp =
+      (StoreAlgorithm == group_store_algorithm::transpose) ||
+      (StoreAlgorithm == group_store_algorithm::sub_group_transpose);
+
 public:
+  using TempLocalMemory = typename std::conditional<need_temp, _TempLocalMemory,
+                                                    _NullTempLocalMemory>::type;
   static size_t get_local_memory_size(size_t work_group_size) {
-    if constexpr ((StoreAlgorithm == group_store_algorithm::transpose) ||
-                  (StoreAlgorithm ==
-                   group_store_algorithm::sub_group_transpose)) {
+    if constexpr (need_temp) {
       return dpct::group::exchange<
           T, ElementsPerWorkItem>::get_local_memory_size(work_group_size);
     }
     return 0;
   }
   group_store(uint8_t *local_memory) : _local_memory(local_memory) {}
-
+  group_store(TempLocalMemory &temp) {
+    if constexpr (need_temp) {
+      _local_memory = &(temp.data[0]);
+    } else {
+      _local_memory = nullptr;
+    }
+  }
   /// Store items into a linear segment of memory.
   ///
   /// Suppose 512 integer data elements partitioned across 128 work-items, where
@@ -1415,18 +1482,22 @@ private:
 /// \tparam group_dim_0 The first dimension size of the work-group.
 /// \tparam group_dim_1 The second dimension size of the work-group.
 /// \tparam group_dim_2 The third dimension size of the work-group.
-template <typename T, int group_dim_0, int group_dim_1 = 1, int group_dim_2 = 1>
+template <typename T, int group_dim_0 = 1, int group_dim_1 = 1,
+          int group_dim_2 = 1>
 class group_shuffle {
   T *_local_memory = nullptr;
   static constexpr size_t group_work_items =
       group_dim_0 * group_dim_1 * group_dim_2;
 
 public:
+  struct TempLocalMemory {
+    uint8_t data[sizeof(T) * group_work_items];
+  };
   static constexpr size_t get_local_memory_size(size_t work_group_size) {
     return sizeof(T) * work_group_size;
   }
   group_shuffle(uint8_t *local_memory) : _local_memory((T *)local_memory) {}
-
+  group_shuffle(TempLocalMemory &temp) { _local_memory = &(temp.data[0]); }
   /// Selects a value from a work-item at a given distance in the work-group
   /// and stores the value in the output.
   ///

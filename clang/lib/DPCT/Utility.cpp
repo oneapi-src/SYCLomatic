@@ -4047,6 +4047,24 @@ static bool isCubTempStorageType(const clang::Type *T) {
     return false;
 
   const clang::Type *DeclContextType = nullptr;
+  const clang::TypedefType *TT = dyn_cast<TypedefType>(T);
+  if (!TT) {
+    if (auto ET = dyn_cast<ElaboratedType>(T)) {
+      TT = dyn_cast<TypedefType>(ET->desugar().getTypePtr());
+    }
+  }
+  if (TT) {
+    auto D = TT->getDecl();
+    if (D && (D->getNameAsString() == "TempStorage")) {
+      auto DC = D->getDeclContext();
+      if (DC && DC->isRecord()) {
+        auto *RD = dyn_cast<RecordDecl>(DC);
+        DeclContextType = RD->getTypeForDecl();
+      } else {
+        return false;
+      }
+    }
+  }
   // cub::{BlockReduce, BlockScan, WarpScan, ...}::TempStorage;
   if (auto *RT = dyn_cast<RecordType>(T)) {
     if (RT->getDecl()->getName() != "TempStorage")
@@ -4077,13 +4095,82 @@ static bool isCubTempStorageType(const clang::Type *T) {
 bool isCubTempStorageType(QualType T) {
   if (T.isNull())
     return false;
-  return isCubTempStorageType(T.getCanonicalType().getTypePtrOrNull());
+  return isCubTempStorageType(T.getTypePtrOrNull()) ||
+         isCubTempStorageType(T.getCanonicalType().getTypePtrOrNull());
 }
 
 bool isCubCollectiveRecordType(QualType T) {
   if (T.isNull())
     return false;
   return isCubCollectiveRecordType(T.getCanonicalType().getTypePtrOrNull());
+}
+
+bool isPreserveCubVar(QualType T) {
+  auto isPreserve = [&](QualType QT) {
+    std::string ObjectName;
+    if (auto TypePtr = QT.getCanonicalType().getTypePtrOrNull()) {
+      if (auto *RT = dyn_cast<RecordType>(TypePtr)) {
+        auto *DC = RT->getDecl()->getDeclContext();
+        if (DC && DC->isRecord()) {
+          auto *RD = dyn_cast<RecordDecl>(DC);
+          ObjectName = RD->getNameAsString();
+        }
+      } else if (auto *DNT = dyn_cast<DependentNameType>(TypePtr)) {
+        auto *QNNS = DNT->getQualifier();
+        if (QNNS->getKind() == NestedNameSpecifier::TypeSpec) {
+          if (auto *SpecType =
+                  dyn_cast<TemplateSpecializationType>(QNNS->getAsType())) {
+            ObjectName = SpecType->getTemplateName()
+                             .getAsTemplateDecl()
+                             ->getNameAsString();
+          }
+        }
+      }
+    }
+    if (ObjectName.empty()) {
+      const clang::TypedefType *TT = dyn_cast<TypedefType>(T.getTypePtr());
+      if (!TT) {
+        if (auto ET = dyn_cast_or_null<ElaboratedType>(QT.getTypePtrOrNull())) {
+          TT = dyn_cast<TypedefType>(ET->desugar().getTypePtr());
+        }
+      }
+      if (TT) {
+        if (auto D = TT->getDecl()) {
+          auto DC = D->getDeclContext();
+          if (DC && DC->isRecord()) {
+            auto *RD = dyn_cast<RecordDecl>(DC);
+            ObjectName = RD->getNameAsString();
+          }
+        }
+      }
+    }
+
+    if ((ObjectName.find("BlockLoad") != std::string::npos) ||
+        (ObjectName.find("BlockStore") != std::string::npos) ||
+        (ObjectName.find("BlockExchange") != std::string::npos) ||
+        (ObjectName.find("BlockRadixSort") != std::string::npos)) {
+      return true;
+    }
+    return false;
+  };
+  if (DpctGlobalInfo::useGroupLocalMemory()) {
+    if (isCubTempStorageType(T)) {
+      if (isPreserve(T)) {
+        return true;
+      }
+    }
+    if (T->isUnionType()) {
+      const TagDecl *RD = T->getAsUnionType()->getDecl()->getCanonicalDecl();
+      for (const auto *D : RD->decls()) {
+        if (const auto *FD = dyn_cast<FieldDecl>(D)) {
+          auto QT = FD->getType().getCanonicalType();
+          if (isCubTempStorageType(QT.getTypePtrOrNull()) && isPreserve(QT))
+            return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 bool isCubVar(const VarDecl *VD) {

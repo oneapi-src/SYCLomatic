@@ -1132,9 +1132,75 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   case TypeLoc::Typedef:
   case TypeLoc::Builtin:
   case TypeLoc::Using:
+  case TypeLoc::DependentName:
   case TypeLoc::Elaborated:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
+    if (DpctGlobalInfo::useGroupLocalMemory() &&
+        (TyName.find("TempStorage") != std::string::npos) &&
+        isPreserveCubVar(TL.getType())) {
+      const RecordDecl *RD = nullptr;
+      const TemplateDecl *TD = nullptr;
+      const TypedefNameDecl *TND = nullptr;
+      if (auto ETL = TL.getAs<ElaboratedTypeLoc>()) {
+        if (auto RTL = ETL.getNamedTypeLoc().getAs<RecordTypeLoc>()) {
+          RD = RTL.getDecl();
+        }
+      } else if (auto RTL = TL.getAs<RecordTypeLoc>()) {
+        RD = RTL.getDecl();
+      } else if (auto TTL = TL.getAs<TypedefTypeLoc>()) {
+        TND = TTL.getTypedefNameDecl();
+      } else if (auto DTL = TL.getAs<DependentNameTypeLoc>()) {
+        const DependentNameType *DT = DTL.getTypePtr();
+        auto *QNNS = DT->getQualifier();
+        if (QNNS->getKind() == NestedNameSpecifier::TypeSpec) {
+          if (auto *SpecType =
+                  dyn_cast<TemplateSpecializationType>(QNNS->getAsType())) {
+            TD = SpecType->getTemplateName().getAsTemplateDecl();
+          } else if (auto *TT = dyn_cast<TypedefType>(QNNS->getAsType())) {
+            if (auto D = TT->getDecl()) {
+              if (auto *SpecType = D->getUnderlyingType()
+                                       .getCanonicalType()
+                                       .getTypePtr()
+                                       ->getAs<TemplateSpecializationType>()) {
+                TD = SpecType->getTemplateName().getAsTemplateDecl();
+              }
+            }
+          }
+        }
+      }
+      if (RD) {
+        auto DC = RD->getDeclContext();
+        if (DC->getDeclKind() == Decl::Kind::ClassTemplateSpecialization) {
+          if (auto CTS = dyn_cast<ClassTemplateSpecializationDecl>(DC)) {
+            if (dpct::DpctGlobalInfo::isInCudaPath(
+                    CTS->getSpecializedTemplate()->getLocation())) {
+              addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
+                             "TempLocalMemory");
+              return;
+            }
+          }
+        }
+      }
+      if (TND) {
+        auto DC = TND->getDeclContext();
+        if (DC && DC->isRecord()) {
+          auto *RD = dyn_cast<RecordDecl>(DC);
+          if (dpct::DpctGlobalInfo::isInCudaPath(RD->getLocation())) {
+            addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
+                           "TempLocalMemory");
+            return;
+          }
+        }
+      }
+      if (TD) {
+        if (dpct::DpctGlobalInfo::isInCudaPath(TD->getLocation())) {
+          addReplacement(TL.getAs<DependentNameTypeLoc>().getNameLoc(),
+                         TL.getEndLoc(), CSCE, "TempLocalMemory");
+          return;
+        }
+      }
+    }
     RewriteType(TyName, TL);
     break;
   }

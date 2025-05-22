@@ -28,14 +28,29 @@ template <int N, int COUNT> struct log2<N, 0, COUNT> {
   enum { VALUE = (1 << (COUNT - 1) < N) ? COUNT : COUNT - 1 };
 };
 
-template <int RADIX_BITS, bool DESCENDING = false> class radix_rank {
+template <int RADIX_BITS, bool DESCENDING = false, int group_dim_0 = 1,
+          int group_dim_1 = 1, int group_dim_2 = 1>
+class radix_rank {
+  static constexpr int PACKING_RATIO =
+      sizeof(packed_counter_type) / sizeof(digit_counter_type);
+  static constexpr int LOG_PACKING_RATIO = log2<PACKING_RATIO>::VALUE;
+  static constexpr int LOG_COUNTER_LANES = RADIX_BITS - LOG_PACKING_RATIO;
+  static constexpr int COUNTER_LANES = 1 << LOG_COUNTER_LANES;
+  static constexpr int PADDED_COUNTER_LANES = COUNTER_LANES + 1;
+
 public:
+  struct TempLocalMemory {
+    static constexpr int group_threads =
+        group_dim_0 * group_dim_1 * group_dim_2;
+    uint8_t data[group_threads * PADDED_COUNTER_LANES *
+                 sizeof(packed_counter_type)];
+  };
   static size_t get_local_memory_size(size_t group_threads) {
     return group_threads * PADDED_COUNTER_LANES * sizeof(packed_counter_type);
   }
 
   radix_rank(uint8_t *local_memory) : _local_memory(local_memory) {}
-
+  radix_rank(TempLocalMemory &temp) { _local_memory = &(temp.data[0]); }
   template <typename Item, typename KT, int VALUES_PER_THREAD>
   __dpct_inline__ void
   rank_keys(const Item &item, KT (&keys)[VALUES_PER_THREAD],
@@ -160,13 +175,6 @@ private:
   }
 
 private:
-  static constexpr int PACKING_RATIO =
-      sizeof(packed_counter_type) / sizeof(digit_counter_type);
-  static constexpr int LOG_PACKING_RATIO = log2<PACKING_RATIO>::VALUE;
-  static constexpr int LOG_COUNTER_LANES = RADIX_BITS - LOG_PACKING_RATIO;
-  static constexpr int COUNTER_LANES = 1 << LOG_COUNTER_LANES;
-  static constexpr int PADDED_COUNTER_LANES = COUNTER_LANES + 1;
-
   packed_counter_type cached_segment[PADDED_COUNTER_LANES];
   uint8_t *_local_memory;
 };

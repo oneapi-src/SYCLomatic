@@ -3120,7 +3120,7 @@ MemVarInfo::MemVarInfo(unsigned Offset,
         auto DS1 = getParentDeclStmt(Var);
         auto DS2 = getParentDeclStmt(DeclOfVarType);
         if (DS1 && DS2 && DS1 == DS2) {
-          IsAnonymousType = true;
+          IsAnonymousType = !DeclOfVarType->hasNameForLinkage();
           DeclStmtOfVarType = DS2;
           const auto LocInfo = DpctGlobalInfo::getLocInfo(
               getDefinitionRange(DS2->getBeginLoc(), DS2->getEndLoc())
@@ -3185,7 +3185,9 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
       OS << "auto &" << getName() << " = "
          << "*" << MapNames::getClNamespace()
          << "ext::oneapi::group_local_memory_for_overwrite<"
-         << getType()->getBaseName();
+         << ((isAnonymousType() && isShared() && isLocal())
+                 ? LocalTypeName
+                 : getType()->getBaseName());
       for (auto &ArraySize : getType()->getRange()) {
         OS << "[" << ArraySize.getSize() << "]";
       }
