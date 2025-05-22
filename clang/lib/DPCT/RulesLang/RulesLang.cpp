@@ -360,7 +360,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType",
               "cudaExternalSemaphoreHandleType", "CUstreamCallback",
               "cudaHostFn_t", "cudaGraphNodeType", "CUsurfref",
-              "CUdevice_P2PAttribute", "cudaIpcMemHandle_t"))))))
+              "CUdevice_P2PAttribute", "cudaIpcMemHandle_t", "nvshmemi_amo_t",
+              "nvshmemi_cmp_type"))))))
           .bind("cudaTypeDef"),
       this);
 
