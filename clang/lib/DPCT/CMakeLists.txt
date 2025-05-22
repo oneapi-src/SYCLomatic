@@ -26,6 +26,7 @@ set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/lapack_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/group_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/blas_gemm_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/shmem_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/compat_service.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/algorithm.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/functional.h
@@ -78,6 +79,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lapack_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/group_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_gemm_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/shmem_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/compat_service.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/group_utils_detail.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/math_detail.hpp.inc
