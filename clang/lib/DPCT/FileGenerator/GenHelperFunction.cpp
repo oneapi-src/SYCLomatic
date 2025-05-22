@@ -82,6 +82,9 @@ const std::string GroupUtilsAllContentStr =
 const std::string BlasGemmUtilsAllContentStr =
 #include "clang/DPCT/blas_gemm_utils.hpp.inc"
     ;
+const std::string ShmemUtilsAllContentStr =
+#include "clang/DPCT/shmem_utils.hpp.inc"
+    ;
 const std::string CompatServiceAllContentStr =
 #include "clang/DPCT/compat_service.hpp.inc"
     ;
@@ -217,6 +220,7 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(LapackUtils, ".", lapack_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(GroupUtils, ".", group_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(BlasGemmUtils, ".", blas_gemm_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(ShmemUtils, ".", shmem_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(CompatService, ".", compat_service.hpp)
   GENERATE_ALL_FILE_CONTENT(GroupUtilsDetail, "detail", group_utils_detail.hpp)
   GENERATE_ALL_FILE_CONTENT(MathDetail, "detail", math_detail.hpp)
