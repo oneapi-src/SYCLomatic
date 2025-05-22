@@ -65,7 +65,7 @@ Advanced DPCT options
     =non-stdandard-sycl-builtins          -   Experimental extension that allows use of non standard SYCL builtin functions.
     =prefetch                             -   Experimental extension that allows use of SYCL prefetch APIs.
     =level_zero                           -   Experimental migration feature that enables the use of Level Zero APIs to migrate target code, like CUDA Inter-Process Communication (IPC) APIs.
-    =async_alloc - Experimental extension that allows use of SYCL async allocation APIs.
+    =async_alloc                          -   Experimental extension that allows use of SYCL async allocation APIs.
     =all                                  -   Enable all experimental extensions listed in this option.
 
 <source0> ... Paths of input source files. These paths are looked up in the compilation database.
