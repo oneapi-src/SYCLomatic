@@ -922,11 +922,14 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaExternalSemaphoreHandleType",
        std::make_shared<TypeNameRule>(getExpNamespace() +
                                       "external_semaphore_handle_type")},
+      // nvSHMEM
       {"nvshmem_team_t", std::make_shared<TypeNameRule>("ishmem_team_t")},
       {"nvshmem_team_config_t",
        std::make_shared<TypeNameRule>("ishmem_team_config_t")},
       {"nvshmemx_init_attr_t",
        std::make_shared<TypeNameRule>("ishmemx_attr_t")},
+      {"nvshmemi_amo_t", std::make_shared<TypeNameRule>("int")},
+      {"nvshmemi_cmp_type", std::make_shared<TypeNameRule>("int")},
       // ...
   };
   // SYCLcompat unsupport types
@@ -1660,6 +1663,7 @@ void MapNames::setExplicitNamespaceMap(
                ? getExpNamespace() +
                      "external_semaphore_handle_type::timeline_win32_nt_handle"
                : "cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32")},
+      // nvSHMEM
       {"NVSHMEM_TEAM_WORLD",
        std::make_shared<EnumNameRule>("ISHMEM_TEAM_WORLD")},
       {"NVSHMEM_TEAM_SHARED",
@@ -1667,9 +1671,21 @@ void MapNames::setExplicitNamespaceMap(
       {"NVSHMEM_TEAM_INVALID",
        std::make_shared<EnumNameRule>("ISHMEM_TEAM_INVALID")},
       {"NVSHMEMX_INIT_WITH_MPI_COMM",
-       std::make_shared<EnumNameRule>("ISHMEMX_RUNTIME_MPI")},
+       std::make_shared<EnumNameRule>(MapNames::getDpctNamespace() +
+                                      "shmemx::RUNTIME_MPI")},
       {"NVSHMEMX_INIT_WITH_SHMEM",
-       std::make_shared<EnumNameRule>("ISHMEMX_RUNTIME_OPENSHMEM")},
+       std::make_shared<EnumNameRule>(MapNames::getDpctNamespace() +
+                                      "shmemx::RUNTIME_OPENSHMEM")},
+      {"NVSHMEM_SIGNAL_SET",
+       std::make_shared<EnumNameRule>("ISHMEM_SIGNAL_SET")},
+      {"NVSHMEM_SIGNAL_ADD",
+       std::make_shared<EnumNameRule>("ISHMEM_SIGNAL_ADD")},
+      {"NVSHMEM_CMP_EQ", std::make_shared<EnumNameRule>("ISHMEM_CMP_EQ")},
+      {"NVSHMEM_CMP_NE", std::make_shared<EnumNameRule>("ISHMEM_CMP_NE")},
+      {"NVSHMEM_CMP_GT", std::make_shared<EnumNameRule>("ISHMEM_CMP_GT")},
+      {"NVSHMEM_CMP_GE", std::make_shared<EnumNameRule>("ISHMEM_CMP_GE")},
+      {"NVSHMEM_CMP_LT", std::make_shared<EnumNameRule>("ISHMEM_CMP_LT")},
+      {"NVSHMEM_CMP_LE", std::make_shared<EnumNameRule>("ISHMEM_CMP_LE")},
       // ...
   };
 
