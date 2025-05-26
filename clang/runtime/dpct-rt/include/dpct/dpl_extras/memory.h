@@ -574,11 +574,8 @@ public:
   template <sycl::access_mode inMode>
   device_iterator(const device_iterator<T> &in)
       : Base(in.ptr), idx(in.idx) {} // required for iter_mode
-  device_iterator &operator=(const device_iterator &in) {
-    Base::operator=(in);
-    idx = in.idx;
-    return *this;
-  }
+  device_iterator(const device_iterator &in) = default;
+  device_iterator &operator=(const device_iterator &in) = default;
 
   reference operator*() const { return *(Base::ptr + idx); }
 
