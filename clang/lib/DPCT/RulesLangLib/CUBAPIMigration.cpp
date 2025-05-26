@@ -895,10 +895,6 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
              isa<CXXFunctionalCastExpr>(Operator) && isa<InitListExpr>(Inner)) {
     processOperatorExpr(Inner);
   }
-  if (OpRepl.empty()) {
-    ExprAnalysis EA(Operator);
-    OpRepl = EA.getReplacedString();
-  }
   return OpRepl;
 }
 void CubRule::processCubDeclStmt(const DeclStmt *DS) {
