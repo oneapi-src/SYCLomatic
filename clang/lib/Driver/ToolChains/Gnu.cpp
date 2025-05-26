@@ -3493,7 +3493,7 @@ bool Generic_GCC::addGCCLibStdCxxIncludePaths(
 #ifdef SYCLomatic_CUSTOMIZATION
   // Detect Debian g++-multiarch-incdir.diff through the list of candidate, the
   // potential GCC version sorts in descending orde.
-  for (auto Candidate : GCCInstallation.GetCandidateVersion()) {
+  for (auto &Candidate : GCCInstallation.GetCandidateVersion()) {
     if (addLibStdCXXIncludePaths(
             LibDir.str() + "/../include/c++/" + Candidate.Text, DebianMultiarch,
             Multilib.includeSuffix(), DriverArgs, CC1Args, /*Debian=*/true))
