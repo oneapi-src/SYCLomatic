@@ -3177,6 +3177,7 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
 
     case EXPR_SYCL_UNIQUE_STABLE_ID:
       S = SYCLUniqueStableIdExpr::CreateEmpty(Context);
+      break;
 
     case EXPR_OPENACC_ASTERISK_SIZE:
       S = OpenACCAsteriskSizeExpr::CreateEmpty(Context);
