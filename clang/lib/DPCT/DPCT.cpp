@@ -11,6 +11,7 @@
 #include "AnalysisInfo.h"
 #include "CommandOption/ValidateArguments.h"
 #include "Config.h"
+#include "ComponentVersion/ComponentVersion.h"
 #include "ErrorHandle/CrashRecovery.h"
 #include "ErrorHandle/Error.h"
 #include "FileGenerator/GenFiles.h"
@@ -975,7 +976,21 @@ int runDPCT(int argc, const char **argv) {
     showReportHeader();
   
   ExtraIncPaths = OptParser->getExtraIncPathList();
+  if (VerifiedComp) {
+    SmallString<128> FilePath1(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(FilePath1,
+                            Twine("extensions/verified_component/component_version.yaml"));
+    SmallString<128> FilePath2(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(FilePath2,
+                            Twine("opt/dpct/extensions/verified_component/component_version.yaml"));
 
+    std::vector<clang::tooling::UnifiedPath> SupportedComponents{
+        llvm::sys::fs::exists(FilePath1) ? FilePath1.c_str()
+                                         : FilePath2.c_str()};
+    std::cout << SupportedComponents[0].getPath().str() << "\n";
+    importStatus(SupportedComponents);
+    return 0;
+  }
   if (isCUDAHeaderRequired()) {
     // TODO: implement one of this for each source language.
     CudaPath = getCudaInstallPath(OriginalArgc, argv);

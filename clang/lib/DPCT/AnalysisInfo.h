@@ -1594,6 +1594,7 @@ private:
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
   static bool EnableCodePin;
+  static bool VerifiedComp;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
   static bool MigrateBuildScriptOnly;

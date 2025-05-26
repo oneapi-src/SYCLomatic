@@ -2428,6 +2428,7 @@ format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
 bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::EnableCodePin = false;
+bool DpctGlobalInfo::VerifiedComp = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::MigrateBuildScriptOnly = false;

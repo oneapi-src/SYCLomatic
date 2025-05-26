@@ -233,6 +233,7 @@ add_clang_library(DPCT
   MigrateScript/GenMakefile.cpp
   RulesInclude/InclusionHeaders.cpp
   IncMigration/IncrementalMigrationUtility.cpp
+  ComponentVersion/ComponentVersion.cpp
   UserDefinedRules/UserDefinedRules.cpp
   UserDefinedRules/PatternRewriter.cpp
   MigrateScript/MigrateBuildScript.cpp
