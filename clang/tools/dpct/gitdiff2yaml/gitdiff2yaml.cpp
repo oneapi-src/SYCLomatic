@@ -31,6 +31,8 @@
 
 namespace {
 
+const std::string LineEnd = "\\n";
+
 std::string execGitCommand(const std::string &CMD) {
   std::array<char, 128> Buffer;
   std::unique_ptr<FILE, int (*)(FILE *)> Pipe(popen(CMD.c_str(), "r"), pclose);
@@ -150,7 +152,7 @@ void processHunkBody(const std::string &Line, HunkContext &Ctx,
       // insert-replacement
       R.OldFilePath = Ctx.CurrentOldFilePath;
       R.NewFilePath = Ctx.CurrentNewFilePath;
-      R.Length = AddInfo->second.length();
+      R.Length = 0;
       R.Offset = CurrentOldFileOffset[AddInfo->first];
       R.ReplacementText = AddInfo->second;
       AddInfo.reset();
@@ -189,10 +191,10 @@ void processHunkBody(const std::string &Line, HunkContext &Ctx,
   case '+': {
     if (!AddInfo.has_value()) {
       auto Item = std::pair<unsigned, std::string>(Ctx.OldCurrentLine,
-                                                   Line.substr(1) + '\n');
+                                                   Line.substr(1) + LineEnd);
       AddInfo = Item;
     } else {
-      AddInfo->second += (Line.substr(1) + '\n');
+      AddInfo->second += (Line.substr(1) + LineEnd);
     }
     break;
   }
@@ -219,14 +221,16 @@ std::vector<Replacement> parseDiff(const std::string &diffOutput,
     if (startsWith(line, "---")) {
       HC.CurrentOldFilePath =
           line.substr(4) == "/dev/null" ? "/dev/null" : line.substr(6);
-      std::ifstream FileStream(RepoRoot + "/" + HC.CurrentOldFilePath);
-      if (!FileStream.is_open()) {
-        throw std::runtime_error("Failed to open file: " + RepoRoot + "/" +
-                                 HC.CurrentOldFilePath);
+      if (HC.CurrentOldFilePath != "/dev/null") {
+        std::ifstream FileStream(RepoRoot + "/" + HC.CurrentOldFilePath);
+        if (!FileStream.is_open()) {
+          throw std::runtime_error("Failed to open file: " + RepoRoot + "/" +
+                                   HC.CurrentOldFilePath);
+        }
+        std::stringstream Buffer;
+        Buffer << FileStream.rdbuf();
+        CurrentOldFileOffset = calculateOldOffset(Buffer.str());
       }
-      std::stringstream Buffer;
-      Buffer << FileStream.rdbuf();
-      CurrentOldFileOffset = calculateOldOffset(Buffer.str());
       continue;
     }
     if (startsWith(line, "+++")) {
@@ -258,29 +262,39 @@ std::vector<Replacement> parseDiff(const std::string &diffOutput,
   return replacements;
 }
 
-void printYaml(const std::vector<Replacement> &Repls) {
-  std::cout << "---" << std::endl;
-  std::cout << "Replacements:" << std::endl;
+void printYaml(std::ostream &stream, const std::vector<Replacement> &Repls) {
+  stream << "---" << std::endl;
+  stream << "Replacements:" << std::endl;
   for (const auto &R : Repls) {
-    std::cout << "  - FilePath:       " << "'" << R.OldFilePath << "'"
-              << std::endl;
-    std::cout << "    Offset:         " << R.Offset << std::endl;
-    std::cout << "    Length:         " << R.Length << std::endl;
-    std::cout << "    ReplacementText:" << "\"" << R.ReplacementText << "\""
-              << std::endl;
-    std::cout << "  - NewFilePath:    " << "'" << R.NewFilePath << "'"
-              << std::endl;
+    stream << "  - FilePath:       " << "'" << R.OldFilePath << "'"
+           << std::endl;
+    stream << "    Offset:         " << R.Offset << std::endl;
+    stream << "    Length:         " << R.Length << std::endl;
+    stream << "    ReplacementText:" << "\"" << R.ReplacementText << "\""
+           << std::endl;
+    stream << "    NewFilePath:    " << "'" << R.NewFilePath << "'"
+           << std::endl;
   }
-  std::cout << "..." << std::endl;
+  stream << "..." << std::endl;
 }
 
 } // namespace
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    std::cerr << "Usage: gitdiff2yaml <old_commit_id>" << std::endl;
+  if (argc != 2 && argc != 4) {
+    std::cerr << "Usage: gitdiff2yaml <old_commit_id> [-o outputfile]"
+              << std::endl;
     return 1;
   }
+  bool OutputToFile = false;
+  if (argc == 4) {
+    if (std::string(argv[2]) != "-o") {
+      std::cerr << "Invalid option: " << argv[2] << std::endl;
+      return 1;
+    }
+    OutputToFile = true;
+  }
+
   std::string OldCommitID = argv[1];
 
   std::string RepoRoot = execGitCommand("git rev-parse --show-toplevel");
@@ -302,7 +316,18 @@ int main(int argc, char *argv[]) {
                              }),
               Repls.end());
 
-  printYaml(Repls);
+  if (OutputToFile) {
+    std::ofstream OutFile(argv[3]);
+    if (!OutFile.is_open()) {
+      std::cerr << "Failed to open output file: " << argv[3] << std::endl;
+      return 1;
+    }
+    printYaml(OutFile, Repls);
+    OutFile.close();
+  } else {
+    printYaml(std::cout, Repls);
+  }
+
   execGitCommand("git reset --hard " + NewCommitID);
 
   return 0;

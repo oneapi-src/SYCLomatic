@@ -1,0 +1,13 @@
+---
+Replacements:
+  - FilePath:       '/dev/null'
+    Offset:         0
+    Length:         0
+    ReplacementText:""
+    NewFilePath:    'b.txt'
+  - FilePath:       '/dev/null'
+    Offset:         0
+    Length:         0
+    ReplacementText:""
+    NewFilePath:    'c.txt'
+...

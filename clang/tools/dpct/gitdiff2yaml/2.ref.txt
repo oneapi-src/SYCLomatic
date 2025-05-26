@@ -1,0 +1,8 @@
+---
+Replacements:
+  - FilePath:       'b.txt'
+    Offset:         0
+    Length:         0
+    ReplacementText:""
+    NewFilePath:    '/dev/null'
+...
