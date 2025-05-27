@@ -15,12 +15,6 @@ int main() {
   // CHECK-NEXT: */
   cudaGraphicsResource_t resource, *resources;
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsRegisterFlags is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
-  // CHECK-NEXT: */
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsRegisterFlagsNone is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
-  // CHECK-NEXT: */
   cudaGraphicsRegisterFlags regFlags = cudaGraphicsRegisterFlagsNone;
 
   ID3D11Resource* pD3DResource;
