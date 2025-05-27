@@ -159,7 +159,7 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
   llvm::errs() << "Saved new version of " << YamlFile << " file\n";
 
   std::vector<clang::tooling::DpctReplacement> Repls(Replaces.begin(),
-                                                 Replaces.end());
+                                                     Replaces.end());
 
   // For header file, its hash content digest and HasCUDASytax field is not
   // registed.

@@ -318,8 +318,8 @@ void ConstantMemVarMigrationRule::runRule(
   }
 }
 
-void ConstantMemVarMigrationRule::previousHCurrentD(const VarDecl *VD,
-                                                    tooling::DpctReplacement &R) {
+void ConstantMemVarMigrationRule::previousHCurrentD(
+    const VarDecl *VD, tooling::DpctReplacement &R) {
   // 1. emit DPCT1055 warning
   // 2. add a new variable for host
   // 3. insert dpct::constant_memory and add the info from that replacement
@@ -371,8 +371,8 @@ void ConstantMemVarMigrationRule::previousHCurrentD(const VarDecl *VD,
   R = tooling::DpctReplacement(R.getFilePath(), 0, 0, "");
 }
 
-void ConstantMemVarMigrationRule::previousDCurrentH(const VarDecl *VD,
-                                                    tooling::DpctReplacement &R) {
+void ConstantMemVarMigrationRule::previousDCurrentH(
+    const VarDecl *VD, tooling::DpctReplacement &R) {
   // 1. change DeviceConstant to HostDeviceConstant
   // 2. emit DPCT1055 warning (warning info is from previous device case)
   // 3. add a new variable for host (decl info is from previous device case)
@@ -401,7 +401,8 @@ void ConstantMemVarMigrationRule::previousDCurrentH(const VarDecl *VD,
   emplaceTransformation(new InsertText(SL, std::move(NewDecl)));
 }
 
-void ConstantMemVarMigrationRule::removeHostConstantWarning(DpctReplacement &R) {
+void ConstantMemVarMigrationRule::removeHostConstantWarning(
+    DpctReplacement &R) {
   std::string ReplStr = R.getReplacementText().str();
 
   // warning text of Diagnostics::HOST_CONSTANT

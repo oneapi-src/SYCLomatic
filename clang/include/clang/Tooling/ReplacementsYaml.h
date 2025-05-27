@@ -62,7 +62,7 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
 
   static void mapping(IO &Io, clang::tooling::Replacement &R) {
     MappingNormalization<NormalizedReplacement, clang::tooling::Replacement>
-    Keys(Io, R);
+        Keys(Io, R);
     Io.mapRequired("FilePath", Keys->FilePath);
     Io.mapRequired("Offset", Keys->Offset);
     Io.mapRequired("Length", Keys->Length);
