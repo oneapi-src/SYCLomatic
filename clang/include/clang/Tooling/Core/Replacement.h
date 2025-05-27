@@ -278,10 +278,9 @@ inline bool operator!=(const Replacement &LHS, const Replacement &RHS) {
 class Replacements {
 private:
 #ifdef SYCLomatic_CUSTOMIZATION
-  using ReplacementsImpl = std::set<DpctReplacement>;
-#else
-  using ReplacementsImpl = std::set<Replacement>;
+  using Replacement = DpctReplacement;
 #endif // SYCLomatic_CUSTOMIZATION
+  using ReplacementsImpl = std::set<Replacement>;
 
 public:
   using const_iterator = ReplacementsImpl::const_iterator;
