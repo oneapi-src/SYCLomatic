@@ -19,6 +19,7 @@
 #include "TextModification.h"
 #include "Utility.h"
 #include "CommandOption/ValidateArguments.h"
+#include "ComponentVersion/ComponentVersion.h"
 #include <bitset>
 #include <memory>
 #include <optional>
@@ -735,6 +736,14 @@ public:
   }
   static const std::vector<clang::tooling::UnifiedPath> &getAnalysisScope() {
     return AnalysisScope;
+  }
+
+  static void
+  setVerifiedCmpStats(const std::vector<std::shared_ptr<CmpStats>> &CmpStats) {
+    VerifiedCmpStats = CmpStats;
+  }
+  static const std::vector<std::shared_ptr<CmpStats>> &getVerifiedCmpStats() {
+    return VerifiedCmpStats;
   }
   static void addChangeExtensions(const std::string &Extension) {
     assert(!Extension.empty());
@@ -1576,6 +1585,7 @@ private:
   static clang::tooling::UnifiedPath InRoot;
   static clang::tooling::UnifiedPath OutRoot;
   static std::vector<clang::tooling::UnifiedPath> AnalysisScope;
+  static std::vector<std::shared_ptr<CmpStats>> VerifiedCmpStats;
   static std::unordered_set<std::string> ChangeExtensions;
   static std::string SYCLSourceExtension;
   static std::string SYCLHeaderExtension;

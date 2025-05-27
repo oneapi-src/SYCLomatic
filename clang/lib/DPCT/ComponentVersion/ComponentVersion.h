@@ -17,10 +17,10 @@
 namespace clang {
 namespace dpct {
 
-class CmpStats {
-public:
+struct CmpStats {
   std::string Feature;
   std::string SupportedVersion;
+  std::string ReplacementText;
   std::string TestComponent;
   bool IsOpenSource;
   bool IsInNextOneAPIVersion;
@@ -30,6 +30,8 @@ public:
 
 void importStatus(std::vector<clang::tooling::UnifiedPath> &RuleFiles);
 
+void emitCmpStatsWarning(std::shared_ptr<clang::dpct::CmpStats> Stats,
+                         std::stringstream &StrStream);
 } // namespace dpct
 } // namespace clang
 
