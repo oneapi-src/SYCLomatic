@@ -271,6 +271,7 @@ add_clang_library(DPCT
   RulesMathLib/RandomAPIMigration.cpp
   RulesMathLib/SolverAPIMigration.cpp
   CodePin/GenCodePinHeader.cpp
+  ReMigration/Hunk.cpp
 
   DEPENDS
   ClangDriverOptions
