@@ -37,6 +37,7 @@
 
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Core/UnifiedPath.h"
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D);
@@ -507,7 +508,7 @@ public:
   getConstantMacroTMSet() {
     return ConstantMacroTMSet;
   }
-  std::vector<tooling::Replacement> &getReplacements() {
+  std::vector<tooling::DpctReplacement> &getReplacements() {
     return PreviousTUReplFromYAML->Replacements;
   }
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>> &
@@ -1258,7 +1259,7 @@ public:
     return FileSetInCompilationDB;
   }
   static std::unordered_map<std::string,
-                            std::vector<clang::tooling::Replacement>> &
+                            std::vector<clang::tooling::DpctReplacement>> &
   getFileRelpsMap() {
     return FileRelpsMap;
   }
@@ -1643,7 +1644,7 @@ private:
   // value: The end location of the macro expansion
   static std::map<std::string, unsigned int> BeginOfEmptyMacros;
   static std::unordered_map<std::string,
-                            std::vector<clang::tooling::Replacement>>
+                            std::vector<clang::tooling::DpctReplacement>>
       FileRelpsMap;
   static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo>
       MsfInfoMap;

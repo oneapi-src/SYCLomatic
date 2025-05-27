@@ -36,7 +36,7 @@ int loadFromYaml(const clang::tooling::UnifiedPath &Input,
 int save2Yaml(
     clang::tooling::UnifiedPath &YamlFile,
     clang::tooling::UnifiedPath &SrcFileName,
-    const std::vector<clang::tooling::Replacement> &Replaces,
+    const std::vector<clang::tooling::DpctReplacement> &Replaces,
     const std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesDigest,
     const std::map<clang::tooling::UnifiedPath,
                    std::vector<clang::tooling::CompilationInfo>>
@@ -44,7 +44,7 @@ int save2Yaml(
 
 void mergeAndUniqueReps(
     clang::tooling::Replacements &Replaces,
-    const std::vector<clang::tooling::Replacement> &PreRepls);
+    const std::vector<clang::tooling::DpctReplacement> &PreRepls);
 
 } // namespace dpct
 } // namespace clang

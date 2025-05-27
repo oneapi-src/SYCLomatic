@@ -500,9 +500,9 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
-  void previousHCurrentD(const VarDecl *VD, tooling::Replacement &R);
-  void previousDCurrentH(const VarDecl *VD, tooling::Replacement &R);
-  void removeHostConstantWarning(tooling::Replacement &R);
+  void previousHCurrentD(const VarDecl *VD, tooling::DpctReplacement &R);
+  void previousDCurrentH(const VarDecl *VD, tooling::DpctReplacement &R);
+  void removeHostConstantWarning(tooling::DpctReplacement &R);
   bool currentIsDevice(const VarDecl *MemVar, std::shared_ptr<MemVarInfo> Info);
   bool currentIsHost(const VarDecl *VD, std::string VarName);
 };

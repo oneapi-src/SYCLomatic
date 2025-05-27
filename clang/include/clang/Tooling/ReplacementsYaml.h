@@ -31,6 +31,7 @@ LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::CompilationInfo>)
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::MainSourceFileInfo)
 LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::MainSourceFileInfo>)
 LLVM_YAML_IS_STRING_MAP(clang::tooling::OptionInfo)
+LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::DpctReplacement)
 #endif // SYCLomatic_CUSTOMIZATION
 
 namespace llvm {
@@ -42,16 +43,43 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
   /// Helper to (de)serialize a Replacement since we don't have direct
   /// access to its data members.
   struct NormalizedReplacement {
-#ifdef SYCLomatic_CUSTOMIZATION
-    NormalizedReplacement(const IO &)
-        : FilePath(""), Offset(0), Length(0), ReplacementText(""),
-          ConstantFlag(""), ConstantOffset(0), InitStr(""), NewHostVarName(""),
-          BlockLevelFormatFlag(false) {
-    }
+    NormalizedReplacement(const IO &) : Offset(0), Length(0) {}
 
     NormalizedReplacement(const IO &, const clang::tooling::Replacement &R)
         : FilePath(R.getFilePath()), Offset(R.getOffset()),
-          Length(R.getLength()), ReplacementText(R.getReplacementText()),
+          Length(R.getLength()), ReplacementText(R.getReplacementText()) {}
+
+    clang::tooling::Replacement denormalize(const IO &) {
+      return clang::tooling::Replacement(FilePath, Offset, Length,
+                                         ReplacementText);
+    }
+
+    std::string FilePath;
+    unsigned int Offset;
+    unsigned int Length;
+    std::string ReplacementText;
+  };
+
+  static void mapping(IO &Io, clang::tooling::Replacement &R) {
+    MappingNormalization<NormalizedReplacement, clang::tooling::Replacement>
+    Keys(Io, R);
+    Io.mapRequired("FilePath", Keys->FilePath);
+    Io.mapRequired("Offset", Keys->Offset);
+    Io.mapRequired("Length", Keys->Length);
+    Io.mapRequired("ReplacementText", Keys->ReplacementText);
+  }
+};
+
+#ifdef SYCLomatic_CUSTOMIZATION
+template <> struct MappingTraits<clang::tooling::DpctReplacement> {
+  struct NormalizedDpctReplacement {
+    NormalizedDpctReplacement(const IO &io)
+        : Base(io), ConstantFlag(""), ConstantOffset(0), InitStr(""),
+          NewHostVarName(""), BlockLevelFormatFlag(false) {}
+
+    NormalizedDpctReplacement(const IO &io,
+                              const clang::tooling::DpctReplacement &R)
+        : Base(io, static_cast<const clang::tooling::DpctReplacement &>(R)),
           ConstantOffset(R.getConstantOffset()), InitStr(R.getInitStr()),
           NewHostVarName(R.getNewHostVarName()),
           BlockLevelFormatFlag(R.getBlockLevelFormatFlag()) {
@@ -67,9 +95,8 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
       }
     }
 
-    clang::tooling::Replacement denormalize(const IO &) {
-      auto R = clang::tooling::Replacement(FilePath, Offset, Length,
-                                           ReplacementText);
+    clang::tooling::DpctReplacement denormalize(const IO &io) {
+      clang::tooling::DpctReplacement R = Base.denormalize(io);
       if (ConstantFlag == "HostDeviceConstant") {
         R.setConstantFlag(clang::dpct::ConstantFlagType::HostDevice);
       } else if (ConstantFlag == "DeviceConstant") {
@@ -85,48 +112,28 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
       R.setBlockLevelFormatFlag(BlockLevelFormatFlag);
       return R;
     }
-#else
-    NormalizedReplacement(const IO &) : Offset(0), Length(0) {}
 
-    NormalizedReplacement(const IO &, const clang::tooling::Replacement &R)
-        : FilePath(R.getFilePath()), Offset(R.getOffset()),
-          Length(R.getLength()), ReplacementText(R.getReplacementText()) {}
-
-    clang::tooling::Replacement denormalize(const IO &) {
-      return clang::tooling::Replacement(FilePath, Offset, Length,
-                                         ReplacementText);
-    }
-#endif // SYCLomatic_CUSTOMIZATION
-
-    std::string FilePath;
-    unsigned int Offset;
-    unsigned int Length;
-    std::string ReplacementText;
-#ifdef SYCLomatic_CUSTOMIZATION
+    MappingTraits<clang::tooling::Replacement>::NormalizedReplacement Base;
     std::string ConstantFlag = "";
     unsigned int ConstantOffset = 0;
     std::string InitStr = "";
     std::string NewHostVarName = "";
     bool BlockLevelFormatFlag = false;
-#endif // SYCLomatic_CUSTOMIZATION
   };
 
-  static void mapping(IO &Io, clang::tooling::Replacement &R) {
-    MappingNormalization<NormalizedReplacement, clang::tooling::Replacement>
-    Keys(Io, R);
-    Io.mapRequired("FilePath", Keys->FilePath);
-    Io.mapRequired("Offset", Keys->Offset);
-    Io.mapRequired("Length", Keys->Length);
-    Io.mapRequired("ReplacementText", Keys->ReplacementText);
-#ifdef SYCLomatic_CUSTOMIZATION
+  static void mapping(IO &Io, clang::tooling::DpctReplacement &R) {
+    MappingNormalization<NormalizedDpctReplacement,
+                         clang::tooling::DpctReplacement>
+        Keys(Io, R);
+    MappingTraits<clang::tooling::Replacement>::mapping(Io, R);
     Io.mapOptional("ConstantFlag", Keys->ConstantFlag);
     Io.mapOptional("ConstantOffset", Keys->ConstantOffset);
     Io.mapOptional("InitStr", Keys->InitStr);
     Io.mapOptional("NewHostVarName", Keys->NewHostVarName);
     Io.mapOptional("BlockLevelFormatFlag", Keys->BlockLevelFormatFlag);
-#endif // SYCLomatic_CUSTOMIZATION
   }
 };
+#endif // SYCLomatic_CUSTOMIZATION
 
 #ifdef SYCLomatic_CUSTOMIZATION
 template <> struct MappingTraits<clang::tooling::MainSourceFileInfo> {
