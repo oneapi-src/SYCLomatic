@@ -18,20 +18,10 @@ int main() {
   cudaArray_t* array;
   size_t size;
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsRegisterFlags is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
-  // CHECK-NEXT: */
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsRegisterFlagsNone is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
-  // CHECK-NEXT: */
+  // CHECK: int regFlags = 0;
   cudaGraphicsRegisterFlags regFlags = cudaGraphicsRegisterFlagsNone;
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsMapFlags is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
-  // CHECK-NEXT: */
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsMapFlagsNone is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
-  // CHECK-NEXT: */
+  // CHECK: int mapFlags = 0;
   cudaGraphicsMapFlags mapFlags = cudaGraphicsMapFlagsNone;
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaGraphicsResourceSetMapFlags was removed because this functionality is deprecated in DX12 and hence is not supported in SYCL.

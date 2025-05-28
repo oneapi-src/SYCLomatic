@@ -1342,6 +1342,27 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
+  f2 = __fmaf_ieee_rd(f0, f1, f2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
+  f2 = __fmaf_ieee_rn(f0, f1, f2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
+  f2 = __fmaf_ieee_ru(f0, f1, f2);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
+  f2 = __fmaf_ieee_rz(f0, f1, f2);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
   f2 = __fmaf_rd(i, i, i);
   // CHECK: /*
@@ -1359,6 +1380,27 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
   f2 = __fmaf_rz(i, i, i);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
+  f2 = __fmaf_ieee_rd(i, i, i);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
+  f2 = __fmaf_ieee_rn(i, i, i);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
+  f2 = __fmaf_ieee_ru(i, i, i);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
+  f2 = __fmaf_ieee_rz(i, i, i);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
@@ -2115,7 +2157,7 @@ __global__ void testSimulation() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = sycl::floor(f + 0.5);
+  // CHECK-NEXT: f = sycl::floor(f + 0.5f);
   f = nearbyintf(f);
 
   // CHECK: /*
@@ -2705,9 +2747,9 @@ __device__ void do_migration5() {
   //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the std::nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::floor(f + 0.5);
+  //CHECK-NEXT: sycl::floor(f + 0.5f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2724,7 +2766,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(&f));
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the std::nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
   //CHECK-NEXT: /*
@@ -2761,9 +2803,9 @@ __global__ void do_migration6() {
   //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the std::nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::floor(f + 0.5);
+  //CHECK-NEXT: sycl::floor(f + 0.5f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2780,7 +2822,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(&f));
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the std::nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
   //CHECK-NEXT: /*
@@ -2817,9 +2859,9 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the std::nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::floor(f + 0.5);
+  //CHECK-NEXT: sycl::floor(f + 0.5f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2835,7 +2877,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(&f));
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the std::nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
   //CHECK-NEXT: /*
@@ -3584,3 +3626,15 @@ template <typename T> class AAA_st {
     return 0;
   }
 };
+
+template <typename t1> void saturate() { printf("default saturate\n"); }
+template <> void saturate<int>() { printf("int saturate\n"); }
+
+// CHECK: void foo11() {
+// CHECK-NEXT:   saturate<int>();
+// CHECK-NEXT:   saturate<float>();
+// CHECK-NEXT: }
+void foo11() {
+  saturate<int>();
+  saturate<float>();
+}

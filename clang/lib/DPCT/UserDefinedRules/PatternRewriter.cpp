@@ -384,29 +384,34 @@ static int parseCodeElement(const MatchPattern &Suffix,
       continue;
     }
 
-    if (Character == '/' && Index < (Size - 1) && Input[Index + 1] == '/') {
-      Index += 2;
-      while (Index < Size && Input[Index] != '\n') {
+    if (SrcFileType != SourceFileType::SFT_CMakeScript &&
+        SrcFileType != SourceFileType::SFT_PySetupScript) {
+      // Skip single line comment for C/C++
+      if (Character == '/' && Index < (Size - 1) && Input[Index + 1] == '/') {
+        Index += 2;
+        while (Index < Size && Input[Index] != '\n') {
+          Index++;
+        }
+        if (Index >= Size) {
+          return -1;
+        }
         Index++;
+        continue;
       }
-      if (Index >= Size) {
-        return -1;
-      }
-      Index++;
-      continue;
-    }
 
-    if (Character == '/' && Index < (Size - 1) && Input[Index + 1] == '*') {
-      Index += 2;
-      while (Index < Size &&
-             !(Input[Index - 1] == '*' && Input[Index] == '/')) {
+      // Skip multi-line comments for C/C++
+      if (Character == '/' && Index < (Size - 1) && Input[Index + 1] == '*') {
+        Index += 2;
+        while (Index < Size &&
+               !(Input[Index - 1] == '*' && Input[Index] == '/')) {
+          Index++;
+        }
+        if (Index >= Size) {
+          return -1;
+        }
         Index++;
+        continue;
       }
-      if (Index >= Size) {
-        return -1;
-      }
-      Index++;
-      continue;
     }
 
     Index++;
