@@ -256,11 +256,9 @@ template <> struct MappingTraits<clang::tooling::OptionInfo> {
 
 template <> struct MappingTraits<clang::tooling::ModifyFileHunk> {
   struct NormalizedModifyFileHunk {
-    NormalizedModifyFileHunk(const IO &io)
-        : HT(clang::tooling::Hunk::HunkType::Unspecified), Offset(0),
-          Length(0) {}
+    NormalizedModifyFileHunk(const IO &io) : Offset(0), Length(0) {}
     NormalizedModifyFileHunk(const IO &io, clang::tooling::ModifyFileHunk &H)
-        : HT(H.getHunkType()), FilePath(H.getFilePath()), Offset(H.getOffset()),
+        : FilePath(H.getFilePath()), Offset(H.getOffset()),
           Length(H.getLength()), ReplacementText(H.getReplacementText()) {}
 
     clang::tooling::ModifyFileHunk denormalize(const IO &) {
@@ -269,7 +267,6 @@ template <> struct MappingTraits<clang::tooling::ModifyFileHunk> {
       return H;
     }
 
-    clang::tooling::Hunk::HunkType HT;
     std::string FilePath;
     unsigned int Offset;
     unsigned int Length;
@@ -277,9 +274,9 @@ template <> struct MappingTraits<clang::tooling::ModifyFileHunk> {
   };
 
   static void mapping(IO &Io, clang::tooling::ModifyFileHunk &H) {
-    MappingNormalization<NormalizedModifyFileHunk, clang::tooling::ModifyFileHunk>
+    MappingNormalization<NormalizedModifyFileHunk,
+                         clang::tooling::ModifyFileHunk>
         Keys(Io, H);
-    Io.mapOptional("HunkType", Keys->HT);
     Io.mapRequired("FilePath", Keys->FilePath);
     Io.mapRequired("Offset", Keys->Offset);
     Io.mapRequired("Length", Keys->Length);
@@ -289,57 +286,50 @@ template <> struct MappingTraits<clang::tooling::ModifyFileHunk> {
 
 template <> struct MappingTraits<clang::tooling::AddFileHunk> {
   struct NormalizedAddFileHunk {
-    NormalizedAddFileHunk(const IO &io)
-        : HT(clang::tooling::Hunk::HunkType::Unspecified), NewFilePath("") {}
+    NormalizedAddFileHunk(const IO &io) {}
     NormalizedAddFileHunk(const IO &io, clang::tooling::AddFileHunk &H)
-        : HT(H.getHunkType()), NewFilePath(H.getNewFilePath()) {}
+        : NewFilePath(H.getNewFilePath()) {}
 
     clang::tooling::AddFileHunk denormalize(const IO &io) {
       clang::tooling::AddFileHunk H(NewFilePath);
       return H;
     }
 
-    clang::tooling::Hunk::HunkType HT;
     std::string NewFilePath;
   };
   static void mapping(IO &Io, clang::tooling::AddFileHunk &H) {
-    MappingNormalization<NormalizedAddFileHunk, clang::tooling::AddFileHunk> Keys(
-        Io, H);
-    Io.mapOptional("HunkType", Keys->HT);
-    Io.mapOptional("NewFilePath", Keys->NewFilePath);
+    MappingNormalization<NormalizedAddFileHunk, clang::tooling::AddFileHunk>
+        Keys(Io, H);
+    Io.mapRequired("NewFilePath", Keys->NewFilePath);
   }
 };
 
 template <> struct MappingTraits<clang::tooling::DeleteFileHunk> {
   struct NormalizedDeleteFileHunk {
-    NormalizedDeleteFileHunk(const IO &io)
-        : HT(clang::tooling::Hunk::HunkType::Unspecified), OldFilePath("") {}
+    NormalizedDeleteFileHunk(const IO &io) {}
     NormalizedDeleteFileHunk(const IO &io, clang::tooling::DeleteFileHunk &H)
-        : HT(H.getHunkType()), OldFilePath(H.getOldFilePath()) {}
+        : OldFilePath(H.getOldFilePath()) {}
 
     clang::tooling::DeleteFileHunk denormalize(const IO &io) {
       clang::tooling::DeleteFileHunk H(OldFilePath);
       return H;
     }
 
-    clang::tooling::Hunk::HunkType HT;
     std::string OldFilePath;
   };
   static void mapping(IO &Io, clang::tooling::DeleteFileHunk &H) {
-    MappingNormalization<NormalizedDeleteFileHunk, clang::tooling::DeleteFileHunk>
+    MappingNormalization<NormalizedDeleteFileHunk,
+                         clang::tooling::DeleteFileHunk>
         Keys(Io, H);
-    Io.mapOptional("HunkType", Keys->HT);
-    Io.mapOptional("OldFilePath", Keys->OldFilePath);
+    Io.mapRequired("OldFilePath", Keys->OldFilePath);
   }
 };
 
 template <> struct MappingTraits<clang::tooling::MoveFileHunk> {
   struct NormalizedMoveFileHunk {
-    NormalizedMoveFileHunk(const IO &io)
-        : HT(clang::tooling::Hunk::HunkType::Unspecified), Offset(0), Length(0),
-          NewFilePath("") {}
+    NormalizedMoveFileHunk(const IO &io) : Offset(0), Length(0) {}
     NormalizedMoveFileHunk(const IO &io, clang::tooling::MoveFileHunk &H)
-        : HT(H.getHunkType()), FilePath(H.getFilePath()), Offset(H.getOffset()),
+        : FilePath(H.getFilePath()), Offset(H.getOffset()),
           Length(H.getLength()), ReplacementText(H.getReplacementText()),
           NewFilePath(H.getNewFilePath()) {}
 
@@ -349,7 +339,6 @@ template <> struct MappingTraits<clang::tooling::MoveFileHunk> {
       return H;
     }
 
-    clang::tooling::Hunk::HunkType HT;
     std::string FilePath;
     unsigned int Offset;
     unsigned int Length;
@@ -360,12 +349,11 @@ template <> struct MappingTraits<clang::tooling::MoveFileHunk> {
   static void mapping(IO &Io, clang::tooling::MoveFileHunk &H) {
     MappingNormalization<NormalizedMoveFileHunk, clang::tooling::MoveFileHunk>
         Keys(Io, H);
-    Io.mapOptional("HunkType", Keys->HT);
     Io.mapRequired("FilePath", Keys->FilePath);
     Io.mapRequired("Offset", Keys->Offset);
     Io.mapRequired("Length", Keys->Length);
     Io.mapRequired("ReplacementText", Keys->ReplacementText);
-    Io.mapOptional("NewFilePath", Keys->NewFilePath);
+    Io.mapRequired("NewFilePath", Keys->NewFilePath);
   }
 };
 
