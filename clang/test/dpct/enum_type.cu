@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --use-experimental-features=matrix -out-root %T/enum_type %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/enum_type %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/enum_type/enum_type.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/enum_type/enum_type.dp.cpp -o %T/enum_type/enum_type.dp.o %}
 #include <cuda.h>
