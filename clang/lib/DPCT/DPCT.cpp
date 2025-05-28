@@ -521,7 +521,7 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
                                         DpctGlobalInfo::getYamlFileName());
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (llvm::sys::fs::exists(YamlFilePath)) {
-    if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
+    if (loadTUFromYaml(YamlFilePath, *PreTU) != 0) {
       llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
     }
 
@@ -1399,6 +1399,8 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationBuildScriptCompleted);
     dpctExit(MigrationSucceeded, false);
   }
+
+  tryLoadingUpstreamChangesAndUserChanges();
 
   ReplTy ReplCUDA, ReplSYCL;
   volatile int RunCount = 0;

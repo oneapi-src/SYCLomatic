@@ -233,6 +233,7 @@ add_clang_library(DPCT
   MigrateScript/GenMakefile.cpp
   RulesInclude/InclusionHeaders.cpp
   IncMigration/IncrementalMigrationUtility.cpp
+  IncMigration/ReMigration.cpp
   UserDefinedRules/UserDefinedRules.cpp
   UserDefinedRules/PatternRewriter.cpp
   MigrateScript/MigrateBuildScript.cpp
@@ -271,7 +272,6 @@ add_clang_library(DPCT
   RulesMathLib/RandomAPIMigration.cpp
   RulesMathLib/SolverAPIMigration.cpp
   CodePin/GenCodePinHeader.cpp
-  ReMigration/Hunk.cpp
 
   DEPENDS
   ClangDriverOptions

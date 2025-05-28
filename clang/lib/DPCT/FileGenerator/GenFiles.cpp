@@ -1209,7 +1209,7 @@ void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path) {
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (fs::exists(YamlFilePath.getCanonicalPath())) {
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
-      if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
+      if (loadTUFromYaml(YamlFilePath, *PreTU) == 0) {
         DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(
             OriginPath, std::move(PreTU));
       } else {

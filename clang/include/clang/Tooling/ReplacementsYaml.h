@@ -357,6 +357,15 @@ template <> struct MappingTraits<clang::tooling::MoveFileHunk> {
   }
 };
 
+template <> struct MappingTraits<clang::tooling::GitDiffChanges> {
+  static void mapping(IO &Io, clang::tooling::GitDiffChanges &GDC) {
+    Io.mapOptional("ModifyFileHunks", GDC.ModifyFileHunks);
+    Io.mapOptional("AddFileHunks", GDC.AddFileHunks);
+    Io.mapOptional("DeleteFileHunks", GDC.DeleteFileHunks);
+    Io.mapOptional("MoveFileHunks", GDC.MoveFileHunks);
+  }
+};
+
 // Keep here only for backward compatibility - begin
 template <> struct MappingTraits<clang::tooling::HelperFuncForYaml> {
   struct NormalizedHelperFuncForYaml {
@@ -413,10 +422,6 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
     // Keep here only for backward compatibility - end
     Io.mapOptional("CompileTargets", Doc.CompileTargets);
     Io.mapOptional("OptionMap", Doc.OptionMap);
-    Io.mapOptional("ModifyFileHunks", Doc.ModifyFileHunks);
-    Io.mapOptional("AddFileHunks", Doc.AddFileHunks);
-    Io.mapOptional("DeleteFileHunks", Doc.DeleteFileHunks);
-    Io.mapOptional("MoveFileHunks", Doc.MoveFileHunks);
 #endif
   }
 };

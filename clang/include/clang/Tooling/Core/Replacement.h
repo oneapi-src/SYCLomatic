@@ -507,6 +507,13 @@ public:
       : Hunk(MoveFile), Replacement(R), NewFilePath(NewFilePath) {}
   std::string getNewFilePath() const { return NewFilePath; }
 };
+
+struct GitDiffChanges {
+  std::vector<ModifyFileHunk> ModifyFileHunks;
+  std::vector<AddFileHunk> AddFileHunks;
+  std::vector<DeleteFileHunk> DeleteFileHunks;
+  std::vector<MoveFileHunk> MoveFileHunks;
+};
 #endif // SYCLomatic_CUSTOMIZATION
 /// Collection of Replacements generated from a single translation unit.
 struct TranslationUnitReplacements {
@@ -526,10 +533,6 @@ struct TranslationUnitReplacements {
   std::map<std::string, std::vector<CompilationInfo>> CompileTargets;
   std::map<std::string, OptionInfo> OptionMap;
   std::vector<DpctReplacement> Replacements;
-  std::vector<ModifyFileHunk> ModifyFileHunks;
-  std::vector<AddFileHunk> AddFileHunks;
-  std::vector<DeleteFileHunk> DeleteFileHunks;
-  std::vector<MoveFileHunk> MoveFileHunks;
 #else
   std::vector<Replacement> Replacements;
 #endif // SYCLomatic_CUSTOMIZATION
