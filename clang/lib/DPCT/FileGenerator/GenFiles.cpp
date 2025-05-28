@@ -913,14 +913,14 @@ void genCodePinHeader(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
 }
 
 void genVerifiedCmpVer(const std::vector<clang::tooling::Replacement> &CmpVerRepls) {
-  auto CmpStatsList = dpct::DpctGlobalInfo::getVerifiedCmpStats();
-  for (auto CmpStats : CmpStatsList) {
+  auto CompStatusList = dpct::DpctGlobalInfo::getSupportedCompsStatus();
+  for (auto CompStatus : CompStatusList) {
     for (auto Repl : CmpVerRepls) {
-      if (Repl.getReplacementText().str().find(CmpStats->ReplacementText) !=
+      if (Repl.getReplacementText().str().find(CompStatus->ReplacementText) !=
           std::string::npos) {
         // If the replacement text is already in the list, skip it.
         std::stringstream ss;
-        emitCmpStatsWarning(CmpStats, ss);
+        emitCompStatusWarning(CompStatus, ss);
         PrintMsg(ss.str());
         return;
       }

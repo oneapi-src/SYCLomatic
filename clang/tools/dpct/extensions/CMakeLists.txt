@@ -19,8 +19,8 @@ set(dpct_pytorch_api_rule_files
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/extensions/pytorch_api_rules/pytorch_api.yaml
 )
 
-set(dpct_verified_component_files
-  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/extensions/verified_component/component_version.yaml
+set(dpct_supported_components_files
+  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/extensions/supported_components/component_version.yaml
 )
 
 set(dpct_rule_template_files
@@ -60,10 +60,10 @@ install(
   DESTINATION ./extensions/pytorch_api_rules)
 
 install(
-    FILES ${dpct_verified_component_files}
+    FILES ${dpct_supported_components_files}
     COMPONENT dpct-rules
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-    DESTINATION ./extensions/verified_component)
+    DESTINATION ./extensions/supported_components)
 
 install(
   FILES ${dpct_rule_template_files}

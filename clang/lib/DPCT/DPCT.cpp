@@ -976,13 +976,13 @@ int runDPCT(int argc, const char **argv) {
     showReportHeader();
   
   ExtraIncPaths = OptParser->getExtraIncPathList();
-  if (VerifiedComp) {
+  if (SupportedComps) {
     SmallString<128> FilePath1(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(FilePath1,
-                            Twine("extensions/verified_component/component_version.yaml"));
+                            Twine("extensions/supported_components/component_version.yaml"));
     SmallString<128> FilePath2(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(FilePath2,
-                            Twine("opt/dpct/extensions/verified_component/component_version.yaml"));
+                            Twine("opt/dpct/extensions/supported_components/component_version.yaml"));
 
     std::vector<clang::tooling::UnifiedPath> SupportedComponents{
         llvm::sys::fs::exists(FilePath1) ? FilePath1.c_str()

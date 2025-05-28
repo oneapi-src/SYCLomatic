@@ -555,11 +555,11 @@ DPCT_FLAG_OPTION(
     llvm::cl::cat(CtHelpCatAll))
 
 DPCT_FLAG_OPTION(
-    VerifiedComp, clang::dpct::DpctOptionClass::OC_Attribute,
+    SupportedComps, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
-    "verified-component",
-    llvm::cl::desc(
-        "Print the dependency for building and runnning the migrated code.\n"),
+    "supported-components",
+    llvm::cl::desc("Show the supported components and their compatibility "
+                   "version information.\n"),
     llvm::cl::cat(CtHelpCatAll))
 
 DPCT_FLAG_OPTION(

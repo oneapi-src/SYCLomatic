@@ -16,12 +16,20 @@
 
 namespace clang {
 namespace dpct {
+enum  ComponentType {
+  DPCPP,
+  oneDPL,
+  oneMKL,
+  oneCCL,
+  oneDNNL,
+  ISHMEM
+};
 
-struct CmpStats {
+struct CompStatus {
   std::string Feature;
   std::string SupportedVersion;
   std::string ReplacementText;
-  std::string TestComponent;
+  ComponentType CompType;
   bool IsOpenSource;
   bool IsInNextOneAPIVersion;
   std::string Link;
@@ -30,7 +38,7 @@ struct CmpStats {
 
 void importStatus(std::vector<clang::tooling::UnifiedPath> &RuleFiles);
 
-void emitCmpStatsWarning(std::shared_ptr<clang::dpct::CmpStats> Stats,
+void emitCompStatusWarning(std::shared_ptr<clang::dpct::CompStatus> Stats,
                          std::stringstream &StrStream);
 } // namespace dpct
 } // namespace clang
