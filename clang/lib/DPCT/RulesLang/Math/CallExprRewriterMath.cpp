@@ -455,9 +455,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
        << MapNames::getClNamespace() + "access::address_space::generic_space, "
        << MapNames::getClNamespace() + "access::decorated::yes>("
        << MigratedArg2 << "))";
-  } else if (FuncName == "nearbyint" || FuncName == "nearbyintf") {
-    OS << MapNames::getClNamespace(false, true) + "floor(" << MigratedArg0
-       << " + 0.5)";
   } else if (FuncName == "rhypot" || FuncName == "rhypotf") {
     auto MigratedArg1 = getMigratedArg(1);
     OS << "1 / " + MapNames::getClNamespace(false, true) + "hypot("

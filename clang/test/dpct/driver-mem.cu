@@ -264,6 +264,9 @@ int main(){
     // CHECK: dpct::memcpy_parameter cpy2;
     // CHECK-EMPTY:
     // CHECK-NEXT: dpct::image_matrix_p ca;
+    // CHECK-NEXT:   /*
+    // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of CU_MEMORYTYPE_ARRAY is not supported.
+    // CHECK-NEXT: */
     // CHECK-NEXT: cpy2.to.image = ca;
     // CHECK-NEXT: cpy2.to.pitched.set_pitch(5);
     // CHECK-NEXT: cpy2.to.pitched.set_y(4);

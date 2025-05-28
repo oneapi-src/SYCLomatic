@@ -435,6 +435,14 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+/// Migration rule for binary operator calls
+class CastScopedEnumTypeRule
+    : public NamedMigrationRule<CastScopedEnumTypeRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migration rule for kernel API calls
 class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;

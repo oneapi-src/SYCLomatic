@@ -55,5 +55,41 @@ RewriterMap dpct::createSTDFunctionsRewriterMap() {
                        ARG(0)))),
           MATH_API_REWRITER_PAIR(
               math::Tag::device_std,
-              CALL_FACTORY_ENTRY("std::fabs", CALL("std::fabs", ARG(0)))))};
+              CALL_FACTORY_ENTRY("std::fabs", CALL("std::fabs", ARG(0)))))
+          MATH_API_REWRITERS_V2(
+              "std::nearbyint",
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::device_std,
+                  CALL_FACTORY_ENTRY("std::nearbyint",
+                                     CALL("std::nearbyint", ARG(0)))),
+              MATH_API_REWRITER_PAIR(
+                  math::Tag::emulation,
+                  WARNING_FACTORY_ENTRY(
+                      "std::nearbyint",
+                      CALL_FACTORY_ENTRY(
+                          "std::nearbyint",
+                          CALL(MapNames::getClNamespace() + "floor",
+                               BO(BinaryOperatorKind::BO_Add, PAREN(ARG(0)),
+                                  ARG("0.5")))),
+                      Diagnostics::MATH_EMULATION,
+                      std::string("std::nearbyint"),
+                      MapNames::getClNamespace() + std::string("floor"))))
+              MATH_API_REWRITERS_V2(
+                  "std::nearbyintf",
+                  MATH_API_REWRITER_PAIR(
+                      math::Tag::device_std,
+                      CALL_FACTORY_ENTRY("std::nearbyintf",
+                                         CALL("std::nearbyintf", ARG(0)))),
+                  MATH_API_REWRITER_PAIR(
+                      math::Tag::emulation,
+                      WARNING_FACTORY_ENTRY(
+                          "std::nearbyintf",
+                          CALL_FACTORY_ENTRY(
+                              "std::nearbyintf",
+                              CALL(MapNames::getClNamespace() + "floor",
+                                   BO(BinaryOperatorKind::BO_Add, PAREN(ARG(0)),
+                                      ARG("0.5f")))),
+                          Diagnostics::MATH_EMULATION,
+                          std::string("std::nearbyintf"),
+                          MapNames::getClNamespace() + std::string("floor"))))};
 }

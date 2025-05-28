@@ -1118,8 +1118,6 @@ void MapNames::setExplicitNamespaceMap(
                ? getClNamespace() +
                      "ext::oneapi::experimental::queue_state::recording"
                : "cudaStreamCaptureStatusActive")},
-      {"cudaStreamCaptureStatusInvalidated",
-       std::make_shared<EnumNameRule>("cudaStreamCaptureStatusInvalidated")},
       // enum cudaGraphNodeType
       {"cudaGraphNodeTypeKernel",
        std::make_shared<EnumNameRule>(
@@ -1602,6 +1600,21 @@ void MapNames::setExplicitNamespaceMap(
       {"CUSOLVER_EIG_RANGE_I",
        std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
       {"ncclSuccess", std::make_shared<EnumNameRule>("0")},
+      {"CUDNN_STATUS_SUCCESS", std::make_shared<EnumNameRule>("0")},
+      {"CUDNN_BATCHNORM_PER_ACTIVATION", std::make_shared<EnumNameRule>("")},
+      {"CUDNN_NORM_PER_ACTIVATION", std::make_shared<EnumNameRule>("")},
+      {"CUSOLVER_EIG_MODE_VECTOR", std::make_shared<EnumNameRule>("")},
+      {"CUSOLVER_EIG_TYPE_1", std::make_shared<EnumNameRule>("")},
+      {"CUSOLVER_ALG_1", std::make_shared<EnumNameRule>("1")},
+      {"CUSOLVER_STATUS_SUCCESS", std::make_shared<EnumNameRule>("0")},
+      {"CUSOLVER_STATUS_NOT_INITIALIZED",
+       std::make_shared<EnumNameRule>("1")},
+      {"CUSOLVER_STATUS_ALLOC_FAILED", std::make_shared<EnumNameRule>("2")},
+      {"CUSOLVER_STATUS_INVALID_VALUE", std::make_shared<EnumNameRule>("3")},
+      {"CUSOLVER_STATUS_ARCH_MISMATCH", std::make_shared<EnumNameRule>("4")},
+      {"CUSOLVER_STATUS_MAPPING_ERROR", std::make_shared<EnumNameRule>("5")},
+      {"CUSOLVER_STATUS_EXECUTION_FAILED", std::make_shared<EnumNameRule>("6")},
+      {"CUSOLVER_STATUS_INTERNAL_ERROR", std::make_shared<EnumNameRule>("7")},
       // enum cudaGraphicsMapFlags
       {"cudaGraphicsMapFlagsNone", std::make_shared<EnumNameRule>("0")},
       {"cudaGraphicsMapFlagsReadOnly", std::make_shared<EnumNameRule>("0")},
