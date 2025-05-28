@@ -10,19 +10,19 @@
 //   -Load replacement from external (disk file)
 //   -Merge replacement in current migration with previous migration.
 
+#include "ExternalReplacement.h"
 #include "AnalysisInfo.h"
+#include "IncMigration/IncrementalMigrationUtility.h"
 #include "Utility.h"
+
+#include "clang/Tooling/Core/Diagnostic.h"
 #include "clang/Tooling/Core/Replacement.h"
+#include "clang/Tooling/Refactoring.h"
+#include "clang/Tooling/ReplacementsYaml.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
-
-#include "ExternalReplacement.h"
-#include "IncMigration/IncrementalMigrationUtility.h"
-#include "clang/Tooling/Core/Diagnostic.h"
-#include "clang/Tooling/Refactoring.h"
-#include "clang/Tooling/ReplacementsYaml.h"
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/raw_os_ostream.h"
 

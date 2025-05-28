@@ -32,6 +32,25 @@ LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::MainSourceFileInfo)
 LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::MainSourceFileInfo>)
 LLVM_YAML_IS_STRING_MAP(clang::tooling::OptionInfo)
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::DpctReplacement)
+LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::ModifyFileHunk)
+LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::AddFileHunk)
+LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::DeleteFileHunk)
+LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::MoveFileHunk)
+LLVM_YAML_DECLARE_ENUM_TRAITS(clang::tooling::Hunk::HunkType)
+namespace llvm {
+namespace yaml {
+inline void
+ScalarEnumerationTraits<clang::tooling::Hunk::HunkType>::enumeration(
+    IO &io, clang::tooling::Hunk::HunkType &value) {
+  io.enumCase(value, "ModifyFile", clang::tooling::Hunk::HunkType::ModifyFile);
+  io.enumCase(value, "AddFile", clang::tooling::Hunk::HunkType::AddFile);
+  io.enumCase(value, "DeleteFile", clang::tooling::Hunk::HunkType::DeleteFile);
+  io.enumCase(value, "MoveFile", clang::tooling::Hunk::HunkType::MoveFile);
+  io.enumCase(value, "Unspecified",
+              clang::tooling::Hunk::HunkType::Unspecified);
+}
+} // namespace yaml
+} // namespace llvm
 #endif // SYCLomatic_CUSTOMIZATION
 
 namespace llvm {
@@ -96,7 +115,7 @@ template <> struct MappingTraits<clang::tooling::DpctReplacement> {
     }
 
     clang::tooling::DpctReplacement denormalize(const IO &io) {
-      clang::tooling::DpctReplacement R = Base.denormalize(io);
+      clang::tooling::DpctReplacement R(Base.denormalize(io));
       if (ConstantFlag == "HostDeviceConstant") {
         R.setConstantFlag(clang::dpct::ConstantFlagType::HostDevice);
       } else if (ConstantFlag == "DeviceConstant") {
@@ -133,9 +152,7 @@ template <> struct MappingTraits<clang::tooling::DpctReplacement> {
     Io.mapOptional("BlockLevelFormatFlag", Keys->BlockLevelFormatFlag);
   }
 };
-#endif // SYCLomatic_CUSTOMIZATION
 
-#ifdef SYCLomatic_CUSTOMIZATION
 template <> struct MappingTraits<clang::tooling::MainSourceFileInfo> {
   struct NormalizedMainSourceFilesDigest {
 
@@ -229,6 +246,106 @@ template <> struct MappingTraits<clang::tooling::OptionInfo> {
   }
 };
 
+template <> struct MappingTraits<clang::tooling::ModifyFileHunk> {
+  struct NormalizedModifyFileHunk {
+    NormalizedModifyFileHunk(const IO &io)
+        : HT(clang::tooling::Hunk::HunkType::Unspecified), Base(io) {}
+    NormalizedModifyFileHunk(const IO &io, clang::tooling::ModifyFileHunk &H)
+        : HT(H.getHunkType()),
+          Base(io, static_cast<const clang::tooling::Replacement &>(H)) {}
+
+    clang::tooling::ModifyFileHunk denormalize(const IO &io) {
+      clang::tooling::ModifyFileHunk H(Base.denormalize(io));
+      return H;
+    }
+
+    clang::tooling::Hunk::HunkType HT;
+    MappingTraits<clang::tooling::Replacement>::NormalizedReplacement Base;
+  };
+
+  static void mapping(IO &Io, clang::tooling::ModifyFileHunk &H) {
+    MappingNormalization<NormalizedModifyFileHunk, clang::tooling::ModifyFileHunk>
+        Keys(Io, H);
+    MappingTraits<clang::tooling::Replacement>::mapping(Io, H);
+    Io.mapOptional("HunkType", Keys->HT);
+  }
+};
+
+template <> struct MappingTraits<clang::tooling::AddFileHunk> {
+  struct NormalizedAddFileHunk {
+    NormalizedAddFileHunk(const IO &io)
+        : HT(clang::tooling::Hunk::HunkType::Unspecified), NewFilePath("") {}
+    NormalizedAddFileHunk(const IO &io, clang::tooling::AddFileHunk &H)
+        : HT(H.getHunkType()), NewFilePath(H.getNewFilePath()) {}
+
+    clang::tooling::AddFileHunk denormalize(const IO &io) {
+      clang::tooling::AddFileHunk H(NewFilePath);
+      return H;
+    }
+
+    clang::tooling::Hunk::HunkType HT;
+    std::string NewFilePath;
+  };
+  static void mapping(IO &Io, clang::tooling::AddFileHunk &H) {
+    MappingNormalization<NormalizedAddFileHunk, clang::tooling::AddFileHunk> Keys(
+        Io, H);
+    Io.mapOptional("HunkType", Keys->HT);
+    Io.mapOptional("NewFilePath", Keys->NewFilePath);
+  }
+};
+
+template <> struct MappingTraits<clang::tooling::DeleteFileHunk> {
+  struct NormalizedDeleteFileHunk {
+    NormalizedDeleteFileHunk(const IO &io)
+        : HT(clang::tooling::Hunk::HunkType::Unspecified), OldFilePath("") {}
+    NormalizedDeleteFileHunk(const IO &io, clang::tooling::DeleteFileHunk &H)
+        : HT(H.getHunkType()), OldFilePath(H.getOldFilePath()) {}
+
+    clang::tooling::DeleteFileHunk denormalize(const IO &io) {
+      clang::tooling::DeleteFileHunk H(OldFilePath);
+      return H;
+    }
+
+    clang::tooling::Hunk::HunkType HT;
+    std::string OldFilePath;
+  };
+  static void mapping(IO &Io, clang::tooling::DeleteFileHunk &H) {
+    MappingNormalization<NormalizedDeleteFileHunk, clang::tooling::DeleteFileHunk>
+        Keys(Io, H);
+    Io.mapOptional("HunkType", Keys->HT);
+    Io.mapOptional("OldFilePath", Keys->OldFilePath);
+  }
+};
+
+template <> struct MappingTraits<clang::tooling::MoveFileHunk> {
+  struct NormalizedMoveFileHunk {
+    NormalizedMoveFileHunk(const IO &io)
+        : HT(clang::tooling::Hunk::HunkType::Unspecified), Base(io),
+          NewFilePath("") {}
+    NormalizedMoveFileHunk(const IO &io, clang::tooling::MoveFileHunk &H)
+        : HT(H.getHunkType()),
+          Base(io, static_cast<const clang::tooling::Replacement &>(H)),
+          NewFilePath(H.getNewFilePath()) {}
+
+    clang::tooling::MoveFileHunk denormalize(const IO &io) {
+      clang::tooling::MoveFileHunk H(Base.denormalize(io), NewFilePath);
+      return H;
+    }
+
+    clang::tooling::Hunk::HunkType HT;
+    MappingTraits<clang::tooling::Replacement>::NormalizedReplacement Base;
+    std::string NewFilePath;
+  };
+
+  static void mapping(IO &Io, clang::tooling::MoveFileHunk &H) {
+    MappingNormalization<NormalizedMoveFileHunk, clang::tooling::MoveFileHunk>
+        Keys(Io, H);
+    MappingTraits<clang::tooling::Replacement>::mapping(Io, H);
+    Io.mapOptional("HunkType", Keys->HT);
+    Io.mapOptional("NewFilePath", Keys->NewFilePath);
+  }
+};
+
 // Keep here only for backward compatibility - begin
 template <> struct MappingTraits<clang::tooling::HelperFuncForYaml> {
   struct NormalizedHelperFuncForYaml {
@@ -285,6 +402,10 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
     // Keep here only for backward compatibility - end
     Io.mapOptional("CompileTargets", Doc.CompileTargets);
     Io.mapOptional("OptionMap", Doc.OptionMap);
+    Io.mapOptional("ModifyFileHunks", Doc.ModifyFileHunks);
+    Io.mapOptional("AddFileHunks", Doc.AddFileHunks);
+    Io.mapOptional("DeleteFileHunks", Doc.DeleteFileHunks);
+    Io.mapOptional("MoveFileHunks", Doc.MoveFileHunks);
 #endif
   }
 };

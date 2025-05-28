@@ -54,7 +54,7 @@ enum class ConstantFlagType : int {
   HostDeviceInOnePass = 4
 };
 enum class HelperFileEnum : unsigned int;
-}
+} // namespace dpct
 #endif // SYCLomatic_CUSTOMIZATION
 namespace tooling {
 
@@ -443,6 +443,70 @@ struct OptionInfo {
   std::vector<std::string> ValueVec;
   bool Specified = true;
 };
+
+class Hunk {
+public:
+  enum HunkType : unsigned {
+    ModifyFile = 0,
+    AddFile,
+    DeleteFile,
+    MoveFile,
+    Unspecified
+  };
+
+private:
+  HunkType HT = Unspecified;
+
+public:
+  Hunk(HunkType HT) : HT(HT) {}
+  HunkType getHunkType() const { return HT; }
+  virtual ~Hunk() = default;
+};
+
+class ModifyFileHunk : public Hunk, public Replacement {
+public:
+  ModifyFileHunk() : Hunk(ModifyFile), Replacement() {}
+  ModifyFileHunk(const std::string &FilePath, unsigned Offset, unsigned Length,
+                 const std::string &ReplacementText)
+      : Hunk(ModifyFile),
+        Replacement(FilePath, Offset, Length, ReplacementText) {}
+  ModifyFileHunk(const Replacement &R) : Hunk(ModifyFile), Replacement(R) {}
+};
+
+class AddFileHunk : public Hunk {
+  std::string NewFilePath;
+
+public:
+  AddFileHunk() : Hunk(AddFile) {}
+  AddFileHunk(std::string NewFilePath)
+      : Hunk(AddFile), NewFilePath(std::move(NewFilePath)) {}
+  const std::string &getNewFilePath() const { return NewFilePath; }
+};
+
+class DeleteFileHunk : public Hunk {
+  std::string OldFilePath;
+
+public:
+  DeleteFileHunk() : Hunk(DeleteFile) {}
+  DeleteFileHunk(std::string OldFilePath)
+      : Hunk(DeleteFile), OldFilePath(std::move(OldFilePath)) {}
+  const std::string &getOldFilePath() const { return OldFilePath; }
+};
+
+class MoveFileHunk : public Hunk, public Replacement {
+  std::string NewFilePath;
+
+public:
+  MoveFileHunk() : Hunk(MoveFile), Replacement() {}
+  MoveFileHunk(const std::string &FilePath, unsigned Offset, unsigned Length,
+               const std::string &ReplacementText,
+               const std::string &NewFilePath)
+      : Hunk(MoveFile), Replacement(FilePath, Offset, Length, ReplacementText),
+        NewFilePath(std::move(NewFilePath)) {}
+  MoveFileHunk(const Replacement &R, const std::string &NewFilePath)
+      : Hunk(MoveFile), Replacement(R), NewFilePath(NewFilePath) {}
+  std::string getNewFilePath() const { return NewFilePath; }
+};
 #endif // SYCLomatic_CUSTOMIZATION
 /// Collection of Replacements generated from a single translation unit.
 struct TranslationUnitReplacements {
@@ -462,6 +526,10 @@ struct TranslationUnitReplacements {
   std::map<std::string, std::vector<CompilationInfo>> CompileTargets;
   std::map<std::string, OptionInfo> OptionMap;
   std::vector<DpctReplacement> Replacements;
+  std::vector<ModifyFileHunk> ModifyFileHunks;
+  std::vector<AddFileHunk> AddFileHunks;
+  std::vector<DeleteFileHunk> DeleteFileHunks;
+  std::vector<MoveFileHunk> MoveFileHunks;
 #else
   std::vector<Replacement> Replacements;
 #endif // SYCLomatic_CUSTOMIZATION
