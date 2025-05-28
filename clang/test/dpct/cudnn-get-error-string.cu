@@ -58,6 +58,9 @@ const char *test_function(cudnnStatus_t status) {
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
 //CHECK-NEXT:  */
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of CUDNN_STATUS_NOT_INITIALIZED is not supported.
+//CHECK-NEXT:  */
 //CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
 //CHECK-NEXT:}
 void foo(cudnnStatus_t err) {

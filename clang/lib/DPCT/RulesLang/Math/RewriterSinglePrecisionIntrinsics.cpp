@@ -170,6 +170,98 @@ RewriterMap dpct::createSinglePrecisionIntrinsicsRewriterMap() {
                            CAST_IF_NOT_SAME(makeLiteral("float"), ARG(1)),
                            CAST_IF_NOT_SAME(makeLiteral("float"), ARG(2)))),
                   Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+      // __fmaf_ieee_rd
+      MATH_API_REWRITERS_V2(
+          "__fmaf_ieee_rd",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              WARNING_FACTORY_ENTRY(
+                  "__fmaf_ieee_rd",
+                  CALL_FACTORY_ENTRY("__fmaf_ieee_rd",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::fmaf_rd",
+                                          ARG(0), ARG(1), ARG(2))),
+                  Diagnostics::FTZ_BEHAVIOR, ARG("__fmaf_ieee_rd"))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              WARNING_FACTORY_ENTRY(
+                  "__fmaf_ieee_rd",
+                  CALL_FACTORY_ENTRY(
+                      "__fmaf_ieee_rd",
+                      CALL(MapNames::getClNamespace(false, true) + "fma",
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(1)),
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(2)))),
+                  Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+      // __fmaf_ieee_rn
+      MATH_API_REWRITERS_V2(
+          "__fmaf_ieee_rn",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              WARNING_FACTORY_ENTRY(
+                  "__fmaf_ieee_rn",
+                  CALL_FACTORY_ENTRY("__fmaf_ieee_rn",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::fmaf_rn",
+                                          ARG(0), ARG(1), ARG(2))),
+                  Diagnostics::FTZ_BEHAVIOR, ARG("__fmaf_ieee_rn"))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              WARNING_FACTORY_ENTRY(
+                  "__fmaf_ieee_rn",
+                  CALL_FACTORY_ENTRY(
+                      "__fmaf_ieee_rn",
+                      CALL(MapNames::getClNamespace(false, true) + "fma",
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(1)),
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(2)))),
+                  Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+      // __fmaf_ieee_ru
+      MATH_API_REWRITERS_V2(
+          "__fmaf_ieee_ru",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              WARNING_FACTORY_ENTRY(
+                  "__fmaf_ieee_ru",
+                  CALL_FACTORY_ENTRY("__fmaf_ieee_ru",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::fmaf_ru",
+                                          ARG(0), ARG(1), ARG(2))),
+                  Diagnostics::FTZ_BEHAVIOR, ARG("__fmaf_ieee_ru"))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              WARNING_FACTORY_ENTRY(
+                  "__fmaf_ieee_ru",
+                  CALL_FACTORY_ENTRY(
+                      "__fmaf_ieee_ru",
+                      CALL(MapNames::getClNamespace(false, true) + "fma",
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(1)),
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(2)))),
+                  Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
+      // __fmaf_ieee_rz
+      MATH_API_REWRITERS_V2(
+          "__fmaf_ieee_rz",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              WARNING_FACTORY_ENTRY(
+                  "__fmaf_ieee_rz",
+                  CALL_FACTORY_ENTRY("__fmaf_ieee_rz",
+                                     CALL(MapNames::getClNamespace() +
+                                              "ext::intel::math::fmaf_rz",
+                                          ARG(0), ARG(1), ARG(2))),
+                  Diagnostics::FTZ_BEHAVIOR, ARG("__fmaf_ieee_rz"))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              WARNING_FACTORY_ENTRY(
+                  "__fmaf_ieee_rz",
+                  CALL_FACTORY_ENTRY(
+                      "__fmaf_ieee_rz",
+                      CALL(MapNames::getClNamespace(false, true) + "fma",
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(1)),
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(2)))),
+                  Diagnostics::ROUNDING_MODE_UNSUPPORTED)))
       // __fmul_rd
       MATH_API_REWRITER_DEVICE(
           "__fmul_rd",

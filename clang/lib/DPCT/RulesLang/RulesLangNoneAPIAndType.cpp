@@ -41,6 +41,11 @@ extern DpctOption<opt, bool> ProcessAll;
 extern DpctOption<opt, bool> AsyncHandler;
 
 namespace clang {
+namespace ast_matchers {
+AST_MATCHER(VarDecl, hasRegisterStorage) {
+  return Node.getStorageClass() == SC_Register;
+}
+} // namespace ast_matchers
 namespace dpct {
 
 void LinkageSpecDeclRule::registerMatcher(MatchFinder &MF) {
@@ -1282,22 +1287,25 @@ void RemoveBaseClassRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-// The EDG frontend can allow code like below:
-//
-//     template <class T1, class T2> struct AAAAA {
-//       template <class T3> void foo(T3 x);
-//     };
-//     template <typename T4, typename T5>
-//     template <typename T6>
-//     void AAAAA<T4, T5>::foo<T6>(T6 x) {}
-//
-// But clang/gcc emits error.
-// We suppress the error in Sema and record the source range and remove
-// the "invalid" code in this rule.
 void CompatWithClangRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  // The EDG frontend can allow code like below:
+  //
+  //     template <class T1, class T2> struct AAAAA {
+  //       template <class T3> void foo(T3 x);
+  //     };
+  //     template <typename T4, typename T5>
+  //     template <typename T6>
+  //     void AAAAA<T4, T5>::foo<T6>(T6 x) {}
+  //
+  // But clang/gcc emits error.
+  // We suppress the error in Sema and record the source range and remove
+  // the "invalid" code in this rule.
   MF.addMatcher(
       cxxMethodDecl(hasParent(functionTemplateDecl())).bind("TemplateMethod"),
       this);
+  // ISO C++17 does not allow the 'register' storage class specifier. nvcc
+  // issues a warning when it encounters it, but keeps compiling.
+  MF.addMatcher(varDecl(hasRegisterStorage()).bind("RegisterStorage"), this);
 }
 
 void CompatWithClangRule::runRule(
@@ -1313,6 +1321,12 @@ void CompatWithClangRule::runRule(
               DpctGlobalInfo::getContext().getLangOpts()));
       auto Length = End.getRawEncoding() - Begin.getRawEncoding();
       emplaceTransformation(new ReplaceText(Begin, Length, ""));
+    }
+  } else if (const auto *VD =
+                 getNodeAsType<VarDecl>(Result, "RegisterStorage")) {
+    SourceLocation SL = VD->getStorageClassSpecLoc();
+    if (DpctGlobalInfo::getContext().getLangOpts().CUDA && SL.isValid()) {
+      emplaceTransformation(new ReplaceText(SL, std::strlen("register"), ""));
     }
   }
 }

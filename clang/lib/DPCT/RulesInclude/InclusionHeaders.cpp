@@ -132,6 +132,10 @@ void IncludesCallbacks::InclusionDirective(
   FileInfo->setFirstIncludeOffset(LocInfo.second);
   LastInclusionLocationUpdater Updater(FileInfo, FilenameRange.getEnd());
 
+  if (FileName == "bits/stdc++.h") {
+    DpctGlobalInfo::getInstance().getIsAfterBitsStdcxxStatus() = true;
+  }
+
   clang::tooling::UnifiedPath IncludedFile;
   if (auto OptionalAbs = Global.getAbsolutePath(*File))
     IncludedFile = OptionalAbs.value();

@@ -31,6 +31,8 @@ using WarpFunctionRewriterFactory =
     CallExprRewriterFactory<WarpFunctionRewriter, std::string>;
 using NoRewriteFuncNameRewriterFactory =
     CallExprRewriterFactory<NoRewriteFuncNameRewriter, std::string>;
+using EmptyRewriterFactory =
+    CallExprRewriterFactory<EmptyRewriter, std::string>;
 
 /// Base class for rewriting math function calls
 class MathCallExprRewriter : public FuncCallExprRewriter {
@@ -349,10 +351,9 @@ public:
       : Name(Name), MathAPIRewriters(MathAPIRewritersInput) {
     NoRewriteRewriter = std::make_pair(
         TrueFunctor,
-        std::make_pair(Name,
-                       std::dynamic_pointer_cast<CallExprRewriterFactoryBase>(
-                           std::make_shared<NoRewriteFuncNameRewriterFactory>(
-                               Name, Name))));
+        std::make_pair(
+            Name, std::dynamic_pointer_cast<CallExprRewriterFactoryBase>(
+                      std::make_shared<EmptyRewriterFactory>(Name, Name))));
   }
   // a. Host API priority:
   //   1. host_perf
@@ -561,22 +562,19 @@ createMathAPIRewriterDevice(
           math::IsDefinedInCUDA(),
           std::move(createMathAPIRewriterDeviceImpl(Name, PerfPred, DevicePerf,
                                                     DeviceNodes)),
-          {Name,
-           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+          {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)}),
       createConditionalFactory(
           math::IsUnresolvedLookupExpr,
           createConditionalFactory(
               math::IsDirectCallerPureDevice,
               std::move(createMathAPIRewriterDeviceImpl(
                   Name, PerfPred, DevicePerf, DeviceNodes)),
-              {Name,
-               std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+              {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)}),
           createConditionalFactory(
               math::IsDefinedInCUDA(),
               std::move(createMathAPIRewriterDeviceImpl(
                   Name, PerfPred, DevicePerf, DeviceNodes)),
-              {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(
-                         Name, Name)})));
+              {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)})));
 }
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -590,21 +588,17 @@ createMathAPIRewriterDevice(
       createConditionalFactory(
           math::IsDefinedInCUDA(),
           std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
-          {Name,
-           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+          {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)}),
       createConditionalFactory(
           math::IsUnresolvedLookupExpr,
           createConditionalFactory(
               math::IsDirectCallerPureDevice,
               std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
-              {Name,
-               std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+              {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)}),
           createConditionalFactory(
               math::IsDefinedInCUDA(),
-              std::move(
-                  createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
-              {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(
-                         Name, Name)})));
+              std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
+              {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)})));
 }
 
 template <class T>
@@ -620,13 +614,11 @@ createMathAPIRewriterExperimentalBfloat16(
     if (math::useExtBFloat16Math() && Rewriter1.second)
       return createConditionalFactory(
           math::IsDefinedInCUDA(), std::move(Rewriter1),
-          {Name,
-           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+          {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)});
     if (Rewriter2.second)
       return createConditionalFactory(
           math::IsDefinedInCUDA(), std::move(Rewriter2),
-          {Name,
-           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+          {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)});
   }
   // report unsupport
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
@@ -643,7 +635,7 @@ createMathAPIRewriterHost(
     T) {
   return createConditionalFactory(
       math::IsDefinedInCUDA(), std::move(HostNormal),
-      {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+      {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)});
 }
 
 template <class T>
@@ -660,7 +652,7 @@ createMathAPIRewriterHost(
       math::IsDefinedInCUDA(),
       createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
                                std::move(HostPerf), std::move(HostNormal)),
-      {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+      {Name, std::make_shared<EmptyRewriterFactory>(Name, Name)});
 }
 
 template <bool IsDouble> std::string getPiString() {

@@ -334,7 +334,7 @@
 // NEARBYINTF: CUDA API:
 // NEARBYINTF-NEXT:   nearbyintf(f /*float*/);
 // NEARBYINTF-NEXT: Is migrated to:
-// NEARBYINTF-NEXT:   sycl::floor(f + 0.5);
+// NEARBYINTF-NEXT:   sycl::floor(f + 0.5f);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=nextafterf | FileCheck %s -check-prefix=NEXTAFTERF
 // NEXTAFTERF: CUDA API:

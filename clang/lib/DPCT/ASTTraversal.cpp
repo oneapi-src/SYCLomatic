@@ -93,6 +93,7 @@ void MigrationRule::emplaceTransformation(TextModification *TM) {
 // RuleLang
 REGISTER_RULE(IterationSpaceBuiltinRule, PassKind::PK_Analysis)
 REGISTER_RULE(ErrorHandlingIfStmtRule, PassKind::PK_Migration)
+REGISTER_RULE(CastScopedEnumTypeRule, PassKind::PK_Migration)
 REGISTER_RULE(ErrorHandlingHostAPIRule, PassKind::PK_Migration)
 REGISTER_RULE(AtomicFunctionRule, PassKind::PK_Migration)
 REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
