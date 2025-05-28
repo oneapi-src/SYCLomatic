@@ -6,10 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "ExternalReplacement.h"
 #include "AnalysisInfo.h"
+#include "ExternalReplacement.h"
 
-using namespace clang::dpct;
+namespace clang::dpct {
 
 int tryLoadingUpstreamChangesAndUserChanges() {
   llvm::SmallString<128> UpstreamChangesFilePath(
@@ -26,3 +26,4 @@ int tryLoadingUpstreamChangesAndUserChanges() {
 
   return 0;
 }
+} // namespace clang::dpct
