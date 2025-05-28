@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6, v11.7, v11.8
 // RUN: dpct --use-experimental-features=graph --format-range=none -out-root %T/cudaGraph_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cudaGraph_test/cudaGraph_test.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/cudaGraph_test/cudaGraph_test.dp.cpp -o %T/cudaGraph_test/cudaGraph_test.dp.o %}
@@ -9,6 +9,24 @@
   do {                       \
     cudaError_t _result = x; \
   } while (0)
+
+__global__ void myKernel(int *data) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < 10) {
+    data[idx] += 1;
+  }
+}
+
+// CHECK: void myKernel_wrapper(int * data) {
+// CHECK:        sycl::queue queue = *dpct::kernel_launcher::_que;
+// CHECK:        unsigned int localMemSize = dpct::kernel_launcher::_local_mem_size;
+// CHECK:        sycl::nd_range<3> nr = dpct::kernel_launcher::_nr;
+// CHECK:        queue.parallel_for(
+// CHECK:          nr,
+// CHECK:          [=](sycl::nd_item<3> item_ct1) {
+// CHECK:            myKernel(data);
+// CHECK:          });
+// CHECK:  }
 
 int main() {
   // CHECK: dpct::experimental::command_graph_ptr graph;
@@ -70,6 +88,32 @@ int main() {
   // CHECK: dpct::experimental::add_empty_node(&node, graph, node10, 1);
   cudaGraphAddEmptyNode(&node, graph, node10, 1);
 
+  // CHECK: dpct::experimental::kernel_node_params params = {};
+  // CHECK-NEXT: params.set_func((void*) dpct::wrapper_register(&myKernel_wrapper).get());
+  // CHECK-NEXT: params.set_block_dim(dpct::dim3(10));
+  // CHECK-NEXT: params.set_grid_dim(dpct::dim3(1));
+  // CHECK-NEXT: params.set_shared_mem_bytes(0);
+  // CHECK-NEXT: void *kernelArgs[] = {};
+  // CHECK-NEXT: params.set_kernel_params(kernelArgs);
+  cudaKernelNodeParams params = {};
+  params.func = (void *)myKernel;
+  params.blockDim = dim3(10);
+  params.gridDim = dim3(1);
+  params.sharedMemBytes = 0;
+  void *kernelArgs[] = {};
+  params.kernelParams = kernelArgs;
+
+  // CHECK: void* function = (void*) dpct::wrapper_register(myKernel_wrapper).get();
+  // CHECK-NEXT: params.set_func(function);
+  void* function = (void*) myKernel;
+  params.func = function;
+
+  // CHECK: dpct::dim3 blockDim = params.get_block_dim();
+  dim3 blockDim = params.blockDim;
+
+  // CHECK: void* func2 = params.get_func();
+  void* func2 = params.func;
+
   size_t numNodes;
 
   // CHECK: dpct::experimental::get_nodes(graph, node4, &numNodes);
@@ -117,13 +161,31 @@ int main() {
   CUDA_CHECK_THROW(cudaGraphLaunch(execGraph, stream));
   cudaGraphLaunch(*execGraph2, *stream2);
 
-#ifndef DNO_BUILD_TEST
-  // CHECK: execGraph->update(*graph);
-  cudaGraphExecUpdate(execGraph, graph, nullptr, nullptr);
+  // CHECK: int updateResult;
+  cudaGraphExecUpdateResultInfo updateResult;
 
-  // CHECK: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(execGraph->update(*graph)));
-  CUDA_CHECK_THROW(cudaGraphExecUpdate(execGraph, graph, nullptr, nullptr));
-#endif
+  // CHECK: int result;
+  cudaGraphExecUpdateResult result;
+
+  // CHECK: dpct::experimental::update(execGraph, graph, &updateResult);
+  cudaGraphExecUpdate(execGraph, graph, &updateResult);
+
+  // CHECK: CUDA_CHECK_THROW(DPCT_CHECK_ERROR(dpct::experimental::update(execGraph, graph, &updateResult)));
+  CUDA_CHECK_THROW(cudaGraphExecUpdate(execGraph, graph, &updateResult));
+
+  // CHECK: if (updateResult == 1) {
+  // CHECK-NEXT: }
+  // CHECK-NEXT: if (updateResult == 0) {
+  // CHECK-NEXT: }
+  if (updateResult.result == cudaGraphExecUpdateSuccess) {
+  }
+  if (updateResult.result == cudaGraphExecUpdateErrorTopologyChanged) {
+  }
+
+  // CHECK: if (updateResult != nullptr) {
+  // CHECK-NEXT: }
+  if (updateResult.errorFromNode != nullptr) {
+  }
 
   // CHECK: sycl::ext::oneapi::experimental::node_type nodeType;
   // CHECK-NEXT: nodeType = node->get_type();

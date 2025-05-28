@@ -377,7 +377,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaExternalMemoryBufferDesc", "cudaExternalSemaphore_t",
                   "cudaExternalSemaphoreHandleDesc",
                   "cudaExternalSemaphoreSignalParams",
-                  "cudaExternalSemaphoreWaitParams"))))))
+                  "cudaExternalSemaphoreWaitParams", "cudaKernelNodeParams",
+                  "cudaGraphExecUpdateResultInfo"))))))
           .bind("cudaTypeDefEA"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -950,9 +951,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     if (CanonicalTypeStr == "cudaGraphExecUpdateResult") {
-      report(TL->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             CanonicalTypeStr);
-      return;
+      if (!DpctGlobalInfo::useExtGraph()) {
+        report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               "cudaGraphExecUpdateResult",
+               "--use-experimental-features=graph");
+      }
     }
 
     if (CanonicalTypeStr == "cudaGraphicsRegisterFlags" ||
@@ -1958,7 +1961,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                           "cufftType", "cudaMemoryType", "CUctx_flags_enum",
                           "CUpointer_attribute_enum", "CUmemorytype_enum",
                           "cudaGraphicsMapFlags", "cudaGraphicsRegisterFlags",
-                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum"))),
+                          "cudaGraphNodeType", "CUdevice_P2PAttribute_enum",
+                          "cudaGraphExecUpdateResult"))),
                       matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
       this);
@@ -2078,7 +2082,16 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
               EnumName == "cudaGraphNodeTypeMemset" ||
               EnumName == "cudaGraphNodeTypeHost" ||
               EnumName == "cudaGraphNodeTypeGraph" ||
-              EnumName == "cudaGraphNodeTypeEmpty")) {
+              EnumName == "cudaGraphNodeTypeEmpty" ||
+              EnumName == "cudaGraphExecUpdateSuccess" ||
+              EnumName == "cudaGraphExecUpdateError" ||
+              EnumName == "cudaGraphExecUpdateErrorTopologyChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorNodeTypeChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorFunctionChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorParametersChanged" ||
+              EnumName == "cudaGraphExecUpdateErrorNotSupported" ||
+              EnumName == "cudaGraphExecUpdateErrorUnsupportedFunctionChange" ||
+              EnumName == "cudaGraphExecUpdateErrorAttributesChanged")) {
     report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
            EnumName, "--use-experimental-features=graph");
     return;
@@ -2738,6 +2751,50 @@ const VarDecl *getAssignTargetDecl(const Stmt *E) {
       if (auto DRE = dyn_cast<DeclRefExpr>(L->IgnoreImpCasts()))
         return dyn_cast<VarDecl>(DRE->getDecl());
 
+  return nullptr;
+}
+
+const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context,
+                                  MigrationRule *Rule) {
+  auto Parents = Context.getParents(*E);
+  if (Parents.size() > 0)
+    return getAssignedBO(Parents[0].get<Expr>(), Context, Rule);
+  return nullptr;
+}
+
+// Return the binary operator if E is the lhs of an assign expression,
+// otherwise nullptr.
+const Expr *getAssignedBO(const Expr *E, ASTContext &Context,
+                          MigrationRule *Rule) {
+  if (dyn_cast<MemberExpr>(E)) {
+    // Continue finding parents when E is MemberExpr.
+    return getParentAsAssignedBO(E, Context, Rule);
+  } else if (auto ICE = dyn_cast<ImplicitCastExpr>(E)) {
+    // Stop finding parents and return nullptr when E is ImplicitCastExpr,
+    // except for ArrayToPointerDecay cast.
+    if (ICE->getCastKind() == CK_ArrayToPointerDecay) {
+      return getParentAsAssignedBO(E, Context, Rule);
+    }
+  } else if (auto ASE = dyn_cast<ArraySubscriptExpr>(E)) {
+    // Continue finding parents when E is ArraySubscriptExpr, and remove
+    // subscript operator anyway for texture object's member.
+    Rule->emplaceTransformation(new ReplaceToken(
+        Lexer::getLocForEndOfToken(ASE->getLHS()->getEndLoc(), 0,
+                                   Context.getSourceManager(),
+                                   Context.getLangOpts()),
+        ASE->getRBracketLoc(), ""));
+    return getParentAsAssignedBO(E, Context, Rule);
+  } else if (auto BO = dyn_cast<BinaryOperator>(E)) {
+    // If E is BinaryOperator, return E only when it is assign expression,
+    // otherwise return nullptr.
+    auto Opcode = BO->getOpcode();
+    if (Opcode == BO_Assign || Opcode == BO_OrAssign)
+      return BO;
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COCE->getOperator() == OO_Equal) {
+      return COCE;
+    }
+  }
   return nullptr;
 }
 
@@ -4671,7 +4728,7 @@ void KernelCallRefRule::runRule(
         (OuterFD->getTemplatedKind() ==
          FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
       std::string TypeRepl;
-      if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
+      if (DpctGlobalInfo::useWrapperRegisterFnPtr()) {
         if ((IsTemplateRelated &&
              (!DRE->hasExplicitTemplateArgs() ||
               (DRE->getNumTemplateArgs() <= TemplateParamNum))) ||
@@ -4680,7 +4737,7 @@ void KernelCallRefRule::runRule(
         }
       }
       insertWrapperPostfix<DeclRefExpr>(
-          DRE, std::move(TypeRepl), DpctGlobalInfo::isCVersionCUDALaunchUsed());
+          DRE, std::move(TypeRepl), DpctGlobalInfo::useWrapperRegisterFnPtr());
     }
   }
   if (auto ULE =
@@ -4717,7 +4774,7 @@ void KernelCallRefRule::runRule(
       }
     }
     insertWrapperPostfix<UnresolvedLookupExpr>(
-        ULE, getTypeRepl(ULE), DpctGlobalInfo::isCVersionCUDALaunchUsed());
+        ULE, getTypeRepl(ULE), DpctGlobalInfo::useWrapperRegisterFnPtr());
   }
 }
 
@@ -4992,7 +5049,7 @@ void KernelCallRule::runRule(
 
       if (!getAddressedRef(CalleeDRE)) {
         if (IsFuncTypeErased) {
-          DpctGlobalInfo::setCVersionCUDALaunchUsed();
+          DpctGlobalInfo::setUseWrapperRegisterFnPtr();
         }
         std::string ReplStr;
         llvm::raw_string_ostream OS(ReplStr);

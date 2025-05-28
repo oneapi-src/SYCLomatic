@@ -25,6 +25,32 @@ typedef sycl::ext::oneapi::experimental::command_graph<
 
 typedef sycl::ext::oneapi::experimental::node *node_ptr;
 
+struct kernel_node_params {
+  void *func{};
+  dpct::dim3 grid_dim{};
+  dpct::dim3 block_dim{};
+  unsigned int shared_mem_bytes{};
+  void **kernel_params{};
+
+public:
+  void set_block_dim(const dpct::dim3 &block_dim) {
+    this->block_dim = block_dim;
+  }
+  void set_grid_dim(const dpct::dim3 &grid_dim) { this->grid_dim = grid_dim; }
+  void set_kernel_params(void **kernel_params) {
+    this->kernel_params = kernel_params;
+  }
+  void set_func(void *func) { this->func = func; }
+  void set_shared_mem_bytes(unsigned int shared_mem_bytes) {
+    this->shared_mem_bytes = shared_mem_bytes;
+  }
+  dpct::dim3 get_block_dim() const { return block_dim; }
+  dpct::dim3 get_grid_dim() const { return grid_dim; }
+  void **get_kernel_params() const { return kernel_params; }
+  void *get_func() const { return func; }
+  unsigned int get_shared_mem_bytes() const { return shared_mem_bytes; }
+};
+
 namespace detail {
 class graph_mgr {
 public:
@@ -189,6 +215,16 @@ static void get_root_nodes(dpct::experimental::command_graph_ptr graph,
                            std::size_t *numberOfNodes) {
   detail::graph_mgr::instance().get_root_nodes(graph, nodesArray,
                                                numberOfNodes);
+}
+
+static void update(dpct::experimental::command_graph_exec_ptr graphExec,
+                   dpct::experimental::command_graph_ptr graph,
+                   int *updateResultInfo) {
+  graphExec->update(*graph);
+  if (!graphExec) {
+    *updateResultInfo = 0;
+  }
+  *updateResultInfo = 1;
 }
 
 } // namespace experimental

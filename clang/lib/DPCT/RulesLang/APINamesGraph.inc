@@ -60,8 +60,10 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
-    MEMBER_CALL_FACTORY_ENTRY("cudaGraphExecUpdate", ARG(0), true, "update",
-                              DEREF(1)),
+    CALL_FACTORY_ENTRY("cudaGraphExecUpdate",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::update",
+                            ARG(0), ARG(1), ARG(2))),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphExecUpdate",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphExecUpdate"),

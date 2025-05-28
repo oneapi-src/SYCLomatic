@@ -643,6 +643,10 @@ void MapNames::setExplicitNamespaceMap(
            DpctGlobalInfo::useExtGraph()
                ? getClNamespace() + "ext::oneapi::experimental::node_type"
                : "cudaGraphNodeType")},
+      {"cudaGraphExecUpdateResult",
+       std::make_shared<TypeNameRule>(DpctGlobalInfo::useExtGraph()
+                                          ? "int"
+                                          : "cudaGraphExecUpdateResult")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
       {"CUmemorytype",
        std::make_shared<TypeNameRule>(getClNamespace() + "usm::alloc")},
@@ -1157,6 +1161,47 @@ void MapNames::setExplicitNamespaceMap(
                ? getClNamespace() +
                      "ext::oneapi::experimental::node_type::empty"
                : "cudaGraphNodeTypeEmpty")},
+      {"cudaGraphExecUpdateSuccess",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph() ? "1" : "cudaGraphExecUpdateSuccess")},
+      {"cudaGraphExecUpdateError",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph() ? "0" : "cudaGraphExecUpdateError")},
+      {"cudaGraphExecUpdateErrorTopologyChanged",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? "0"
+               : "cudaGraphExecUpdateErrorTopologyChanged")},
+      {"cudaGraphExecUpdateErrorNodeTypeChanged",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? "0"
+               : "cudaGraphExecUpdateErrorNodeTypeChanged")},
+      {"cudaGraphExecUpdateErrorFunctionChanged",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? "0"
+               : "cudaGraphExecUpdateErrorFunctionChanged")},
+      {"cudaGraphExecUpdateErrorParametersChanged",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? "0"
+               : "cudaGraphExecUpdateErrorParametersChanged")},
+      {"cudaGraphExecUpdateErrorNotSupported",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? "0"
+               : "cudaGraphExecUpdateErrorNotSupported")},
+      {"cudaGraphExecUpdateErrorUnsupportedFunctionChange",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? "0"
+               : "cudaGraphExecUpdateErrorUnsupportedFunctionChange")},
+      {"cudaGraphExecUpdateErrorAttributesChanged",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? "0"
+               : "cudaGraphExecUpdateErrorAttributesChanged")},
       // enum CUmem_advise_enum
       {"CU_MEM_ADVISE_SET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_UNSET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
