@@ -122,7 +122,7 @@ ENTRY(cudaEventDestroy, cudaEventDestroy, true, API_CALL_REMOVED, P0, "DPCT1026/
 ENTRY(cudaEventElapsedTime, cudaEventElapsedTime, true, NO_FLAG, P0, "DPCT1012")
 ENTRY(cudaEventQuery, cudaEventQuery, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaEventRecord, cudaEventRecord, true, NO_FLAG, P0, "DPCT1012/DPCT1024")
-ENTRY(cudaEventRecordWithFlags, cudaEventRecordWithFlags, false, NO_FLAG, P7, "comment")
+ENTRY(cudaEventRecordWithFlags, cudaEventRecordWithFlags, true, NO_FLAG, P7, "DPCT1028")
 ENTRY(cudaEventSynchronize, cudaEventSynchronize, true, NO_FLAG, P0, "DPCT1012")
 
 // external resource interoperability functions of runtime API
