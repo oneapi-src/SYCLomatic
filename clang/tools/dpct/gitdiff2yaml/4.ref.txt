@@ -1,33 +1,27 @@
 ---
-Replacements:
-  - FilePath:       'a.txt'
-    Offset:         8
-    Length:         8
-    ReplacementText:"111\n222\n"
-    NewFilePath:    'a.txt'
-  - FilePath:       'a.txt'
-    Offset:         20
-    Length:         4
-    ReplacementText:"333\n"
-    NewFilePath:    'a.txt'
-  - FilePath:       'a.txt'
-    Offset:         56
-    Length:         0
-    ReplacementText:"444\n"
-    NewFilePath:    'a.txt'
-  - FilePath:       'a.txt'
-    Offset:         92
-    Length:         4
-    ReplacementText:""
-    NewFilePath:    'a.txt'
-  - FilePath:       'b.txt'
-    Offset:         40
-    Length:         12
-    ReplacementText:""
-    NewFilePath:    'b.txt'
-  - FilePath:       'b.txt'
-    Offset:         92
-    Length:         0
-    ReplacementText:"111\n222\n333\n"
-    NewFilePath:    'b.txt'
+ModifyFileHunks:
+  - FilePath:        'a.txt'
+    Offset:          8
+    Length:          8
+    ReplacementText: "111\n222\n"
+  - FilePath:        'a.txt'
+    Offset:          20
+    Length:          4
+    ReplacementText: "333\n"
+  - FilePath:        'a.txt'
+    Offset:          56
+    Length:          0
+    ReplacementText: "444\n"
+  - FilePath:        'a.txt'
+    Offset:          92
+    Length:          4
+    ReplacementText: ""
+  - FilePath:        'b.txt'
+    Offset:          40
+    Length:          12
+    ReplacementText: ""
+  - FilePath:        'b.txt'
+    Offset:          92
+    Length:          0
+    ReplacementText: "111\n222\n333\n"
 ...

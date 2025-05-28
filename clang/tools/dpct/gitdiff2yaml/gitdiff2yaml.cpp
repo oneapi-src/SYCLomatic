@@ -262,17 +262,106 @@ std::vector<Replacement> parseDiff(const std::string &diffOutput,
   return replacements;
 }
 
+struct ModifyHunk {
+  std::string FilePath;
+  unsigned Offset = 0;
+  unsigned Length = 0;
+  std::string ReplacementText;
+};
+
+struct AddHunk {
+  std::string NewFilePath;
+};
+
+struct DeleteHunk {
+  std::string OldFilePath;
+};
+
+struct MoveHunk {
+  std::string FilePath;
+  unsigned Offset = 0;
+  unsigned Length = 0;
+  std::string ReplacementText;
+  std::string NewFilePath;
+};
+
 void printYaml(std::ostream &stream, const std::vector<Replacement> &Repls) {
-  stream << "---" << std::endl;
-  stream << "Replacements:" << std::endl;
+  std::vector<ModifyHunk> ModifyHunks;
+  std::vector<AddHunk> AddHunks;
+  std::vector<DeleteHunk> DeleteHunks;
+  std::vector<MoveHunk> MoveHunks;
+
   for (const auto &R : Repls) {
-    stream << "  - FilePath:       " << "'" << R.OldFilePath << "'"
+    if (R.OldFilePath == "/dev/null" && R.NewFilePath != "/dev/null") {
+      // Add replacement
+      AddHunk AH;
+      AH.NewFilePath = R.NewFilePath;
+      AddHunks.push_back(AH);
+      continue;
+    }
+    if (R.OldFilePath != "/dev/null" && R.NewFilePath == "/dev/null") {
+      // Delete replacement
+      DeleteHunk DH;
+      DH.OldFilePath = R.OldFilePath;
+      DeleteHunks.push_back(DH);
+      continue;
+    }
+    if (R.OldFilePath == R.NewFilePath && R.OldFilePath != "/dev/null") {
+      // Modify replacement
+      ModifyHunk MH;
+      MH.FilePath = R.OldFilePath;
+      MH.Offset = R.Offset;
+      MH.Length = R.Length;
+      MH.ReplacementText = R.ReplacementText;
+      ModifyHunks.push_back(MH);
+      continue;
+    } 
+    if (R.OldFilePath != R.NewFilePath) {
+      // Move replacement
+      MoveHunk MH;
+      MH.FilePath = R.OldFilePath;
+      MH.Offset = R.Offset;
+      MH.Length = R.Length;
+      MH.ReplacementText = R.ReplacementText;
+      MH.NewFilePath = R.NewFilePath;
+      MoveHunks.push_back(MH);
+      continue;
+    }
+    throw std::runtime_error("Invalid replacement: " + R.OldFilePath + " -> " +
+                                   R.NewFilePath);
+  }
+
+  stream << "---" << std::endl;
+  if (!ModifyHunks.empty())
+    stream << "ModifyFileHunks:" << std::endl;
+  for (const auto &H : ModifyHunks) {
+    stream << "  - FilePath:        " << "'" << H.FilePath << "'" << std::endl;
+    stream << "    Offset:          " << H.Offset << std::endl;
+    stream << "    Length:          " << H.Length << std::endl;
+    stream << "    ReplacementText: " << "\"" << H.ReplacementText << "\""
            << std::endl;
-    stream << "    Offset:         " << R.Offset << std::endl;
-    stream << "    Length:         " << R.Length << std::endl;
-    stream << "    ReplacementText:" << "\"" << R.ReplacementText << "\""
+  }
+  if (!AddHunks.empty())
+    stream << "AddFileHunks:" << std::endl;
+  for (const auto &H : AddHunks) {
+    stream << "  - NewFilePath:     " << "'" << H.NewFilePath << "'"
            << std::endl;
-    stream << "    NewFilePath:    " << "'" << R.NewFilePath << "'"
+  }
+  if (!DeleteHunks.empty())
+    stream << "DeleteFileHunks:" << std::endl;
+  for (const auto &H : DeleteHunks) {
+    stream << "  - OldFilePath:     " << "'" << H.OldFilePath << "'"
+           << std::endl;
+  }
+  if (!MoveHunks.empty())
+    stream << "MoveFileHunks:" << std::endl;
+  for (const auto &H : MoveHunks) {
+    stream << "  - FilePath:        " << "'" << H.FilePath << "'" << std::endl;
+    stream << "    Offset:          " << H.Offset << std::endl;
+    stream << "    Length:          " << H.Length << std::endl;
+    stream << "    ReplacementText: " << "\"" << H.ReplacementText << "\""
+           << std::endl;
+    stream << "    NewFilePath:     " << "'" << H.NewFilePath << "'"
            << std::endl;
   }
   stream << "..." << std::endl;
