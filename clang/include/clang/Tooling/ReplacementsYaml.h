@@ -93,12 +93,13 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
 template <> struct MappingTraits<clang::tooling::DpctReplacement> {
   struct NormalizedDpctReplacement {
     NormalizedDpctReplacement(const IO &io)
-        : Base(io), ConstantFlag(""), ConstantOffset(0), InitStr(""),
-          NewHostVarName(""), BlockLevelFormatFlag(false) {}
+        : Offset(0), Length(0), ConstantFlag(""), ConstantOffset(0),
+          InitStr(""), NewHostVarName(""), BlockLevelFormatFlag(false) {}
 
     NormalizedDpctReplacement(const IO &io,
                               const clang::tooling::DpctReplacement &R)
-        : Base(io, static_cast<const clang::tooling::DpctReplacement &>(R)),
+        : FilePath(R.getFilePath()), Offset(R.getOffset()),
+          Length(R.getLength()), ReplacementText(R.getReplacementText()),
           ConstantOffset(R.getConstantOffset()), InitStr(R.getInitStr()),
           NewHostVarName(R.getNewHostVarName()),
           BlockLevelFormatFlag(R.getBlockLevelFormatFlag()) {
@@ -114,8 +115,9 @@ template <> struct MappingTraits<clang::tooling::DpctReplacement> {
       }
     }
 
-    clang::tooling::DpctReplacement denormalize(const IO &io) {
-      clang::tooling::DpctReplacement R(Base.denormalize(io));
+    clang::tooling::DpctReplacement denormalize(const IO &) {
+      clang::tooling::DpctReplacement R(FilePath, Offset, Length,
+                                        ReplacementText);
       if (ConstantFlag == "HostDeviceConstant") {
         R.setConstantFlag(clang::dpct::ConstantFlagType::HostDevice);
       } else if (ConstantFlag == "DeviceConstant") {
@@ -132,7 +134,10 @@ template <> struct MappingTraits<clang::tooling::DpctReplacement> {
       return R;
     }
 
-    MappingTraits<clang::tooling::Replacement>::NormalizedReplacement Base;
+    std::string FilePath;
+    unsigned int Offset;
+    unsigned int Length;
+    std::string ReplacementText;
     std::string ConstantFlag = "";
     unsigned int ConstantOffset = 0;
     std::string InitStr = "";
@@ -144,7 +149,10 @@ template <> struct MappingTraits<clang::tooling::DpctReplacement> {
     MappingNormalization<NormalizedDpctReplacement,
                          clang::tooling::DpctReplacement>
         Keys(Io, R);
-    MappingTraits<clang::tooling::Replacement>::mapping(Io, R);
+    Io.mapRequired("FilePath", Keys->FilePath);
+    Io.mapRequired("Offset", Keys->Offset);
+    Io.mapRequired("Length", Keys->Length);
+    Io.mapRequired("ReplacementText", Keys->ReplacementText);
     Io.mapOptional("ConstantFlag", Keys->ConstantFlag);
     Io.mapOptional("ConstantOffset", Keys->ConstantOffset);
     Io.mapOptional("InitStr", Keys->InitStr);
@@ -249,25 +257,33 @@ template <> struct MappingTraits<clang::tooling::OptionInfo> {
 template <> struct MappingTraits<clang::tooling::ModifyFileHunk> {
   struct NormalizedModifyFileHunk {
     NormalizedModifyFileHunk(const IO &io)
-        : HT(clang::tooling::Hunk::HunkType::Unspecified), Base(io) {}
+        : HT(clang::tooling::Hunk::HunkType::Unspecified), Offset(0),
+          Length(0) {}
     NormalizedModifyFileHunk(const IO &io, clang::tooling::ModifyFileHunk &H)
-        : HT(H.getHunkType()),
-          Base(io, static_cast<const clang::tooling::Replacement &>(H)) {}
+        : HT(H.getHunkType()), FilePath(H.getFilePath()), Offset(H.getOffset()),
+          Length(H.getLength()), ReplacementText(H.getReplacementText()) {}
 
-    clang::tooling::ModifyFileHunk denormalize(const IO &io) {
-      clang::tooling::ModifyFileHunk H(Base.denormalize(io));
+    clang::tooling::ModifyFileHunk denormalize(const IO &) {
+      clang::tooling::ModifyFileHunk H(FilePath, Offset, Length,
+                                       ReplacementText);
       return H;
     }
 
     clang::tooling::Hunk::HunkType HT;
-    MappingTraits<clang::tooling::Replacement>::NormalizedReplacement Base;
+    std::string FilePath;
+    unsigned int Offset;
+    unsigned int Length;
+    std::string ReplacementText;
   };
 
   static void mapping(IO &Io, clang::tooling::ModifyFileHunk &H) {
     MappingNormalization<NormalizedModifyFileHunk, clang::tooling::ModifyFileHunk>
         Keys(Io, H);
-    MappingTraits<clang::tooling::Replacement>::mapping(Io, H);
     Io.mapOptional("HunkType", Keys->HT);
+    Io.mapRequired("FilePath", Keys->FilePath);
+    Io.mapRequired("Offset", Keys->Offset);
+    Io.mapRequired("Length", Keys->Length);
+    Io.mapRequired("ReplacementText", Keys->ReplacementText);
   }
 };
 
@@ -320,28 +336,35 @@ template <> struct MappingTraits<clang::tooling::DeleteFileHunk> {
 template <> struct MappingTraits<clang::tooling::MoveFileHunk> {
   struct NormalizedMoveFileHunk {
     NormalizedMoveFileHunk(const IO &io)
-        : HT(clang::tooling::Hunk::HunkType::Unspecified), Base(io),
+        : HT(clang::tooling::Hunk::HunkType::Unspecified), Offset(0), Length(0),
           NewFilePath("") {}
     NormalizedMoveFileHunk(const IO &io, clang::tooling::MoveFileHunk &H)
-        : HT(H.getHunkType()),
-          Base(io, static_cast<const clang::tooling::Replacement &>(H)),
+        : HT(H.getHunkType()), FilePath(H.getFilePath()), Offset(H.getOffset()),
+          Length(H.getLength()), ReplacementText(H.getReplacementText()),
           NewFilePath(H.getNewFilePath()) {}
 
     clang::tooling::MoveFileHunk denormalize(const IO &io) {
-      clang::tooling::MoveFileHunk H(Base.denormalize(io), NewFilePath);
+      clang::tooling::MoveFileHunk H(FilePath, Offset, Length, ReplacementText,
+                                     NewFilePath);
       return H;
     }
 
     clang::tooling::Hunk::HunkType HT;
-    MappingTraits<clang::tooling::Replacement>::NormalizedReplacement Base;
+    std::string FilePath;
+    unsigned int Offset;
+    unsigned int Length;
+    std::string ReplacementText;
     std::string NewFilePath;
   };
 
   static void mapping(IO &Io, clang::tooling::MoveFileHunk &H) {
     MappingNormalization<NormalizedMoveFileHunk, clang::tooling::MoveFileHunk>
         Keys(Io, H);
-    MappingTraits<clang::tooling::Replacement>::mapping(Io, H);
     Io.mapOptional("HunkType", Keys->HT);
+    Io.mapRequired("FilePath", Keys->FilePath);
+    Io.mapRequired("Offset", Keys->Offset);
+    Io.mapRequired("Length", Keys->Length);
+    Io.mapRequired("ReplacementText", Keys->ReplacementText);
     Io.mapOptional("NewFilePath", Keys->NewFilePath);
   }
 };
