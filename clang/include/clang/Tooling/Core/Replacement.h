@@ -478,8 +478,7 @@ class AddFileHunk : public Hunk {
 
 public:
   AddFileHunk() : Hunk(AddFile) {}
-  AddFileHunk(std::string NewFilePath)
-      : Hunk(AddFile), NewFilePath(std::move(NewFilePath)) {}
+  AddFileHunk(std::string NewFilePath);
   const std::string &getNewFilePath() const { return NewFilePath; }
 };
 
@@ -488,8 +487,7 @@ class DeleteFileHunk : public Hunk {
 
 public:
   DeleteFileHunk() : Hunk(DeleteFile) {}
-  DeleteFileHunk(std::string OldFilePath)
-      : Hunk(DeleteFile), OldFilePath(std::move(OldFilePath)) {}
+  DeleteFileHunk(std::string OldFilePath);
   const std::string &getOldFilePath() const { return OldFilePath; }
 };
 
