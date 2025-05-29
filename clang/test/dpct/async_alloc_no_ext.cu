@@ -11,11 +11,11 @@ void foo_1(float *f, cudaStream_t hStream) {
   // CHECK-NEXT: */
   // CHECK-NEXT: cudaMallocAsync(&f, 1024, memPool, hStream);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaMallocAsync is not supported, please try to remigrate with option: --use-experimental-features=virtual_mem.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaMallocAsync is not supported, please try to remigrate with option: --use-experimental-features=async_alloc.
   // CHECK-NEXT: */
   // CHECK-NEXT: cudaMallocAsync(&f, 1024, hStream);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaFreeAsync is not supported, please try to remigrate with option: --use-experimental-features=virtual_mem.
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaFreeAsync is not supported, please try to remigrate with option: --use-experimental-features=async_alloc.
   // CHECK-NEXT: */
   // CHECK-NEXT: cudaFreeAsync(f, hStream);
 #ifndef NO_BUILD_TEST

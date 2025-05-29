@@ -1011,7 +1011,7 @@ CONDITIONAL_FACTORY_ENTRY(
             UNSUPPORT_FACTORY_ENTRY(
                 "cudaMallocAsync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                 ARG("cudaMallocAsync"),
-                ARG("--use-experimental-features=virtual_mem"))),
+                ARG("--use-experimental-features=async_alloc"))),
         UNSUPPORT_FACTORY_ENTRY("cudaMallocAsync",
                                 Diagnostics::API_NOT_MIGRATED,
                                 ARG("cudaMallocAsync"))),
@@ -1030,7 +1030,7 @@ CONDITIONAL_FACTORY_ENTRY(
         UNSUPPORT_FACTORY_ENTRY(
             "cudaFreeAsync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
             ARG("cudaFreeAsync"),
-            ARG("--use-experimental-features=virtual_mem"))),
+            ARG("--use-experimental-features=async_alloc"))),
     UNSUPPORT_FACTORY_ENTRY("cudaFreeAsync", Diagnostics::API_NOT_MIGRATED,
                             ARG("cudaFreeAsync")))
 

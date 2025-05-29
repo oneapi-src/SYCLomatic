@@ -811,12 +811,11 @@ DPCT_ENUM_OPTION(
             "be accessed within a kernel using syntax similar to C++ global "
             "variables.\n",
             false),
-        DPCT_OPTION_ENUM_VALUE("virtual_mem",
-                               int(ExperimentalFeatures::Exp_VirtualMemory),
-                               "Experimental extension that allows for mapping "
-                               "of an address range onto "
-                               "multiple allocations of physical memory.",
-                               false),
+        DPCT_OPTION_ENUM_VALUE(
+            "virtual_mem", int(ExperimentalFeatures::Exp_VirtualMemory),
+            "Experimental extension that allows for mapping of an address "
+            "range onto multiple allocations of physical memory.",
+            false),
         DPCT_OPTION_ENUM_VALUE(
             "in_order_queue_events",
             int(ExperimentalFeatures::Exp_InOrderQueueEvents),

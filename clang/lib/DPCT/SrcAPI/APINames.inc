@@ -238,7 +238,7 @@ ENTRY(cudaMemcpyToArrayAsync, cudaMemcpyToArrayAsync, true, NO_FLAG, P0, "Succes
 
 // stream ordered memory allocator functions of runtime API
 ENTRY(cudaFreeAsync, cudaFreeAsync, true, NO_FLAG, P7, "comment")
-ENTRY(cudaMallocAsync, cudaMallocAsync, true, NO_FLAG, P7, "comment")
+ENTRY(cudaMallocAsync, cudaMallocAsync, true, NO_FLAG, P7, "partial")
 ENTRY(cudaMallocFromPoolAsync, cudaMallocFromPoolAsync, false, NO_FLAG, P7, "comment")
 ENTRY(cudaMemPoolCreate, cudaMemPoolCreate, false, NO_FLAG, P4, "comment")
 ENTRY(cudaMemPoolDestroy, cudaMemPoolDestroy, false, NO_FLAG, P7, "comment")
