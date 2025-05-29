@@ -315,7 +315,7 @@ void printYaml(std::ostream &stream, const std::vector<Replacement> &Repls) {
       MH.ReplacementText = R.ReplacementText;
       ModifyHunks.push_back(MH);
       continue;
-    } 
+    }
     if (R.OldFilePath != R.NewFilePath) {
       // Move replacement
       MoveHunk MH;
@@ -328,7 +328,7 @@ void printYaml(std::ostream &stream, const std::vector<Replacement> &Repls) {
       continue;
     }
     throw std::runtime_error("Invalid replacement: " + R.OldFilePath + " -> " +
-                                   R.NewFilePath);
+                             R.NewFilePath);
   }
 
   stream << "---" << std::endl;
