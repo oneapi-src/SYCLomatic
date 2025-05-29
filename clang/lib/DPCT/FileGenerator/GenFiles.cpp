@@ -914,6 +914,7 @@ void genCodePinHeader(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
 
 void genVerifiedCmpVer(const std::vector<clang::tooling::Replacement> &CmpVerRepls) {
   auto CompStatusList = dpct::DpctGlobalInfo::getSupportedCompsStatus();
+  auto CompsInfo = dpct::DpctGlobalInfo::getSupportedComponentInfo();
   for (auto CompStatus : CompStatusList) {
     for (auto Repl : CmpVerRepls) {
       if (Repl.getReplacementText().str().find(CompStatus->ReplacementText) !=
@@ -921,6 +922,9 @@ void genVerifiedCmpVer(const std::vector<clang::tooling::Replacement> &CmpVerRep
         // If the replacement text is already in the list, skip it.
         std::stringstream ss;
         emitCompStatusWarning(CompStatus, ss);
+
+        collectNewVerInfo(
+          CompsInfo[CompStatus->CompType], CompStatus);
         PrintMsg(ss.str());
         return;
       }

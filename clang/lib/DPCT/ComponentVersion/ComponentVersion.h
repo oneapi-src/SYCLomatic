@@ -1,4 +1,5 @@
-//===--------------- ComponentVersion.h ----------------------------------------------===//
+//===--------------- ComponentVersion.h
+//----------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -16,14 +17,7 @@
 
 namespace clang {
 namespace dpct {
-enum  ComponentType {
-  DPCPP,
-  oneDPL,
-  oneMKL,
-  oneCCL,
-  oneDNNL,
-  ISHMEM
-};
+enum ComponentType { DPCPP, oneDPL, oneMKL, oneCCL, oneDNNL, ISHMEM };
 
 struct CompStatus {
   std::string Feature;
@@ -36,10 +30,24 @@ struct CompStatus {
   std::string Description;
 };
 
+const std::string CuroneAPIVersion = "2025.1";
+class ComponentInfo {
+public:
+  ComponentInfo(const std::string &Name,
+                const std::string &Version = "oneAPI " + CuroneAPIVersion)
+      : ComponentName(Name), ComponentVersion(Version) {}
+      ComponentInfo() : ComponentName(""), ComponentVersion("oneAPI " + CuroneAPIVersion) {}
+  std::string ComponentName;
+  std::string ComponentVersion;
+  std::vector<std::string> ComponentDes;
+};
+
 void importStatus(std::vector<clang::tooling::UnifiedPath> &RuleFiles);
 
 void emitCompStatusWarning(std::shared_ptr<clang::dpct::CompStatus> Stats,
-                         std::stringstream &StrStream);
+                           std::stringstream &StrStream);
+void collectNewVerInfo(ComponentInfo &Info,
+                       const std::shared_ptr<clang::dpct::CompStatus> &Status);
 } // namespace dpct
 } // namespace clang
 

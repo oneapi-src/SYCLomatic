@@ -1,8 +1,8 @@
 ---
 - Feature: Free Function query for SYCL
   SupportedVersion: 20250526
+  ComponentType: Compiler
   Link: https:github.com/oneapi-src/oneAPI-sycl/issues/444sss
-  TestComponent: Compiler
   ReplacementText: "sycl::get_kernel_info<sycl::info::kernel::work_group_size>(kernel)"
   IsOpenSource: true
   IsInNextOneAPIVersion: true
@@ -10,7 +10,7 @@
 
 - Feature: Free Function query for SYCL222
   SupportedVersion: 2025052x
-  TestComponent: MKL Library
+  ComponentType: Compiler
   Link: https:github.com/oneapi-src/oneAPI-sycl/issues/444sss
   ReplacementText: "sycl::get_kernel_info<sycl::info::kernel::work_group_size>(kernel)"
   IsOpenSource: false
