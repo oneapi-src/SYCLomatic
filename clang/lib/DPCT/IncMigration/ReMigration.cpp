@@ -11,14 +11,15 @@
 
 namespace clang::dpct {
 
-static void dumpGitDiffChanges(const clang::tooling::GitDiffChanges& GHC) {
+static void dumpGitDiffChanges(const clang::tooling::GitDiffChanges &GHC) {
   llvm::errs() << "GitDiffChanges:\n";
   llvm::errs() << "  ModifyFileHunks:\n";
   for (const auto &Hunk : GHC.ModifyFileHunks) {
     llvm::errs() << "    - FilePath:        " << Hunk.getFilePath() << "\n";
     llvm::errs() << "      Offset:          " << Hunk.getOffset() << "\n";
     llvm::errs() << "      Length:          " << Hunk.getLength() << "\n";
-    llvm::errs() << "      ReplacementText: " << Hunk.getReplacementText() << "\n";
+    llvm::errs() << "      ReplacementText: " << Hunk.getReplacementText()
+                 << "\n";
   }
   llvm::errs() << "  AddFileHunks:\n";
   for (const auto &Hunk : GHC.AddFileHunks) {
@@ -33,7 +34,8 @@ static void dumpGitDiffChanges(const clang::tooling::GitDiffChanges& GHC) {
     llvm::errs() << "    - FilePath:        " << Hunk.getFilePath() << "\n";
     llvm::errs() << "      Offset:          " << Hunk.getOffset() << "\n";
     llvm::errs() << "      Length:          " << Hunk.getLength() << "\n";
-    llvm::errs() << "      ReplacementText: " << Hunk.getReplacementText() << "\n";
+    llvm::errs() << "      ReplacementText: " << Hunk.getReplacementText()
+                 << "\n";
     llvm::errs() << "      NewFilePath:     " << Hunk.getNewFilePath() << "\n";
   }
 }
