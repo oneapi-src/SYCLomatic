@@ -11,7 +11,7 @@
 
 namespace clang::dpct {
 
-int tryLoadingUpstreamChangesAndUserChanges() {
+void tryLoadingUpstreamChangesAndUserChanges() {
   llvm::SmallString<128> UpstreamChangesFilePath(
       DpctGlobalInfo::getInRoot().getCanonicalPath());
   llvm::SmallString<128> UserChangesFilePath(
@@ -21,9 +21,12 @@ int tryLoadingUpstreamChangesAndUserChanges() {
 
   clang::tooling::GitDiffChanges UpstreamChanges;
   clang::tooling::GitDiffChanges UserChanges;
-  loadGDCFromYaml(UpstreamChangesFilePath, UpstreamChanges);
-  loadGDCFromYaml(UserChangesFilePath, UserChanges);
 
-  return 0;
+  if (llvm::sys::fs::exists(UpstreamChangesFilePath)) {
+    loadGDCFromYaml(UpstreamChangesFilePath, UpstreamChanges);
+  }
+  if (llvm::sys::fs::exists(UserChangesFilePath)) {
+    loadGDCFromYaml(UserChangesFilePath, UserChanges);
+  }
 }
 } // namespace clang::dpct

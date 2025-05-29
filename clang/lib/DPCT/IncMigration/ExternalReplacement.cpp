@@ -118,9 +118,14 @@ int loadTUFromYaml(const clang::tooling::UnifiedPath &Input,
   return 0;
 }
 
-int loadGDCFromYaml(const clang::tooling::UnifiedPath &Input,
-                    clang::tooling::GitDiffChanges &GDC) {
-  return loadFromYaml(Input, GDC);
+void loadGDCFromYaml(const clang::tooling::UnifiedPath &Input,
+                     clang::tooling::GitDiffChanges &GDC) {
+  int status = loadFromYaml(Input, GDC);
+  if (status) {
+    llvm::errs() << "Failed to load git diff Changes from "
+                 << Input.getCanonicalPath() << "\n";
+    GDC = clang::tooling::GitDiffChanges();
+  }
 }
 
 void mergeAndUniqueReps(

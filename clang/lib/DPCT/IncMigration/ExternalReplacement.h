@@ -35,8 +35,8 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
                       clang::tooling::Replacements &Replaces);
 int loadTUFromYaml(const clang::tooling::UnifiedPath &Input,
                    clang::tooling::TranslationUnitReplacements &TU);
-int loadGDCFromYaml(const clang::tooling::UnifiedPath &Input,
-                    clang::tooling::GitDiffChanges &GDC);
+void loadGDCFromYaml(const clang::tooling::UnifiedPath &Input,
+                     clang::tooling::GitDiffChanges &GDC);
 int save2Yaml(
     clang::tooling::UnifiedPath &YamlFile,
     clang::tooling::UnifiedPath &SrcFileName,
@@ -50,7 +50,7 @@ void mergeAndUniqueReps(
     clang::tooling::Replacements &Replaces,
     const std::vector<clang::tooling::DpctReplacement> &PreRepls);
 
-int tryLoadingUpstreamChangesAndUserChanges();
+void tryLoadingUpstreamChangesAndUserChanges();
 } // namespace dpct
 } // namespace clang
 
