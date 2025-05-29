@@ -1405,6 +1405,12 @@ public:
   getAfterBitsStdcxxFilesMap() {
     return AfterBitsStdcxxFiles;
   }
+  static clang::tooling::GitDiffChanges &getUpstreamChanges() {
+    return UpstreamChanges;
+  }
+  static clang::tooling::GitDiffChanges &getUserChanges() {
+    return UserChanges;
+  }
   std::shared_ptr<DpctFileInfo>
   insertFile(const clang::tooling::UnifiedPath &FilePath) {
     return insertObject(FileMap, FilePath);
@@ -1747,6 +1753,8 @@ private:
   static std::map<clang::tooling::UnifiedPath /*MainFile*/,
                   std::set<clang::tooling::UnifiedPath>>
       AfterBitsStdcxxFiles;
+  static clang::tooling::GitDiffChanges UpstreamChanges;
+  static clang::tooling::GitDiffChanges UserChanges;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

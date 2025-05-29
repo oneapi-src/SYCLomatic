@@ -19,14 +19,12 @@ void tryLoadingUpstreamChangesAndUserChanges() {
   llvm::sys::path::append(UpstreamChangesFilePath, "UpstreamChanges.yaml");
   llvm::sys::path::append(UserChangesFilePath, "UserChanges.yaml");
 
-  clang::tooling::GitDiffChanges UpstreamChanges;
-  clang::tooling::GitDiffChanges UserChanges;
-
   if (llvm::sys::fs::exists(UpstreamChangesFilePath)) {
-    loadGDCFromYaml(UpstreamChangesFilePath, UpstreamChanges);
+    loadGDCFromYaml(UpstreamChangesFilePath,
+                    DpctGlobalInfo::getUpstreamChanges());
   }
   if (llvm::sys::fs::exists(UserChangesFilePath)) {
-    loadGDCFromYaml(UserChangesFilePath, UserChanges);
+    loadGDCFromYaml(UserChangesFilePath, DpctGlobalInfo::getUserChanges());
   }
 }
 } // namespace clang::dpct
