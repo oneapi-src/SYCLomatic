@@ -921,7 +921,6 @@ void genVerifiedCmpVer(const std::vector<clang::tooling::Replacement> &CmpVerRep
           std::string::npos) {
         // If the replacement text is already in the list, skip it.
         std::stringstream ss;
-        emitCompStatusWarning(CompStatus, ss);
 
         collectNewVerInfo(
           CompsInfo[CompStatus->CompType], CompStatus);

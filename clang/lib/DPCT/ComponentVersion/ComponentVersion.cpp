@@ -32,7 +32,7 @@ struct llvm::yaml::MappingTraits<std::shared_ptr<clang::dpct::CompStatus>> {
     io.mapOptional("IsOpenSource", Status->IsOpenSource);
     io.mapRequired("IsInNextOneAPIVersion", Status->IsInNextOneAPIVersion);
     io.mapOptional("Link", Status->Link);
-    io.mapOptional("Description", Status->Link);
+    io.mapOptional("Description", Status->Description);
   }
 };
 template <> struct llvm::yaml::ScalarEnumerationTraits<ComponentType> {
@@ -54,30 +54,23 @@ void DisplayComponentInfo(const ComponentInfo &Info) {
   std::cout << "  - " << Info.ComponentName << ": " << Info.ComponentVersion
             << ".\n";
 }
-void SupportedComponents() {
-  std::vector<ComponentInfo> Components = {{"DPCPP"},   {"oneDPL"}, {"oneMKL"},
-                                           {"oneDNNL"}, {"oneCCL"}, {"ISHMEM"}};
+void SupportedComponents(const  std::unordered_map<ComponentType, ComponentInfo>  &Components) {
 
   std::cout << "Supported components:\n";
+  std::stringstream ss;
   for (const auto &Component : Components) {
-    DisplayComponentInfo(Component);
+    DisplayComponentInfo(Component.second);
+    for (const auto& Des : Component.second.ComponentDes) {
+      ss << "  - " << Des << "\n";
+    }
   }
-}
-
-void emitCompStatusWarning(std::shared_ptr<clang::dpct::CompStatus> Status,
-                           std::stringstream &ss) {
-  ss << "The feature " << Status->Feature << " is supported in the "
-     << Status->SupportedVersion << " daily build. ";
-  if (Status->IsOpenSource) {
-    ss << "This feature is open-source. ";
-  }
-  if (!Status->Link.empty()) {
-    ss << "For more details, please refer to the provided link: "
-       << Status->Link << ". ";
+  if (!ss.str().empty()) {
+    std::cout << "\nDetails:\n";
+    std::cout << ss.str();
   }
 
-  ss << "\n";
 }
+
 
 void printWarning(std::stringstream &ss,
                   const std::shared_ptr<clang::dpct::CompStatus> &Status,
@@ -94,8 +87,8 @@ void collectNewVerInfo(ComponentInfo &Info,
   std::string Description = "";
   Description += "The feature " + Status->Feature;
   if (Status->IsOpenSource) {
-    Description += " is supported in the " + Status->SupportedVersion + ". ";
-    Info.ComponentVersion = Status->SupportedVersion;
+    Description += " is supported in " + Info.ComponentName + " " + Status->SupportedVersion + ". ";
+    Info.ComponentVersion = Status->SupportedVersion + " (open source). ";
   } else {
     if (Status->IsInNextOneAPIVersion) {
       Description += " is supported in the next oneAPI version. ";
@@ -106,6 +99,7 @@ void collectNewVerInfo(ComponentInfo &Info,
         "For more details, please refer to the provided link: " + Status->Link +
         ". \n";
   }
+  // std::cout <<Description << "\n";
   Info.ComponentDes.push_back(Description);
 }
 
@@ -121,7 +115,6 @@ void importStatus(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
   yin >> NewCompsStatus;
   std::stringstream ss;
   DpctGlobalInfo::setSupportedCompsStatus(NewCompsStatus);
-  SupportedComponents();
   if (NewCompsStatus.empty()) {
     return;
   }
@@ -138,6 +131,8 @@ void importStatus(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
   for (auto &CompStatus : NewCompsStatus) {
     collectNewVerInfo(Components[CompStatus->CompType], CompStatus);
   }
+  SupportedComponents(Components);
+
 }
 
 } // namespace dpct

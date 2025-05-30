@@ -44,8 +44,7 @@ public:
 
 void importStatus(std::vector<clang::tooling::UnifiedPath> &RuleFiles);
 
-void emitCompStatusWarning(std::shared_ptr<clang::dpct::CompStatus> Stats,
-                           std::stringstream &StrStream);
+
 void collectNewVerInfo(ComponentInfo &Info,
                        const std::shared_ptr<clang::dpct::CompStatus> &Status);
 } // namespace dpct
