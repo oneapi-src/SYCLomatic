@@ -586,6 +586,14 @@ public:
   std::optional<std::string> rewrite() override { return NewFuncName; }
 };
 
+// No replacement generated
+class EmptyRewriter : public CallExprRewriter {
+public:
+  EmptyRewriter(const CallExpr *, StringRef, StringRef)
+      : CallExprRewriter(Call, SourceCalleeName) {}
+  std::optional<std::string> rewrite() override { return std::nullopt; }
+};
+
 struct ThrustFunctor {
   ThrustFunctor(const clang::Expr *E) : E(E) {}
   const clang::Expr *E;
@@ -1141,6 +1149,14 @@ template <class ET> class ParenExprPrinter {
 public:
   ParenExprPrinter(ET &&E) : E(std::forward<ET>(E)) {}
   template <class StreamT> void print(StreamT &Stream) const {
+    if constexpr (std::is_base_of_v<
+                      clang::Stmt,
+                      std::remove_cv_t<std::remove_pointer_t<ET>>>) {
+      if (isa<DeclRefExpr>(E->IgnoreImpCasts())) {
+        dpct::print(Stream, E);
+        return;
+      }
+    }
     PairedPrinter PP(Stream, "(", ")");
     dpct::print(Stream, E);
   }
