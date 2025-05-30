@@ -631,7 +631,7 @@ protected:
   inline void analyzeExpr(const ExprWithCleanups *EWC) {
     dispatch(EWC->getSubExpr());
   }
-
+  void analyzeExpr(const CXXDependentScopeMemberExpr *CDSME);
   void analyzeExpr(const CXXConstructExpr *Ctor);
   void analyzeExpr(const CXXTemporaryObjectExpr *Temp);
   void analyzeExpr(const CXXUnresolvedConstructExpr *Ctor);
