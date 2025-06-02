@@ -23,6 +23,7 @@ Frequently Asked Questions
 * `How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?`_
 * `Why do I get "warning: shift count >= width of type" when I compile migrated code with the Intel® oneAPI DPC++/C++ Compiler?`_
 * `How do I resolve missing include errors that occur when migrating my code?`_
+* `How do I set up a flag to filter out additional options while migrating?`_
 
 General Information
 -------------------
@@ -502,3 +503,11 @@ ways:
 * If you are using a compilation database, add the ``-I<extra include path>``
   option to the compile command in the database for the source files, to 
   specify the include path.
+
+How do I set up a flag to filter out additional options while migrating?
+************************************************************************
+
+Additional Flag options may not be recognized by the tool, so they may need
+manual intervention. You can manually use the flag ``-ignore-unknown`` to ignore
+the unknown options after migration. You can enable the ``-ignore-unknown`` flag
+from the Visual Studio DPCT window.
