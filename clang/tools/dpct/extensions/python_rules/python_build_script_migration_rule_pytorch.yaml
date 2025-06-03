@@ -18,14 +18,6 @@
   In: CUDAExtension
   Out: CppExtension
 
-- Rule: rule_include_dirs
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: include_dirs
-  In: CppExtension(${args})
-  Out: CppExtension(${args}, include_dirs=cpp_extension.include_paths('xpu'),)
-
 - Rule: rule_cpp_extension_load_no_extra_cflags
   Kind: PythonRule
   Priority: Fallback
