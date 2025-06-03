@@ -344,9 +344,8 @@ The values are:
 - ``=device_info``: Disable the Intel extensions for device information, if supported
   by the compiler and the backend. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_intel_device_info.md>`__.
 - ``=enqueued_barriers``: Disable the enqueued barriers extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_enqueue_barrier.asciidoc>`__.
-- ``=free-function-queries``: Disable the free function query experimental extension
-  that allows getting ``id``, ``item``, ``nd_item``, ``group``, and ``sub_group`` instances
-  globally.
+- ``=free-function-queries``: Disable the free function query experimental extension 
+  that allows getting ``id``, ``item``, ``nd_item``, ``group``, and ``sub_group`` instances globally.
 - ``=peer_access``: Disable the peer access extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_peer_access.asciidoc>`__.
 - ``=assert``: Disable the assert extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_assert.asciidoc>`__.
 - ``=queue_empty``: Disable the queue empty extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_queue_empty.asciidoc>`__.
@@ -684,9 +683,8 @@ The values are:
   `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc>`__.
 - ``=dpl-experimental-api``: Experimental extension that allows use of experimental
   oneDPL APIs. `See more details <https://github.com/oneapi-src/oneDPL/tree/main/include/oneapi/dpl/pstl/experimental>`__.
-- ``=free-function-queries``: DEPRECATED. Experimental extension that allows getting ``id``,
-  ``item``, ``nd_item``, ``group``, and ``sub_group`` instances globally. Deprecate this option
-  as the feature is turned on by default.
+- ``=free-function-queries``: DEPRECATED. Experimental extension that allows getting ``id``, 
+  ``item``, ``nd_item``, ``group``, and ``sub_group`` instances globally. Deprecate this option as the feature is turned on by default.
 - ``=local-memory-kernel-scope-allocation``: Experimental extension that
   allows allocation of local memory objects at the kernel functor scope. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_local_memory.asciidoc>`__.
 - ``=logical-group``: Experimental helper function used to logically
