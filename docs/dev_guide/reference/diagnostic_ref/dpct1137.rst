@@ -8,7 +8,7 @@ Message
 
 .. _msg-1137-start:
 
-ASM instruction "<instruction>" is asynchronous copy, currently it is migrated to synchronous copy
+ASM instruction ``<instruction>`` is asynchronous copy, currently it is migrated to synchronous copy
 operation. You may need to adjust the code to tune the performance.
 
 .. _msg-1137-end:
@@ -17,7 +17,7 @@ Detailed Help
 -------------
 
 You may need to adjust the code to tune the performance because the asynchronous copy ASM
-instruction “cp.async” has been migrated to synchronous copy operation.
+instruction ``cp.async`` has been migrated to synchronous copy operation.
 
 Suggestions to Fix
 ------------------
