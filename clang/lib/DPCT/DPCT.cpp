@@ -976,7 +976,8 @@ int runDPCT(int argc, const char **argv) {
     showReportHeader();
   
   ExtraIncPaths = OptParser->getExtraIncPathList();
-  if (SupportedComps) {
+  
+  {
     SmallString<128> FilePath1(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(FilePath1,
                             Twine("extensions/supported_components/component_version.yaml"));
@@ -987,8 +988,10 @@ int runDPCT(int argc, const char **argv) {
     std::vector<clang::tooling::UnifiedPath> SupportedComponents{
         llvm::sys::fs::exists(FilePath1) ? FilePath1.c_str()
                                          : FilePath2.c_str()};
-    std::cout << SupportedComponents[0].getPath().str() << "\n";
     importStatus(SupportedComponents);
+  }
+  if (SupportedComps) {
+    showSupportedComponents(SupportedComps);
     return 0;
   }
   if (isCUDAHeaderRequired()) {

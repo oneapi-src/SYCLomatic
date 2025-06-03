@@ -3,7 +3,7 @@
   SupportedVersion: 20250526
   ComponentType: Compiler
   Link: https:github.com/oneapi-src/oneAPI-sycl/issues/444sss
-  ReplacementText: "sycl::get_kernel_info<sycl::info::kernel::work_group_size>(kernel)"
+  ReplacementText: "this_work_item"
   IsOpenSource: true
   IsInNextOneAPIVersion: true
   Description: Free Function query for SYCL is supported. and user can use it to query the kernel info in the kernel function directly

@@ -912,7 +912,8 @@ void genCodePinHeader(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
   RS << "#endif" << getNL();
 }
 
-void genVerifiedCmpVer(const std::vector<clang::tooling::Replacement> &CmpVerRepls) {
+void genVerifiedCmpVer(
+    const std::vector<clang::tooling::Replacement> &CmpVerRepls) {
   auto CompStatusList = dpct::DpctGlobalInfo::getSupportedCompsStatus();
   auto CompsInfo = dpct::DpctGlobalInfo::getSupportedComponentInfo();
   for (auto CompStatus : CompStatusList) {
@@ -920,15 +921,11 @@ void genVerifiedCmpVer(const std::vector<clang::tooling::Replacement> &CmpVerRep
       if (Repl.getReplacementText().str().find(CompStatus->ReplacementText) !=
           std::string::npos) {
         // If the replacement text is already in the list, skip it.
-        std::stringstream ss;
-
-        collectNewVerInfo(
-          CompsInfo[CompStatus->CompType], CompStatus);
-        PrintMsg(ss.str());
-        return;
+        collectNewVerInfo(CompsInfo[CompStatus->CompType], CompStatus);
       }
     }
   }
+  showSupportedComponents();
 }
 /// Apply all generated replacements, and immediately save the results to files
 /// in output directory.

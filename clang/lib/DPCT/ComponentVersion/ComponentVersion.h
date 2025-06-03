@@ -44,7 +44,7 @@ public:
 
 void importStatus(std::vector<clang::tooling::UnifiedPath> &RuleFiles);
 
-
+void showSupportedComponents(bool isPrintOverall = false);
 void collectNewVerInfo(ComponentInfo &Info,
                        const std::shared_ptr<clang::dpct::CompStatus> &Status);
 } // namespace dpct

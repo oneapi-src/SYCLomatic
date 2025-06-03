@@ -50,36 +50,37 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<ComponentType> {
 
 namespace clang {
 namespace dpct {
-void DisplayComponentInfo(const ComponentInfo &Info) {
-  std::cout << "  - " << Info.ComponentName << ": " << Info.ComponentVersion
-            << ".\n";
-}
-void SupportedComponents(const  std::unordered_map<ComponentType, ComponentInfo>  &Components) {
 
-  std::cout << "Supported components:\n";
-  std::stringstream ss;
-  for (const auto &Component : Components) {
-    DisplayComponentInfo(Component.second);
-    for (const auto& Des : Component.second.ComponentDes) {
-      ss << "  - " << Des << "\n";
+void DisplayOverallComponentInfo(
+    const std::unordered_map<ComponentType, ComponentInfo>
+        &SupportedComponentInfo) {
+  std::stringstream ComponentOverallLog;
+  ComponentOverallLog << "Supported components:\n";
+  for (const auto &Component : SupportedComponentInfo) {
+    ComponentOverallLog << "  - " << Component.second.ComponentName << ": "
+                        << Component.second.ComponentVersion << ".\n";
+  }
+  std::cout << ComponentOverallLog.str();
+}
+
+void DisplayComponentDetailsInfo(
+    const std::unordered_map<ComponentType, ComponentInfo>
+        &SupportedComponentInfo) {
+  std::stringstream ComponentDetailLog;
+  ComponentDetailLog << "\nSupport Component details:\n";
+  for (const auto &Component : SupportedComponentInfo) {
+    for (const auto &Des : Component.second.ComponentDes) {
+      ComponentDetailLog << "  - " << Des << "\n";
     }
   }
-  if (!ss.str().empty()) {
-    std::cout << "\nDetails:\n";
-    std::cout << ss.str();
-  }
-
+  std::cout << ComponentDetailLog.str() << "\n";
 }
 
-
-void printWarning(std::stringstream &ss,
-                  const std::shared_ptr<clang::dpct::CompStatus> &Status,
-                  std::string &ComponentType) {
-  ss << ComponentType;
-  if (Status->IsOpenSource) {
-    ss << Status->SupportedVersion << "\n";
-  } else {
-  }
+void showSupportedComponents(bool isPrintOverall) {
+  auto SupportedComponentInfo = DpctGlobalInfo::getSupportedComponentInfo();
+  if (isPrintOverall)
+    DisplayOverallComponentInfo(SupportedComponentInfo);
+  DisplayComponentDetailsInfo(SupportedComponentInfo);
 }
 
 void collectNewVerInfo(ComponentInfo &Info,
@@ -87,8 +88,18 @@ void collectNewVerInfo(ComponentInfo &Info,
   std::string Description = "";
   Description += "The feature " + Status->Feature;
   if (Status->IsOpenSource) {
-    Description += " is supported in " + Info.ComponentName + " " + Status->SupportedVersion + ". ";
-    Info.ComponentVersion = Status->SupportedVersion + " (open source). ";
+    Description += " is supported in " + Info.ComponentName + " open source " +
+                   Status->SupportedVersion + ". ";
+    if (!Info.ComponentVersion.empty()) {
+      if (Info.ComponentVersion.find("oneAPI") == std::string::npos) {
+        long orgDate = stoi(Info.ComponentVersion);
+        long newDate = stoi(Status->SupportedVersion);
+        if (orgDate < newDate)
+          Info.ComponentVersion = Status->SupportedVersion;
+      } else {
+        Info.ComponentVersion = Status->SupportedVersion;
+      }
+    }
   } else {
     if (Status->IsInNextOneAPIVersion) {
       Description += " is supported in the next oneAPI version. ";
@@ -99,7 +110,6 @@ void collectNewVerInfo(ComponentInfo &Info,
         "For more details, please refer to the provided link: " + Status->Link +
         ". \n";
   }
-  // std::cout <<Description << "\n";
   Info.ComponentDes.push_back(Description);
 }
 
@@ -126,13 +136,11 @@ void importStatus(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
       {ComponentType::oneDNNL, ComponentInfo("oneDNNL")},
       {ComponentType::oneCCL, ComponentInfo("oneCCL")},
       {ComponentType::ISHMEM, ComponentInfo("ISHMEM")}};
-  DpctGlobalInfo::setSupportedComponentInfo(Components);
 
   for (auto &CompStatus : NewCompsStatus) {
     collectNewVerInfo(Components[CompStatus->CompType], CompStatus);
   }
-  SupportedComponents(Components);
-
+  DpctGlobalInfo::setSupportedComponentInfo(Components);
 }
 
 } // namespace dpct
