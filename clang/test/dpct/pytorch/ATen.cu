@@ -28,6 +28,7 @@
 // END_1
 
 // CHECK: #include <c10/xpu/XPUMacros.h>
+// CHECK: #include <c10/core/DeviceGuard.h>
 #include <c10/cuda/CUDAMacros.h>
 
 #define AT_CUDA_CHECK(stmt)  (stmt)
@@ -80,4 +81,9 @@ int main() {
 // CHECK-NEXT: (DPCT_CHECK_ERROR(f = (float *)sycl::malloc_device(4, c10::xpu::getCurrentXPUStream().queue())));
 void foo2(at::cuda::CUDAGuard device_guard, float *f) {
   C10_CUDA_CHECK(cudaMalloc(&f, 4));
+}
+
+void foo3(at::Tensor x) {
+  // CHECK: c10::DeviceGuard device_guard{c10::Device(at::kXPU, (char)x.get_device())};
+  at::cuda::CUDAGuard device_guard{(char)x.get_device()};
 }

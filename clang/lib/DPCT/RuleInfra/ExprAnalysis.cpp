@@ -1223,6 +1223,9 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   if (Iter != MapNames::TypeNamesMap.end()) {
     HelperFeatureSet.insert(Iter->second->RequestFeature);
     requestHelperFeatureForTypeNames(TyName);
+    for (const auto &Include : Iter->second->Includes) {
+      DpctGlobalInfo::getInstance().insertHeader(SR.getBegin(), Include);
+    }
   } else {
     Iter = MapNamesDNN::CuDNNTypeNamesMap.find(TyName);
     if (Iter != MapNamesDNN::CuDNNTypeNamesMap.end()) {
