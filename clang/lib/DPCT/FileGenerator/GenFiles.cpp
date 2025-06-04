@@ -440,6 +440,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
   }
 }
 
+
 static void getMainSrcFilesRepls(
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls) {
   auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();

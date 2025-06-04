@@ -10,9 +10,7 @@
 #define __EXTERNAL_REPLACEMENT_H__
 
 #include "clang/Tooling/Core/Replacement.h"
-#include "clang/Tooling/Core/UnifiedPath.h"
 #include "llvm/ADT/StringRef.h"
-
 #include <map>
 #include <vector>
 

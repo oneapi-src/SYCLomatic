@@ -37,7 +37,6 @@
 
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
-#include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Core/UnifiedPath.h"
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D);

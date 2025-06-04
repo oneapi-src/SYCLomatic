@@ -14,9 +14,11 @@
 
 #ifndef LLVM_CLANG_TOOLING_REPLACEMENTSYAML_H
 #define LLVM_CLANG_TOOLING_REPLACEMENTSYAML_H
+
 #include "clang/Tooling/Refactoring.h"
 #include "llvm/Support/YAMLTraits.h"
 #include <string>
+
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::Replacement)
 #ifdef SYCLomatic_CUSTOMIZATION
 // Keep here only for backward compatibility - begin
@@ -52,6 +54,7 @@ ScalarEnumerationTraits<clang::tooling::Hunk::HunkType>::enumeration(
 
 namespace llvm {
 namespace yaml {
+
 /// Specialized MappingTraits to describe how a Replacement is
 /// (de)serialized.
 template <> struct MappingTraits<clang::tooling::Replacement> {
@@ -150,18 +153,22 @@ template <> struct MappingTraits<clang::tooling::MainSourceFileInfo> {
 
     NormalizedMainSourceFilesDigest(const IO &)
         : MainSourceFile(""), Digest(""), HasCUDASyntax(false) {}
+
     NormalizedMainSourceFilesDigest(const IO &,
                                     clang::tooling::MainSourceFileInfo &R)
         : MainSourceFile(R.MainSourceFile), Digest(R.Digest),
           HasCUDASyntax(R.HasCUDASyntax) {}
+
     clang::tooling::MainSourceFileInfo denormalize(const IO &) {
       return clang::tooling::MainSourceFileInfo(MainSourceFile, Digest,
                                                 HasCUDASyntax);
     }
+
     std::string MainSourceFile = "";
     std::string Digest = "";
     bool HasCUDASyntax = false;
   };
+
   static void mapping(IO &Io, clang::tooling::MainSourceFileInfo &R) {
     MappingNormalization<NormalizedMainSourceFilesDigest,
                          clang::tooling::MainSourceFileInfo>
@@ -171,14 +178,18 @@ template <> struct MappingTraits<clang::tooling::MainSourceFileInfo> {
     Io.mapOptional("HasCUDASyntax", Keys->HasCUDASyntax);
   }
 };
+
 template <> struct MappingTraits<clang::tooling::CompilationInfo> {
   struct NormalizedCompileCmds {
+
     NormalizedCompileCmds(const IO &)
         : MigratedFileName(""), CompileOptions(""), Compiler(""){}
+
     NormalizedCompileCmds(const IO &, clang::tooling::CompilationInfo &CmpInfo)
         : MigratedFileName(CmpInfo.MigratedFileName),
           CompileOptions(CmpInfo.CompileOptions),
           Compiler(CmpInfo.Compiler) {}
+
     clang::tooling::CompilationInfo denormalize(const IO &) {
       clang::tooling::CompilationInfo CmpInfo;
       CmpInfo.MigratedFileName = MigratedFileName;
@@ -186,10 +197,12 @@ template <> struct MappingTraits<clang::tooling::CompilationInfo> {
       CmpInfo.Compiler = Compiler;
       return CmpInfo;
     }
+
     std::string MigratedFileName;
     std::string CompileOptions;
     std::string Compiler;
   };
+
   static void mapping(IO &Io, clang::tooling::CompilationInfo &CmpInfo) {
     MappingNormalization<NormalizedCompileCmds, clang::tooling::CompilationInfo>
         Keys(Io, CmpInfo);
@@ -198,12 +211,14 @@ template <> struct MappingTraits<clang::tooling::CompilationInfo> {
     Io.mapOptional("Compiler", Keys->Compiler);
   }
 };
+
 template <> struct MappingTraits<clang::tooling::OptionInfo> {
   struct NormalizedOptionInfo {
     NormalizedOptionInfo(const IO &) : Value(""), Specified(true) {}
     NormalizedOptionInfo(const IO &, clang::tooling::OptionInfo &OptInfo)
         : Value(OptInfo.Value), ValueVec(OptInfo.ValueVec),
           Specified(OptInfo.Specified) {}
+
     clang::tooling::OptionInfo denormalize(const IO &) {
       clang::tooling::OptionInfo OptInfo;
       OptInfo.Value = Value;
@@ -215,6 +230,7 @@ template <> struct MappingTraits<clang::tooling::OptionInfo> {
     std::vector<std::string> ValueVec;
     bool Specified;
   };
+
   static void mapping(IO &Io, clang::tooling::OptionInfo &OptInfo) {
     MappingNormalization<NormalizedOptionInfo, clang::tooling::OptionInfo> Keys(
         Io, OptInfo);

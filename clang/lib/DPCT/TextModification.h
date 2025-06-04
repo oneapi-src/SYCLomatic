@@ -41,7 +41,7 @@ enum ReplacementType { RT_ForSYCLMigration = 0, RT_CUDAWithCodePin };
 class ExtReplacement : public tooling::Replacement {
 public:
   /// Creates an invalid (not applicable) replacement.
-  ExtReplacement() : Replacement() {};
+  ExtReplacement() : Replacement(){};
 
   /// Creates a replacement of the range [Offset, Offset+Length) in
   /// FilePath with ReplacementText.
@@ -49,12 +49,9 @@ public:
   /// \param FilePath A source file accessible via a SourceManager.
   /// \param Offset The byte offset of the start of the range in the file.
   /// \param Length The length of the range in bytes.
-  ExtReplacement(clang::tooling::UnifiedPath FilePath, unsigned Offset,
-                 unsigned Length, StringRef ReplacementText,
-                 const TextModification *_TM)
-      : Replacement(FilePath.getCanonicalPath(), Offset, Length,
-                    ReplacementText),
-        TM(_TM) {}
+  ExtReplacement(clang::tooling::UnifiedPath FilePath, unsigned Offset, unsigned Length,
+                 StringRef ReplacementText, const TextModification *_TM)
+      : Replacement(FilePath.getCanonicalPath(), Offset, Length, ReplacementText), TM(_TM) {}
 
   /// Creates a Replacement of the range [Start, Start+Length) with
   /// ReplacementText.
