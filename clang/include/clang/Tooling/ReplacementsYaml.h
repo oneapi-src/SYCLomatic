@@ -226,6 +226,7 @@ template <> struct MappingTraits<clang::tooling::OptionInfo> {
       OptInfo.Specified = Specified;
       return OptInfo;
     }
+
     std::string Value;
     std::vector<std::string> ValueVec;
     bool Specified;
