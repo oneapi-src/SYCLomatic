@@ -6,12 +6,23 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "ReMigration.h"
+
 #include "AnalysisInfo.h"
 #include "ExternalReplacement.h"
 
 namespace clang::dpct {
-
-static void dumpGitDiffChanges(const clang::tooling::GitDiffChanges &GHC) {
+static GitDiffChanges UpstreamChanges;
+static GitDiffChanges UserChanges;
+AddFileHunk::AddFileHunk(std::string NewFilePath)
+    : Hunk(AddFile),
+      NewFilePath(tooling::UnifiedPath(NewFilePath).getCanonicalPath()) {}
+DeleteFileHunk::DeleteFileHunk(std::string OldFilePath)
+    : Hunk(DeleteFile),
+      OldFilePath(tooling::UnifiedPath(OldFilePath).getCanonicalPath()) {}
+GitDiffChanges &getUpstreamChanges() { return UpstreamChanges; }
+GitDiffChanges &getUserChanges() { return UserChanges; }
+static void dumpGitDiffChanges(const GitDiffChanges &GHC) {
   llvm::errs() << "GitDiffChanges:\n";
   llvm::errs() << "  ModifyFileHunks:\n";
   for (const auto &Hunk : GHC.ModifyFileHunks) {
@@ -49,11 +60,10 @@ void tryLoadingUpstreamChangesAndUserChanges() {
   llvm::sys::path::append(UserChangesFilePath, "UserChanges.yaml");
 
   if (llvm::sys::fs::exists(UpstreamChangesFilePath)) {
-    loadGDCFromYaml(UpstreamChangesFilePath,
-                    DpctGlobalInfo::getUpstreamChanges());
+    ::loadGDCFromYaml(UpstreamChangesFilePath, getUpstreamChanges());
   }
   if (llvm::sys::fs::exists(UserChangesFilePath)) {
-    loadGDCFromYaml(UserChangesFilePath, DpctGlobalInfo::getUserChanges());
+    ::loadGDCFromYaml(UserChangesFilePath, getUserChanges());
   }
 }
 } // namespace clang::dpct

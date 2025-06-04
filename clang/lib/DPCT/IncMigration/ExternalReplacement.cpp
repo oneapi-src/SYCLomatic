@@ -119,12 +119,12 @@ int loadTUFromYaml(const clang::tooling::UnifiedPath &Input,
 }
 
 void loadGDCFromYaml(const clang::tooling::UnifiedPath &Input,
-                     clang::tooling::GitDiffChanges &GDC) {
+                     clang::dpct::GitDiffChanges &GDC) {
   int status = loadFromYaml(Input, GDC);
   if (status) {
     llvm::errs() << "Failed to load git diff Changes from "
                  << Input.getCanonicalPath() << "\n";
-    GDC = clang::tooling::GitDiffChanges();
+    GDC = clang::dpct::GitDiffChanges();
   }
 }
 

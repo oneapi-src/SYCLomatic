@@ -9,8 +9,8 @@
 #ifndef __EXTERNAL_REPLACEMENT_H__
 #define __EXTERNAL_REPLACEMENT_H__
 
-#include "clang/Tooling/Core/Replacement.h"
-#include "llvm/ADT/StringRef.h"
+#include "IncMigration/ReMigration.h"
+
 #include <map>
 #include <vector>
 
@@ -34,7 +34,7 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
 int loadTUFromYaml(const clang::tooling::UnifiedPath &Input,
                    clang::tooling::TranslationUnitReplacements &TU);
 void loadGDCFromYaml(const clang::tooling::UnifiedPath &Input,
-                     clang::tooling::GitDiffChanges &GDC);
+                     clang::dpct::GitDiffChanges &GDC);
 int save2Yaml(
     clang::tooling::UnifiedPath &YamlFile,
     clang::tooling::UnifiedPath &SrcFileName,

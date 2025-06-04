@@ -723,13 +723,6 @@ std::map<std::string, Replacements> groupReplacementsByFile(
   }
   return Result;
 }
-#ifdef SYCLomatic_CUSTOMIZATION
-AddFileHunk::AddFileHunk(std::string NewFilePath)
-    : Hunk(AddFile), NewFilePath(UnifiedPath(NewFilePath).getCanonicalPath()) {}
-DeleteFileHunk::DeleteFileHunk(std::string OldFilePath)
-    : Hunk(DeleteFile),
-      OldFilePath(UnifiedPath(OldFilePath).getCanonicalPath()) {}
-#endif // SYCLomatic_CUSTOMIZATION
 
 } // namespace tooling
 } // namespace clang
