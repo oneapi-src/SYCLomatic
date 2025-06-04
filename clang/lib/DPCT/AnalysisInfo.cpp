@@ -2557,7 +2557,6 @@ bool DpctGlobalInfo::IsAfterBitsStdcxx = false;
 std::map<clang::tooling::UnifiedPath /*MainFile*/,
          std::set<clang::tooling::UnifiedPath>>
     DpctGlobalInfo::AfterBitsStdcxxFiles;
-
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
                                   llvm::raw_ostream &OS) {
