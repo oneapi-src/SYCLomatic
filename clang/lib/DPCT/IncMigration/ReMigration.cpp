@@ -7,11 +7,17 @@
 //===----------------------------------------------------------------------===//
 
 #include "ReMigration.h"
-
 #include "AnalysisInfo.h"
 #include "ExternalReplacement.h"
+
+#include "clang/AST/Expr.h"
 #include "clang/Tooling/Core/Replacement.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include <string>
+#include <unordered_map>
 
 namespace clang::dpct {
 static GitDiffChanges UpstreamChanges;
@@ -91,11 +97,162 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
 }
 
 std::map<std::string, std::vector<tooling::Replacement>>
-groupReplcementsFileByFile(
+groupReplcementsByFile(
     const std::vector<tooling::Replacement> &Repls) {
   std::map<std::string, std::vector<tooling::Replacement>> Result;
   for (const auto &R : Repls) {
     Result[R.getFilePath().str()].push_back(R);
+  }
+  return Result;
+}
+
+StringRef getLineString(clang::tooling::UnifiedPath FilePath,
+                        unsigned LineNumber) {
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
+  StringRef Line = FileInfo->getLineString(LineNumber);
+  return Line;
+}
+unsigned getLineNumber(clang::tooling::UnifiedPath FilePath, unsigned Offset) {
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
+  return FileInfo->getLineNumber(Offset);
+}
+unsigned getLineBeginOffset(clang::tooling::UnifiedPath FilePath,
+                            unsigned LineNumber) {
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
+  return FileInfo->getLineInfo(LineNumber).Offset;
+}
+
+std::map<unsigned, std::string>
+convertReplcementsLineString(const std::vector<tooling::Replacement> &Repls) {
+  tooling::UnifiedPath FilePath(Repls[0].getFilePath());
+
+  std::map<unsigned, std::string> Result;
+  std::vector<tooling::Replacement> SortedRepls = Repls;
+
+  std::sort(SortedRepls.begin(), SortedRepls.end(),
+            [](const tooling::Replacement &A, const tooling::Replacement &B) {
+              return A.getOffset() < B.getOffset();
+            });
+
+  for (const auto &Repl : SortedRepls) {
+    unsigned StartLine = getLineNumber(FilePath, Repl.getOffset());
+    unsigned EndLine =
+        getLineNumber(FilePath, Repl.getOffset() + Repl.getLength() - 1);
+
+    // process each line
+    for (unsigned Line = StartLine; Line <= EndLine; ++Line) {
+      std::string LineContent = getLineString(FilePath, Line).str();
+      unsigned LineStartOffset = getLineBeginOffset(FilePath, Line);
+      unsigned LineEndOffset = LineStartOffset + LineContent.size();
+
+      // calculate the replacement range within the line
+      unsigned ReplaceStart =
+          std::max(Repl.getOffset(), LineStartOffset) - LineStartOffset;
+      unsigned ReplaceEnd =
+          std::min(Repl.getOffset() + Repl.getLength(), LineEndOffset) -
+          LineStartOffset;
+
+      // do replace
+      if (Line == StartLine) {
+        LineContent.replace(
+            ReplaceStart, ReplaceEnd - ReplaceStart,
+            Repl.getReplacementText().substr(0, ReplaceEnd - ReplaceStart));
+      } else if (Line == EndLine) {
+        unsigned textStart =
+            Repl.getReplacementText().size() - (ReplaceEnd - ReplaceStart);
+        LineContent.replace(0, ReplaceEnd,
+                            Repl.getReplacementText().substr(textStart));
+      } else {
+        LineContent = Repl.getReplacementText().substr(
+            ReplaceStart, LineEndOffset - LineStartOffset);
+      }
+
+      Result[Line] = LineContent;
+    }
+  }
+  return Result;
+}
+
+std::map<unsigned, std::string>
+convertReplcementsLineString(const tooling::Replacements &Repls) {
+  std::vector<tooling::Replacement> ReplsVec;
+  for (const auto &R : Repls) {
+    ReplsVec.push_back(R);
+  }
+  return convertReplcementsLineString(ReplsVec);
+}
+
+std::vector<tooling::Replacement>
+convertMapToReplacements(const std::map<unsigned, std::string> &Map,
+                         const clang::tooling::UnifiedPath &FilePath) {
+  std::vector<clang::tooling::Replacement> Result;
+  for (const auto &Pair : Map) {
+    unsigned LineNumber = Pair.first;
+    StringRef LineContent = Pair.second;
+    unsigned Offset = getLineBeginOffset(FilePath, LineNumber);
+    Result.emplace_back(FilePath, Offset, LineContent.size(),
+                        LineContent.str());
+  }
+  return Result;
+}
+
+std::vector<tooling::Replacement>
+mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
+                const std::map<unsigned, std::string> &MapB,
+                const clang::tooling::UnifiedPath &FilePath) {
+  auto genReplacement = [&](unsigned LineNumber,
+                            const std::string &LineContent) {
+    unsigned Offset = getLineBeginOffset(FilePath, LineNumber);
+    return tooling::Replacement(FilePath.getCanonicalPath(), Offset,
+                                LineContent.size(), LineContent);
+  };
+
+  std::vector<tooling::Replacement> Result;
+  auto ItA = MapA.begin();
+  auto ItB = MapB.begin();
+
+  while (ItA != MapA.end() || ItB != MapB.end()) {
+    if (ItA == MapA.end()) {
+      Result.push_back(genReplacement(ItB->first, ItB->second));
+      ++ItB;
+    } else if (ItB == MapB.end()) {
+      Result.push_back(genReplacement(ItA->first, ItA->second));
+      ++ItA;
+    } else if (ItA->first < ItB->first) {
+      Result.push_back(genReplacement(ItA->first, ItA->second));
+      ++ItA;
+    } else if (ItB->first < ItA->first) {
+      Result.push_back(genReplacement(ItB->first, ItB->second));
+      ++ItB;
+    } else {
+      // Conflict line(s)
+      std::vector<std::string> ConflictA;
+      std::vector<std::string> ConflictB;
+      unsigned ConflictOffset = ItA->first;
+      unsigned ConflictLength = 0;
+
+      // Collect continuous conflicting lines
+      while (ItA != MapA.end() && ItB != MapB.end() &&
+             ItA->first == ItB->first) {
+        ConflictA.push_back(ItA->second);
+        ConflictB.push_back(ItB->second);
+        ++ItA;
+        ++ItB;
+        ConflictLength += ItA->second.size();
+      }
+
+      // generate merged string
+      std::string Merged = "<<<<<<<\n";
+      for (const auto &L : ConflictA)
+        Merged += L;
+      Merged += "=======\n";
+      for (const auto &L : ConflictB)
+        Merged += L;
+      Merged += ">>>>>>>\n";
+
+      Result.emplace_back(FilePath.getCanonicalPath(), ConflictOffset,
+                          ConflictLength, Merged);
+    }
   }
   return Result;
 }
@@ -136,9 +293,7 @@ groupReplcementsFileByFile(
 //    Repl_C_x will be ignored during this merge.
 // 2. Shfit Repl_C_y with Repl_A, called Repl_D.
 // 3. Merge Repl_D and Repl_B. May have conflicts.
-
-// !!!WIP!!!
-std::map<std::string, clang::tooling::Replacements>
+std::map<std::string, std::vector<clang::tooling::Replacement>>
 reMigrationMerge(const GitDiffChanges &Repl_A,
                  const std::vector<tooling::Replacement> &Repl_B,
                  const std::vector<tooling::Replacement> &Repl_C1,
@@ -213,36 +368,40 @@ reMigrationMerge(const GitDiffChanges &Repl_A,
 
   // Shift Repl_C_y with Repl_A(ModifiedParts)
   std::map<std::string, clang::tooling::Replacements> Repl_D;
-  for (const auto& Item: Repl_C_y) {
+  for (const auto &Item : Repl_C_y) {
     const auto &FilePath = Item.first;
     const auto &Repls = Item.second;
-
     // Check if the file has modified parts.
     const auto &It = ModifiedParts.find(FilePath);
     if (It == ModifiedParts.end()) {
       Repl_D[FilePath] = Repls;
       continue;
     }
-
     Repl_D[FilePath] = calculateUpdatedRanges(It->second, Repls);
   }
-  
+
   // Group Repl_B by file
-  const auto Repl_B_by_file = groupReplcementsFileByFile(Repl_B);
+  const auto Repl_B_by_file = groupReplcementsByFile(Repl_B);
   // Merge Repl_D and Repl_B
-  // 1. we need group the replacements by line number fisrt. For repl in the same line, we need merge them together.
-  // 2. then we should convert the replacements to a map <line_number, new_text>. We will have 2 maps.
-  // 3. we need a vector<offset /*line end offset*/> for current file (CUDA code 2)
-  // 4. merge by line, generate a new map <line_number, new_text (with git conflict mark)>
-  // 5. convert that map to Replacements.
-  for (const auto &Repls : Repl_B_by_file) {
-
-
+  // 1. we should convert the replacements to a map <line_number, new_text>. We will have 2 maps.
+  // 2. we need a vector<offset /*line end offset*/> for current file (CUDA code 2)
+  // 3. merge line by line
+  std::map<std::string, std::vector<clang::tooling::Replacement>> Result;
+  for (const auto &Pair : Repl_B_by_file) {
+    std::map<unsigned, std::string> ReplBInLines =
+        convertReplcementsLineString(Pair.second);
+    if (Repl_D.find(Pair.first) != Repl_D.end()) {
+      // Merge Repl_D and Repl_B
+      std::map<unsigned, std::string> ReplDInLines =
+          convertReplcementsLineString(Repl_D[Pair.first]);
+      Result[Pair.first] =
+          mergeMapsByLine(ReplBInLines, ReplDInLines, Pair.first);
+    } else {
+      // No Repl_D for this file, just add Repl_B.
+      Result[Pair.first] = Pair.second;
+    }
   }
 
-
-
-  std::map<std::string, clang::tooling::Replacements> Result;
   return Result;
 }
 } // namespace clang::dpct
