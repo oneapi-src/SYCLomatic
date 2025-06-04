@@ -190,7 +190,7 @@ convertMapToReplacements(const std::map<unsigned, std::string> &Map,
     unsigned LineNumber = Pair.first;
     StringRef LineContent = Pair.second;
     unsigned Offset = getLineBeginOffset(FilePath, LineNumber);
-    Result.emplace_back(FilePath, Offset, LineContent.size(),
+    Result.emplace_back(FilePath.getCanonicalPath(), Offset, LineContent.size(),
                         LineContent.str());
   }
   return Result;
