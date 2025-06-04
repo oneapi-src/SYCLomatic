@@ -54,7 +54,7 @@ enum class ConstantFlagType : int {
   HostDeviceInOnePass = 4
 };
 enum class HelperFileEnum : unsigned int;
-} // namespace dpct
+}
 #endif // SYCLomatic_CUSTOMIZATION
 namespace tooling {
 
@@ -139,6 +139,9 @@ public:
   unsigned getOffset() const { return ReplacementRange.getOffset(); }
   unsigned getLength() const { return ReplacementRange.getLength(); }
   StringRef getReplacementText() const { return ReplacementText; }
+#ifdef SYCLomatic_CUSTOMIZATION
+  void setReplacementText(const std::string Str) { ReplacementText = Str; }
+#endif // SYCLomatic_CUSTOMIZATION
   /// @}
 
   /// Applies the replacement on the Rewriter.
@@ -146,35 +149,8 @@ public:
 
   /// Returns a human readable string representation.
   std::string toString() const;
-
 #ifdef SYCLomatic_CUSTOMIZATION
-protected:
-#else
-private:
-#endif // SYCLomatic_CUSTOMIZATION
-  void setFromSourceLocation(const SourceManager &Sources, SourceLocation Start,
-                             unsigned Length, StringRef ReplacementText);
-  void setFromSourceRange(const SourceManager &Sources,
-                          const CharSourceRange &Range,
-                          StringRef ReplacementText,
-                          const LangOptions &LangOpts);
-
-  std::string FilePath;
-  Range ReplacementRange;
-  std::string ReplacementText;
-};
-
-#ifdef SYCLomatic_CUSTOMIZATION
-class DpctReplacement : public Replacement {
-public:
-  using Replacement::Replacement;
-  DpctReplacement(const Replacement &R) : Replacement(R) {}
-
-  void setReplacementText(const std::string Str) { ReplacementText = Str; }
-
-  void setBlockLevelFormatFlag(bool Flag = true) {
-    BlockLevelFormatFlag = Flag;
-  }
+  void setBlockLevelFormatFlag(bool Flag = true) { BlockLevelFormatFlag = Flag; }
   bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
   void setNotFormatFlag() { NotFormatFlag = true; }
   bool getNotFormatFlag() const { return NotFormatFlag; }
@@ -189,8 +165,20 @@ public:
   void setOffset(unsigned int Offset) {
     ReplacementRange = Range(Offset, ReplacementRange.getLength());
   }
+#endif // SYCLomatic_CUSTOMIZATION
 
 private:
+  void setFromSourceLocation(const SourceManager &Sources, SourceLocation Start,
+                             unsigned Length, StringRef ReplacementText);
+  void setFromSourceRange(const SourceManager &Sources,
+                          const CharSourceRange &Range,
+                          StringRef ReplacementText,
+                          const LangOptions &LangOpts);
+
+  std::string FilePath;
+  Range ReplacementRange;
+  std::string ReplacementText;
+#ifdef SYCLomatic_CUSTOMIZATION
   bool BlockLevelFormatFlag = false;
   bool NotFormatFlag = false;
   // Record the __constant__ variable is used in host, device or hostdevice
@@ -205,8 +193,8 @@ private:
   // appending "_host_ct1". Since the original name can only be collected when
   // it used in device code, so we need record it.
   std::string NewHostVarName = "";
-};
 #endif // SYCLomatic_CUSTOMIZATION
+};
 
 enum class replacement_error {
   fail_to_apply = 0,
@@ -277,9 +265,6 @@ inline bool operator!=(const Replacement &LHS, const Replacement &RHS) {
 /// offset (i.e. order-dependent).
 class Replacements {
 private:
-#ifdef SYCLomatic_CUSTOMIZATION
-  using Replacement = DpctReplacement;
-#endif // SYCLomatic_CUSTOMIZATION
   using ReplacementsImpl = std::set<Replacement>;
 
 public:
@@ -530,10 +515,8 @@ struct TranslationUnitReplacements {
   // Keep here only for backward compatibility - end
   std::map<std::string, std::vector<CompilationInfo>> CompileTargets;
   std::map<std::string, OptionInfo> OptionMap;
-  std::vector<DpctReplacement> Replacements;
-#else
-  std::vector<Replacement> Replacements;
 #endif // SYCLomatic_CUSTOMIZATION
+  std::vector<Replacement> Replacements;
 };
 
 /// Calculates the new ranges after \p Replaces are applied. These

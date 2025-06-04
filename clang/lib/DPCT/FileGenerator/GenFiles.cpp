@@ -441,7 +441,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
 }
 
 static void getMainSrcFilesRepls(
-    std::vector<clang::tooling::DpctReplacement> &MainSrcFilesRepls) {
+    std::vector<clang::tooling::Replacement> &MainSrcFilesRepls) {
   auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
   for (const auto &Entry : FileRelpsMap)
     for (const auto &Repl : Entry.second)
@@ -455,7 +455,7 @@ static void getMainSrcFilesInfo(
 }
 
 static void saveUpdatedMigrationDataIntoYAML(
-    std::vector<clang::tooling::DpctReplacement> &MainSrcFilesRepls,
+    std::vector<clang::tooling::Replacement> &MainSrcFilesRepls,
     std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesInfo,
     clang::tooling::UnifiedPath YamlFile, clang::tooling::UnifiedPath SrcFile,
     std::unordered_map<std::string, bool> &MainSrcFileMap) {
@@ -511,7 +511,7 @@ int writeReplacementsToFiles(
     clang::tooling::UnifiedPath &InRoot,
     std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesInfo,
     std::unordered_map<std::string, bool> &MainSrcFileMap,
-    std::vector<clang::tooling::DpctReplacement> &MainSrcFilesRepls,
+    std::vector<clang::tooling::Replacement> &MainSrcFilesRepls,
     std::unordered_map<clang::tooling::UnifiedPath,
                        std::vector<clang::tooling::Range>> &FileRangesMap,
     std::unordered_map<clang::tooling::UnifiedPath,
@@ -960,7 +960,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       CompileCmdsPerTarget[Entry.first] = Entry.second;
   }
 
-  std::vector<clang::tooling::DpctReplacement> MainSrcFilesRepls;
+  std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
   std::vector<clang::tooling::MainSourceFileInfo> MainSrcFilesInfo;
 
   if (ReplSYCL.empty()) {

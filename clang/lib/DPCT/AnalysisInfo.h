@@ -508,7 +508,7 @@ public:
   getConstantMacroTMSet() {
     return ConstantMacroTMSet;
   }
-  std::vector<tooling::DpctReplacement> &getReplacements() {
+  std::vector<tooling::Replacement> &getReplacements() {
     return PreviousTUReplFromYAML->Replacements;
   }
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>> &
@@ -1259,7 +1259,7 @@ public:
     return FileSetInCompilationDB;
   }
   static std::unordered_map<std::string,
-                            std::vector<clang::tooling::DpctReplacement>> &
+                            std::vector<clang::tooling::Replacement>> &
   getFileRelpsMap() {
     return FileRelpsMap;
   }
@@ -1659,7 +1659,7 @@ private:
   // value: The end location of the macro expansion
   static std::map<std::string, unsigned int> BeginOfEmptyMacros;
   static std::unordered_map<std::string,
-                            std::vector<clang::tooling::DpctReplacement>>
+                            std::vector<clang::tooling::Replacement>>
       FileRelpsMap;
   static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo>
       MsfInfoMap;

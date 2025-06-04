@@ -38,10 +38,10 @@ enum ReplacementType { RT_ForSYCLMigration = 0, RT_CUDAWithCodePin };
 /// AST Rule. Further Analysis Pass like Merge Pass can happen based
 /// on this meta info of Replacement.
 ///  eg. Replacement happen at same position may be merged to avoid conflict.
-class ExtReplacement : public tooling::DpctReplacement {
+class ExtReplacement : public tooling::Replacement {
 public:
   /// Creates an invalid (not applicable) replacement.
-  ExtReplacement() : DpctReplacement() {};
+  ExtReplacement() : Replacement() {};
 
   /// Creates a replacement of the range [Offset, Offset+Length) in
   /// FilePath with ReplacementText.
@@ -52,8 +52,8 @@ public:
   ExtReplacement(clang::tooling::UnifiedPath FilePath, unsigned Offset,
                  unsigned Length, StringRef ReplacementText,
                  const TextModification *_TM)
-      : DpctReplacement(FilePath.getCanonicalPath(), Offset, Length,
-                        ReplacementText),
+      : Replacement(FilePath.getCanonicalPath(), Offset, Length,
+                    ReplacementText),
         TM(_TM) {}
 
   /// Creates a Replacement of the range [Start, Start+Length) with
@@ -61,20 +61,20 @@ public:
   ExtReplacement(const SourceManager &Sources, SourceLocation Start,
                  unsigned Length, StringRef ReplacementText,
                  const TextModification *_TM)
-      : DpctReplacement(Sources, Start, Length, ReplacementText), TM(_TM) {}
+      : Replacement(Sources, Start, Length, ReplacementText), TM(_TM) {}
 
   /// Creates a Replacement of the given range with ReplacementText.
   ExtReplacement(const SourceManager &Sources, const CharSourceRange &Range,
                  StringRef ReplacementText, const TextModification *_TM,
                  const LangOptions &LangOpts = LangOptions())
-      : DpctReplacement(Sources, Range, ReplacementText, LangOpts), TM(_TM) {}
+      : Replacement(Sources, Range, ReplacementText, LangOpts), TM(_TM) {}
 
   /// Creates a Replacement of the node with ReplacementText.
   template <typename Node>
   ExtReplacement(const SourceManager &Sources, const Node &NodeToReplace,
                  StringRef ReplacementText, const TextModification *_TM,
                  const LangOptions &LangOpts = LangOptions())
-      : DpctReplacement(Sources, NodeToReplace, ReplacementText, LangOpts),
+      : Replacement(Sources, NodeToReplace, ReplacementText, LangOpts),
         TM(_TM) {}
   void setInsertPosition(InsertPosition IP) { InsertPos = IP; }
   unsigned int getInsertPosition() const { return InsertPos; }

@@ -14,11 +14,9 @@
 
 #ifndef LLVM_CLANG_TOOLING_REPLACEMENTSYAML_H
 #define LLVM_CLANG_TOOLING_REPLACEMENTSYAML_H
-
 #include "clang/Tooling/Refactoring.h"
 #include "llvm/Support/YAMLTraits.h"
 #include <string>
-
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::Replacement)
 #ifdef SYCLomatic_CUSTOMIZATION
 // Keep here only for backward compatibility - begin
@@ -31,7 +29,6 @@ LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::CompilationInfo>)
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::MainSourceFileInfo)
 LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::MainSourceFileInfo>)
 LLVM_YAML_IS_STRING_MAP(clang::tooling::OptionInfo)
-LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::DpctReplacement)
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::ModifyFileHunk)
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::AddFileHunk)
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::DeleteFileHunk)
@@ -55,49 +52,20 @@ ScalarEnumerationTraits<clang::tooling::Hunk::HunkType>::enumeration(
 
 namespace llvm {
 namespace yaml {
-
 /// Specialized MappingTraits to describe how a Replacement is
 /// (de)serialized.
 template <> struct MappingTraits<clang::tooling::Replacement> {
   /// Helper to (de)serialize a Replacement since we don't have direct
   /// access to its data members.
   struct NormalizedReplacement {
-    NormalizedReplacement(const IO &) : Offset(0), Length(0) {}
-
-    NormalizedReplacement(const IO &, const clang::tooling::Replacement &R)
-        : FilePath(R.getFilePath()), Offset(R.getOffset()),
-          Length(R.getLength()), ReplacementText(R.getReplacementText()) {}
-
-    clang::tooling::Replacement denormalize(const IO &) {
-      return clang::tooling::Replacement(FilePath, Offset, Length,
-                                         ReplacementText);
+#ifdef SYCLomatic_CUSTOMIZATION
+    NormalizedReplacement(const IO &)
+        : FilePath(""), Offset(0), Length(0), ReplacementText(""),
+          ConstantFlag(""), ConstantOffset(0), InitStr(""), NewHostVarName(""),
+          BlockLevelFormatFlag(false) {
     }
 
-    std::string FilePath;
-    unsigned int Offset;
-    unsigned int Length;
-    std::string ReplacementText;
-  };
-
-  static void mapping(IO &Io, clang::tooling::Replacement &R) {
-    MappingNormalization<NormalizedReplacement, clang::tooling::Replacement>
-        Keys(Io, R);
-    Io.mapRequired("FilePath", Keys->FilePath);
-    Io.mapRequired("Offset", Keys->Offset);
-    Io.mapRequired("Length", Keys->Length);
-    Io.mapRequired("ReplacementText", Keys->ReplacementText);
-  }
-};
-
-#ifdef SYCLomatic_CUSTOMIZATION
-template <> struct MappingTraits<clang::tooling::DpctReplacement> {
-  struct NormalizedDpctReplacement {
-    NormalizedDpctReplacement(const IO &io)
-        : Offset(0), Length(0), ConstantFlag(""), ConstantOffset(0),
-          InitStr(""), NewHostVarName(""), BlockLevelFormatFlag(false) {}
-
-    NormalizedDpctReplacement(const IO &io,
-                              const clang::tooling::DpctReplacement &R)
+    NormalizedReplacement(const IO &, const clang::tooling::Replacement &R)
         : FilePath(R.getFilePath()), Offset(R.getOffset()),
           Length(R.getLength()), ReplacementText(R.getReplacementText()),
           ConstantOffset(R.getConstantOffset()), InitStr(R.getInitStr()),
@@ -115,9 +83,9 @@ template <> struct MappingTraits<clang::tooling::DpctReplacement> {
       }
     }
 
-    clang::tooling::DpctReplacement denormalize(const IO &) {
-      clang::tooling::DpctReplacement R(FilePath, Offset, Length,
-                                        ReplacementText);
+    clang::tooling::Replacement denormalize(const IO &) {
+      auto R = clang::tooling::Replacement(FilePath, Offset, Length,
+                                           ReplacementText);
       if (ConstantFlag == "HostDeviceConstant") {
         R.setConstantFlag(clang::dpct::ConstantFlagType::HostDevice);
       } else if (ConstantFlag == "DeviceConstant") {
@@ -133,55 +101,67 @@ template <> struct MappingTraits<clang::tooling::DpctReplacement> {
       R.setBlockLevelFormatFlag(BlockLevelFormatFlag);
       return R;
     }
+#else
+    NormalizedReplacement(const IO &) : Offset(0), Length(0) {}
+
+    NormalizedReplacement(const IO &, const clang::tooling::Replacement &R)
+        : FilePath(R.getFilePath()), Offset(R.getOffset()),
+          Length(R.getLength()), ReplacementText(R.getReplacementText()) {}
+
+    clang::tooling::Replacement denormalize(const IO &) {
+      return clang::tooling::Replacement(FilePath, Offset, Length,
+                                         ReplacementText);
+    }
+#endif // SYCLomatic_CUSTOMIZATION
 
     std::string FilePath;
     unsigned int Offset;
     unsigned int Length;
     std::string ReplacementText;
+#ifdef SYCLomatic_CUSTOMIZATION
     std::string ConstantFlag = "";
     unsigned int ConstantOffset = 0;
     std::string InitStr = "";
     std::string NewHostVarName = "";
     bool BlockLevelFormatFlag = false;
+#endif // SYCLomatic_CUSTOMIZATION
   };
 
-  static void mapping(IO &Io, clang::tooling::DpctReplacement &R) {
-    MappingNormalization<NormalizedDpctReplacement,
-                         clang::tooling::DpctReplacement>
-        Keys(Io, R);
+  static void mapping(IO &Io, clang::tooling::Replacement &R) {
+    MappingNormalization<NormalizedReplacement, clang::tooling::Replacement>
+    Keys(Io, R);
     Io.mapRequired("FilePath", Keys->FilePath);
     Io.mapRequired("Offset", Keys->Offset);
     Io.mapRequired("Length", Keys->Length);
     Io.mapRequired("ReplacementText", Keys->ReplacementText);
+#ifdef SYCLomatic_CUSTOMIZATION
     Io.mapOptional("ConstantFlag", Keys->ConstantFlag);
     Io.mapOptional("ConstantOffset", Keys->ConstantOffset);
     Io.mapOptional("InitStr", Keys->InitStr);
     Io.mapOptional("NewHostVarName", Keys->NewHostVarName);
     Io.mapOptional("BlockLevelFormatFlag", Keys->BlockLevelFormatFlag);
+#endif // SYCLomatic_CUSTOMIZATION
   }
 };
 
+#ifdef SYCLomatic_CUSTOMIZATION
 template <> struct MappingTraits<clang::tooling::MainSourceFileInfo> {
   struct NormalizedMainSourceFilesDigest {
 
     NormalizedMainSourceFilesDigest(const IO &)
         : MainSourceFile(""), Digest(""), HasCUDASyntax(false) {}
-
     NormalizedMainSourceFilesDigest(const IO &,
                                     clang::tooling::MainSourceFileInfo &R)
         : MainSourceFile(R.MainSourceFile), Digest(R.Digest),
           HasCUDASyntax(R.HasCUDASyntax) {}
-
     clang::tooling::MainSourceFileInfo denormalize(const IO &) {
       return clang::tooling::MainSourceFileInfo(MainSourceFile, Digest,
                                                 HasCUDASyntax);
     }
-
     std::string MainSourceFile = "";
     std::string Digest = "";
     bool HasCUDASyntax = false;
   };
-
   static void mapping(IO &Io, clang::tooling::MainSourceFileInfo &R) {
     MappingNormalization<NormalizedMainSourceFilesDigest,
                          clang::tooling::MainSourceFileInfo>
@@ -191,18 +171,14 @@ template <> struct MappingTraits<clang::tooling::MainSourceFileInfo> {
     Io.mapOptional("HasCUDASyntax", Keys->HasCUDASyntax);
   }
 };
-
 template <> struct MappingTraits<clang::tooling::CompilationInfo> {
   struct NormalizedCompileCmds {
-
     NormalizedCompileCmds(const IO &)
         : MigratedFileName(""), CompileOptions(""), Compiler(""){}
-
     NormalizedCompileCmds(const IO &, clang::tooling::CompilationInfo &CmpInfo)
         : MigratedFileName(CmpInfo.MigratedFileName),
           CompileOptions(CmpInfo.CompileOptions),
           Compiler(CmpInfo.Compiler) {}
-
     clang::tooling::CompilationInfo denormalize(const IO &) {
       clang::tooling::CompilationInfo CmpInfo;
       CmpInfo.MigratedFileName = MigratedFileName;
@@ -210,12 +186,10 @@ template <> struct MappingTraits<clang::tooling::CompilationInfo> {
       CmpInfo.Compiler = Compiler;
       return CmpInfo;
     }
-
     std::string MigratedFileName;
     std::string CompileOptions;
     std::string Compiler;
   };
-
   static void mapping(IO &Io, clang::tooling::CompilationInfo &CmpInfo) {
     MappingNormalization<NormalizedCompileCmds, clang::tooling::CompilationInfo>
         Keys(Io, CmpInfo);
@@ -224,14 +198,12 @@ template <> struct MappingTraits<clang::tooling::CompilationInfo> {
     Io.mapOptional("Compiler", Keys->Compiler);
   }
 };
-
 template <> struct MappingTraits<clang::tooling::OptionInfo> {
   struct NormalizedOptionInfo {
     NormalizedOptionInfo(const IO &) : Value(""), Specified(true) {}
     NormalizedOptionInfo(const IO &, clang::tooling::OptionInfo &OptInfo)
         : Value(OptInfo.Value), ValueVec(OptInfo.ValueVec),
           Specified(OptInfo.Specified) {}
-
     clang::tooling::OptionInfo denormalize(const IO &) {
       clang::tooling::OptionInfo OptInfo;
       OptInfo.Value = Value;
@@ -239,12 +211,10 @@ template <> struct MappingTraits<clang::tooling::OptionInfo> {
       OptInfo.Specified = Specified;
       return OptInfo;
     }
-
     std::string Value;
     std::vector<std::string> ValueVec;
     bool Specified;
   };
-
   static void mapping(IO &Io, clang::tooling::OptionInfo &OptInfo) {
     MappingNormalization<NormalizedOptionInfo, clang::tooling::OptionInfo> Keys(
         Io, OptInfo);

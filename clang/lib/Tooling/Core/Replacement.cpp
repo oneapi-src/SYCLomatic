@@ -181,9 +181,6 @@ void Replacement::setFromSourceRange(const SourceManager &Sources,
                         ReplacementText);
 }
 
-#ifdef SYCLomatic_CUSTOMIZATION
-#define Replacement DpctReplacement
-#endif // SYCLomatic_CUSTOMIZATION
 Replacement
 Replacements::getReplacementInChangedCode(const Replacement &R) const {
   unsigned NewStart = getShiftedCodePosition(R.getOffset());
@@ -732,8 +729,6 @@ AddFileHunk::AddFileHunk(std::string NewFilePath)
 DeleteFileHunk::DeleteFileHunk(std::string OldFilePath)
     : Hunk(DeleteFile),
       OldFilePath(UnifiedPath(OldFilePath).getCanonicalPath()) {}
-
-#undef Replacement
 #endif // SYCLomatic_CUSTOMIZATION
 
 } // namespace tooling

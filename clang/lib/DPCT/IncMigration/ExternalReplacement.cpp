@@ -40,7 +40,7 @@ namespace dpct {
 int save2Yaml(
     clang::tooling::UnifiedPath &YamlFile,
     clang::tooling::UnifiedPath &SrcFileName,
-    const std::vector<clang::tooling::DpctReplacement> &Replaces,
+    const std::vector<clang::tooling::Replacement> &Replaces,
     const std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesDigest,
     const std::map<clang::tooling::UnifiedPath,
                    std::vector<clang::tooling::CompilationInfo>>
@@ -130,7 +130,7 @@ void loadGDCFromYaml(const clang::tooling::UnifiedPath &Input,
 
 void mergeAndUniqueReps(
     Replacements &Replaces,
-    const std::vector<clang::tooling::DpctReplacement> &PreRepls) {
+    const std::vector<clang::tooling::Replacement> &PreRepls) {
 
   bool DupFlag = false;
   for (const auto &OldR : PreRepls) {
@@ -179,8 +179,8 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
 
   llvm::errs() << "Saved new version of " << YamlFile << " file\n";
 
-  std::vector<clang::tooling::DpctReplacement> Repls(Replaces.begin(),
-                                                     Replaces.end());
+  std::vector<clang::tooling::Replacement> Repls(Replaces.begin(),
+                                                 Replaces.end());
 
   // For header file, its hash content digest and HasCUDASytax field is not
   // registed.

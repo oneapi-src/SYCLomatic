@@ -2470,7 +2470,7 @@ std::map<std::string, std::string>
     DpctGlobalInfo::FunctionCallInMacroMigrateRecord;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
 std::map<std::string, unsigned int> DpctGlobalInfo::BeginOfEmptyMacros;
-std::unordered_map<std::string, std::vector<clang::tooling::DpctReplacement>>
+std::unordered_map<std::string, std::vector<clang::tooling::Replacement>>
     DpctGlobalInfo::FileRelpsMap;
 std::unordered_map<std::string, clang::tooling::MainSourceFileInfo>
     DpctGlobalInfo::MsfInfoMap;
