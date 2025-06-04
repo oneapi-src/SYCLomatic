@@ -84,16 +84,16 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
         Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
     if (BOffset > EOffset)
       continue;
-    (void)Result.add(clang::tooling::DpctReplacement(
+    (void)Result.add(tooling::Replacement(
         R.getFilePath(), BOffset, EOffset - BOffset, R.getReplacementText()));
   }
   return Result;
 }
 
-std::map<std::string, std::vector<clang::tooling::DpctReplacement>>
+std::map<std::string, std::vector<tooling::Replacement>>
 groupReplcementsFileByFile(
-    const std::vector<clang::tooling::DpctReplacement> &Repls) {
-  std::map<std::string, std::vector<clang::tooling::DpctReplacement>> Result;
+    const std::vector<tooling::Replacement> &Repls) {
+  std::map<std::string, std::vector<tooling::Replacement>> Result;
   for (const auto &R : Repls) {
     Result[R.getFilePath().str()].push_back(R);
   }
@@ -136,19 +136,21 @@ groupReplcementsFileByFile(
 //    Repl_C_x will be ignored during this merge.
 // 2. Shfit Repl_C_y with Repl_A, called Repl_D.
 // 3. Merge Repl_D and Repl_B. May have conflicts.
+
+// !!!WIP!!!
 std::map<std::string, clang::tooling::Replacements>
-reMigrationMerge(const clang::tooling::GitDiffChanges &Repl_A,
-                 const std::vector<clang::tooling::DpctReplacement> &Repl_B,
-                 const std::vector<clang::tooling::DpctReplacement> &Repl_C1,
-                 const clang::tooling::GitDiffChanges &Repl_C2) {
+reMigrationMerge(const GitDiffChanges &Repl_A,
+                 const std::vector<tooling::Replacement> &Repl_B,
+                 const std::vector<tooling::Replacement> &Repl_C1,
+                 const GitDiffChanges &Repl_C2) {
   assert(Repl_C2.AddFileHunks.empty() && Repl_C2.DeleteFileHunks.empty() &&
          Repl_C2.MoveFileHunks.empty() &&
          "Repl_C2 should only have ModifiyFileHunks.");
-  std::vector<clang::tooling::DpctReplacement> Repl_C;
+  std::vector<tooling::Replacement> Repl_C;
   // Merge Repl_C1 and Repl_C2
   Repl_C.insert(Repl_C.end(), Repl_C1.begin(), Repl_C1.end());
   for (const auto &Hunk : Repl_C2.ModifyFileHunks) {
-    clang::tooling::DpctReplacement Replacement(
+    tooling::Replacement Replacement(
         Hunk.getFilePath(), Hunk.getOffset(), Hunk.getLength(),
         Hunk.getReplacementText());
     Repl_C.push_back(Replacement);
@@ -164,7 +166,7 @@ reMigrationMerge(const clang::tooling::GitDiffChanges &Repl_A,
           Hunk.getLength();
     }
     (void)ModifiedParts[Hunk.getFilePath().str()].add(
-        clang::tooling::DpctReplacement(Hunk.getFilePath().str(),
+        tooling::Replacement(Hunk.getFilePath().str(),
                                         Hunk.getOffset(), Hunk.getLength(),
                                         Hunk.getReplacementText()));
   }
@@ -173,7 +175,7 @@ reMigrationMerge(const clang::tooling::GitDiffChanges &Repl_A,
       DeletedParts[Hunk.getFilePath().str()][Hunk.getOffset()] = Hunk.getLength();
     }
     (void)ModifiedParts[Hunk.getFilePath().str()].add(
-      clang::tooling::DpctReplacement(Hunk.getFilePath().str(),
+      tooling::Replacement(Hunk.getFilePath().str(),
                                       Hunk.getOffset(), Hunk.getLength(),
                                       Hunk.getReplacementText()));
   }
@@ -189,7 +191,7 @@ reMigrationMerge(const clang::tooling::GitDiffChanges &Repl_A,
     const auto &It = DeletedParts.find(Repl.getFilePath().str());
     if (It == DeletedParts.end()) {
       (void)Repl_C_y[Repl.getFilePath().str()].add(
-          clang::tooling::DpctReplacement(Repl.getFilePath().str(),
+          tooling::Replacement(Repl.getFilePath().str(),
                                           Repl.getOffset(), Repl.getLength(),
                                           Repl.getReplacementText()));
       continue;
@@ -204,7 +206,7 @@ reMigrationMerge(const clang::tooling::GitDiffChanges &Repl_A,
       }
     }
     (void)Repl_C_y[Repl.getFilePath().str()].add(
-        clang::tooling::DpctReplacement(Repl.getFilePath().str(),
+        tooling::Replacement(Repl.getFilePath().str(),
                                         Repl.getOffset(), Repl.getLength(),
                                         Repl.getReplacementText()));
   }
