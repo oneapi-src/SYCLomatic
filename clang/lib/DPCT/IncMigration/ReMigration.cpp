@@ -9,6 +9,7 @@
 #include "AnalysisInfo.h"
 #include "ExternalReplacement.h"
 #include "clang/Tooling/Core/Replacement.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace clang::dpct {
 
@@ -219,7 +220,7 @@ reMigrationMerge(const clang::tooling::GitDiffChanges &Repl_A,
   // Merge Repl_D and Repl_B
   // 1. we need group the replacements by line number fisrt. For repl in the same line, we need merge them together.
   // 2. then we should convert the replacements to a map <line_number, new_text>. We will have 2 maps.
-  // 3. we need also get a map <line_number, text> for current file (CUDA code 2)
+  // 3. we need a vector<offset /*line end offset*/> for current file (CUDA code 2)
   // 4. merge by line, generate a new map <line_number, new_text (with git conflict mark)>
   // 5. convert that map to Replacements.
   for (const auto &Repls : Repl_B_by_file) {
