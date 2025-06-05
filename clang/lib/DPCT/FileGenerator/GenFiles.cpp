@@ -607,7 +607,6 @@ int writeReplacementsToFiles(
         MainSrcFileMap[Entry.first] = true;
 
         for (const auto &Repl : Entry.second) {
-          Repl.getReplacementText();
           MainSrcFilesRepls.push_back(Repl);
         }
       }
