@@ -1,4 +1,6 @@
-# This is a example
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
 # ---
 # - Feature: Feature name
 #   SupportedVersion: Time Stamp of component
