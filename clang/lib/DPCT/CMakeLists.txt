@@ -271,6 +271,12 @@ add_clang_library(DPCT
   RulesMathLib/RandomAPIMigration.cpp
   RulesMathLib/SolverAPIMigration.cpp
   CodePin/GenCodePinHeader.cpp
+  RulesMathLib/CallExprRewriterCUBLASExt.cpp
+  RulesMathLib/CallExprRewriterCUBLASHelper.cpp
+  RulesMathLib/CallExprRewriterCUBLASLevel1.cpp
+  RulesMathLib/CallExprRewriterCUBLASLevel2.cpp
+  RulesMathLib/CallExprRewriterCUBLASLevel3.cpp
+  RulesMathLib/CallExprRewriterCUBLASLt.cpp
 
   DEPENDS
   ClangDriverOptions
