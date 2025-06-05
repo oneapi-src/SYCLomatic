@@ -14,6 +14,16 @@ void func_char1(char1 a) {
 __global__ void kernel_char1(char1 *a, char1 *b) {
 }
 
+template <int np> __global__ void kernel_foo() {
+  constexpr int nmeta = np;
+  float2 meta[nmeta];
+  float KQ_cmn;
+  for (int imeta = 1; imeta < nmeta; ++imeta) {
+    // CHECK: KQ_cmn = sycl::fmax(KQ_cmn, (float)(meta[imeta].x()));
+    KQ_cmn = fmaxf(KQ_cmn, meta[imeta].x);
+  }
+}
+
 int main_char1() {
   // range default constructor does the right thing.
   // CHECK: int8_t char1_a;

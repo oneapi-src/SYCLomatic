@@ -1,2 +1,6 @@
 file(GLOB REL_CUDA_SRC "file1.dp.cpp" "${CMAKE_SOURCE_DIR}/src/*.dp.cpp")
 file(GLOB SRCS *.cc *.dp.cpp *.dp.hpp)
+file(GLOB_RECURSE DECODE_KERNELS_SRCS
+     ${PROJECT_SOURCE_DIR}/src/generated/d*decode_head*.dp.cpp)
+file(GLOB_RECURSE PREFILL_KERNELS_SRCS
+     ${PROJECT_SOURCE_DIR}/src/generated/*prefill_head*.dp.cpp)

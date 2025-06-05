@@ -26,7 +26,7 @@ namespace clang {
 namespace dpct {
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
-llvm::DenseSet<llvm::StringRef> ProcessedYamlFiles;
+std::unordered_set<std::string> ProcessedYamlFiles;
 
 OutputBuilder::~OutputBuilder() {}
 
@@ -370,7 +370,7 @@ std::unique_ptr<llvm::MemoryBuffer>
 readYAMLFile(const llvm::StringRef &RuleFilePath) {
   // Check if the rule file has already been processed
   // to avoid infinite recursion
-  if (!ProcessedYamlFiles.insert(RuleFilePath).second) {
+  if (!ProcessedYamlFiles.insert(RuleFilePath.str()).second) {
     return llvm::MemoryBuffer::getMemBufferCopy("");
   }
 
@@ -385,7 +385,7 @@ readYAMLFile(const llvm::StringRef &RuleFilePath) {
   }
 
   // Get the directory path of the rule file.
-  llvm::SmallString<128> DirectoryPath(RuleFilePath);
+  llvm::SmallString<256> DirectoryPath(RuleFilePath);
   llvm::sys::path::remove_filename(DirectoryPath);
 
   // Iterate over the input line by line.
@@ -451,7 +451,7 @@ readYAMLFile(const llvm::StringRef &RuleFilePath) {
 
         if (!IncRuleFilePathStr.empty()) {
           // Find the absolute path for the included rule file path
-          llvm::SmallString<128> IncRuleFileAbsPath = DirectoryPath;
+          llvm::SmallString<256> IncRuleFileAbsPath(DirectoryPath);
           llvm::sys::path::append(IncRuleFileAbsPath, IncRuleFilePathStr);
 
           // Recursively process the included file

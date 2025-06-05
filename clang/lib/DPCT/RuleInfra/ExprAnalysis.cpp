@@ -686,6 +686,26 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   }
 }
 
+void ExprAnalysis::analyzeExpr(const CXXDependentScopeMemberExpr *CDSME) {
+  if (auto AE = dyn_cast<ArraySubscriptExpr>(CDSME->getBase())) {
+    auto Base = AE->getBase();
+    if (auto BT =
+            dyn_cast<DependentSizedArrayType>(Base->getType().getTypePtr())) {
+      auto ET = BT->getElementType();
+      if (isTypeInAnalysisScope(ET.getTypePtr()))
+        return;
+      std::string BaseType = dpct::DpctGlobalInfo::getUnqualifiedTypeName(ET);
+      if (MapNamesLang::SupportedVectorTypes.find(BaseType) !=
+          MapNamesLang::SupportedVectorTypes.end()) {
+        std::string MemberName = CDSME->getMemberNameInfo().getAsString();
+        if (MapNames::replaceName(MapNamesLang::MemberNamesMap, MemberName)) {
+          addReplacement(CDSME->getMemberLoc(), CDSME->getEndLoc(), MemberName);
+        }
+      }
+    }
+  }
+}
+
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   const auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
 

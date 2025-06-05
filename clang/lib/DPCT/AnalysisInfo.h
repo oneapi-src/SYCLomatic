@@ -1398,6 +1398,12 @@ public:
   getHeaderInsertedBitMap() {
     return HeaderInsertedBitMap;
   }
+  static bool &getIsAfterBitsStdcxxStatus() { return IsAfterBitsStdcxx; }
+  static std::map<clang::tooling::UnifiedPath,
+                  std::set<clang::tooling::UnifiedPath>> &
+  getAfterBitsStdcxxFilesMap() {
+    return AfterBitsStdcxxFiles;
+  }
   std::shared_ptr<DpctFileInfo>
   insertFile(const clang::tooling::UnifiedPath &FilePath) {
     return insertObject(FileMap, FilePath);
@@ -1407,7 +1413,10 @@ public:
     return findObject(FileMap, FilePath);
   }
   std::shared_ptr<DpctFileInfo> getMainFile() const { return MainFile; }
-  void setMainFile(std::shared_ptr<DpctFileInfo> Main) { MainFile = Main; }
+  void setMainFile(std::shared_ptr<DpctFileInfo> Main) {
+    getIsAfterBitsStdcxxStatus() = false;
+    MainFile = Main;
+  }
   void recordIncludingRelationship(
       const clang::tooling::UnifiedPath &CurrentFileName,
       const clang::tooling::UnifiedPath &IncludedFileName);
@@ -1726,6 +1735,17 @@ private:
   static std::unordered_map<clang::tooling::UnifiedPath,
                             std::bitset<HeaderType::NUM_HEADERS>>
       HeaderInsertedBitMap;
+  // `IsAfterBitsStdcxx` is used as a flag. It is set to true when PP meet
+  // <bits/stdc++.h>. It is reset to false when starting to process a new
+  // translation unit.
+  static bool IsAfterBitsStdcxx;
+  // If `IsAfterBitsStdcxx` is true, it means <bits/stdc++.h> is already
+  // included, so the tool will record all files included since this time point.
+  // When inserting `sycl.hpp`, the tool can check if the insert location is in
+  // the map, if it is, the tool will also insert `sycl.hpp` at the main file.
+  static std::map<clang::tooling::UnifiedPath /*MainFile*/,
+                  std::set<clang::tooling::UnifiedPath>>
+      AfterBitsStdcxxFiles;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

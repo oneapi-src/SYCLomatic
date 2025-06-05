@@ -1690,6 +1690,7 @@ public:
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
     _img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
+    set_img_mem(_img, mem);
   }
 
   /// Attach image memory to bindless image.

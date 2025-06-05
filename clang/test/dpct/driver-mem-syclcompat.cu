@@ -262,6 +262,9 @@ int main(){
     // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "CUarray" is not currently supported with SYCLcompat. Please adjust the code manually.
     // CHECK-NEXT: */
     // CHECK-NEXT: CUarray ca;
+    // CHECK-NEXT: /*
+    // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of CU_MEMORYTYPE_ARRAY is not supported.
+    // CHECK-NEXT: */
     // CHECK-NEXT: cpy2.to.image = ca;
     // CHECK-NEXT: cpy2.to.pitched.set_pitch(5);
     // CHECK-NEXT: cpy2.to.pitched.set_y(4);

@@ -7872,6 +7872,12 @@ NamedDecl *Sema::ActOnVariableDeclarator(
     }
   }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (SC != SC_None) {
+    NewVD->setStorageClassSpecLoc(D.getDeclSpec().getStorageClassSpecLoc());
+  }
+#endif
+
   // Set the lexical context. If the declarator has a C++ scope specifier, the
   // lexical context will be different from the semantic context.
   NewVD->setLexicalDeclContext(CurContext);
@@ -15288,6 +15294,11 @@ Decl *Sema::ActOnParamDeclarator(Scope *S, Declarator &D,
   if (getLangOpts().OpenCL)
     deduceOpenCLAddressSpace(New);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (SC != SC_None) {
+    New->setStorageClassSpecLoc(D.getDeclSpec().getStorageClassSpecLoc());
+  }
+#endif
   return New;
 }
 

@@ -43,12 +43,6 @@ void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("extResMember"),
       this);
 
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
-                                "cudaExternalMemoryHandleType",
-                                "cudaExternalSemaphoreHandleType"))))))
-                    .bind("extResEnum"),
-                this);
-
   auto graphicsInteropAPI = [&]() {
     return hasAnyName(
         "cudaGraphicsD3D11RegisterResource", "cudaGraphicsResourceSetMapFlags",
@@ -232,18 +226,6 @@ void GraphicsInteropRule::runRule(
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
-  } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "extResEnum")) {
-    if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
-      std::string EnumName = ECD->getName().str();
-      requestHelperFeatureForEnumNames(EnumName);
-      if (MapNames::replaceName(MapNames::EnumNamesMap, EnumName)) {
-        emplaceTransformation(new ReplaceStmt(DRE, EnumName));
-      } else {
-        report(DRE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-               EnumName);
-        return;
-      }
-    }
   }
 }
 

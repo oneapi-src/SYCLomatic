@@ -1,0 +1,28 @@
+.. _DPCT1137:
+
+DPCT1137
+========
+
+Message
+-------
+
+.. _msg-1137-start:
+
+ASM instruction ``<instruction>`` is asynchronous copy, currently it is migrated to synchronous copy
+operation. You may need to adjust the code to tune the performance.
+
+.. _msg-1137-end:
+
+Detailed Help
+-------------
+
+You may need to adjust the code to tune the performance because the asynchronous copy ASM
+instruction ``cp.async`` has been migrated to synchronous copy operation.
+
+Suggestions to Fix
+------------------
+
+You may need to check if your SYCL backend device supports asynchronous copy from global memory to
+local memory. If it does, users need to rewrite the code with the asynchronous copy by leveraging
+`_sycl_ext_oneapi_cuda_async_barrier <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_cuda_async_barrier.asciidoc>`__; otherwise, they should keep the
+migrated code untouched.

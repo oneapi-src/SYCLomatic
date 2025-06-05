@@ -98,14 +98,6 @@
   In: CUDAExtension
   Out: DPCPPExtension
 
-- Rule: rule_include_dirs
-  Kind: PythonRule
-  Priority: Fallback
-  MatchMode: Partial
-  PythonSyntax: include_dirs
-  In: DPCPPExtension(${args})
-  Out: DPCPPExtension(${args}, include_dirs=cpp_extension.include_paths(),)
-
 - Rule: rule_cpp_extension_load_no_extra_cflags
   Kind: PythonRule
   Priority: Fallback

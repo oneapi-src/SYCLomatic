@@ -31,6 +31,15 @@ __device__ void d() {
   i = std::abs(i2);
   l = std::abs(l2);
   ll = std::abs(ll2);
+
+  //CHECK: std::nearbyintf(f);
+  //CHECK-NEXT: std::nearbyint(d);
+  //CHECK-NEXT: std::nearbyintf(f);
+  //CHECK-NEXT: std::nearbyint(d);
+  nearbyintf(f);
+  nearbyint(d);
+  std::nearbyintf(f);
+  std::nearbyint(d);
 }
 
 void h() {
