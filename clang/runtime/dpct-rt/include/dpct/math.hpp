@@ -425,7 +425,7 @@ max(T1 a, T2 b) {
   return sycl::fmax(static_cast<common_t>(a), static_cast<common_t>(b));
 }
 
-// pow functions overstore.
+// pow functions overload.
 inline float pow(const float a, const int b) { return sycl::pown(a, b); }
 inline double pow(const double a, const int b) { return sycl::pown(a, b); }
 inline float pow(const float a, const float b) { return sycl::pow(a, b); }
@@ -2058,7 +2058,7 @@ public:
   const size_t num_elements;
 };
 
-/// Collectively loads 1 8x8 b16 (128 bytes) matrix from private memory to local
+/// Collectively loads 1 8x8 b16 (128 bytes) matrix from local memory to private
 /// memory per sub-group. Requires the sub-group size of kernel calling this
 /// function to be 32.
 /// 'mat' specifies the matrix index to be loaded. The first '(mat + 1) * 8'
@@ -2135,7 +2135,7 @@ void ldmatrix(uintptr_t addr, T *m, bool trans = false, unsigned mat = 0) {
   }
 }
 
-/// Collectively loads 2 8x8 b16 (256 bytes) matrix from private memory to local
+/// Collectively loads 2 8x8 b16 (256 bytes) matrix from local memory to private
 /// memory per sub-group. Requires the sub-group size of kernel calling this
 /// function to be 32.
 /// The first 16 work items of sub-group contain the starting address of their
@@ -2172,7 +2172,7 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, bool trans = false) {
   ldmatrix(addr, m2, trans, 1);
 }
 
-/// Collectively loads 4 8x8 b16 (512 bytes) matrix from private memory to local
+/// Collectively loads 4 8x8 b16 (512 bytes) matrix from local memory to private
 /// memory per sub-group. Requires the sub-group size of kernel calling this
 /// function to be 32.
 /// Each work item of sub-group contains the starting address of their
@@ -2243,7 +2243,7 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
 /// \tparam [in] T Type of result variable (currently only supports 16-bit type)
 /// \param [in] addr The starting address of corresponding matrix row for a work
 /// item in local memory
-/// \param [in] m The private memory to store the matrix. It points to 2 b16
+/// \param [in] m The local memory to store the matrix. It points to 2 b16
 /// type elements.
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 /// \param [in] mat The matrix index to be stored
@@ -2319,9 +2319,9 @@ void stmatrix(uintptr_t addr, T m, bool trans = false, unsigned mat = 0) {
 /// \tparam [in] T Type of result variable (currently only supports 16-bit type)
 /// \param [in] addr The starting address of corresponding matrix row for a work
 /// item in local memory
-/// \param [in] m1 The private memory to store the data of 1st matrix. It points
+/// \param [in] m1 The local memory to store the data of 1st matrix. It points
 /// to 2 b16 type elements.
-/// \param [in] m2 The private memory to store the data of 2nd matrix. It points
+/// \param [in] m2 The local memory to store the data of 2nd matrix. It points
 /// to 2 b16 type elements.
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 template <typename T>
@@ -2357,13 +2357,13 @@ void stmatrix(uintptr_t addr, T m1, T m2, bool trans = false) {
 /// \tparam [in] T Type of result variable (currently only supports 16-bit type)
 /// \param [in] addr The starting address of corresponding matrix row for a work
 /// item in local memory
-/// \param [in] m1 The private memory to store the data of 1st matrix. It points
+/// \param [in] m1 The local memory to store the data of 1st matrix. It points
 /// to 2 b16 type elements.
-/// \param [in] m2 The private memory to store the data of 2nd matrix. It points
+/// \param [in] m2 The local memory to store the data of 2nd matrix. It points
 /// to 2 b16 type elements.
-/// \param [in] m3 The private memory to store the data of 3rd matrix. It points
+/// \param [in] m3 The local memory to store the data of 3rd matrix. It points
 /// to 2 b16 type elements.
-/// \param [in] m4 The private memory to store the data of 4th matrix. It points
+/// \param [in] m4 The local memory to store the data of 4th matrix. It points
 /// to 2 b16 type elements.
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 template <typename T>
