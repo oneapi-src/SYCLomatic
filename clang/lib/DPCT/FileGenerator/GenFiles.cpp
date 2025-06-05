@@ -912,15 +912,15 @@ void genCodePinHeader(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
 }
 
 void GenVerifiedCmpVer(
-    const std::vector<clang::tooling::Replacement> &CmpVerRepls) {
+    const std::vector<clang::tooling::Replacement> &MainSrcFilesRepls) {
   auto CompStatusList = dpct::DpctGlobalInfo::getCompatibleCompsStatus();
   auto CompsInfo = dpct::DpctGlobalInfo::getSupportedComponentInfo();
   for (auto CompStatus : CompStatusList) {
-    for (auto Repl : CmpVerRepls) {
+    for (auto Repl : MainSrcFilesRepls) {
       if (Repl.getReplacementText().str().find(CompStatus->ReplacementText) !=
           std::string::npos) {
         // If the replacement text is already in the list, skip it.
-        updateComInfoBasedOnCompStatus(CompsInfo[CompStatus->CompType], CompStatus);
+        updateComInfoByCompStatus(CompsInfo[CompStatus->CompType], CompStatus);
         break;
       }
     }

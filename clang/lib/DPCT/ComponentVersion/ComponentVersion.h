@@ -50,7 +50,7 @@ void displayComponentDetailsInfo(
     const std::unordered_map<ComponentType, ComponentInfo>
         &SupportedComponentInfo);
 void displaySupportedComponents(bool isPrintOverall = false);
-void updateComInfoBasedOnCompStatus(ComponentInfo &Info,
+void updateComInfoByCompStatus(ComponentInfo &Info,
                        const std::shared_ptr<clang::dpct::CompStatus> &Status);
 } // namespace dpct
 } // namespace clang

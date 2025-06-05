@@ -82,7 +82,7 @@ void displaySupportedComponents(bool isPrintOverall) {
       dpct::DpctGlobalInfo::getSupportedComponentInfo();
   if (isPrintOverall) {
     for (auto &CompStatus : CompsStatus) {
-      updateComInfoBasedOnCompStatus(Components[CompStatus->CompType],
+      updateComInfoByCompStatus(Components[CompStatus->CompType],
                                      CompStatus);
     }
     displayOverallComponentInfo(Components);
@@ -114,7 +114,7 @@ std::string getContentAfterSpace(const std::string &str) {
   }
   return str;
 }
-void updateComInfoBasedOnCompStatus(
+void updateComInfoByCompStatus(
     ComponentInfo &Info,
     const std::shared_ptr<clang::dpct::CompStatus> &Status) {
   std::string Description = generateDescription(Info, Status);
