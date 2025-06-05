@@ -68,6 +68,7 @@ void DisplayComponentDetailsInfo(
         &SupportedComponentInfo) {
   std::stringstream ComponentDetailLog;
   ComponentDetailLog << "\nSupport Component details:\n";
+  std::cout << "Size " << SupportedComponentInfo.size() << "\n";
   for (const auto &Component : SupportedComponentInfo) {
     for (const auto &Des : Component.second.ComponentDes) {
       ComponentDetailLog << "  - " << Des << "\n";
@@ -77,14 +78,21 @@ void DisplayComponentDetailsInfo(
 }
 
 void showSupportedComponents(bool isPrintOverall) {
-  auto SupportedComponentInfo = DpctGlobalInfo::getSupportedComponentInfo();
-  if (isPrintOverall)
-    DisplayOverallComponentInfo(SupportedComponentInfo);
-  DisplayComponentDetailsInfo(SupportedComponentInfo);
+  auto CompsStatus = DpctGlobalInfo::getSupportedCompsStatus();
+  std::unordered_map<ComponentType, ComponentInfo> Components =
+      dpct::DpctGlobalInfo::getSupportedComponentInfo();
+  if (isPrintOverall) {
+    for (auto &CompStatus : CompsStatus) {
+      CollectNewVerInfo(Components[CompStatus->CompType], CompStatus);
+    }
+    DisplayOverallComponentInfo(Components);
+  }
+  DisplayComponentDetailsInfo(Components);
 }
 
-void collectNewVerInfo(ComponentInfo &Info,
+void CollectNewVerInfo(ComponentInfo &Info,
                        const std::shared_ptr<clang::dpct::CompStatus> &Status) {
+  std::cout << "HHHHHH \n";
   std::string Description = "";
   Description += "The feature " + Status->Feature;
   if (Status->IsOpenSource) {
@@ -110,37 +118,23 @@ void collectNewVerInfo(ComponentInfo &Info,
         "For more details, please refer to the provided link: " + Status->Link +
         ". \n";
   }
+  std::cout << "Info name " << Info.ComponentName << "\n";
   Info.ComponentDes.push_back(Description);
 }
 
-void importStatus(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
+void ParseSupportComponentStatus(
+    std::vector<clang::tooling::UnifiedPath> &RuleFiles,
+    bool IsPrintComponentOpt) {
   auto file = llvm::MemoryBuffer::getFile(RuleFiles[0].getCanonicalPath());
   if (!file) {
     llvm::errs() << "Error: failed to read " << RuleFiles[0].getCanonicalPath()
                  << ": " << file.getError().message() << "\n";
     return;
   }
-  std::vector<std::shared_ptr<clang::dpct::CompStatus>> NewCompsStatus;
+  std::vector<std::shared_ptr<clang::dpct::CompStatus>> CompsStatus;
   yaml::Input yin(file.get()->getBuffer());
-  yin >> NewCompsStatus;
-  std::stringstream ss;
-  DpctGlobalInfo::setSupportedCompsStatus(NewCompsStatus);
-  if (NewCompsStatus.empty()) {
-    return;
-  }
-
-  std::unordered_map<ComponentType, ComponentInfo> Components = {
-      {ComponentType::DPCPP, ComponentInfo("DPCPP")},
-      {ComponentType::oneDPL, ComponentInfo("oneDPL")},
-      {ComponentType::oneMKL, ComponentInfo("oneMKL")},
-      {ComponentType::oneDNNL, ComponentInfo("oneDNNL")},
-      {ComponentType::oneCCL, ComponentInfo("oneCCL")},
-      {ComponentType::ISHMEM, ComponentInfo("ISHMEM")}};
-
-  for (auto &CompStatus : NewCompsStatus) {
-    collectNewVerInfo(Components[CompStatus->CompType], CompStatus);
-  }
-  DpctGlobalInfo::setSupportedComponentInfo(Components);
+  yin >> CompsStatus;
+  DpctGlobalInfo::setSupportedCompsStatus(CompsStatus);
 }
 
 } // namespace dpct

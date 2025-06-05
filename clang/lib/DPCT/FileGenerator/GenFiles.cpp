@@ -912,7 +912,7 @@ void genCodePinHeader(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
   RS << "#endif" << getNL();
 }
 
-void genVerifiedCmpVer(
+void GenVerifiedCmpVer(
     const std::vector<clang::tooling::Replacement> &CmpVerRepls) {
   auto CompStatusList = dpct::DpctGlobalInfo::getSupportedCompsStatus();
   auto CompsInfo = dpct::DpctGlobalInfo::getSupportedComponentInfo();
@@ -921,11 +921,12 @@ void genVerifiedCmpVer(
       if (Repl.getReplacementText().str().find(CompStatus->ReplacementText) !=
           std::string::npos) {
         // If the replacement text is already in the list, skip it.
-        collectNewVerInfo(CompsInfo[CompStatus->CompType], CompStatus);
+        CollectNewVerInfo(CompsInfo[CompStatus->CompType], CompStatus);
+        break;
       }
     }
   }
-  showSupportedComponents();
+  DisplayComponentDetailsInfo(CompsInfo);
 }
 /// Apply all generated replacements, and immediately save the results to files
 /// in output directory.
@@ -1012,7 +1013,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
               clang::dpct::RT_CUDAWithCodePin))
         return RewriteStatus;
     }
-    genVerifiedCmpVer(MainSrcFilesRepls);
+    GenVerifiedCmpVer(MainSrcFilesRepls);
     // Print the in-root path and the number of processed files
     size_t ProcessedFileNumber;
     if (ProcessAll) {

@@ -2411,7 +2411,6 @@ clang::tooling::UnifiedPath DpctGlobalInfo::InRoot;
 clang::tooling::UnifiedPath DpctGlobalInfo::OutRoot;
 std::vector<clang::tooling::UnifiedPath> DpctGlobalInfo::AnalysisScope;
 std::vector<std::shared_ptr<CompStatus>> DpctGlobalInfo::SupportedCompsStatus;
-std::unordered_map<ComponentType, ComponentInfo> DpctGlobalInfo::SupportedCompsInfo;
 std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::SYCLSourceExtension = std::string();
 std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();

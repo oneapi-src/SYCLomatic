@@ -30,22 +30,27 @@ struct CompStatus {
   std::string Description;
 };
 
-const std::string CuroneAPIVersion = "2025.1";
+const std::string OneAPIVersion = "2025.1";
 class ComponentInfo {
 public:
   ComponentInfo(const std::string &Name,
-                const std::string &Version = "oneAPI " + CuroneAPIVersion)
+                const std::string &Version = "oneAPI " + OneAPIVersion)
       : ComponentName(Name), ComponentVersion(Version) {}
-      ComponentInfo() : ComponentName(""), ComponentVersion("oneAPI " + CuroneAPIVersion) {}
+  ComponentInfo()
+      : ComponentName(""), ComponentVersion("oneAPI " + OneAPIVersion) {}
   std::string ComponentName;
   std::string ComponentVersion;
   std::vector<std::string> ComponentDes;
 };
 
-void importStatus(std::vector<clang::tooling::UnifiedPath> &RuleFiles);
-
+void ParseSupportComponentStatus(
+    std::vector<clang::tooling::UnifiedPath> &RuleFiles,
+    bool IsPrintComponentOpt = false);
+void DisplayComponentDetailsInfo(
+    const std::unordered_map<ComponentType, ComponentInfo>
+        &SupportedComponentInfo);
 void showSupportedComponents(bool isPrintOverall = false);
-void collectNewVerInfo(ComponentInfo &Info,
+void CollectNewVerInfo(ComponentInfo &Info,
                        const std::shared_ptr<clang::dpct::CompStatus> &Status);
 } // namespace dpct
 } // namespace clang

@@ -988,7 +988,7 @@ int runDPCT(int argc, const char **argv) {
     std::vector<clang::tooling::UnifiedPath> SupportedComponents{
         llvm::sys::fs::exists(FilePath1) ? FilePath1.c_str()
                                          : FilePath2.c_str()};
-    importStatus(SupportedComponents);
+    ParseSupportComponentStatus(SupportedComponents, SupportedComps);
   }
   if (SupportedComps) {
     showSupportedComponents(SupportedComps);

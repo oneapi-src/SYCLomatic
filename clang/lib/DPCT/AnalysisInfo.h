@@ -744,12 +744,16 @@ public:
   static const std::vector<std::shared_ptr<CompStatus>> &getSupportedCompsStatus() {
     return SupportedCompsStatus;
   }
-  static void
-  setSupportedComponentInfo(std::unordered_map<ComponentType, ComponentInfo> &CompsInfo) {
-    SupportedCompsInfo = CompsInfo;
-  }
-  static const std::unordered_map<ComponentType, ComponentInfo> &getSupportedComponentInfo() {
-    return SupportedCompsInfo;
+static const std::unordered_map<ComponentType, ComponentInfo> &
+  getSupportedComponentInfo() {
+    static std::unordered_map<ComponentType, ComponentInfo> Components = {
+        {ComponentType::DPCPP, ComponentInfo("DPCPP")},
+        {ComponentType::oneDPL, ComponentInfo("oneDPL")},
+        {ComponentType::oneMKL, ComponentInfo("oneMKL")},
+        {ComponentType::oneDNNL, ComponentInfo("oneDNNL")},
+        {ComponentType::oneCCL, ComponentInfo("oneCCL")},
+        {ComponentType::ISHMEM, ComponentInfo("ISHMEM")}};
+    return Components;
   }
   static void addChangeExtensions(const std::string &Extension) {
     assert(!Extension.empty());
@@ -1592,7 +1596,6 @@ private:
   static clang::tooling::UnifiedPath OutRoot;
   static std::vector<clang::tooling::UnifiedPath> AnalysisScope;
   static std::vector<std::shared_ptr<CompStatus>> SupportedCompsStatus;
-  static std::unordered_map<ComponentType, ComponentInfo> SupportedCompsInfo;
   static std::unordered_set<std::string> ChangeExtensions;
   static std::string SYCLSourceExtension;
   static std::string SYCLHeaderExtension;
