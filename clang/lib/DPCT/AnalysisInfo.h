@@ -738,11 +738,11 @@ public:
     return AnalysisScope;
   }
   static void
-  setSupportedCompsStatus(const std::vector<std::shared_ptr<CompStatus>> &CompStatus) {
-    SupportedCompsStatus = CompStatus;
+  setCompatibleCompsStatus(const std::vector<std::shared_ptr<CompStatus>> &CompStatus) {
+    CompatibleCompsStatus = CompStatus;
   }
-  static const std::vector<std::shared_ptr<CompStatus>> &getSupportedCompsStatus() {
-    return SupportedCompsStatus;
+  static const std::vector<std::shared_ptr<CompStatus>> &getCompatibleCompsStatus() {
+    return CompatibleCompsStatus;
   }
 static const std::unordered_map<ComponentType, ComponentInfo> &
   getSupportedComponentInfo() {
@@ -1595,7 +1595,7 @@ private:
   static clang::tooling::UnifiedPath InRoot;
   static clang::tooling::UnifiedPath OutRoot;
   static std::vector<clang::tooling::UnifiedPath> AnalysisScope;
-  static std::vector<std::shared_ptr<CompStatus>> SupportedCompsStatus;
+  static std::vector<std::shared_ptr<CompStatus>> CompatibleCompsStatus;
   static std::unordered_set<std::string> ChangeExtensions;
   static std::string SYCLSourceExtension;
   static std::string SYCLHeaderExtension;
@@ -1614,7 +1614,7 @@ private:
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
   static bool EnableCodePin;
-  static bool SupportedComps;
+  static bool CompatibleComps;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
   static bool MigrateBuildScriptOnly;

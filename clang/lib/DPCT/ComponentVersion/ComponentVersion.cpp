@@ -51,11 +51,11 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<ComponentType> {
 namespace clang {
 namespace dpct {
 
-void DisplayOverallComponentInfo(
+void displayOverallComponentInfo(
     const std::unordered_map<ComponentType, ComponentInfo>
         &SupportedComponentInfo) {
   std::stringstream ComponentOverallLog;
-  ComponentOverallLog << "Supported components:\n";
+  ComponentOverallLog << "Comptatible components:\n";
   for (const auto &Component : SupportedComponentInfo) {
     ComponentOverallLog << "  - " << Component.second.ComponentName << ": "
                         << Component.second.ComponentVersion << ".\n";
@@ -63,12 +63,11 @@ void DisplayOverallComponentInfo(
   std::cout << ComponentOverallLog.str();
 }
 
-void DisplayComponentDetailsInfo(
+void displayComponentDetailsInfo(
     const std::unordered_map<ComponentType, ComponentInfo>
         &SupportedComponentInfo) {
   std::stringstream ComponentDetailLog;
-  ComponentDetailLog << "\nSupport Component details:\n";
-  std::cout << "Size " << SupportedComponentInfo.size() << "\n";
+  ComponentDetailLog << "\nComptatible Component details:\n";
   for (const auto &Component : SupportedComponentInfo) {
     for (const auto &Des : Component.second.ComponentDes) {
       ComponentDetailLog << "  - " << Des << "\n";
@@ -77,22 +76,23 @@ void DisplayComponentDetailsInfo(
   std::cout << ComponentDetailLog.str() << "\n";
 }
 
-void showSupportedComponents(bool isPrintOverall) {
-  auto CompsStatus = DpctGlobalInfo::getSupportedCompsStatus();
+void displaySupportedComponents(bool isPrintOverall) {
+  auto CompsStatus = DpctGlobalInfo::getCompatibleCompsStatus();
   std::unordered_map<ComponentType, ComponentInfo> Components =
       dpct::DpctGlobalInfo::getSupportedComponentInfo();
   if (isPrintOverall) {
     for (auto &CompStatus : CompsStatus) {
-      CollectNewVerInfo(Components[CompStatus->CompType], CompStatus);
+      updateComInfoBasedOnCompStatus(Components[CompStatus->CompType],
+                                     CompStatus);
     }
-    DisplayOverallComponentInfo(Components);
+    displayOverallComponentInfo(Components);
   }
-  DisplayComponentDetailsInfo(Components);
+  displayComponentDetailsInfo(Components);
 }
 
-void CollectNewVerInfo(ComponentInfo &Info,
-                       const std::shared_ptr<clang::dpct::CompStatus> &Status) {
-  std::cout << "HHHHHH \n";
+void updateComInfoBasedOnCompStatus(
+    ComponentInfo &Info,
+    const std::shared_ptr<clang::dpct::CompStatus> &Status) {
   std::string Description = "";
   Description += "The feature " + Status->Feature;
   if (Status->IsOpenSource) {
@@ -100,12 +100,13 @@ void CollectNewVerInfo(ComponentInfo &Info,
                    Status->SupportedVersion + ". ";
     if (!Info.ComponentVersion.empty()) {
       if (Info.ComponentVersion.find("oneAPI") == std::string::npos) {
-        long orgDate = stoi(Info.ComponentVersion);
-        long newDate = stoi(Status->SupportedVersion);
-        if (orgDate < newDate)
-          Info.ComponentVersion = Status->SupportedVersion;
+        long OrgDate =
+            stoi(Info.ComponentVersion); // Version should be datestamp.
+        long NewDate = stoi(Status->SupportedVersion);
+        if (OrgDate < NewDate)
+          Info.ComponentVersion = ">=" + Status->SupportedVersion;
       } else {
-        Info.ComponentVersion = Status->SupportedVersion;
+        Info.ComponentVersion = ">=" + Status->SupportedVersion;
       }
     }
   } else {
@@ -118,11 +119,10 @@ void CollectNewVerInfo(ComponentInfo &Info,
         "For more details, please refer to the provided link: " + Status->Link +
         ". \n";
   }
-  std::cout << "Info name " << Info.ComponentName << "\n";
   Info.ComponentDes.push_back(Description);
 }
 
-void ParseSupportComponentStatus(
+void parseSupportComponentStatus(
     std::vector<clang::tooling::UnifiedPath> &RuleFiles,
     bool IsPrintComponentOpt) {
   auto file = llvm::MemoryBuffer::getFile(RuleFiles[0].getCanonicalPath());
@@ -134,7 +134,7 @@ void ParseSupportComponentStatus(
   std::vector<std::shared_ptr<clang::dpct::CompStatus>> CompsStatus;
   yaml::Input yin(file.get()->getBuffer());
   yin >> CompsStatus;
-  DpctGlobalInfo::setSupportedCompsStatus(CompsStatus);
+  DpctGlobalInfo::setCompatibleCompsStatus(CompsStatus);
 }
 
 } // namespace dpct

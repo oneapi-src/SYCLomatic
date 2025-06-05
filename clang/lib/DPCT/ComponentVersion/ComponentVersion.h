@@ -43,14 +43,14 @@ public:
   std::vector<std::string> ComponentDes;
 };
 
-void ParseSupportComponentStatus(
+void parseSupportComponentStatus(
     std::vector<clang::tooling::UnifiedPath> &RuleFiles,
     bool IsPrintComponentOpt = false);
-void DisplayComponentDetailsInfo(
+void displayComponentDetailsInfo(
     const std::unordered_map<ComponentType, ComponentInfo>
         &SupportedComponentInfo);
-void showSupportedComponents(bool isPrintOverall = false);
-void CollectNewVerInfo(ComponentInfo &Info,
+void displaySupportedComponents(bool isPrintOverall = false);
+void updateComInfoBasedOnCompStatus(ComponentInfo &Info,
                        const std::shared_ptr<clang::dpct::CompStatus> &Status);
 } // namespace dpct
 } // namespace clang

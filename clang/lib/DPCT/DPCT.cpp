@@ -988,10 +988,10 @@ int runDPCT(int argc, const char **argv) {
     std::vector<clang::tooling::UnifiedPath> SupportedComponents{
         llvm::sys::fs::exists(FilePath1) ? FilePath1.c_str()
                                          : FilePath2.c_str()};
-    ParseSupportComponentStatus(SupportedComponents, SupportedComps);
+    parseSupportComponentStatus(SupportedComponents, CompatibleComps);
   }
-  if (SupportedComps) {
-    showSupportedComponents(SupportedComps);
+  if (CompatibleComps) {
+    displaySupportedComponents(CompatibleComps);
     return 0;
   }
   if (isCUDAHeaderRequired()) {
