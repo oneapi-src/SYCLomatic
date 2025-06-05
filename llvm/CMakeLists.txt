@@ -872,7 +872,7 @@ endif()
 
 # SYCLomatic_CUSTOMIZATION begin
 if(WIN32)
-    add_compile_options(/MT)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 endif()
 # SYCLomatic_CUSTOMIZATION end
 

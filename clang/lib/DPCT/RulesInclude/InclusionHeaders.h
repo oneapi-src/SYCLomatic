@@ -67,7 +67,7 @@ class RuleGroups {
     return flag(First) | flag(Rest...);
   }
   static constexpr FlagsType flag(RuleGroupKind K) noexcept {
-    return 1 << static_cast<uint8_t>(K);
+    return 1ULL << static_cast<uint8_t>(K);
   }
 
   FlagsType Flags = flag(RuleGroupKind::RK_Common);
