@@ -1563,8 +1563,8 @@ protected:
     OS() << "{" << getNL();
     incIndent();
     indent();
-    OS() << "volatile " << CDType << " *d_mat_frag_ct1["
-         << DMatVE->getNumElements() << "] = { ";
+    OS() << "volatile void *d_mat_frag_ct1[" << DMatVE->getNumElements()
+         << "] = { ";
     for (unsigned Inst = 0; Inst != DMatVE->getNumElements(); ++Inst) {
       if (isa<InlineAsmDiscardExpr>(DMatVE->getElement(Inst)))
         continue;

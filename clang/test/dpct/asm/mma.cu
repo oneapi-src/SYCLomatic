@@ -26,7 +26,7 @@ Except for m8n8k4, all other shapes are supported for row/col layout of A/B matr
 
 __global__ void mma_kernel_m8n8k4(int *a, int *b, float *c) {
   // CHECK: {
-  // CHECK-NEXT:   volatile float *d_mat_frag_ct1[8] = { &c[0], &c[1], &c[2], &c[3], &c[4], &c[5], &c[6], &c[7] };
+  // CHECK-NEXT:   volatile void *d_mat_frag_ct1[8] = { &c[0], &c[1], &c[2], &c[3], &c[4], &c[5], &c[6], &c[7] };
   // CHECK-NEXT:   sycl::vec<uint32_t, 2> a_mat_frag_ct1(a[0], a[1]);
   // CHECK-NEXT:   sycl::vec<uint32_t, 2> b_mat_frag_ct1(b[0], b[1]);
   // CHECK-NEXT:   sycl::vec<float, 8> c_mat_frag_ct1(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]);
@@ -44,7 +44,7 @@ __global__ void mma_kernel_m8n8k4(int *a, int *b, float *c) {
 
 __global__ void mma_kernel_m8n8k16(int *a, int *b, int *c, int *d) {
   // CHECK: {
-  // CHECK-NEXT:   volatile int32_t *d_mat_frag_ct1[2] = { &d[0], &d[1] };
+  // CHECK-NEXT:   volatile void *d_mat_frag_ct1[2] = { &d[0], &d[1] };
   // CHECK-NEXT:   sycl::vec<uint32_t, 1> a_mat_frag_ct1(a[0]);
   // CHECK-NEXT:   sycl::vec<uint32_t, 1> b_mat_frag_ct1(b[0]);
   // CHECK-NEXT:   sycl::vec<int32_t, 2> c_mat_frag_ct1(c[0], c[1]);
@@ -63,7 +63,7 @@ __global__ void mma_kernel_m8n8k16(int *a, int *b, int *c, int *d) {
 
 __global__ void mma_kernel_m16n8k8(int *a, int *b, float *fc, float *fd) {
   // CHECK: {
-  // CHECK-NEXT:   volatile float *d_mat_frag_ct1[4] = { &fd[0], &fd[1], &fd[2], &fd[3] };
+  // CHECK-NEXT:   volatile void *d_mat_frag_ct1[4] = { &fd[0], &fd[1], &fd[2], &fd[3] };
   // CHECK-NEXT:   sycl::vec<uint32_t, 2> a_mat_frag_ct1(*(reinterpret_cast<int *>(&a[0])), *(reinterpret_cast<int *>(&a[1])));
   // CHECK-NEXT:   sycl::vec<uint32_t, 1> b_mat_frag_ct1(*(reinterpret_cast<int *>(&b[0])));
   // CHECK-NEXT:   sycl::vec<float, 4> c_mat_frag_ct1(fc[0], fc[1], fc[2], fc[3]);
@@ -81,7 +81,7 @@ __global__ void mma_kernel_m16n8k8(int *a, int *b, float *fc, float *fd) {
         "f"(fc[0]), "f"(fc[1]), "f"(fc[2]), "f"(fc[3]));
 
   // CHECK: {
-  // CHECK-NEXT:   volatile float *d_mat_frag_ct1[4] = { &fd[0], &fd[1], &fd[2], &fd[3] };
+  // CHECK-NEXT:   volatile void *d_mat_frag_ct1[4] = { &fd[0], &fd[1], &fd[2], &fd[3] };
   // CHECK-NEXT:   sycl::vec<uint32_t, 2> a_mat_frag_ct1(*(reinterpret_cast<int *>(&a[0])), *(reinterpret_cast<int *>(&a[1])));
   // CHECK-NEXT:   sycl::vec<uint32_t, 1> b_mat_frag_ct1(*(reinterpret_cast<int *>(&b[0])));
   // CHECK-NEXT:   sycl::vec<float, 4> c_mat_frag_ct1(fc[0], fc[1], fc[2], fc[3]);
@@ -101,7 +101,7 @@ __global__ void mma_kernel_m16n8k8(int *a, int *b, float *fc, float *fd) {
 
 __global__ void mma_kernel_m16n8k16(int *a, int *b, int *c, float *fc, int *d) {
   // CHECK: {
-  // CHECK-NEXT:   volatile float *d_mat_frag_ct1[4] = { &fc[0], &fc[1], &fc[2], &fc[3] };
+  // CHECK-NEXT:   volatile void *d_mat_frag_ct1[4] = { &fc[0], &fc[1], &fc[2], &fc[3] };
   // CHECK-NEXT:   sycl::vec<uint32_t, 4> a_mat_frag_ct1(a[0], a[1], a[2], a[3]);
   // CHECK-NEXT:   sycl::vec<uint32_t, 2> b_mat_frag_ct1(b[0], b[1]);
   // CHECK-NEXT:   sycl::vec<float, 4> c_mat_frag_ct1(fc[0], fc[1], fc[2], fc[3]);
@@ -117,7 +117,7 @@ __global__ void mma_kernel_m16n8k16(int *a, int *b, int *c, float *fc, int *d) {
           "r"(b[0]), "r"(b[1]));
 
   // CHECK: {
-  // CHECK-NEXT:   volatile int32_t *d_mat_frag_ct1[4] = { &d[0], &d[1], &d[2], &d[3] };
+  // CHECK-NEXT:   volatile void *d_mat_frag_ct1[4] = { &d[0], &d[1], &d[2], &d[3] };
   // CHECK-NEXT:   sycl::vec<uint32_t, 2> a_mat_frag_ct1(a[0], a[1]);
   // CHECK-NEXT:   sycl::vec<uint32_t, 1> b_mat_frag_ct1(b[0]);
   // CHECK-NEXT:   sycl::vec<int32_t, 4> c_mat_frag_ct1(c[0], c[1], c[2], c[3]);
@@ -136,7 +136,7 @@ __global__ void mma_kernel_m16n8k16(int *a, int *b, int *c, float *fc, int *d) {
 
 __global__ void mma_kernel_m16n8k32(int *a, int *b, int *c, int *d) {
   // CHECK: {
-  // CHECK-NEXT:   volatile int32_t *d_mat_frag_ct1[4] = { &d[0], &d[1], &d[2], &d[3] };
+  // CHECK-NEXT:   volatile void *d_mat_frag_ct1[4] = { &d[0], &d[1], &d[2], &d[3] };
   // CHECK-NEXT:   sycl::vec<uint32_t, 4> a_mat_frag_ct1(a[0], a[1], a[2], a[3]);
   // CHECK-NEXT:   sycl::vec<uint32_t, 2> b_mat_frag_ct1(b[0], b[1]);
   // CHECK-NEXT:   sycl::vec<int32_t, 4> c_mat_frag_ct1(c[0], c[1], c[2], c[3]);
