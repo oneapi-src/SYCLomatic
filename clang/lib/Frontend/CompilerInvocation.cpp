@@ -3412,7 +3412,7 @@ static bool ParseHeaderSearchArgs(HeaderSearchOptions &Opts, ArgList &Args,
   #ifdef  SYCLomatic_CUSTOMIZATION
     if (A->getValue()[0] == '"') {
       std::string str(A->getValue());
-      str.erase(std::remove(str.begin(), str.end(), '\"'), str.end());
+      str.erase(std::remove(str.begin(), str.end(), '"'), str.end());
       return str;
     }
   #endif
