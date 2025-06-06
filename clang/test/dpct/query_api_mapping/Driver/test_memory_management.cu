@@ -106,6 +106,12 @@
 // CUMEMCPY2D-NEXT:   const dpct::memcpy_parameter *c;
 // CUMEMCPY2D-NEXT:   dpct::dpct_memcpy(*c);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpy2DUnaligned | FileCheck %s -check-prefix=CUMEMCPY2DUNALIGNED
+// CUMEMCPY2DUNALIGNED: CUDA API:
+// CUMEMCPY2DUNALIGNED-NEXT:   cuMemcpy2DUnaligned(copy2d_desc /*const CUDA_MEMCPY2D **/);
+// CUMEMCPY2DUNALIGNED-NEXT: Is migrated to:
+// CUMEMCPY2DUNALIGNED-NEXT:   dpct::dpct_memcpy(*copy2d_desc /*const CUDA_MEMCPY2D **/);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpy2DAsync | FileCheck %s -check-prefix=CUMEMCPY2DASYNC
 // CUMEMCPY2DASYNC: CUDA API:
 // CUMEMCPY2DASYNC-NEXT:   const CUDA_MEMCPY2D *c;

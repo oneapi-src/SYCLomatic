@@ -90,6 +90,20 @@
 // CUDEVICEGETATTRIBUTE-NEXT:  /* 15 */ *pi = dpct::get_device(d).get_minor_version();
 // CUDEVICEGETATTRIBUTE-NEXT:  /* 16 */ *pi = dpct::get_device(d).is_native_atomic_supported();
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDeviceGetP2PAttribute | FileCheck %s -check-prefix=CUDEVICEGETP2PATTRIBUTE
+// CUDEVICEGETP2PATTRIBUTE: CUDA API:
+// CUDEVICEGETP2PATTRIBUTE-NEXT:   CUdevice_P2PAttribute attrib;
+// CUDEVICEGETP2PATTRIBUTE-NEXT:   /* 1 */ cuDeviceGetP2PAttribute(
+// CUDEVICEGETP2PATTRIBUTE-NEXT:       &value /*int **/, CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED,
+// CUDEVICEGETP2PATTRIBUTE-NEXT:       srcDevice /*CUdevice*/, dstDevice /*CUdevice*/);
+// CUDEVICEGETP2PATTRIBUTE-NEXT:   /* 2 */ cuDeviceGetP2PAttribute(
+// CUDEVICEGETP2PATTRIBUTE-NEXT:       &value /*int **/, CU_DEVICE_P2P_ATTRIBUTE_NATIVE_ATOMIC_SUPPORTED,
+// CUDEVICEGETP2PATTRIBUTE-NEXT:       srcDevice /*CUdevice*/, dstDevice /*CUdevice*/);
+// CUDEVICEGETP2PATTRIBUTE-NEXT: Is migrated to:
+// CUDEVICEGETP2PATTRIBUTE-NEXT:   sycl::ext::oneapi::peer_access attrib;
+// CUDEVICEGETP2PATTRIBUTE-NEXT:   /* 1 */ value = dpct::get_device(srcDevice).ext_oneapi_can_access_peer(dpct::get_device(dstDevice), sycl::ext::oneapi::peer_access::access_supported);
+// CUDEVICEGETP2PATTRIBUTE-NEXT:   /* 2 */ value = dpct::get_device(srcDevice).ext_oneapi_can_access_peer(dpct::get_device(dstDevice), sycl::ext::oneapi::peer_access::atomics_supported);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDeviceGetCount | FileCheck %s -check-prefix=CUDEVICEGETCOUNT
 // CUDEVICEGETCOUNT: CUDA API:
 // CUDEVICEGETCOUNT-NEXT:   cuDeviceGetCount(pi /*int **/);
@@ -124,6 +138,19 @@
 // CUDEVICEPRIMARYCTXRELEASE-NEXT:   cuDevicePrimaryCtxRelease(d /*CUdevice*/);
 // CUDEVICEPRIMARYCTXRELEASE-NEXT: The API is Removed.
 // CUDEVICEPRIMARYCTXRELEASE-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDevicePrimaryCtxSetFlags | FileCheck %s -check-prefix=CUDEVICEPRIMARYCTXSETFLAGS
+// CUDEVICEPRIMARYCTXSETFLAGS: CUDA API:
+// CUDEVICEPRIMARYCTXSETFLAGS-NEXT:   cuDevicePrimaryCtxSetFlags(device /*CUdevice*/, flags /*unsigned int*/);
+// CUDEVICEPRIMARYCTXSETFLAGS-NEXT: The API is Removed.
+// CUDEVICEPRIMARYCTXSETFLAGS-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDevicePrimaryCtxGetState | FileCheck %s -check-prefix=CUDEVICEPRIMARYCTXGETSTATE
+// CUDEVICEPRIMARYCTXGETSTATE: CUDA API:
+// CUDEVICEPRIMARYCTXGETSTATE-NEXT:   cuDevicePrimaryCtxGetState(device /*CUdevice*/, &flags /*unsigned int **/,
+// CUDEVICEPRIMARYCTXGETSTATE-NEXT:                              &active /*int **/);
+// CUDEVICEPRIMARYCTXGETSTATE-NEXT: The API is Removed.
+// CUDEVICEPRIMARYCTXGETSTATE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDevicePrimaryCtxRetain | FileCheck %s -check-prefix=CUDEVICEPRIMARYCTXRETAIN
 // CUDEVICEPRIMARYCTXRETAIN: CUDA API:
