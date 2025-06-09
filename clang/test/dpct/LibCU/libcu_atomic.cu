@@ -10,6 +10,24 @@
 // CHECK: #include <dpct/atomic.hpp>
 #include <cuda/atomic>
 
+template <class T> bool is_complete(const T &result) {
+  return !(result == static_cast<T>(0.0) && std::signbit(result));
+}
+
+template <typename T> struct ReduceArg {
+
+private:
+// CHECK:  dpct::atomic<T, sycl::memory_scope::system, sycl::memory_order::relaxed> *result_h;
+  cuda::atomic<T, cuda::thread_scope_system> *result_h;
+
+public:
+  void complete() {
+    //CHECK: while (!is_complete(result_h[0].load(sycl::memory_order::relaxed))) {
+    while (!is_complete(result_h[0].load(cuda::std::memory_order_relaxed))) {
+    }
+  }
+};
+
 int main(){
   // CHECK: sycl::atomic_fence(sycl::memory_order::release, sycl::memory_scope::system);
   cuda::atomic_thread_fence(cuda::std::memory_order_release, cuda::thread_scope_system);
