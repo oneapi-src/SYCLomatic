@@ -575,6 +575,10 @@ messages, detailed help, and suggestion to fix your errors.
      - .. include:: diagnostic_ref/dpct1136.rst
           :start-after: msg-1136-start:
           :end-before: msg-1136-end:
+   * - :ref:`DPCT1137`
+     - .. include:: diagnostic_ref/dpct1137.rst
+          :start-after: msg-1137-start:
+          :end-before: msg-1137-end:
    * - :ref:`DPCT2001`
      - .. include:: diagnostic_ref/dpct2001.rst
           :start-after: msg-2001-start:

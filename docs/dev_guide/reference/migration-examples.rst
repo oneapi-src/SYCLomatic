@@ -24,6 +24,10 @@ Supported CUDA APIs
 * **CudaExternalMemoryGetMappedBuffer**
 * **cudaExternalMemoryGetMappedMipmappedArray**
 * **cudaImportExternalMemory**
+* **cudaDestroyExternalSemaphore**
+* **cudaImportExternalSemaphore**
+* **cudaSignalExternalSemaphoresAsync**
+* **cudaWaitExternalSemaphoresAsync**
 
 Examples
 ********
@@ -98,55 +102,105 @@ CUDA
 
 .. code-block:: none
 
-   // Create a resource using Vulkan APIs
+   VkDevice device = {};
+
+   // Create a texture resource using Vulkan APIs
    VkImage vkTexture;
+   VkImageCreateInfo imageCreateInfo = {}; // init and fill texture descriptor
+   vkCreateImage(device, &imageCreateInfo, nullptr, &vkTexture);
 
-   cudaExternalMemoryHandleDesc memHandleDesc; cudaExternalMemoryMipmappedArrayDesc mipmapDesc;
+   // Create a semaphore resource using Vulkan APIs
+   VkSemaphore vkSemaphore;
+   VkSemaphoreCreateInfo semaphoreInfo = {}; // init and fill semaphore descriptor
+   vkCreateSemaphore(device, &semaphoreInfo, nullptr, &vkSemaphore);
+
+   cudaStream_t stream;
+   cudaStreamCreate(&stream);
+
+   cudaExternalMemoryHandleDesc memHandleDesc;
+   cudaExternalMemoryMipmappedArrayDesc mipmapDesc;
    cudaExternalMemory_t externalMemory;
+   cudaExternalSemaphoreHandleDesc semHandleDesc;
+   cudaExternalSemaphore_t externalSemaphore;
+   cudaExternalSemaphoreWaitParams waitParams;
+   cudaExternalSemaphoreSignalParams signalParams;
 
-   // Import the memory from external resource (Vulkan)
+
+   // Import the memory from external resource (vkTexture)
    cudaImportExternalMemory(&externalMemory, &memHandleDesc);
+   // Import the semaphore from external resource (vkSemaphore)
+   cudaImportExternalSemaphore(&externalSemaphore, &semHandleDesc);
+
+   // Wait on the semaphore using external resource
+   cudaWaitExternalSemaphoresAsync(&externalSemaphore, &waitParams, 1, stream);
 
    // Get the mapped array from the CUDA resource
    cudaMipmappedArray_t cudaMipmappedArray = nullptr;
-   cudaExternalMemoryGetMappedMipmappedArray(&cudaMipmappedArray,
-                                             externalMemory,
-                                             &mipmapDesc);
+   cudaExternalMemoryGetMappedMipmappedArray(&cudaMipmappedArray, externalMemory, &mipmapDesc);
+
+   // Signal the semaphore using external resource
+   cudaSignalExternalSemaphoresAsync(&externalSemaphore, &signalParams, 1, stream);
 
    // Retrieve the tex data as a cudaArray from cudaMipmappedArray
    cudaArray_t cudaArr;
    cudaGetMipmappedArrayLevel(&cudaArr, cudaMipmappedArray, 0);
 
-   // Destroy the CUDA resource
+   // Destroy the CUDA resources
    cudaDestroyExternalMemory(externalMemory);
+   cudaDestroyExternalSemaphore(externalSemaphore);
 
 Migrated Code
 
 .. code-block:: none
 
-   // Create a resource using Vulkan APIs
+   VkDevice device = {};
+
+   // Create a texture resource using Vulkan APIs
    VkImage vkTexture;
+   VkImageCreateInfo imageCreateInfo = {}; // init and fill texture descriptor
+   vkCreateImage(device, &imageCreateInfo, nullptr, &vkTexture);
+
+   // Create a semaphore resource using Vulkan APIs
+   VkSemaphore vkSemaphore;
+   VkSemaphoreCreateInfo semaphoreInfo = {}; // init and fill semaphore descriptor
+   vkCreateSemaphore(device, &semaphoreInfo, nullptr, &vkSemaphore);
+
+   dpct::queue_ptr stream;
+   stream = dpct::get_current_device().create_queue();
 
    dpct::experimental::external_mem_handle_desc memHandleDesc;
    dpct::experimental::external_mem_img_desc mipmapDesc;
    sycl::ext::oneapi::experimental::external_mem externalMemory;
+   dpct::experimental::external_sem_handle_desc semHandleDesc;
+   dpct::experimental::external_sem_wrapper_ptr externalSemaphore;
+   dpct::experimental::external_sem_params waitParams;
+   dpct::experimental::external_sem_params signalParams;
 
-   // Import the memory from external resource (Vulkan)
+
+   // Import the memory from external resource (vkTexture)
    dpct::experimental::import_external_memory(&externalMemory, &memHandleDesc));
+   // Import the semaphore from external resource (vkSemaphore)
+   dpct::experimental::import_external_semaphore(&externalSemaphore, &semHandleDesc);
+
+   // Wait on the semaphore using external resource
+   dpct::experimental::wait_external_semaphore(&externalSemaphore, &waitParams, 1, stream);
 
    // Get the mapped array from the CUDA resource
    dpct::experimental::image_mem_wrapper_ptr cudaMipmappedArray = nullptr;
-   cudaMipmappedArray = new dpct::experimental::image_mem_wrapper(
-                                externalMemory,
-                                &mipmapDesc);
+   cudaMipmappedArray = new dpct::experimental::image_mem_wrapper(externalMemory, &mipmapDesc);
+
+   // Signal the semaphore using external resource
+   dpct::experimental::signal_external_semaphore(&externalSemaphore, &signalParams, 1, stream);
 
    // Retrieve the tex data as a cudaArray from cudaMipmappedArray
    dpct::experimental::image_mem_wrapper_ptr cudaArr;
    cudaArr = cudaMipmappedArray->get_mip_level(0);
 
-   // Destroy the CUDA resource
+   // Destroy the CUDA resources
    sycl::ext::oneapi::experimental::release_external_memory(
            externalMemory, dpct::get_in_order_queue());
+   delete externalSemaphore;
+
 
 Additional Migration Examples
 -----------------------------

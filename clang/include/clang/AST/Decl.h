@@ -260,6 +260,9 @@ class NamedDecl : public Decl {
 
 private:
   NamedDecl *getUnderlyingDeclImpl() LLVM_READONLY;
+#ifdef SYCLomatic_CUSTOMIZATION
+  SourceLocation StorageClassSpecLoc = SourceLocation();
+#endif
 
 protected:
   NamedDecl(Kind DK, DeclContext *DC, SourceLocation L, DeclarationName N)
@@ -486,6 +489,12 @@ public:
   }
 
   ObjCStringFormatFamily getObjCFStringFormattingFamily() const;
+
+#ifdef SYCLomatic_CUSTOMIZATION
+  SourceLocation getStorageClassSpecLoc() const { return StorageClassSpecLoc; }
+
+  void setStorageClassSpecLoc(SourceLocation Loc) { StorageClassSpecLoc = Loc; }
+#endif
 
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
   static bool classofKind(Kind K) { return K >= firstNamed && K <= lastNamed; }

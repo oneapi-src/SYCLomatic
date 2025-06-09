@@ -1,0 +1,4 @@
+// CHECK: Warning: Only CMake scripts will be migrated as no --migrate-build-script option is provided.
+// CHECK: dpct exited with code: 4 (Migration of build script(s) completed.)
+// CHECK: [Warning]: Two migration rules (Rule:builtin_rule_execute_process, Rule:rule_execute_process) are duplicated, the migration rule (Rule:builtin_rule_execute_process) is ignored.
+// CHECK: Processing: {{(.+)}}input.cmake

@@ -349,6 +349,22 @@ RewriterMap dpct::createDoublePrecisionMathematicalFunctionsRewriterMap() {
                           makeArgWithAddressSpaceCast(2)))),
               Diagnostics::MATH_EMULATION, std::string("sincospi"),
               MapNames::getClNamespace() + std::string("sincos")))
+      // nearbyint
+      MATH_API_REWRITERS_V2(
+          "nearbyint",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::device_std,
+              CALL_FACTORY_ENTRY("nearbyint", CALL("std::nearbyint", ARG(0)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              WARNING_FACTORY_ENTRY(
+                  "nearbyint",
+                  CALL_FACTORY_ENTRY("nearbyint",
+                                     CALL(MapNames::getClNamespace() + "floor",
+                                          BO(BinaryOperatorKind::BO_Add,
+                                             PAREN(ARG(0)), ARG("0.5")))),
+                  Diagnostics::MATH_EMULATION, std::string("nearbyint"),
+                  MapNames::getClNamespace() + std::string("floor"))))
       // sinpi
       CALL_FACTORY_ENTRY(
           "sinpi",

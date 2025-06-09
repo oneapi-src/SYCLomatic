@@ -4,7 +4,7 @@
 
 // CHECK: float f(float x) {
 // CHECK-EMPTY: 
-// CHECK-NEXT:   return expf(x);
+// CHECK-NEXT:   return ::expf(x);
 // CHECK-EMPTY: 
 // CHECK-NEXT: }
 // CHECK-NEXT: float f_host_ct0(float x) {

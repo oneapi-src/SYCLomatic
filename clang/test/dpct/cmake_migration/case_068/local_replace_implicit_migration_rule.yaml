@@ -1,0 +1,6 @@
+- Rule: rule_execute_process
+  Kind: CMakeRule
+  Priority: Takeover
+  CmakeSyntax: execute_process
+  In: execute_process(${args1} ${args2} ${args3})
+  Out: "#execute_process(${args1} ${args2} ${args3})"
