@@ -344,6 +344,8 @@ The values are:
 - ``=device_info``: Disable the Intel extensions for device information, if supported
   by the compiler and the backend. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_intel_device_info.md>`__.
 - ``=enqueued_barriers``: Disable the enqueued barriers extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_enqueue_barrier.asciidoc>`__.
+- ``=free-function-queries``: Disable the free function query experimental extension 
+  that allows getting ``id``, ``item``, ``nd_item``, ``group``, and ``sub_group`` instances globally.
 - ``=peer_access``: Disable the peer access extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_peer_access.asciidoc>`__.
 - ``=assert``: Disable the assert extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_assert.asciidoc>`__.
 - ``=queue_empty``: Disable the queue empty extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_queue_empty.asciidoc>`__.
@@ -611,7 +613,7 @@ Stop migration and generation of reports if parsing errors happened. Default: ``
 .. _desc-suppress-warnings:
 
 A comma-separated list of migration warnings to suppress. Valid warning IDs
-range from 1000 to 1136. Hyphen-separated ranges are also allowed. For
+range from 1000 to 1137. Hyphen-separated ranges are also allowed. For
 example: ``-suppress-warnings=1000-1010,1011``.
 
 .. _end-suppress-warnings:
@@ -681,9 +683,8 @@ The values are:
   `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc>`__.
 - ``=dpl-experimental-api``: Experimental extension that allows use of experimental
   oneDPL APIs. `See more details <https://github.com/oneapi-src/oneDPL/tree/main/include/oneapi/dpl/pstl/experimental>`__.
-- ``=free-function-queries``: Experimental extension that allows getting
-  ``id``, ``item``, ``nd_item``, ``group``, and ``sub_group`` instances
-  globally. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_free_function_queries.asciidoc>`__.
+- ``=free-function-queries``: DEPRECATED. Experimental extension that allows getting ``id``, 
+  ``item``, ``nd_item``, ``group``, and ``sub_group`` instances globally. Deprecate this option as the feature is turned on by default.
 - ``=local-memory-kernel-scope-allocation``: Experimental extension that
   allows allocation of local memory objects at the kernel functor scope. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_local_memory.asciidoc>`__.
 - ``=logical-group``: Experimental helper function used to logically
@@ -713,6 +714,8 @@ The values are:
 - ``=non-standard-sycl-builtins``: Experimental extension that allows use of non standard
   SYCL builtin functions.
 - ``=prefetch``: Experimental extension that allows use of SYCL prefetch APIs.
+- ``=level_zero``: Experimental migration feature that enables the use of Level Zero APIs
+  to migrate target code, like CUDA Inter-Process Communication (IPC) APIs.
 - ``=all``: Enable all experimental extensions listed in this option.
 
 .. _end-use-experimental-features:

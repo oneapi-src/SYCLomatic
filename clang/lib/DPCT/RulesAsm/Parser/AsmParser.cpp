@@ -736,10 +736,11 @@ InlineAsmExprResult InlineAsmParser::ActOnParenExpr(InlineAsmExpr *SubExpr) {
 InlineAsmExprResult
 InlineAsmParser::ActOnVectorExpr(ArrayRef<InlineAsmExpr *> Vec) {
 
-  // Vector size for ldmatrix are 1, 2, 4
+  // Vector size for ldmatrix/stmatrix are 1, 2, 4
   // size(x) = 2 * sizeof(v).
   InlineAsmVectorType::VecKind Kind;
-  if (Opcode->getTokenID() == asmtok::op_ldmatrix) {
+  if (Opcode->getTokenID() == asmtok::op_ldmatrix ||
+      Opcode->getTokenID() == asmtok::op_stmatrix) {
     switch (Vec.size()) {
     case 1:
       Kind = InlineAsmVectorType::x1;

@@ -575,15 +575,25 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
 
 // cmake systaxes need to be processed by implicit migration rules, as they are
 // difficult to be described with yaml based rule syntax.
-static const std::vector<std::string> ImplicitMigrationRules = {
+static const std::vector<std::string> BuiltinMigrationRules = {
     "cmake_minimum_required", "execute_process", "cuda_compile",
     "cuda_compile_fatbin"};
 
-static void reserveImplicitMigrationRules() {
-  for (const auto &Rule : ImplicitMigrationRules) {
-    MetaRuleObject::PatternRewriter PrePR;
-    PrePR.BuildScriptSyntax = Rule;
-    CmakeBuildInRules[PrePR.BuildScriptSyntax] = PrePR;
+static void applyBuiltinMigrationRules() {
+  for (const auto &Rule : BuiltinMigrationRules) {
+    MetaRuleObject::PatternRewriter BuiltinPR;
+    BuiltinPR.BuildScriptSyntax = Rule;
+    BuiltinPR.RuleId = "builtin_rule_" + Rule;
+
+    auto &PR = CmakeBuildInRules[Rule];
+    if (PR.Priority != RulePriority::Takeover) {
+      PR = BuiltinPR;
+    } else {
+      llvm::outs() << "[Warning]: Two migration rules (Rule:"
+                   << BuiltinPR.RuleId << ", Rule:" << PR.RuleId
+                   << ") are duplicated, the migration rule (Rule:"
+                   << BuiltinPR.RuleId << ") is ignored.\n";
+    }
   }
 }
 
@@ -592,7 +602,7 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
   loadBufferFromFile(InRoot, OutRoot, CmakeScriptFileBufferMap);
   unifyInputFileFormat(CmakeScriptFileBufferMap, ScriptFileCRLFMap);
   convertAllCmakeCommandsToLowerCase();
-  reserveImplicitMigrationRules();
+  applyBuiltinMigrationRules();
   doCmakeScriptAnalysis();
   applyCmakeMigrationRules(InRoot, OutRoot);
   storeBufferToFile(CmakeScriptFileBufferMap, ScriptFileCRLFMap);
@@ -610,7 +620,7 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
         Iter->second.Priority > PR.Priority) {
       CmakeBuildInRules[PR.BuildScriptSyntax] = PR;
     } else {
-      llvm::outs() << "[Warnning]: Two migration rules (Rule:" << R.RuleId
+      llvm::outs() << "[Warning]: Two migration rules (Rule:" << R.RuleId
                    << ", Rule:" << Iter->second.RuleId
                    << ") are duplicated, the migration rule (Rule:" << R.RuleId
                    << ") is ignored.\n";

@@ -846,11 +846,17 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
   auto processOperatorExpr = [&](const Expr *Obj) {
     std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
         Obj->getType().getCanonicalType());
-    if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
+    if (OpType.find("cub::Sum") != std::string::npos ||
+        OpType.find("cuda::std::plus") != std::string::npos ||
+        OpType.find("thrust::plus") != std::string::npos) {
       OpRepl = MapNames::getClNamespace() + "plus<>()";
-    } else if (OpType == "cub::Max" || OpType == "cuda::maximum<void>") {
+    } else if (OpType.find("cub::Max") != std::string::npos ||
+               OpType.find("cuda::maximum") != std::string::npos ||
+               OpType.find("thrust::maximum") != std::string::npos) {
       OpRepl = MapNames::getClNamespace() + "maximum<>()";
-    } else if (OpType == "cub::Min" || OpType == "cuda::minimum<void>") {
+    } else if (OpType.find("cub::Min") != std::string::npos ||
+               OpType.find("cuda::minimum") != std::string::npos ||
+               OpType.find("thrust::minimum") != std::string::npos) {
       OpRepl = MapNames::getClNamespace() + "minimum<>()";
     }
   };
@@ -861,17 +867,21 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
     } else {
       auto CtorArg = Op->getArg(0)->IgnoreImplicitAsWritten();
       if (auto DRE = dyn_cast<DeclRefExpr>(CtorArg)) {
-        auto D = DRE->getDecl();
-        if (!D)
-          return OpRepl;
-        std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
-            D->getType().getCanonicalType());
-        if (OpType == "cub::Sum" || OpType == "cub::Max" ||
-            OpType == "cub::Min" || OpType == "cuda::std::plus<void>" ||
-            OpType == "cuda::maximum<void>" ||
-            OpType == "cuda::minimum<void>") {
-          ExprAnalysis EA(Operator);
-          OpRepl = EA.getReplacedString();
+        if (auto D = DRE->getDecl()) {
+          std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
+              D->getType().getCanonicalType());
+          if (OpType.find("cub::Sum") != std::string::npos ||
+              OpType.find("cub::Max") != std::string::npos ||
+              OpType.find("cub::Min") != std::string::npos ||
+              OpType.find("cuda::std::plus") != std::string::npos ||
+              OpType.find("cuda::maximum") != std::string::npos ||
+              OpType.find("cuda::minimum") != std::string::npos ||
+              OpType.find("thrust::plus") != std::string::npos ||
+              OpType.find("thrust::maximum") != std::string::npos ||
+              OpType.find("thrust::minimum") != std::string::npos) {
+            ExprAnalysis EA(Operator);
+            OpRepl = EA.getReplacedString();
+          }
         }
       } else if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(CtorArg)) {
         processOperatorExpr(CXXTempObj);
