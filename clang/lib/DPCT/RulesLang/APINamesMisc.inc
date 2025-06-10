@@ -17,9 +17,10 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL(MapNames::getDpctNamespace() +
                          "experimental::calculate_max_active_wg_per_xecore",
                      ARG(0), ARG(2),
-                     BO(BinaryOperatorKind::BO_Add, ARG(3),
-                        ARG("dpct_placeholder /* total share local memory "
-                            "size */"))))),
+                     makeCombinedArg(ARG(3),
+                                     ARG(" /* + dpct_placeholder (replace "
+                                         "dpct_placeholder with static "
+                                         "share local memory size) */"))))),
         Diagnostics::MAX_ACTIVE_WG_ARGS,
         ARG(MapNames::getDpctNamespace() +
             "experimental::calculate_max_active_wg_per_xecore"),
@@ -38,9 +39,10 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL(MapNames::getDpctNamespace() +
                          "experimental::calculate_max_active_wg_per_xecore",
                      ARG(0), ARG(2),
-                     BO(BinaryOperatorKind::BO_Add, ARG(3),
-                        ARG("dpct_placeholder /* total share local memory "
-                            "size */"))))),
+                     makeCombinedArg(ARG(3),
+                                     ARG(" /* + dpct_placeholder (replace "
+                                         "dpct_placeholder with static "
+                                         "share local memory size) */"))))),
         Diagnostics::MAX_ACTIVE_WG_ARGS,
         ARG(MapNames::getDpctNamespace() +
             "experimental::calculate_max_active_wg_per_xecore"),
@@ -59,9 +61,10 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL(MapNames::getDpctNamespace() +
                          "experimental::calculate_max_potential_wg",
                      ARG(0), ARG(1), ARG(4),
-                     BO(BinaryOperatorKind::BO_Add, ARG(3),
-                        ARG("dpct_placeholder /* total share local memory "
-                            "size */")))),
+                     makeCombinedArg(ARG(3),
+                                     ARG(" /* + dpct_placeholder (replace "
+                                         "dpct_placeholder with static "
+                                         "share local memory size) */")))),
             CONDITIONAL_FACTORY_ENTRY(
                 CheckArgCount(4, std::equal_to<>(), false),
                 CALL_FACTORY_ENTRY(
@@ -69,16 +72,18 @@ CONDITIONAL_FACTORY_ENTRY(
                     CALL(MapNames::getDpctNamespace() +
                              "experimental::calculate_max_potential_wg",
                          ARG(0), ARG(1), ARG("0"),
-                         BO(BinaryOperatorKind::BO_Add, ARG(3),
-                            ARG("dpct_placeholder /* total share local memory "
-                                "size */")))),
+                         makeCombinedArg(ARG(3),
+                                         ARG(" /* + dpct_placeholder (replace "
+                                             "dpct_placeholder with static "
+                                             "share local memory size) */")))),
                 CALL_FACTORY_ENTRY(
                     "cudaOccupancyMaxPotentialBlockSize",
                     CALL(MapNames::getDpctNamespace() +
                              "experimental::calculate_max_potential_wg",
                          ARG(0), ARG(1), ARG("0"),
-                         ARG("dpct_placeholder /* total share local memory "
-                             "size */"))))),
+                         ARG("/* dpct_placeholder (replace dpct_placeholder "
+                             "with static share local memory "
+                             "size) */"))))),
         Diagnostics::MAX_ACTIVE_WG_ARGS,
         ARG(MapNames::getDpctNamespace() +
             "experimental::calculate_max_potential_wg"),

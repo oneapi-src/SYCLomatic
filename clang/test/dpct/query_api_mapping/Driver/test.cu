@@ -402,7 +402,7 @@
 // CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:   cuOccupancyMaxActiveBlocksPerMultiprocessor(pi /*int **/, f /*CUfunction*/,
 // CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:                                               i /*int*/, s /*size_t*/);
 // CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT: Is migrated to (with the option --use-experimental-features=occupancy-calculation):
-// CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:   dpct::experimental::calculate_max_active_wg_per_xecore(pi, i, s + dpct_placeholder /* total share local memory size */);
+// CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:   dpct::experimental::calculate_max_active_wg_per_xecore(pi, i, s /* + dpct_placeholder (replace dpct_placeholder with static share local memory size) */);
 
 /// Texture Reference Management [DEPRECATED]
 

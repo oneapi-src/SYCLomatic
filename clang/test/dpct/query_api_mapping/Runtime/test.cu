@@ -360,7 +360,7 @@
 // CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:   cudaOccupancyMaxActiveBlocksPerMultiprocessor(
 // CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:       pi /*int **/, pFunc /*const void **/, i /*int*/, s /*size_t*/);
 // CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT: Is migrated to (with the option --use-experimental-features=occupancy-calculation):
-// CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:   dpct::experimental::calculate_max_active_wg_per_xecore(pi, i, s + dpct_placeholder /* total share local memory size */);
+// CUDAOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:   dpct::experimental::calculate_max_active_wg_per_xecore(pi, i, s /* + dpct_placeholder (replace dpct_placeholder with static share local memory size) */);
 
 /// Memory Management [DEPRECATED]
 
