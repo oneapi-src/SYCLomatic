@@ -1,0 +1,1 @@
+set(CUDA_FLAGS -ffast-math )
