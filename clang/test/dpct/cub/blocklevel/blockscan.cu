@@ -135,6 +135,26 @@ __global__ void InclusiveScanKernel(int* data) {
   data[threadid] = output;
 }
 
+// CHECK: void InclusiveScanKernelThrustFunctor(int* data) {
+// CHECK:   int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
+// CHECK:   int input = data[threadid];
+// CHECK:   int output = 0;
+// CHECK:   output = sycl::inclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, sycl::plus<>());
+// CHECK:   data[threadid] = output;
+// CHECK: }
+__global__ void InclusiveScanKernelThrustFunctor(int* data) {
+  typedef cub::BlockScan<int, 4> BlockScan;
+
+  __shared__ typename BlockScan::TempStorage temp1;
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output = 0;
+  BlockScan(temp1).InclusiveScan(input, output, thrust::plus<>());
+  data[threadid] = output;
+}
+
 //CHECK: void InclusiveScanKernel_Max(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);

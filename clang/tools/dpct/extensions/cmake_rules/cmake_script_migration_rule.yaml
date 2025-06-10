@@ -2923,16 +2923,28 @@
       In: -Xcudafe=${arg}
       Out: ""
 
-- Rule: rule_extended_lambda_remove
+- Rule: rule_dash_dash_extended_lambda_remove
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: extended_lambda_remove
+  CmakeSyntax: dash_dash_extended_lambda_remove
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
     value:
       MatchMode: Full
       In: --extended-lambda
+      Out: ""
+
+- Rule: rule_dash_extended_lambda_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: dash_extended_lambda_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In:  -extended-lambda
       Out: ""
 
 - Rule: rule_expt_relaxed_constexpr_remove
