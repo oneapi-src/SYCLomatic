@@ -854,6 +854,9 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   }
   if (const auto *TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
+    auto CMD = dpct::DpctGlobalInfo::findAncestor<CXXMethodDecl>(TL);
+    if (CMD && !CMD->isUserProvided())
+      return;
     if (const auto *TypePtr = TL->getTypePtr()) {
       if (isTypeInAnalysisScope(TypePtr)) {
         if (const auto *const ET = dyn_cast<ElaboratedType>(TypePtr))
