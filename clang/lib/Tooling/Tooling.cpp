@@ -181,7 +181,7 @@ std::string getRealFilePath(std::string File, clang::FileManager *FM){
   llvm::sys::path::remove_dots(FilePathAbs, true);
   RealFilePath = FilePathAbs.str().str();
   auto FE = FM->getOptionalFileRef(File);
-  if (FE) {
+  if (FE && !FE->getFileEntry().tryGetRealPathName().empty()) {
     RealFilePath = FE->getFileEntry().tryGetRealPathName().str();
   }
   return RealFilePath;
