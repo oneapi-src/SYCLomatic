@@ -192,3 +192,9 @@
   In: c10::cuda::CUDAGuard
   Out: c10::DeviceGuard
   Includes: [<c10/core/DeviceGuard.h>]
+
+- Rule: rule_decl_CUDAGuard_with_tenosr
+  Kind: PatternRewriter
+  Priority: Takeover
+  In: c10::DeviceGuard device_guard{${args}};
+  Out: c10::DeviceGuard device_guard{c10::Device(at::kXPU, ${args})};
