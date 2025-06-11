@@ -799,7 +799,6 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                              hasType(hasCanonicalType(qualType(hasDeclaration(
                                  recordDecl(isUnion(), has(fieldDecl())))))),
                              hasType(typeContainsString("TempStorage"))))))
-                            //  hasType(namedDecl(hasAnyName("TempStorage")))))))
                     .bind("DeclStmt"),
                 this);
 
@@ -926,6 +925,7 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
           VDecl->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
       emplaceTransformation(new ReplaceDecl(RD, ""));
     }
+
     // always remove TempStorage variable declaration
     emplaceTransformation(new ReplaceStmt(DS, ""));
 
@@ -975,24 +975,19 @@ void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
           DpctGlobalInfo::getContext())) &&
       CanonicalTypeStr.find("class cub::") != 0)
     return;
-TD->dump();
+
   std::string TypeName = TD->getNameAsString();
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
 
-
   auto MyMatcher = compoundStmt(
       forEachDescendant(typeLoc(loc(qualType(hasDeclaration(
-                                   anyOf(typedefDecl(hasName(TypeName)), 
+                                    anyOf(typedefDecl(hasName(TypeName)),
                                           typeAliasDecl(hasName(TypeName)))))))
-
-          // typeLoc(loc(qualType(hasDeclaration(
-          //                                 typeAliasDecl(hasName(TypeName)))))))
                             .bind("typeLoc")));
   auto MatcherScope = DpctGlobalInfo::findAncestor<CompoundStmt>(TD);
   if (!MatcherScope)
     return;
-  
   auto TypeLocMatchResult =
       ast_matchers::match(MyMatcher, *MatcherScope, Context);
   bool DeleteFlag = true;
