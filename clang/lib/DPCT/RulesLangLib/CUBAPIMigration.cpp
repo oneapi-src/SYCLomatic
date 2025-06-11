@@ -799,6 +799,7 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                              hasType(hasCanonicalType(qualType(hasDeclaration(
                                  recordDecl(isUnion(), has(fieldDecl())))))),
                              hasType(typeContainsString("TempStorage"))))))
+                            //  hasType(namedDecl(hasAnyName("TempStorage")))))))
                     .bind("DeclStmt"),
                 this);
 
@@ -925,7 +926,6 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
           VDecl->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
       emplaceTransformation(new ReplaceDecl(RD, ""));
     }
-
     // always remove TempStorage variable declaration
     emplaceTransformation(new ReplaceStmt(DS, ""));
 
@@ -946,10 +946,14 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
       if (isTypeInAnalysisScope(ObjCanonicalType.getTypePtr())) {
         continue;
       } else if (ObjTypeStr.find("class cub::WarpScan") == 0 ||
-                 ObjTypeStr.find("class cub::WarpReduce") == 0) {
+                 ObjTypeStr.find("class cub::WarpReduce") == 0 ||
+                 ObjTypeStr.find("WarpScan<") == 0 ||
+                 ObjTypeStr.find("WarpReduce<") == 0) {
         Repl = DpctGlobalInfo::getSubGroup(DRE);
       } else if (ObjTypeStr.find("class cub::BlockScan") == 0 ||
-                 ObjTypeStr.find("class cub::BlockReduce") == 0) {
+                 ObjTypeStr.find("class cub::BlockReduce") == 0 ||
+                 ObjTypeStr.find("BlockScan<") == 0 ||
+                 ObjTypeStr.find("BlockReduce<") == 0) {
         Repl = DpctGlobalInfo::getGroup(DRE);
       } else {
         continue;
@@ -973,7 +977,6 @@ void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
     return;
 TD->dump();
   std::string TypeName = TD->getNameAsString();
-  llvm::outs() << "Type name  " << TypeName << "\n";
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
 
@@ -987,21 +990,15 @@ TD->dump();
           //                                 typeAliasDecl(hasName(TypeName)))))))
                             .bind("typeLoc")));
   auto MatcherScope = DpctGlobalInfo::findAncestor<CompoundStmt>(TD);
-      llvm::outs() << "EEEEEEEEEEEEEEEEEE T1aaa\n";
-  
   if (!MatcherScope)
     return;
-      llvm::outs() << "EEEEEEEEEEEEEEEEEE T1ccc\n";
   
   auto TypeLocMatchResult =
       ast_matchers::match(MyMatcher, *MatcherScope, Context);
   bool DeleteFlag = true;
   // Currently, typedef decl can be deleted in following cases
   for (auto &Element : TypeLocMatchResult) {
-      llvm::outs() << "EEEEEEEEEEEEEEEEEE T1xxx\n";
-    
     if (auto TL = Element.getNodeAs<TypeLoc>("typeLoc")) {
-      llvm::outs() << "====== T1a\n";
       // 1. Used in temporary class constructor
       if (auto AncestorMTE =
               DpctGlobalInfo::findAncestor<MaterializeTemporaryExpr>(TL)) {
@@ -1020,8 +1017,6 @@ TD->dump();
         }
       } // 2. Used in TempStorage variable declaration
       else if (auto AncestorVD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
-      llvm::outs() << "====== T2\n";
-
         auto VarType = AncestorVD->getType().getCanonicalType();
         std::string VarTypeStr =
             AncestorVD->getType().getCanonicalType().getAsString();
@@ -1035,15 +1030,11 @@ TD->dump();
       // 3. Used in self typedef decl
       else if (auto AncestorTD =
                    DpctGlobalInfo::findAncestor<TypedefNameDecl>(TL)) {
-      llvm::outs() << "====== T3\n";
-
         if (AncestorTD != TD) {
           DeleteFlag = false;
           break;
         }
       } else if (auto *FD = DpctGlobalInfo::findAncestor<FieldDecl>(TL)) {
-      llvm::outs() << "====== T4\n";
-
         if (!isCubTempStorageType(FD->getType())) {
           DeleteFlag = false;
           break;
@@ -1056,7 +1047,6 @@ TD->dump();
   }
   // DeleteFlag=false;
   if (DeleteFlag) {
-    llvm::outs() << "XXX " << TD->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager())<< "\n";
     emplaceTransformation(new ReplaceDecl(TD, ""));
   } else {
     auto BeginLoc =
@@ -1064,7 +1054,6 @@ TD->dump();
     auto EndLoc =
         SM.getExpansionLoc(TD->getTypeSourceInfo()->getTypeLoc().getEndLoc());
     if (CanonicalTypeStr.find("Warp") != std::string::npos) {
-      llvm::outs() <<"XXXXXXXXXXXXXXXXXXXXXXX22222 \n";
       emplaceTransformation(
           replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
                       MapNames::getClNamespace() + "sub_group", SM));
@@ -1702,7 +1691,6 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
   std::string TypeName = TL->getType().getCanonicalType().getAsString();
   if (TypeName.find("class cub::WarpScan") == 0 ||
       TypeName.find("class cub::WarpReduce") == 0) {
-        std::cout << "XXXXXXXXXXXXXXXXXXXXXXX\n";
     emplaceTransformation(replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
                                       MapNames::getClNamespace() + "sub_group",
                                       SM));
