@@ -1040,7 +1040,7 @@ void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
       }
     }
   }
-  // DeleteFlag=false;
+
   if (DeleteFlag) {
     emplaceTransformation(new ReplaceDecl(TD, ""));
   } else {
