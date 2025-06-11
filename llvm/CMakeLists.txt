@@ -59,7 +59,7 @@ project(LLVM
 # SYCLomatic_CUSTOMIZATION begin
 # Must go after `project(..)` but before `add_executable(..)`
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC|IntelLLVM")
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 endif()
 # SYCLomatic_CUSTOMIZATION end
 
