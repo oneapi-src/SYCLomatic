@@ -70,4 +70,27 @@ __device__ inline void load_global_short4(short4 &a, const short4 *addr) {
   a.w = w;
 }
 
+// CHECK: __dpct_inline__ int ld_flag_volatile(int* flag_addr) {
+// CHECK-NEXT:   int flag;
+// CHECK-NEXT:   flag = *((uint32_t *)(uintptr_t)flag_addr);
+// CHECK-NEXT:   sycl::atomic_fence(sycl::memory_order::seq_cst,sycl::memory_scope::device);
+// CHECK-NEXT:   return flag;
+// CHECK-NEXT: }
+__device__ __forceinline__ int ld_flag_volatile(int* flag_addr) {
+  int flag;
+  asm volatile("ld.volatile.global.u32 %0, [%1]; membar.gl;" : "=r"(flag) : "l"(flag_addr));
+  return flag;
+}
+
+// CHECK: __dpct_inline__ int ld_flag_acquire(int* flag_addr) {
+// CHECK-NEXT:  int flag;
+// CHECK-NEXT:  flag = *((uint32_t *)(uintptr_t)flag_addr);
+// CHECK-NEXT:  return flag;
+// CHECK-NEXT: }
+__device__ __forceinline__ int ld_flag_acquire(int* flag_addr) {
+  int flag;
+  asm volatile("ld.volatile.global.u32 %0, [%1];" : "=r"(flag) : "l"(flag_addr));
+  return flag;
+}
+
 // clang-format on
