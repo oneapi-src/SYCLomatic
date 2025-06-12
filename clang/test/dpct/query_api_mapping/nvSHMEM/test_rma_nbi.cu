@@ -1,5 +1,5 @@
 // REQUIRES: system-linux
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.2
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=nvshmem_putmem_nbi | FileCheck %s -check-prefix=NVSHMEM_PUTMEM_NBI
 // NVSHMEM_PUTMEM_NBI: CUDA API:
