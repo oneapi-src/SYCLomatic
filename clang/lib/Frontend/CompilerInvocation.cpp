@@ -3409,6 +3409,13 @@ static bool ParseHeaderSearchArgs(HeaderSearchOptions &Opts, ArgList &Args,
                            &Opts](const llvm::opt::Arg *A,
                                   bool IsFramework = false) -> std::string {
     assert(A->getNumValues() && "Unexpected empty search path flag!");
+  #ifdef  SYCLomatic_CUSTOMIZATION
+    if (A->getValue()[0] == '"') {
+      std::string str(A->getValue());
+      str.erase(std::remove(str.begin(), str.end(), '"'), str.end());
+      return str;
+    }
+  #endif
     if (IsSysrootSpecified && !IsFramework && A->getValue()[0] == '=') {
       SmallString<32> Buffer;
       llvm::sys::path::append(Buffer, Opts.Sysroot,

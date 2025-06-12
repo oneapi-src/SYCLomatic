@@ -450,6 +450,7 @@ MODIFIER(cs, ".cs")
 MODIFIER(to, ".to")
 MODIFIER(aligned, ".aligned")
 MODIFIER(trans, ".trans")
+MODIFIER(ptx_volatile, ".volatile")
 
 #undef LINKAGE
 #undef TARGET
