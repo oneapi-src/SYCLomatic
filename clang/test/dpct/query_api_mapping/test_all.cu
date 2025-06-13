@@ -759,6 +759,11 @@
 // CHECK-NEXT: cub::DeviceSelect::Flagged
 // CHECK-NEXT: cub::DeviceSelect::If
 // CHECK-NEXT: cub::DeviceSelect::Unique
+// CHECK-NEXT: cub::WarpScan::Broadcast
+// CHECK-NEXT: cub::WarpScan::ExclusiveScan
+// CHECK-NEXT: cub::WarpScan::ExclusiveSum
+// CHECK-NEXT: cub::WarpScan::InclusiveScan
+// CHECK-NEXT: cub::WarpScan::InclusiveSum
 // CHECK-NEXT: cublasAsumEx
 // CHECK-NEXT: cublasAsumEx_64
 // CHECK-NEXT: cublasAxpyEx
