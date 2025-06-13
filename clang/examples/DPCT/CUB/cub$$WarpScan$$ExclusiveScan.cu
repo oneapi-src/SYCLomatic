@@ -5,6 +5,6 @@
 __device__ void test(int thread_data) {
   // Start
   __shared__ typename cub::WarpScan<int>::TempStorage temp_storage;
-  cub::WarpScan<int>(temp_storage).ExclusiveScan(thread_data, thread_data, cub::Sum());
+  cub::WarpScan<int>(temp_storage).ExclusiveScan(thread_data/*int*/, thread_data/*int &*/, cub::Sum()/*ScanOp*/);
   // End
 }
