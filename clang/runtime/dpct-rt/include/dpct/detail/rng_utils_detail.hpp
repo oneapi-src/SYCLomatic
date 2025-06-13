@@ -344,12 +344,12 @@ private:
 #else
         // since C++20
 #if defined(_MSC_VER) && !defined(__clang__)
-#pragma message("warning: oneapi::mkl::rng::mrg32k3a_mode::custom cannot be "
-                "initialized with a value since C++20. Ignore the parameter "
+#pragma message("warning: oneapi::mkl::rng::mrg32k3a_mode::custom cannot be "  \
+                "initialized with a value since C++20. Ignore the parameter "  \
                 "`mode`.")
 #else
-#warning "oneapi::mkl::rng::mrg32k3a_mode::custom cannot be initialized with a "
-         "value since C++20. Ignore the parameter `mode`."
+#warning "oneapi::mkl::rng::mrg32k3a_mode::custom cannot be initialized with " \
+         "a value since C++20. Ignore the parameter `mode`."
 #endif
         return engine_t(*queue, dimensions);
 #endif
