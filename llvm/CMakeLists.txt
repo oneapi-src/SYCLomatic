@@ -49,9 +49,19 @@ if (CMAKE_GENERATOR STREQUAL "Xcode" AND NOT CMAKE_OSX_ARCHITECTURES)
   set(CMAKE_OSX_ARCHITECTURES "x86_64")
 endif()
 
+# SYCLomatic_CUSTOMIZATION begin
+# Must go before `project(..)`.
+cmake_policy(SET CMP0091 NEW)
+# SYCLomatic_CUSTOMIZATION end
 project(LLVM
   VERSION ${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}
   LANGUAGES C CXX ASM)
+# SYCLomatic_CUSTOMIZATION begin
+# Must go after `project(..)` but before `add_executable(..)`
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC|IntelLLVM")
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+endif()
+# SYCLomatic_CUSTOMIZATION end
 
 if (NOT DEFINED CMAKE_INSTALL_LIBDIR AND DEFINED LLVM_LIBDIR_SUFFIX)
   # Must go before `include(GNUInstallDirs)`.
@@ -869,12 +879,6 @@ if(NOT DEFINED LLVM_DYLIB_COMPONENTS)
   set(LLVM_DYLIB_COMPONENTS "all" CACHE STRING
     "Semicolon-separated list of components to include in libLLVM, or \"all\".")
 endif()
-
-# SYCLomatic_CUSTOMIZATION begin
-if(WIN32)
-    add_compile_options(/MT)
-endif()
-# SYCLomatic_CUSTOMIZATION end
 
 if(MSVC)
   option(LLVM_BUILD_LLVM_C_DYLIB "Build LLVM-C.dll (Windows only)" ON)

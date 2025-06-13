@@ -49,3 +49,8 @@ int main(){
 
   return 0;
 }
+
+template <class T> __device__ void atomic_test(typename T::data_t t) {
+  // CHECK: sycl::atomic_ref<typename T::data_t, sycl::memory_order::relaxed, sycl::memory_scope::system> b(t);
+  cuda::std::atomic_ref<typename T::data_t> b(t);
+}

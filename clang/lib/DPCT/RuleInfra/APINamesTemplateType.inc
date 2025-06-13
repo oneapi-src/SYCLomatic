@@ -29,6 +29,26 @@ TYPE_REWRITE_ENTRY(
                      TEMPLATE_ARG(0))))
 
 TYPE_REWRITE_ENTRY(
+    "cuda::atomic_ref",
+    TYPE_CONDITIONAL_FACTORY(
+        CheckTemplateArgCount(2),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() + "atomic_ref"),
+                     TEMPLATE_ARG(0),
+                     STR(MapNames::getClNamespace() + "memory_order::relaxed"),
+                     TEMPLATE_ARG(1)),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() + "atomic_ref"),
+                     TEMPLATE_ARG(0),
+                     STR(MapNames::getClNamespace() + "memory_order::relaxed"),
+                     STR(MapNames::getClNamespace() + "memory_scope:system"))))
+
+TYPE_REWRITE_ENTRY(
+    "cuda::std::atomic_ref",
+    TYPE_FACTORY(STR(MapNames::getClNamespace() + "atomic_ref"),
+                 TEMPLATE_ARG(0),
+                 STR(MapNames::getClNamespace() + "memory_order::relaxed"),
+                 STR(MapNames::getClNamespace() + "memory_scope::system")))
+
+TYPE_REWRITE_ENTRY(
     "thrust::not_equal_to",
     TYPE_FACTORY(STR("std::not_equal_to"), TEMPLATE_ARG(0)))
 
