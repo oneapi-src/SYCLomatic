@@ -1786,6 +1786,9 @@
 // CHECK-NEXT: cusparseCcsrmm2
 // CHECK-NEXT: cusparseCcsrmv
 // CHECK-NEXT: cusparseCcsrmv_mp
+// CHECK-NEXT: cusparseCcsrsm2_analysis
+// CHECK-NEXT: cusparseCcsrsm2_bufferSizeExt
+// CHECK-NEXT: cusparseCcsrsm2_solve
 // CHECK-NEXT: cusparseCcsrsv2_analysis
 // CHECK-NEXT: cusparseCcsrsv2_bufferSize
 // CHECK-NEXT: cusparseCcsrsv2_bufferSizeExt
@@ -1797,6 +1800,8 @@
 // CHECK-NEXT: cusparseCreate
 // CHECK-NEXT: cusparseCreateConstDnVec
 // CHECK-NEXT: cusparseCreateCsr
+// CHECK-NEXT: cusparseCreateCsrgemm2Info
+// CHECK-NEXT: cusparseCreateCsrsm2Info
 // CHECK-NEXT: cusparseCreateCsrsv2Info
 // CHECK-NEXT: cusparseCreateDnMat
 // CHECK-NEXT: cusparseCreateDnVec
@@ -1815,6 +1820,9 @@
 // CHECK-NEXT: cusparseDcsrmm2
 // CHECK-NEXT: cusparseDcsrmv
 // CHECK-NEXT: cusparseDcsrmv_mp
+// CHECK-NEXT: cusparseDcsrsm2_analysis
+// CHECK-NEXT: cusparseDcsrsm2_bufferSizeExt
+// CHECK-NEXT: cusparseDcsrsm2_solve
 // CHECK-NEXT: cusparseDcsrsv2_analysis
 // CHECK-NEXT: cusparseDcsrsv2_bufferSize
 // CHECK-NEXT: cusparseDcsrsv2_bufferSizeExt
@@ -1822,6 +1830,8 @@
 // CHECK-NEXT: cusparseDcsrsv_analysis
 // CHECK-NEXT: cusparseDcsrsv_solve
 // CHECK-NEXT: cusparseDestroy
+// CHECK-NEXT: cusparseDestroyCsrgemm2Info
+// CHECK-NEXT: cusparseDestroyCsrsm2Info
 // CHECK-NEXT: cusparseDestroyCsrsv2Info
 // CHECK-NEXT: cusparseDestroyDnMat
 // CHECK-NEXT: cusparseDestroyDnVec
@@ -1848,6 +1858,9 @@
 // CHECK-NEXT: cusparseScsrmm2
 // CHECK-NEXT: cusparseScsrmv
 // CHECK-NEXT: cusparseScsrmv_mp
+// CHECK-NEXT: cusparseScsrsm2_analysis
+// CHECK-NEXT: cusparseScsrsm2_bufferSizeExt
+// CHECK-NEXT: cusparseScsrsm2_solve
 // CHECK-NEXT: cusparseScsrsv2_analysis
 // CHECK-NEXT: cusparseScsrsv2_bufferSize
 // CHECK-NEXT: cusparseScsrsv2_bufferSizeExt
@@ -1892,6 +1905,9 @@
 // CHECK-NEXT: cusparseZcsrmm2
 // CHECK-NEXT: cusparseZcsrmv
 // CHECK-NEXT: cusparseZcsrmv_mp
+// CHECK-NEXT: cusparseZcsrsm2_analysis
+// CHECK-NEXT: cusparseZcsrsm2_bufferSizeExt
+// CHECK-NEXT: cusparseZcsrsm2_solve
 // CHECK-NEXT: cusparseZcsrsv2_analysis
 // CHECK-NEXT: cusparseZcsrsv2_bufferSize
 // CHECK-NEXT: cusparseZcsrsv2_bufferSizeExt
