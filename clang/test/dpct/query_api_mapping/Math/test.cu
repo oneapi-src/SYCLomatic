@@ -289,3 +289,69 @@
 // __USAD-NEXT:   __usad(u1 /*unsigned int*/, u2 /*unsigned int*/, u3 /*unsigned int*/);
 // __USAD-NEXT: Is migrated to:
 // __USAD-NEXT:   sycl::abs_diff(u1, u2)+u3;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dp2a_hi | FileCheck %s -check-prefix=__dp2a_hi
+// __dp2a_hi: CUDA API:
+// __dp2a_hi-NEXT:   __dp2a_hi(i_a /*int*/, i_b /*int*/, i_c /*int*/);
+// __dp2a_hi-NEXT:   __dp2a_hi(ui_a /*unsigned int*/, ui_b /*unsigned int*/,
+// __dp2a_hi-NEXT:             ui_c /*unsigned int*/);
+// __dp2a_hi-NEXT:   __dp2a_hi(us2_a /*ushort2*/, uc4_b /*uchar4*/, ui_c /*unsigned int*/);
+// __dp2a_hi-NEXT:   __dp2a_hi(s2_a /*short2*/, c4_b /*char4*/, i_c /*int*/);
+// __dp2a_hi-NEXT: Is migrated to:
+// __dp2a_hi-NEXT:   dpct::dp2a_hi(i_a, i_b, i_c);
+// __dp2a_hi-NEXT:   dpct::dp2a_hi(ui_a, ui_b, ui_c);
+// __dp2a_hi-NEXT:   dpct::dp2a_hi(us2_a, uc4_b, ui_c);
+// __dp2a_hi-NEXT:   dpct::dp2a_hi(s2_a, c4_b, i_c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dp2a_lo | FileCheck %s -check-prefix=__dp2a_lo
+// __dp2a_lo: CUDA API:
+// __dp2a_lo-NEXT:   __dp2a_lo(i_a /*int*/, i_b /*int*/, i_c /*int*/);
+// __dp2a_lo-NEXT:   __dp2a_lo(ui_a /*unsigned int*/, ui_b /*unsigned int*/,
+// __dp2a_lo-NEXT:             ui_c /*unsigned int*/);
+// __dp2a_lo-NEXT:   __dp2a_lo(us2_a /*ushort2*/, uc4_b /*uchar4*/, ui_c /*unsigned int*/);
+// __dp2a_lo-NEXT:   __dp2a_lo(s2_a /*short2*/, c4_b /*char4*/, i_c /*int*/);
+// __dp2a_lo-NEXT: Is migrated to:
+// __dp2a_lo-NEXT:   dpct::dp2a_lo(i_a, i_b, i_c);
+// __dp2a_lo-NEXT:   dpct::dp2a_lo(ui_a, ui_b, ui_c);
+// __dp2a_lo-NEXT:   dpct::dp2a_lo(us2_a, uc4_b, ui_c);
+// __dp2a_lo-NEXT:   dpct::dp2a_lo(s2_a, c4_b, i_c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dp4a | FileCheck %s -check-prefix=__dp4a
+// __dp4a: CUDA API:
+// __dp4a-NEXT:   __dp4a(i_a /*int*/, i_b /*int*/, i_c /*int*/);
+// __dp4a-NEXT:   __dp4a(ui_a /*unsigned int*/, ui_b /*unsigned int*/, ui_c /*unsigned int*/);
+// __dp4a-NEXT:   __dp4a(uc4_a /*uchar4*/, uc4_b /*uchar4*/, ui_c /*unsigned int*/);
+// __dp4a-NEXT:   __dp4a(c4_a /*char4*/, c4_b /*char4*/, i_c /*int*/);
+// __dp4a-NEXT: Is migrated to:
+// __dp4a-NEXT:   dpct::dp4a(i_a, i_b, i_c);
+// __dp4a-NEXT:   dpct::dp4a(ui_a, ui_b, ui_c);
+// __dp4a-NEXT:   dpct::dp4a(uc4_a, uc4_b, ui_c);
+// __dp4a-NEXT:   dpct::dp4a(c4_a, c4_b, i_c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__funnelshift_l | FileCheck %s -check-prefix=__funnelshift_l
+// __funnelshift_l: CUDA API:
+// __funnelshift_l-NEXT:   __funnelshift_l(ui_a /*unsigned int*/, ui_b /*unsigned int*/,
+// __funnelshift_l-NEXT:                   ui_c /*unsigned int*/);
+// __funnelshift_l-NEXT: Is migrated to:
+// __funnelshift_l-NEXT:   dpct::funnelshift_l(ui_a, ui_b, ui_c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__funnelshift_lc | FileCheck %s -check-prefix=__funnelshift_lc
+// __funnelshift_lc: CUDA API:
+// __funnelshift_lc-NEXT:   __funnelshift_lc(ui_a /*unsigned int*/, ui_b /*unsigned int*/,
+// __funnelshift_lc-NEXT:                    ui_c /*unsigned int*/);
+// __funnelshift_lc-NEXT: Is migrated to:
+// __funnelshift_lc-NEXT:   dpct::funnelshift_lc(ui_a, ui_b, ui_c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__funnelshift_r | FileCheck %s -check-prefix=__funnelshift_r
+// __funnelshift_r: CUDA API:
+// __funnelshift_r-NEXT:   __funnelshift_r(ui_a /*unsigned int*/, ui_b /*unsigned int*/,
+// __funnelshift_r-NEXT:                   ui_c /*unsigned int*/);
+// __funnelshift_r-NEXT: Is migrated to:
+// __funnelshift_r-NEXT:   dpct::funnelshift_r(ui_a, ui_b, ui_c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__funnelshift_rc | FileCheck %s -check-prefix=__funnelshift_rc
+// __funnelshift_rc: CUDA API:
+// __funnelshift_rc-NEXT:   __funnelshift_rc(ui_a /*unsigned int*/, ui_b /*unsigned int*/,
+// __funnelshift_rc-NEXT:                    ui_c /*unsigned int*/);
+// __funnelshift_rc-NEXT: Is migrated to:
+// __funnelshift_rc-NEXT:   dpct::funnelshift_rc(ui_a, ui_b, ui_c);
