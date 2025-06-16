@@ -411,6 +411,31 @@
 // CURAND_UNIFORM_DOUBLE-NEXT:   ps2->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
 // CURAND_UNIFORM_DOUBLE-NEXT:   ps3->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_uniform4_double | FileCheck %s -check-prefix=CURAND_UNIFORM4_DOUBLE
+// CURAND_UNIFORM4_DOUBLE: CUDA API:
+// CURAND_UNIFORM4_DOUBLE-NEXT: curandStatePhilox4_32_10_t *ps;
+// CURAND_UNIFORM4_DOUBLE-NEXT:   curand_uniform4_double(ps /*curandStatePhilox4_32_10_t **/);
+// CURAND_UNIFORM4_DOUBLE-NEXT: Is migrated to:
+// CURAND_UNIFORM4_DOUBLE-NEXT: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps;
+// CURAND_UNIFORM4_DOUBLE-NEXT:   ps->generate<oneapi::mkl::rng::device::uniform<double>, 4>();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_uniform4_double | FileCheck %s -check-prefix=CURAND_NORMAL4_DOUBLE
+// CURAND_NORMAL4_DOUBLE: CUDA API:
+// CURAND_NORMAL4_DOUBLE-NEXT: curandStatePhilox4_32_10_t *ps;
+// CURAND_NORMAL4_DOUBLE-NEXT:   curand_normal4_double(ps /*curandStatePhilox4_32_10_t **/);
+// CURAND_NORMAL4_DOUBLE-NEXT: Is migrated to:
+// CURAND_NORMAL4_DOUBLE-NEXT: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps;
+// CURAND_NORMAL4_DOUBLE-NEXT:   ps->generate<oneapi::mkl::rng::device::gaussian<double>, 4>();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_uniform4_double | FileCheck %s -check-prefix=CURAND_LOG_NORMAL4_DOUBLE
+// CURAND_LOG_NORMAL4_DOUBLE: CUDA API:
+// CURAND_LOG_NORMAL4_DOUBLE-NEXT: curandStatePhilox4_32_10_t *ps;
+// CURAND_LOG_NORMAL4_DOUBLE-NEXT:   curand_log_normal4_double(ps /*curandStatePhilox4_32_10_t **/,
+// CURAND_LOG_NORMAL4_DOUBLE-NEXT:                             mean /*double*/, stddev /*double*/);
+// CURAND_LOG_NORMAL4_DOUBLE-NEXT: Is migrated to:
+// CURAND_LOG_NORMAL4_DOUBLE-NEXT: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps;
+// CURAND_LOG_NORMAL4_DOUBLE-NEXT:   ps->generate<oneapi::mkl::rng::device::lognormal<double>, 4>(mean, stddev);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=skipahead_sequence | FileCheck %s -check-prefix=SKIPAHEAD_SEQUENCE
 // SKIPAHEAD_SEQUENCE: CUDA API:
 // SKIPAHEAD_SEQUENCE-NEXT:   curandStateMRG32k3a_t *ps1;

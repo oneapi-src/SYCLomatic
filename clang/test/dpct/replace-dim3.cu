@@ -6,7 +6,10 @@
 
 #include <cstdio>
 #include <algorithm>
+#include <queue>
+#include <thrust/complex.h>
 
+#include <cuda_runtime.h>
 #ifndef NO_BUILD_TEST
 #define NUM 23
 #define CALL_FUNC(func) func()
@@ -321,3 +324,42 @@ int dim3_implicit_ctor() {
   // CHECK: B b5 = {0, {1, {1}}};
   B b5 = {0, {1, {1}}};
 }
+
+namespace test_dim3 {
+struct TuneParam {
+  dim3 block = {1, 1, 1};
+
+  float time = 0;
+
+  TuneParam();
+  TuneParam(const TuneParam &) = default;
+  TuneParam(TuneParam &&) = default;
+  // CHECK: TuneParam &operator=(const TuneParam &) = default;
+  TuneParam &operator=(const TuneParam &) = default;
+  // CHECK: TuneParam &operator=(TuneParam &&) = default;
+  TuneParam &operator=(TuneParam &&) = default;
+};
+
+struct TuneParamComp {
+  bool operator()(const TuneParam &a, const TuneParam &b) const {
+    return a.time < b.time;
+  }
+};
+
+class TuneCandidates : public std::priority_queue<TuneParam, std::vector<TuneParam>, TuneParamComp> {
+private:
+  const size_t max_size = 5;
+  float besttime = 0;
+
+public:
+  TuneCandidates(size_t size) : max_size(size) {}
+
+  void pushCandidate(TuneParam candidate) {
+    if (size() < max_size) {
+      push(candidate);
+      return;
+    }
+  }
+};
+
+} // namespace test_dim3
