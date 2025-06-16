@@ -1787,6 +1787,9 @@
 // CHECK-NEXT: cusolverDnZunmtr
 // CHECK-NEXT: cusolverDnZunmtr_bufferSize
 // CHECK-NEXT: cusparseCcsr2csc
+// CHECK-NEXT: cusparseCcsrgemm
+// CHECK-NEXT: cusparseCcsrgemm2
+// CHECK-NEXT: cusparseCcsrgemm2_bufferSizeExt
 // CHECK-NEXT: cusparseCcsrmm
 // CHECK-NEXT: cusparseCcsrmm2
 // CHECK-NEXT: cusparseCcsrmv
@@ -1804,6 +1807,7 @@
 // CHECK-NEXT: cusparseConstDnVecGetValues
 // CHECK-NEXT: cusparseCreate
 // CHECK-NEXT: cusparseCreateConstDnVec
+// CHECK-NEXT: cusparseCreateCoo
 // CHECK-NEXT: cusparseCreateCsr
 // CHECK-NEXT: cusparseCreateCsrgemm2Info
 // CHECK-NEXT: cusparseCreateCsrsm2Info
@@ -1821,6 +1825,9 @@
 // CHECK-NEXT: cusparseCsrsv_analysisEx
 // CHECK-NEXT: cusparseCsrsv_solveEx
 // CHECK-NEXT: cusparseDcsr2csc
+// CHECK-NEXT: cusparseDcsrgemm
+// CHECK-NEXT: cusparseDcsrgemm2
+// CHECK-NEXT: cusparseDcsrgemm2_bufferSizeExt
 // CHECK-NEXT: cusparseDcsrmm
 // CHECK-NEXT: cusparseDcsrmm2
 // CHECK-NEXT: cusparseDcsrmv
@@ -1859,6 +1866,9 @@
 // CHECK-NEXT: cusparseGetProperty
 // CHECK-NEXT: cusparseGetStream
 // CHECK-NEXT: cusparseScsr2csc
+// CHECK-NEXT: cusparseScsrgemm
+// CHECK-NEXT: cusparseScsrgemm2
+// CHECK-NEXT: cusparseScsrgemm2_bufferSizeExt
 // CHECK-NEXT: cusparseScsrmm
 // CHECK-NEXT: cusparseScsrmm2
 // CHECK-NEXT: cusparseScsrmv
@@ -1905,7 +1915,12 @@
 // CHECK-NEXT: cusparseSpSV_createDescr
 // CHECK-NEXT: cusparseSpSV_destroyDescr
 // CHECK-NEXT: cusparseSpSV_solve
+// CHECK-NEXT: cusparseXcsrgemm2Nnz
+// CHECK-NEXT: cusparseXcsrgemmNnz
 // CHECK-NEXT: cusparseZcsr2csc
+// CHECK-NEXT: cusparseZcsrgemm
+// CHECK-NEXT: cusparseZcsrgemm2
+// CHECK-NEXT: cusparseZcsrgemm2_bufferSizeExt
 // CHECK-NEXT: cusparseZcsrmm
 // CHECK-NEXT: cusparseZcsrmm2
 // CHECK-NEXT: cusparseZcsrmv

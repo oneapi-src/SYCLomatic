@@ -1,0 +1,144 @@
+---
+MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSPARSE/MainSrcFiles_placehold'
+Replacements:
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSPARSE/cusparseXcsrgemm2Nnz.cu'
+    Offset:          0
+    Length:          22
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/sparse_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSPARSE/cusparseXcsrgemm2Nnz.cu'
+    Offset:          33
+    Length:          16
+    ReplacementText: 'dpct::sparse::descriptor_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSPARSE/cusparseXcsrgemm2Nnz.cu'
+    Offset:          95
+    Length:          18
+    ReplacementText: 'std::shared_ptr<dpct::sparse::matrix_info>'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSPARSE/cusparseXcsrgemm2Nnz.cu'
+    Offset:          194
+    Length:          18
+    ReplacementText: 'std::shared_ptr<dpct::sparse::matrix_info>'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSPARSE/cusparseXcsrgemm2Nnz.cu'
+    Offset:          303
+    Length:          18
+    ReplacementText: 'std::shared_ptr<dpct::sparse::matrix_info>'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSPARSE/cusparseXcsrgemm2Nnz.cu'
+    Offset:          402
+    Length:          18
+    ReplacementText: 'std::shared_ptr<dpct::sparse::matrix_info>'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSPARSE/cusparseXcsrgemm2Nnz.cu'
+    Offset:          472
+    Length:          14
+    ReplacementText: 'std::shared_ptr<dpct::sparse::csrgemm2_info>'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+MainSourceFilesDigest:
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSPARSE/cusparseXcsrgemm2Nnz.cu'
+    Digest:          b1ef408526e5fbc66fe2eb46ad4528fd
+    HasCUDASyntax:   true
+DpctVersion:     21.0.0
+SDKVersionMajor: '10'
+SDKVersionMinor: '2'
+MainHelperFileName: ''
+USMLevel:        ''
+FeatureMap:      {}
+CompileTargets:  {}
+OptionMap:
+  AnalysisScopePath:
+    Value:           ''
+    ValueVec:
+      - '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSPARSE'
+    Specified:       false
+  AsyncHandler:
+    Value:           'false'
+    Specified:       false
+  BuildScript:
+    Value:           '0'
+    Specified:       false
+  CodePinEnabled:
+    Value:           'false'
+    Specified:       false
+  CommentsEnabled:
+    Value:           'false'
+    Specified:       false
+  CompilationsDir:
+    Value:           ''
+    Specified:       false
+  CtadEnabled:
+    Value:           'false'
+    Specified:       false
+  EnablepProfiling:
+    Value:           'false'
+    Specified:       false
+  ExperimentalFlag:
+    Value:           '0'
+    Specified:       false
+  ExplicitNamespace:
+    Value:           '20'
+    Specified:       false
+  ExtensionDDFlag:
+    Value:           '0'
+    Specified:       false
+  ExtensionDEFlag:
+    Value:           '4294967295'
+    Specified:       false
+  HelperFuncPreferenceFlag:
+    Value:           '0'
+    Specified:       false
+  NDRangeDim:
+    Value:           '3'
+    Specified:       false
+  NoDRYPattern:
+    Value:           'false'
+    Specified:       false
+  OptimizeMigration:
+    Value:           'false'
+    Specified:       false
+  ProcessAll:
+    Value:           'false'
+    Specified:       false
+  RuleFile:
+    Value:           ''
+    Specified:       false
+  SyclNamedLambda:
+    Value:           'false'
+    Specified:       false
+  UseSYCLCompat:
+    Value:           'false'
+    Specified:       false
+  UsmLevel:
+    Value:           '1'
+    Specified:       false
+...
