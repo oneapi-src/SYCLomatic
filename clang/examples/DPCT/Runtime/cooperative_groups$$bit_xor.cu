@@ -10,6 +10,6 @@ __global__ void test() {
   cooperative_groups::thread_block_tile<32> tile32 = cooperative_groups::tiled_partition<32>(cta);
   int *idata;
   // Start
-  cooperative_groups::reduce(tile32 /*thread_block_tile<32>*/, sdata[tid]/*data*/, cooperative_groups::plus<double>()/*cg::plus<T>*/);
+  cooperative_groups::reduce(tile32 /*thread_block_tile<32>*/, sdata[tid]/*data*/, cooperative_groups::bit_xor<int>()/*cg::bit_xor<T>*/);
   // End
 }
