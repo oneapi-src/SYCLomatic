@@ -84,6 +84,10 @@ struct GitDiffChanges {
 };
 GitDiffChanges &getUpstreamChanges();
 GitDiffChanges &getUserChanges();
+
+clang::tooling::Replacements
+calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
+                       const clang::tooling::Replacements &NewRepl);
 } // namespace dpct
 } // namespace clang
 

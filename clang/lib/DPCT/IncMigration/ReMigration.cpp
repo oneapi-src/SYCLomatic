@@ -16,6 +16,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -77,21 +78,42 @@ void tryLoadingUpstreamChangesAndUserChanges() {
 
 /// Calculate the new Repls of the input \p NewRepl after \p Repls is applied to
 /// the files.
+/// This shfit may have conflicts.
+/// Since \p NewRepl (from Repl_C_y) is line based and \p Repls (from Repl_A) is
+/// character based, we assume that if there is a conflict, the range from
+/// Repl_C_y is always covering the range from Repl_A. Then we just ignore the
+/// \p NewRepl (from Repl_C_y) since the old CUDA code is changed, so the
+/// migration repl is out-of-date.
 /// \param Repls Replacements to apply.
 /// \param NewRepl Replacements before applying \p Repls.
 /// \return The result Repls.
 clang::tooling::Replacements
 calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
                        const clang::tooling::Replacements &NewRepl) {
+  // Assumption: no overlap in the each groups.
   clang::tooling::Replacements Result;
   for (const auto &R : NewRepl) {
+    // Check if the range (BOffset, EOffset - BOffset) is overlapped with any
+    // repl in Repls
+    std::optional<tooling::Replacement> MaxNotGreater = std::nullopt;
+    for (const auto &ExistingR : Repls) {
+      if (ExistingR.getOffset() <= R.getOffset())
+        MaxNotGreater = ExistingR;
+      else
+        break;
+    }
+    if (MaxNotGreater.has_value()) {
+      if (MaxNotGreater->getOffset() + MaxNotGreater->getLength() > R.getOffset())
+        continue; // has overlap
+    }
+
     unsigned int BOffset = Repls.getShiftedCodePosition(R.getOffset());
     unsigned int EOffset =
         Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
     if (BOffset > EOffset)
       continue;
-    (void)Result.add(tooling::Replacement(
-        R.getFilePath(), BOffset, EOffset - BOffset, R.getReplacementText()));
+    llvm::cantFail(Result.add(tooling::Replacement(
+        R.getFilePath(), BOffset, EOffset - BOffset, R.getReplacementText())));
   }
   return Result;
 }
@@ -267,7 +289,7 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
 //       |                                     /                  |
 //       | Repl C2                     Repl D /                   |
 //       |                                   /                    |
-//       V               shift              V            merge    |
+//       V      shift (may have conlifct)   V            merge    |
 // [SYCL code 1.1] ----------------> [SYCL code 1.1]  ----------> |
 // (based on CUDA code 1)         (based on CUDA code 2)          |
 //                                                                V
@@ -320,19 +342,18 @@ reMigrationMerge(const GitDiffChanges &Repl_A,
       DeletedParts[Hunk.getFilePath().str()][Hunk.getOffset()] =
           Hunk.getLength();
     }
-    (void)ModifiedParts[Hunk.getFilePath().str()].add(
-        tooling::Replacement(Hunk.getFilePath().str(),
-                                        Hunk.getOffset(), Hunk.getLength(),
-                                        Hunk.getReplacementText()));
+    llvm::cantFail(ModifiedParts[Hunk.getFilePath().str()].add(
+        tooling::Replacement(Hunk.getFilePath().str(), Hunk.getOffset(),
+                             Hunk.getLength(), Hunk.getReplacementText())));
   }
   for (const auto &Hunk : Repl_A.MoveFileHunks) {
     if (Hunk.getLength() != 0 && Hunk.getReplacementText().size() == 0) {
-      DeletedParts[Hunk.getFilePath().str()][Hunk.getOffset()] = Hunk.getLength();
+      DeletedParts[Hunk.getFilePath().str()][Hunk.getOffset()] =
+          Hunk.getLength();
     }
-    (void)ModifiedParts[Hunk.getFilePath().str()].add(
-      tooling::Replacement(Hunk.getFilePath().str(),
-                                      Hunk.getOffset(), Hunk.getLength(),
-                                      Hunk.getReplacementText()));
+    llvm::cantFail(ModifiedParts[Hunk.getFilePath().str()].add(
+        tooling::Replacement(Hunk.getFilePath().str(), Hunk.getOffset(),
+                             Hunk.getLength(), Hunk.getReplacementText())));
   }
   for (const auto &Hunk : Repl_A.DeleteFileHunks) {
     DeletedParts[Hunk.getOldFilePath()] = std::map<unsigned, unsigned>();
@@ -345,10 +366,9 @@ reMigrationMerge(const GitDiffChanges &Repl_A,
     // So here assume there is no overlap between delete hunks and replacements.
     const auto &It = DeletedParts.find(Repl.getFilePath().str());
     if (It == DeletedParts.end()) {
-      (void)Repl_C_y[Repl.getFilePath().str()].add(
-          tooling::Replacement(Repl.getFilePath().str(),
-                                          Repl.getOffset(), Repl.getLength(),
-                                          Repl.getReplacementText()));
+      llvm::cantFail(Repl_C_y[Repl.getFilePath().str()].add(
+          tooling::Replacement(Repl.getFilePath().str(), Repl.getOffset(),
+                               Repl.getLength(), Repl.getReplacementText())));
       continue;
     }
 
@@ -360,10 +380,9 @@ reMigrationMerge(const GitDiffChanges &Repl_A,
         break;
       }
     }
-    (void)Repl_C_y[Repl.getFilePath().str()].add(
-        tooling::Replacement(Repl.getFilePath().str(),
-                                        Repl.getOffset(), Repl.getLength(),
-                                        Repl.getReplacementText()));
+    llvm::cantFail(Repl_C_y[Repl.getFilePath().str()].add(
+        tooling::Replacement(Repl.getFilePath().str(), Repl.getOffset(),
+                             Repl.getLength(), Repl.getReplacementText())));
   }
 
   // Shift Repl_C_y with Repl_A(ModifiedParts)
