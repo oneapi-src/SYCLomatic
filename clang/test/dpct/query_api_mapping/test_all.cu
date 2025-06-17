@@ -759,6 +759,8 @@
 // CHECK-NEXT: cub::DeviceSelect::Flagged
 // CHECK-NEXT: cub::DeviceSelect::If
 // CHECK-NEXT: cub::DeviceSelect::Unique
+// CHECK-NEXT: cub::WarpReduce::Reduce
+// CHECK-NEXT: cub::WarpReduce::Sum
 // CHECK-NEXT: cub::WarpScan::Broadcast
 // CHECK-NEXT: cub::WarpScan::ExclusiveScan
 // CHECK-NEXT: cub::WarpScan::ExclusiveSum
