@@ -66,3 +66,31 @@
 // CHECK_BLOCKSTORE_STORE:    auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 // CHECK_BLOCKSTORE_STORE:    dpct::group::group_store<int, 4, dpct::group::group_store_algorithm::blocked>(temp_storage).store(item_ct1, dst, thread_data);
 // CHECK_BLOCKSTORE_STORE:    dpct::group::group_store<int, 4, dpct::group::group_store_algorithm::blocked>(temp_storage).store(item_ct1, dst, thread_data, end);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockRadixSort::Sort | FileCheck %s -check-prefix=CHECK_BLOCKRADIXSORT_SORT
+// CHECK_BLOCKRADIXSORT_SORT:  CUDA API:
+// CHECK_BLOCKRADIXSORT_SORT:    __shared__ typename cub::BlockRadixSort<int, 128, 4>::TempStorage temp_storage;
+// CHECK_BLOCKRADIXSORT_SORT:    cub::BlockRadixSort<int, 128, 4>(temp_storage).Sort(thread_data/*int(&)[4]*/);
+// CHECK_BLOCKRADIXSORT_SORT:  Is migrated to:
+// CHECK_BLOCKRADIXSORT_SORT:    dpct::group::group_radix_sort<int, 4>(temp_storage).sort(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), thread_data);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockRadixSort::SortBlockedToStriped | FileCheck %s -check-prefix=CHECK_BLOCKRADIXSORT_SORTBLOCKEDTOSTRIPED
+// CHECK_BLOCKRADIXSORT_SORTBLOCKEDTOSTRIPED:  CUDA API:
+// CHECK_BLOCKRADIXSORT_SORTBLOCKEDTOSTRIPED:    __shared__ typename cub::BlockRadixSort<int, 128, 4>::TempStorage temp_storage;
+// CHECK_BLOCKRADIXSORT_SORTBLOCKEDTOSTRIPED:    cub::BlockRadixSort<int, 128, 4>(temp_storage).SortBlockedToStriped(thread_data/*int(&)[4]*/);
+// CHECK_BLOCKRADIXSORT_SORTBLOCKEDTOSTRIPED:  Is migrated to:
+// CHECK_BLOCKRADIXSORT_SORTBLOCKEDTOSTRIPED:    dpct::group::group_radix_sort<int, 4>(temp_storage).sort_blocked_to_striped(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), thread_data);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockRadixSort::SortDescending | FileCheck %s -check-prefix=CHECK_BLOCKRADIXSORT_SORTDESCENDING
+// CHECK_BLOCKRADIXSORT_SORTDESCENDING:  CUDA API:
+// CHECK_BLOCKRADIXSORT_SORTDESCENDING:    __shared__ typename cub::BlockRadixSort<int, 128, 4>::TempStorage temp_storage;
+// CHECK_BLOCKRADIXSORT_SORTDESCENDING:    cub::BlockRadixSort<int, 128, 4>(temp_storage).SortDescending(thread_data/*int(&)[4]*/);
+// CHECK_BLOCKRADIXSORT_SORTDESCENDING:  Is migrated to:
+// CHECK_BLOCKRADIXSORT_SORTDESCENDING:    dpct::group::group_radix_sort<int, 4>(temp_storage).sort_descending(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), thread_data);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockRadixSort::SortDescendingBlockedToStriped | FileCheck %s -check-prefix=CHECK_BLOCKRADIXSORT_SORTDESCENDINGBLOCKEDTOSTRIPED
+// CHECK_BLOCKRADIXSORT_SORTDESCENDINGBLOCKEDTOSTRIPED:  CUDA API:
+// CHECK_BLOCKRADIXSORT_SORTDESCENDINGBLOCKEDTOSTRIPED:    __shared__ typename cub::BlockRadixSort<int, 128, 4>::TempStorage temp_storage;
+// CHECK_BLOCKRADIXSORT_SORTDESCENDINGBLOCKEDTOSTRIPED:    cub::BlockRadixSort<int, 128, 4>(temp_storage).SortDescendingBlockedToStriped(thread_data/*int(&)[4]*/);
+// CHECK_BLOCKRADIXSORT_SORTDESCENDINGBLOCKEDTOSTRIPED:  Is migrated to:
+// CHECK_BLOCKRADIXSORT_SORTDESCENDINGBLOCKEDTOSTRIPED:    dpct::group::group_radix_sort<int, 4>(temp_storage).sort_descending_blocked_to_striped(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), thread_data);

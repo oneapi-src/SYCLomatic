@@ -746,6 +746,10 @@
 // CHECK-NEXT: cub::BlockExchange::StripedToBlocked
 // CHECK-NEXT: cub::BlockExchange::WarpStripedToBlocked
 // CHECK-NEXT: cub::BlockLoad::Load
+// CHECK-NEXT: cub::BlockRadixSort::Sort
+// CHECK-NEXT: cub::BlockRadixSort::SortBlockedToStriped
+// CHECK-NEXT: cub::BlockRadixSort::SortDescending
+// CHECK-NEXT: cub::BlockRadixSort::SortDescendingBlockedToStriped
 // CHECK-NEXT: cub::BlockStore::Store
 // CHECK-NEXT: cub::DeviceReduce::ArgMax
 // CHECK-NEXT: cub::DeviceReduce::ArgMin
