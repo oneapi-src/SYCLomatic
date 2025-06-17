@@ -739,6 +739,12 @@
 // CHECK-NEXT: cuTexRefSetFilterMode
 // CHECK-NEXT: cuTexRefSetFlags
 // CHECK-NEXT: cuTexRefSetFormat
+// CHECK-NEXT: cub::BlockExchange::BlockedToStriped
+// CHECK-NEXT: cub::BlockExchange::BlockedToWarpStriped
+// CHECK-NEXT: cub::BlockExchange::ScatterToBlocked
+// CHECK-NEXT: cub::BlockExchange::ScatterToStriped
+// CHECK-NEXT: cub::BlockExchange::StripedToBlocked
+// CHECK-NEXT: cub::BlockExchange::WarpStripedToBlocked
 // CHECK-NEXT: cub::DeviceReduce::ArgMax
 // CHECK-NEXT: cub::DeviceReduce::ArgMin
 // CHECK-NEXT: cub::DeviceReduce::Max
