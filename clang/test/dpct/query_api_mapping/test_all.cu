@@ -745,6 +745,8 @@
 // CHECK-NEXT: cub::BlockExchange::ScatterToStriped
 // CHECK-NEXT: cub::BlockExchange::StripedToBlocked
 // CHECK-NEXT: cub::BlockExchange::WarpStripedToBlocked
+// CHECK-NEXT: cub::BlockLoad::Load
+// CHECK-NEXT: cub::BlockStore::Store
 // CHECK-NEXT: cub::DeviceReduce::ArgMax
 // CHECK-NEXT: cub::DeviceReduce::ArgMin
 // CHECK-NEXT: cub::DeviceReduce::Max

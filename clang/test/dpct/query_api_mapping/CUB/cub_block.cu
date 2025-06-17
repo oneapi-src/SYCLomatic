@@ -44,3 +44,25 @@
 // CHECK_BLOCKEXCHANGE_WARPSTRIPEDTOBLOCKED:    cub::BlockExchange<int, 128, 4>(temp_storage).WarpStripedToBlocked(thread_data/*int(&)[4]*/, thread_data/*int(&)[4]*/);
 // CHECK_BLOCKEXCHANGE_WARPSTRIPEDTOBLOCKED:  Is migrated to:
 // CHECK_BLOCKEXCHANGE_WARPSTRIPEDTOBLOCKED:    dpct::group::exchange<int, 4>(temp_storage).sub_group_striped_to_blocked(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), thread_data, thread_data);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockLoad::Load | FileCheck %s -check-prefix=CHECK_BLOCKLOAD_LOAD
+// CHECK_BLOCKLOAD_LOAD:  CUDA API:
+// CHECK_BLOCKLOAD_LOAD:    __shared__ typename cub::BlockLoad<int, 128, 4, cub::BLOCK_LOAD_DIRECT>::TempStorage temp_storage;
+// CHECK_BLOCKLOAD_LOAD:    cub::BlockLoad<int, 128, 4, cub::BLOCK_LOAD_DIRECT>(temp_storage).Load(src/*int **/, thread_data/*int(&)[4]*/);
+// CHECK_BLOCKLOAD_LOAD:    cub::BlockLoad<int, 128, 4, cub::BLOCK_LOAD_DIRECT>(temp_storage).Load(src/*int **/, thread_data/*int(&)[4]*/, end/*int*/);
+// CHECK_BLOCKLOAD_LOAD:    cub::BlockLoad<int, 128, 4, cub::BLOCK_LOAD_DIRECT>(temp_storage).Load(src/*int **/, thread_data/*int(&)[4]*/, end/*int*/, default_value/*int*/);
+// CHECK_BLOCKLOAD_LOAD:  Is migrated to:
+// CHECK_BLOCKLOAD_LOAD:    auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK_BLOCKLOAD_LOAD:    dpct::group::group_load<int, 4, dpct::group::group_load_algorithm::blocked>(temp_storage).load(item_ct1, src, thread_data);
+// CHECK_BLOCKLOAD_LOAD:    dpct::group::group_load<int, 4, dpct::group::group_load_algorithm::blocked>(temp_storage).load(item_ct1, src, thread_data, end);
+// CHECK_BLOCKLOAD_LOAD:    dpct::group::group_load<int, 4, dpct::group::group_load_algorithm::blocked>(temp_storage).load(item_ct1, src, thread_data, end, default_value);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockStore::Store | FileCheck %s -check-prefix=CHECK_BLOCKSTORE_STORE
+// CHECK_BLOCKSTORE_STORE:  CUDA API:
+// CHECK_BLOCKSTORE_STORE:    __shared__ typename cub::BlockStore<int, 128, 4, cub::BLOCK_STORE_DIRECT>::TempStorage temp_storage;
+// CHECK_BLOCKSTORE_STORE:    cub::BlockStore<int, 128, 4, cub::BLOCK_STORE_DIRECT>(temp_storage).Store(dst/*int **/, thread_data/*int(&)[4]*/);
+// CHECK_BLOCKSTORE_STORE:    cub::BlockStore<int, 128, 4, cub::BLOCK_STORE_DIRECT>(temp_storage).Store(dst/*int **/, thread_data/*int(&)[4]*/, end/*int*/);
+// CHECK_BLOCKSTORE_STORE:  Is migrated to:
+// CHECK_BLOCKSTORE_STORE:    auto item_ct1 = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
+// CHECK_BLOCKSTORE_STORE:    dpct::group::group_store<int, 4, dpct::group::group_store_algorithm::blocked>(temp_storage).store(item_ct1, dst, thread_data);
+// CHECK_BLOCKSTORE_STORE:    dpct::group::group_store<int, 4, dpct::group::group_store_algorithm::blocked>(temp_storage).store(item_ct1, dst, thread_data, end);
