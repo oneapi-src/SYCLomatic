@@ -40,3 +40,11 @@
 // CG_REDUCE-NEXT: Is migrated to (with the option --use-experimental-features=free-function-queries):
 // CG_REDUCE-NEXT:    sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), sdata[tid], sycl::plus<double>());
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cooperative_groups::thread_group::thread_rank | FileCheck %s -check-prefix=CG_TG_THREAD_RANK
+// CG_TG_THREAD_RANK: CUDA API:
+// CG_TG_THREAD_RANK-NEXT:    cooperative_groups::reduce(
+// CG_TG_THREAD_RANK-NEXT:        tile32 /* type group */, sdata[tid] /* type argument */,
+// CG_TG_THREAD_RANK-NEXT:        cooperative_groups::plus<double>() /* type operator */);
+// CG_TG_THREAD_RANK-NEXT: Is migrated to (with the option --use-experimental-features=free-function-queries):
+// CG_TG_THREAD_RANK-NEXT:    sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), sdata[tid], sycl::plus<double>());
+

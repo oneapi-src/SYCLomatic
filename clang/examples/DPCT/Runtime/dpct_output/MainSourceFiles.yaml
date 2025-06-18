@@ -1,8 +1,8 @@
 ---
 MainSourceFile:  '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/MainSrcFiles_placehold'
 Replacements:
-  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$experimental$$this_thread_block.cu'
-    Offset:          54
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          61
     Length:          32
     ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n"
     ConstantFlag:    ''
@@ -10,17 +10,17 @@ Replacements:
     InitStr:         ''
     NewHostVarName:  ''
     BlockLevelFormatFlag: false
-  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$experimental$$this_thread_block.cu'
-    Offset:          86
-    Length:          39
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          93
+    Length:          37
     ReplacementText: ''
     ConstantFlag:    ''
     ConstantOffset:  0
     InitStr:         ''
     NewHostVarName:  ''
     BlockLevelFormatFlag: false
-  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$experimental$$this_thread_block.cu'
-    Offset:          127
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          131
     Length:          11
     ReplacementText: ''
     ConstantFlag:    ''
@@ -28,9 +28,117 @@ Replacements:
     InitStr:         ''
     NewHostVarName:  ''
     BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          175
+    Length:          32
+    ReplacementText: 'sycl::group<3>'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          220
+    Length:          39
+    ReplacementText: 'sycl::ext::oneapi::this_work_item::get_work_group<3>()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          288
+    Length:          17
+    ReplacementText: 'sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_linear_id()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          309
+    Length:          41
+    ReplacementText: 'sycl::sub_group'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          366
+    Length:          44
+    ReplacementText: 'sycl::ext::oneapi::this_work_item::get_sub_group()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          412
+    Length:          0
+    ReplacementText: "  /*\n  DPCT1007:0: Migration of tiled_partition is not supported.\n  */\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          488
+    Length:          157
+    ReplacementText: 'sycl::inclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), sdata[tid], sycl::plus<double>())'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          650
+    Length:          125
+    ReplacementText: 'sycl::inclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), sdata[tid], sycl::plus<>())'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          777
+    Length:          0
+    ReplacementText: "  /*\n  DPCT1007:1: Migration of inclusive_scan is not supported.\n  */\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          779
+    Length:          157
+    ReplacementText: "cooperative_groups::inclusive_scan(\n      tile16 /* type group */, sdata[tid] /* type value */,\n      sycl::plus<double>() /* type operator */)"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          938
+    Length:          0
+    ReplacementText: "  /*\n  DPCT1007:2: Migration of inclusive_scan is not supported.\n  */\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Offset:          1000
+    Length:          0
+    ReplacementText: "                                     /*\n                                     DPCT1007:3: Migration of thread_rank is not supported.\n                                     */\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
 MainSourceFilesDigest:
-  - MainSourceFile:  '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$experimental$$this_thread_block.cu'
-    Digest:          30c01080800c468f5486080c556a22a2
+  - MainSourceFile:  '/home/chenshe1/SYCLomatic/clang/examples/DPCT/Runtime/cooperative_groups$$inclusive_scan.cu'
+    Digest:          997c9982e31aeb2bcfbc6bb1f3f5a1f0
     HasCUDASyntax:   true
 DpctVersion:     21.0.0
 SDKVersionMajor: '12'

@@ -2,10 +2,8 @@
 #include <cooperative_groups/scan.h>
 
 __global__ void test() {
-
-  cooperative_groups::thread_group tg =
-      cooperative_groups::this_thread_block();
   // Start
-    tg.thread_rank()/* thread_group::thread_rank */;
+  cooperative_groups::thread_group tg = cooperative_groups::this_thread_block();
+  tg.thread_rank() /* thread_group::thread_rank */;
   // End
 }
