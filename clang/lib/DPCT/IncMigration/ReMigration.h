@@ -12,6 +12,16 @@
 #include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/ReplacementsYaml.h"
 
+extern std::optional<
+    std::function<llvm::StringRef(clang::tooling::UnifiedPath, unsigned)>>
+    getLineStringHook;
+extern std::optional<
+    std::function<unsigned(clang::tooling::UnifiedPath, unsigned)>>
+    getLineNumberHook;
+extern std::optional<
+    std::function<unsigned(clang::tooling::UnifiedPath, unsigned)>>
+    getLineBeginOffsetHook;
+
 namespace clang {
 namespace dpct {
 class Hunk {
@@ -88,6 +98,10 @@ GitDiffChanges &getUserChanges();
 clang::tooling::Replacements
 calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
                        const clang::tooling::Replacements &NewRepl);
+std::map<std::string, std::vector<tooling::Replacement>>
+groupReplcementsByFile(const std::vector<tooling::Replacement> &Repls);
+std::map<unsigned, std::string>
+convertReplcementsLineString(const std::vector<tooling::Replacement> &Repls);
 } // namespace dpct
 } // namespace clang
 

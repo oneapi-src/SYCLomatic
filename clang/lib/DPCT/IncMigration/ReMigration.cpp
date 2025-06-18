@@ -9,6 +9,7 @@
 #include "ReMigration.h"
 #include "AnalysisInfo.h"
 #include "ExternalReplacement.h"
+#include "TextModification.h"
 
 #include "clang/AST/Expr.h"
 #include "clang/Tooling/Core/Replacement.h"
@@ -19,6 +20,14 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+
+std::optional<
+    std::function<llvm::StringRef(clang::tooling::UnifiedPath, unsigned)>>
+    getLineStringHook = std::nullopt;
+std::optional<std::function<unsigned(clang::tooling::UnifiedPath, unsigned)>>
+    getLineNumberHook = std::nullopt;
+std::optional<std::function<unsigned(clang::tooling::UnifiedPath, unsigned)>>
+    getLineBeginOffsetHook = std::nullopt;
 
 namespace clang::dpct {
 static GitDiffChanges UpstreamChanges;
@@ -76,6 +85,40 @@ void tryLoadingUpstreamChangesAndUserChanges() {
   }
 }
 
+static StringRef getLineString(clang::tooling::UnifiedPath FilePath,
+                               unsigned LineNumber) {
+#ifndef NDEBUG
+  if (getLineStringHook.has_value()) {
+    return getLineStringHook.value()(FilePath, LineNumber);
+  }
+#endif
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
+  StringRef Line = FileInfo->getLineString(LineNumber);
+  return Line;
+}
+
+static unsigned getLineNumber(clang::tooling::UnifiedPath FilePath,
+                              unsigned Offset) {
+#ifndef NDEBUG
+  if (getLineNumberHook.has_value()) {
+    return getLineNumberHook.value()(FilePath, Offset);
+  }
+#endif
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
+  return FileInfo->getLineNumber(Offset);
+}
+
+static unsigned getLineBeginOffset(clang::tooling::UnifiedPath FilePath,
+                                   unsigned LineNumber) {
+#ifndef NDEBUG
+  if (getLineBeginOffsetHook.has_value()) {
+    return getLineBeginOffsetHook.value()(FilePath, LineNumber);
+  }
+#endif
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
+  return FileInfo->getLineInfo(LineNumber).Offset;
+}
+
 /// Calculate the new Repls of the input \p NewRepl after \p Repls is applied to
 /// the files.
 /// This shfit may have conflicts.
@@ -128,69 +171,118 @@ groupReplcementsByFile(
   return Result;
 }
 
-StringRef getLineString(clang::tooling::UnifiedPath FilePath,
-                        unsigned LineNumber) {
-  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
-  StringRef Line = FileInfo->getLineString(LineNumber);
-  return Line;
-}
-unsigned getLineNumber(clang::tooling::UnifiedPath FilePath, unsigned Offset) {
-  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
-  return FileInfo->getLineNumber(Offset);
-}
-unsigned getLineBeginOffset(clang::tooling::UnifiedPath FilePath,
-                            unsigned LineNumber) {
-  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(FilePath);
-  return FileInfo->getLineInfo(LineNumber).Offset;
+// // This function keep the NL in each string (if has)
+// std::vector<std::string> splitStringByNL(const std::string &Str) {
+//   std::vector<std::string> Result;
+//   if (Str.empty())
+//     return Result;
+//   size_t Start = 0;
+//   bool InQuotes = false;
+//   for (size_t i = 0; i < Str.length(); ++i) {
+//     if (Str[i] == '"') {
+//       InQuotes = !InQuotes;
+//     } else if (Str[i] == '\n' && !InQuotes) {
+//       Result.push_back(Str.substr(Start, i - Start + 1));
+//       Start = i + 1;
+//     }
+//   }
+//   if (Start < Str.length()) {
+//     Result.push_back(Str.substr(Start));
+//   }
+//   return Result;
+// }
+
+// If repl range is cross lines, we treat the \n itself belongs to current line.
+// Example:
+// aaabbbccc
+// dddeeefff
+// ggghhhiii
+//
+// Original repl:
+// (ccc\ndddeeefff\nggg) =>（jjj\nkkk）
+//
+// Splitted repls:
+// (ccc\n) =>（jjj\nkkk）
+// (dddeeefff\n) => ""
+// (ggg) => ""
+std::vector<tooling::Replacement> splitReplInOrderToNotCrossLines(
+    const std::vector<tooling::Replacement> &InRepls) {
+  std::string FilePath = InRepls[0].getFilePath().str();
+  std::vector<tooling::Replacement> Result;
+
+  for (const auto &Repl : InRepls) {
+    unsigned StartOffset = Repl.getOffset();
+    unsigned EndOffset = StartOffset + Repl.getLength();
+    unsigned StartLine = getLineNumber(FilePath, StartOffset);
+    unsigned EndLine = getLineNumber(FilePath, EndOffset);
+
+    if (StartLine == EndLine) {
+      // Single line replacement
+      Result.push_back(Repl);
+      continue;
+    }
+
+    // Cross-line replacement
+    unsigned CurrentOffset = StartOffset;
+
+    // The first line
+    unsigned LineEndOffset = getLineBeginOffset(FilePath, StartLine + 1);
+    unsigned FirstLineLength = LineEndOffset - StartOffset;
+    Result.emplace_back(FilePath, CurrentOffset, FirstLineLength,
+                        Repl.getReplacementText());
+    CurrentOffset += FirstLineLength;
+
+    // middle lines
+    for (unsigned Line = StartLine + 1; Line < EndLine; ++Line) {
+      LineEndOffset = getLineBeginOffset(FilePath, Line + 1);
+      unsigned lineLength = LineEndOffset - CurrentOffset;
+      Result.emplace_back(Repl.getFilePath(), CurrentOffset, lineLength, "");
+      CurrentOffset += lineLength;
+    }
+
+    // The last line
+    unsigned LastLineLength = EndOffset - CurrentOffset;
+    if (LastLineLength > 0) {
+      Result.emplace_back(Repl.getFilePath(), CurrentOffset, LastLineLength,
+                          "");
+    }
+  }
+
+  return Result;
 }
 
 std::map<unsigned, std::string>
-convertReplcementsLineString(const std::vector<tooling::Replacement> &Repls) {
-  tooling::UnifiedPath FilePath(Repls[0].getFilePath());
+convertReplcementsLineString(const std::vector<tooling::Replacement> &InRepls) {
+  std::vector<tooling::Replacement> Replacements =
+      splitReplInOrderToNotCrossLines(InRepls);
+  tooling::UnifiedPath FilePath(InRepls[0].getFilePath());
 
+  // group replacement by line
+  std::map<unsigned, std::vector<tooling::Replacement>> ReplacementsByLine;
+  for (const auto &Repl : Replacements) {
+    unsigned LineNum = getLineNumber(FilePath, Repl.getOffset());
+    ReplacementsByLine[LineNum].push_back(Repl);
+  }
+
+  // process each line
   std::map<unsigned, std::string> Result;
-  std::vector<tooling::Replacement> SortedRepls = Repls;
+  for (auto &[LineNum, Repls] : ReplacementsByLine) {
+    std::sort(Repls.begin(), Repls.end());
 
-  std::sort(SortedRepls.begin(), SortedRepls.end(),
-            [](const tooling::Replacement &A, const tooling::Replacement &B) {
-              return A.getOffset() < B.getOffset();
-            });
-
-  for (const auto &Repl : SortedRepls) {
-    unsigned StartLine = getLineNumber(FilePath, Repl.getOffset());
-    unsigned EndLine =
-        getLineNumber(FilePath, Repl.getOffset() + Repl.getLength() - 1);
-
-    // process each line
-    for (unsigned Line = StartLine; Line <= EndLine; ++Line) {
-      std::string LineContent = getLineString(FilePath, Line).str();
-      unsigned LineStartOffset = getLineBeginOffset(FilePath, Line);
-      unsigned LineEndOffset = LineStartOffset + LineContent.size();
-
-      // calculate the replacement range within the line
-      unsigned ReplaceStart =
-          std::max(Repl.getOffset(), LineStartOffset) - LineStartOffset;
-      unsigned ReplaceEnd =
-          std::min(Repl.getOffset() + Repl.getLength(), LineEndOffset) -
-          LineStartOffset;
-
-      // do replace
-      if (Line == StartLine) {
-        LineContent.replace(
-            ReplaceStart, ReplaceEnd - ReplaceStart,
-            Repl.getReplacementText().substr(0, ReplaceEnd - ReplaceStart));
-      } else if (Line == EndLine) {
-        unsigned textStart =
-            Repl.getReplacementText().size() - (ReplaceEnd - ReplaceStart);
-        LineContent.replace(0, ReplaceEnd,
-                            Repl.getReplacementText().substr(textStart));
-      } else {
-        LineContent = Repl.getReplacementText().substr(
-            ReplaceStart, LineEndOffset - LineStartOffset);
-      }
-
-      Result[Line] = LineContent;
+    std::string OriginalLineStr = getLineString(FilePath, LineNum).str();
+    unsigned LineStartOffset = getLineBeginOffset(FilePath, LineNum);
+    std::string NewLineStr;
+    unsigned Pos = 0;
+    for (const auto &Repl : Repls) {
+      unsigned StrOffset = Repl.getOffset() - LineStartOffset;
+      NewLineStr += OriginalLineStr.substr(Pos, StrOffset - Pos);
+      NewLineStr += Repl.getReplacementText().str();
+      Pos = StrOffset + Repl.getLength();
     }
+    std::cout << "OriginalLineStr:" << OriginalLineStr << "!!!" << std::endl;
+    std::cout << "Pos:" << Pos << std::endl;
+    NewLineStr += OriginalLineStr.substr(Pos);
+    Result[LineNum] = NewLineStr;
   }
   return Result;
 }
