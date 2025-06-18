@@ -94,3 +94,73 @@
 // CHECK_BLOCKRADIXSORT_SORTDESCENDINGBLOCKEDTOSTRIPED:    cub::BlockRadixSort<int, 128, 4>(temp_storage).SortDescendingBlockedToStriped(thread_data/*int(&)[4]*/);
 // CHECK_BLOCKRADIXSORT_SORTDESCENDINGBLOCKEDTOSTRIPED:  Is migrated to:
 // CHECK_BLOCKRADIXSORT_SORTDESCENDINGBLOCKEDTOSTRIPED:    dpct::group::group_radix_sort<int, 4>(temp_storage).sort_descending_blocked_to_striped(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), thread_data);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockReduce::Reduce | FileCheck %s -check-prefix=CHECK_BLOCKREDUCE_REDUCE
+// CHECK_BLOCKREDUCE_REDUCE:  CUDA API:
+// CHECK_BLOCKREDUCE_REDUCE:    __shared__ typename cub::BlockReduce<int, 4>::TempStorage temp_storage;
+// CHECK_BLOCKREDUCE_REDUCE:    cub::BlockReduce<int, 4>(temp_storage).Reduce(data/*int*/, cub::Sum()/*ReduceOp*/);
+// CHECK_BLOCKREDUCE_REDUCE:  Is migrated to:
+// CHECK_BLOCKREDUCE_REDUCE:    sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), data, sycl::plus<>());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockReduce::Sum | FileCheck %s -check-prefix=CHECK_BLOCKREDUCE_SUM
+// CHECK_BLOCKREDUCE_SUM:  CUDA API:
+// CHECK_BLOCKREDUCE_SUM:    __shared__ typename cub::BlockReduce<int, 4>::TempStorage temp_storage;
+// CHECK_BLOCKREDUCE_SUM:    cub::BlockReduce<int, 4>(temp_storage).Sum(data/*int*/);
+// CHECK_BLOCKREDUCE_SUM:  Is migrated to:
+// CHECK_BLOCKREDUCE_SUM:    sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), data, sycl::plus<>());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockScan::ExclusiveScan | FileCheck %s -check-prefix=CHECK_BLOCKSCAN_EXCLUSIVESCAN
+// CHECK_BLOCKSCAN_EXCLUSIVESCAN:  CUDA API:
+// CHECK_BLOCKSCAN_EXCLUSIVESCAN:    __shared__ typename cub::BlockScan<int, 4>::TempStorage temp_storage;
+// CHECK_BLOCKSCAN_EXCLUSIVESCAN:    cub::BlockScan<int, 4>(temp_storage).ExclusiveScan(input/*int*/, output/*int &*/, init/*int*/, cub::Sum()/*ScanOp*/);
+// CHECK_BLOCKSCAN_EXCLUSIVESCAN:  Is migrated to:
+// CHECK_BLOCKSCAN_EXCLUSIVESCAN:    output = sycl::exclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, init, sycl::plus<>());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockScan::ExclusiveSum | FileCheck %s -check-prefix=CHECK_BLOCKSCAN_EXCLUSIVESUM
+// CHECK_BLOCKSCAN_EXCLUSIVESUM:  CUDA API:
+// CHECK_BLOCKSCAN_EXCLUSIVESUM:    __shared__ typename cub::BlockScan<int, 4>::TempStorage temp_storage;
+// CHECK_BLOCKSCAN_EXCLUSIVESUM:    cub::BlockScan<int, 4>(temp_storage).ExclusiveSum(input/*int*/, output/*int &*/);
+// CHECK_BLOCKSCAN_EXCLUSIVESUM:  Is migrated to:
+// CHECK_BLOCKSCAN_EXCLUSIVESUM:    output = sycl::exclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, 0, sycl::plus<>());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockScan::InclusiveScan | FileCheck %s -check-prefix=CHECK_BLOCKSCAN_INCLUSIVESCAN
+// CHECK_BLOCKSCAN_INCLUSIVESCAN:  CUDA API:
+// CHECK_BLOCKSCAN_INCLUSIVESCAN:    __shared__ typename cub::BlockScan<int, 4>::TempStorage temp_storage;
+// CHECK_BLOCKSCAN_INCLUSIVESCAN:    cub::BlockScan<int, 4>(temp_storage).InclusiveScan(input/*int*/, output/*int &*/, cub::Sum()/*ScanOp*/);
+// CHECK_BLOCKSCAN_INCLUSIVESCAN:  Is migrated to:
+// CHECK_BLOCKSCAN_INCLUSIVESCAN:    output = sycl::inclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, sycl::plus<>());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockScan::InclusiveSum | FileCheck %s -check-prefix=CHECK_BLOCKSCAN_INCLUSIVESUM
+// CHECK_BLOCKSCAN_INCLUSIVESUM:  CUDA API:
+// CHECK_BLOCKSCAN_INCLUSIVESUM:    __shared__ typename cub::BlockScan<int, 4>::TempStorage temp_storage;
+// CHECK_BLOCKSCAN_INCLUSIVESUM:    cub::BlockScan<int, 4>(temp_storage).InclusiveSum(input/*int*/, output/*int &*/);
+// CHECK_BLOCKSCAN_INCLUSIVESUM:  Is migrated to:
+// CHECK_BLOCKSCAN_INCLUSIVESUM:    output = sycl::inclusive_scan_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), input, sycl::plus<>());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockShuffle::Down | FileCheck %s -check-prefix=CHECK_BLOCKSHUFFLE_DOWN
+// CHECK_BLOCKSHUFFLE_DOWN:  CUDA API:
+// CHECK_BLOCKSHUFFLE_DOWN:    __shared__ typename cub::BlockShuffle<int, 128>::TempStorage temp_storage;
+// CHECK_BLOCKSHUFFLE_DOWN:    cub::BlockShuffle<int, 128>(temp_storage).Down(input/*int*/, output/*int &*/);
+// CHECK_BLOCKSHUFFLE_DOWN:  Is migrated to:
+// CHECK_BLOCKSHUFFLE_DOWN:    dpct::group::group_shuffle<int, 128>(temp_storage).shuffle_left(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), input, output);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockShuffle::Offset | FileCheck %s -check-prefix=CHECK_BLOCKSHUFFLE_OFFSET
+// CHECK_BLOCKSHUFFLE_OFFSET:  CUDA API:
+// CHECK_BLOCKSHUFFLE_OFFSET:    __shared__ typename cub::BlockShuffle<int, 128>::TempStorage temp_storage;
+// CHECK_BLOCKSHUFFLE_OFFSET:    cub::BlockShuffle<int, 128>(temp_storage).Offset(input/*int*/, output/*int &*/, distance/*int*/);
+// CHECK_BLOCKSHUFFLE_OFFSET:  Is migrated to:
+// CHECK_BLOCKSHUFFLE_OFFSET:    dpct::group::group_shuffle<int, 128>(temp_storage).select(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), input, output, distance);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockShuffle::Rotate | FileCheck %s -check-prefix=CHECK_BLOCKSHUFFLE_ROTATE
+// CHECK_BLOCKSHUFFLE_ROTATE:  CUDA API:
+// CHECK_BLOCKSHUFFLE_ROTATE:    __shared__ typename cub::BlockShuffle<int, 128>::TempStorage temp_storage;
+// CHECK_BLOCKSHUFFLE_ROTATE:    cub::BlockShuffle<int, 128>(temp_storage).Rotate(input/*int*/, output/*int &*/, distance/*unsigned int*/);
+// CHECK_BLOCKSHUFFLE_ROTATE:  Is migrated to:
+// CHECK_BLOCKSHUFFLE_ROTATE:    dpct::group::group_shuffle<int, 128>(temp_storage).select2(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), input, output, distance);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::BlockShuffle::Up | FileCheck %s -check-prefix=CHECK_BLOCKSHUFFLE_UP
+// CHECK_BLOCKSHUFFLE_UP:  CUDA API:
+// CHECK_BLOCKSHUFFLE_UP:    __shared__ typename cub::BlockShuffle<int, 128>::TempStorage temp_storage;
+// CHECK_BLOCKSHUFFLE_UP:    cub::BlockShuffle<int, 128>(temp_storage).Up(input/*int*/, output/*int &*/);
+// CHECK_BLOCKSHUFFLE_UP:  Is migrated to:
+// CHECK_BLOCKSHUFFLE_UP:    dpct::group::group_shuffle<int, 128>(temp_storage).shuffle_right(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), input, output);

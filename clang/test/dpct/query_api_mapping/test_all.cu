@@ -750,6 +750,16 @@
 // CHECK-NEXT: cub::BlockRadixSort::SortBlockedToStriped
 // CHECK-NEXT: cub::BlockRadixSort::SortDescending
 // CHECK-NEXT: cub::BlockRadixSort::SortDescendingBlockedToStriped
+// CHECK-NEXT: cub::BlockReduce::Reduce
+// CHECK-NEXT: cub::BlockReduce::Sum
+// CHECK-NEXT: cub::BlockScan::ExclusiveScan
+// CHECK-NEXT: cub::BlockScan::ExclusiveSum
+// CHECK-NEXT: cub::BlockScan::InclusiveScan
+// CHECK-NEXT: cub::BlockScan::InclusiveSum
+// CHECK-NEXT: cub::BlockShuffle::Down
+// CHECK-NEXT: cub::BlockShuffle::Offset
+// CHECK-NEXT: cub::BlockShuffle::Rotate
+// CHECK-NEXT: cub::BlockShuffle::Up
 // CHECK-NEXT: cub::BlockStore::Store
 // CHECK-NEXT: cub::DeviceReduce::ArgMax
 // CHECK-NEXT: cub::DeviceReduce::ArgMin
