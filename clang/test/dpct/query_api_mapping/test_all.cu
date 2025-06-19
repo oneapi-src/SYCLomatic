@@ -1348,6 +1348,9 @@
 // CHECK-NEXT: cudaHostUnregister
 // CHECK-NEXT: cudaImportExternalMemory
 // CHECK-NEXT: cudaImportExternalSemaphore
+// CHECK-NEXT: cudaIpcCloseMemHandle
+// CHECK-NEXT: cudaIpcGetMemHandle
+// CHECK-NEXT: cudaIpcOpenMemHandle
 // CHECK-NEXT: cudaLaunchCooperativeKernel
 // CHECK-NEXT: cudaLaunchKernel
 // CHECK-NEXT: cudaMalloc
