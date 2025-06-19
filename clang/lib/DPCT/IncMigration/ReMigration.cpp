@@ -365,7 +365,7 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
 //   Repl_A_4: Replacements in moved files.
 //
 // Merge process:
-// 1. Merge Repl_C1 and Repl_C2 directly, named Repl_C. There is no conlict.
+// 1. Merge Repl_C1 and Repl_C2 directly, named Repl_C. (If there is conlict, keep Repl_C2)
 //    Repl_C can be divided in to 2 parts:
 //      Repl_C_x: Replacements which in ranges of Repl_A_3 or delete hunks in
 //                Repl_A_2/Repl_A_4.
@@ -383,6 +383,7 @@ reMigrationMerge(const GitDiffChanges &Repl_A,
          "Repl_C2 should only have ModifiyFileHunks.");
   std::vector<tooling::Replacement> Repl_C;
   // Merge Repl_C1 and Repl_C2
+  // TODO: resolve conflict.
   Repl_C.insert(Repl_C.end(), Repl_C1.begin(), Repl_C1.end());
   for (const auto &Hunk : Repl_C2.ModifyFileHunks) {
     tooling::Replacement Replacement(
@@ -419,7 +420,7 @@ reMigrationMerge(const GitDiffChanges &Repl_A,
 
   // Get Repl_C_y
   std::map<std::string, clang::tooling::Replacements> Repl_C_y;
-  for (const auto &Repl : Repl_B) {
+  for (const auto &Repl : Repl_C) {
     // The gitdiff changes are line-based while clang replacements are character-based.
     // So here assume there is no overlap between delete hunks and replacements.
     const auto &It = DeletedParts.find(Repl.getFilePath().str());

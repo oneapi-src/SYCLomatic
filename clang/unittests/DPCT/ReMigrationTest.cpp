@@ -323,3 +323,53 @@ TEST_F(ReMigrationTest3, mergeMapsByLine) {
 
   EXPECT_EQ(Expected, Result);
 }
+
+class ReMigrationTest4 : public ::testing::Test {
+protected:
+  void SetUp() override {}
+  void TearDown() override {}
+  // clang-format off
+/*
+aaa bb ccc
+aaa bb ccc
+aaa bb ccc
+aaa bb ccc
+aaa bb ccc
+aaa bb ccc
+aaa bb ccc
+aaa bb ccc
+aaa bb ccc
+aaa bb ccc
+*/
+  // clang-format on
+  static StringRef getLineStringUnittest(clang::tooling::UnifiedPath FilePath,
+                                         unsigned LineNumber) {
+    static std::string S = "aaa bb ccc\n";
+    return StringRef(S);
+  }
+  static unsigned getLineNumberUnittest(clang::tooling::UnifiedPath FilePath,
+                                        unsigned Offset) {
+    static std::vector<unsigned> LineOffsets = {0,  11, 22, 33, 44,
+                                                55, 66, 77, 88, 99};
+    auto Iter =
+        std::upper_bound(LineOffsets.begin(), LineOffsets.end(), Offset);
+    if (Iter == LineOffsets.end())
+      return LineOffsets.size();
+    return std::distance(LineOffsets.begin(), Iter);
+  }
+  static unsigned
+  getLineBeginOffsetUnittest(clang::tooling::UnifiedPath FilePath,
+                             unsigned LineNumber) {
+    static std::unordered_map<unsigned, unsigned> LineOffsets = {
+        {1, 0},  {2, 11}, {3, 22}, {4, 33}, {5, 44},
+        {6, 55}, {7, 66}, {8, 77}, {9, 88}, {10, 99}};
+    return LineOffsets[LineNumber];
+  }
+};
+
+TEST_F(ReMigrationTest4, reMigrationMerge) {
+  getLineStringHook = this->getLineStringUnittest;
+  getLineNumberHook = this->getLineNumberUnittest;
+  getLineBeginOffsetHook = this->getLineBeginOffsetUnittest;
+
+}
