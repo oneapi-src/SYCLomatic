@@ -261,3 +261,42 @@ eee bb ccc
   auto Result = convertReplcementsLineString(Repls);
   EXPECT_EQ(Expected, Result);
 }
+
+TEST_F(ReMigrationTest, mergeMapsByLine) {
+  getLineBeginOffsetHook = getLineBeginOffsetUnittest;
+  getLineStringHook = getLineStringUnittest;
+  std::map<unsigned, std::string> MapA = {{1, "zzzzz\n"}, {3, "xxxx1\n"},
+                                          {4, "wwww1\n"}, {5, "vvvvv\n"},
+                                          {7, "ppppp\n"}, {9, "iiijjjkkk\n"}};
+  std::map<unsigned, std::string> MapB = {
+      {2, "yyyyy\n"}, {3, "xxxx2\n"}, {4, "wwww2\n"}, {7, ""}, {8, "qqqqq"}};
+  UnifiedPath FilePath("test.cu");
+  auto Result = mergeMapsByLine(MapA, MapB, FilePath);
+  std::sort(Result.begin(), Result.end());
+
+  std::vector<Replacement> Expected = {
+      Replacement("test.cu", 0, 11, "zzzzz\n"),
+      Replacement("test.cu", 11, 11, "yyyyy\n"),
+      Replacement("test.cu", 22, 22,
+                  "<<<<<<<\nxxxx1\nwwww1\n=======\nxxxx2\nwwww2\n>>>>>>>\n"),
+      Replacement("test.cu", 44, 11, "vvvvv\n"),
+      Replacement("test.cu", 66, 11, "<<<<<<<\nppppp\n=======\n>>>>>>>\n"),
+      Replacement("test.cu", 77, 11, "qqqqq"),
+      Replacement("test.cu", 88, 11, "iiijjjkkk\n"),
+  };
+
+  ASSERT_EQ(Expected.size(), Result.size());
+  size_t Num = Expected.size();
+  auto ExpectedIt = Expected.begin();
+  auto ResultIt = Result.begin();
+  for (size_t i = 0; i < Num; ++i) {
+    EXPECT_EQ(ExpectedIt->getFilePath(), ResultIt->getFilePath());
+    EXPECT_EQ(ExpectedIt->getOffset(), ResultIt->getOffset());
+    EXPECT_EQ(ExpectedIt->getLength(), ResultIt->getLength());
+    EXPECT_EQ(ExpectedIt->getReplacementText(), ResultIt->getReplacementText());
+    ExpectedIt++;
+    ResultIt++;
+  }
+
+  EXPECT_EQ(Expected, Result);
+}

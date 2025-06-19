@@ -171,27 +171,6 @@ groupReplcementsByFile(
   return Result;
 }
 
-// // This function keep the NL in each string (if has)
-// std::vector<std::string> splitStringByNL(const std::string &Str) {
-//   std::vector<std::string> Result;
-//   if (Str.empty())
-//     return Result;
-//   size_t Start = 0;
-//   bool InQuotes = false;
-//   for (size_t i = 0; i < Str.length(); ++i) {
-//     if (Str[i] == '"') {
-//       InQuotes = !InQuotes;
-//     } else if (Str[i] == '\n' && !InQuotes) {
-//       Result.push_back(Str.substr(Start, i - Start + 1));
-//       Start = i + 1;
-//     }
-//   }
-//   if (Start < Str.length()) {
-//     Result.push_back(Str.substr(Start));
-//   }
-//   return Result;
-// }
-
 // If repl range is cross lines, we treat the \n itself belongs to current line.
 // Example:
 // aaabbbccc
@@ -297,28 +276,15 @@ convertReplcementsLineString(const tooling::Replacements &Repls) {
 }
 
 std::vector<tooling::Replacement>
-convertMapToReplacements(const std::map<unsigned, std::string> &Map,
-                         const clang::tooling::UnifiedPath &FilePath) {
-  std::vector<clang::tooling::Replacement> Result;
-  for (const auto &Pair : Map) {
-    unsigned LineNumber = Pair.first;
-    StringRef LineContent = Pair.second;
-    unsigned Offset = getLineBeginOffset(FilePath, LineNumber);
-    Result.emplace_back(FilePath.getCanonicalPath(), Offset, LineContent.size(),
-                        LineContent.str());
-  }
-  return Result;
-}
-
-std::vector<tooling::Replacement>
 mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
                 const std::map<unsigned, std::string> &MapB,
                 const clang::tooling::UnifiedPath &FilePath) {
   auto genReplacement = [&](unsigned LineNumber,
                             const std::string &LineContent) {
     unsigned Offset = getLineBeginOffset(FilePath, LineNumber);
-    return tooling::Replacement(FilePath.getCanonicalPath(), Offset,
-                                LineContent.size(), LineContent);
+    unsigned StrLen = getLineString(FilePath, LineNumber).size();
+    return tooling::Replacement(FilePath.getCanonicalPath(), Offset, StrLen,
+                                LineContent);
   };
 
   std::vector<tooling::Replacement> Result;
@@ -342,7 +308,7 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
       // Conflict line(s)
       std::vector<std::string> ConflictA;
       std::vector<std::string> ConflictB;
-      unsigned ConflictOffset = ItA->first;
+      unsigned ConflictOffset = getLineBeginOffset(FilePath, ItA->first);
       unsigned ConflictLength = 0;
 
       // Collect continuous conflicting lines
@@ -352,7 +318,7 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
         ConflictB.push_back(ItB->second);
         ++ItA;
         ++ItB;
-        ConflictLength += ItA->second.size();
+        ConflictLength += getLineString(FilePath, ItA->first).size();
       }
 
       // generate merged string

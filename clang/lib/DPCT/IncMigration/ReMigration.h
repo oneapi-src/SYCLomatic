@@ -104,6 +104,10 @@ std::vector<tooling::Replacement> splitReplInOrderToNotCrossLines(
     const std::vector<tooling::Replacement> &InRepls);
 std::map<unsigned, std::string>
 convertReplcementsLineString(const std::vector<tooling::Replacement> &Repls);
+std::vector<tooling::Replacement>
+mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
+                const std::map<unsigned, std::string> &MapB,
+                const clang::tooling::UnifiedPath &FilePath);
 } // namespace dpct
 } // namespace clang
 
