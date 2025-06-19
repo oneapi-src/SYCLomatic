@@ -245,3 +245,27 @@
 // __TANF-NEXT:   __tanf(f /*float*/);
 // __TANF-NEXT: Is migrated to:
 // __TANF-NEXT:   sycl::tan(f);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__fmaf_ieee_rd | FileCheck %s -check-prefix=__fmaf_ieee_rd
+// __fmaf_ieee_rd: CUDA API:
+// __fmaf_ieee_rd-NEXT:   __fmaf_ieee_rd(f0 /*float*/, f1 /*float*/, f2 /*float*/);
+// __fmaf_ieee_rd-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __fmaf_ieee_rd-NEXT:   sycl::ext::intel::math::fmaf_rd(f0, f1, f2);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__fmaf_ieee_rn | FileCheck %s -check-prefix=__fmaf_ieee_rn
+// __fmaf_ieee_rn: CUDA API:
+// __fmaf_ieee_rn-NEXT:   __fmaf_ieee_rn(f0 /*float*/, f1 /*float*/, f2 /*float*/);
+// __fmaf_ieee_rn-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __fmaf_ieee_rn-NEXT:   sycl::ext::intel::math::fmaf_rn(f0, f1, f2);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__fmaf_ieee_ru | FileCheck %s -check-prefix=__fmaf_ieee_ru
+// __fmaf_ieee_ru: CUDA API:
+// __fmaf_ieee_ru-NEXT:   __fmaf_ieee_ru(f0 /*float*/, f1 /*float*/, f2 /*float*/);
+// __fmaf_ieee_ru-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __fmaf_ieee_ru-NEXT:   sycl::ext::intel::math::fmaf_ru(f0, f1, f2);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__fmaf_ieee_rz | FileCheck %s -check-prefix=__fmaf_ieee_rz
+// __fmaf_ieee_rz: CUDA API:
+// __fmaf_ieee_rz-NEXT:   __fmaf_ieee_rz(f0 /*float*/, f1 /*float*/, f2 /*float*/);
+// __fmaf_ieee_rz-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __fmaf_ieee_rz-NEXT:   sycl::ext::intel::math::fmaf_rz(f0, f1, f2);
