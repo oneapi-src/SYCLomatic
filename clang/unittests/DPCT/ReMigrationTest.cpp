@@ -8,46 +8,13 @@ using namespace llvm;
 using namespace clang::tooling;
 using namespace clang::dpct;
 
-namespace {
-  // clang-format off
-/*
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-*/
-  // clang-format on
-StringRef getLineStringUnittest(clang::tooling::UnifiedPath FilePath,
-                                unsigned LineNumber) {
-  static std::string S = "aaa bb ccc\n";
-  return StringRef(S);
-}
-unsigned getLineNumberUnittest(clang::tooling::UnifiedPath FilePath,
-                               unsigned Offset) {
-  static std::vector<unsigned> LineOffsets = {0, 11, 22, 33, 44, 55, 66, 77, 88, 99};
-  auto Iter = std::upper_bound(LineOffsets.begin(), LineOffsets.end(), Offset);
-  if (Iter == LineOffsets.end())
-    return LineOffsets.size();
-  return std::distance(LineOffsets.begin(), Iter);
-}
-unsigned getLineBeginOffsetUnittest(clang::tooling::UnifiedPath FilePath,
-                                    unsigned LineNumber) {
-  static std::unordered_map<unsigned, unsigned> LineOffsets = {
-      {1, 0}, {2, 11}, {3, 22}, {4, 33}, {5, 44}, {6, 55}, {7, 66}, {8, 77}, {9, 88}, {10, 99}};
-  return LineOffsets[LineNumber];
-}
-} // namespace
-
-class ReMigrationTest : public ::testing::Test {
+class ReMigrationTest1 : public ::testing::Test {
 protected:
   void SetUp() override {}
   void TearDown() override {}
 };
 
-TEST_F(ReMigrationTest, calculateUpdatedRanges) {
+TEST_F(ReMigrationTest1, calculateUpdatedRanges) {
   // clang-format off
   // Old base:
 /*
@@ -118,7 +85,7 @@ aaa bb ccc
   }
 }
 
-TEST_F(ReMigrationTest, groupReplcementsByFile) {
+TEST_F(ReMigrationTest1, groupReplcementsByFile) {
   std::string FilePath1 =
       clang::tooling::UnifiedPath("file1.cpp").getCanonicalPath().str();
   std::string FilePath2 =
@@ -171,33 +138,61 @@ TEST_F(ReMigrationTest, groupReplcementsByFile) {
   }
 }
 
-TEST_F(ReMigrationTest, splitReplInOrderToNotCrossLines) {
+class ReMigrationTest2 : public ::testing::Test {
+protected:
+  void SetUp() override {}
+  void TearDown() override {}
   // clang-format off
-  // Old base:
 /*
-Example:
 aaabbbbccc
 dddeeeefff
 ggghhhhiii
 zzzzzzzzzz
 yyyyyyyyyy
-//
-// Original repl:
-// (ccc\ndddeeeefff\nggg) =>（jjj\nkkk）
-// (zz\nyy) =>（xx)
-//
-// Splitted repls:
-// (ccc\n) =>（jjj\nkkk）
-// (dddeeeefff\n) => ""
-// (ggg) => ""
-// (zz\n) => (xx)
-// (yy) => ""
-eee bb ccc
 */
   // clang-format on
-  getLineStringHook = getLineStringUnittest;
-  getLineNumberHook = getLineNumberUnittest;
-  getLineBeginOffsetHook = getLineBeginOffsetUnittest;
+  static StringRef getLineStringUnittest(clang::tooling::UnifiedPath FilePath,
+                                         unsigned LineNumber) {
+    static std::vector<std::string> LineString = {
+        "aaabbbbccc\n", "dddeeeefff\n", "ggghhhhiii\n", "zzzzzzzzzz\n",
+        "yyyyyyyyyy\n"};
+    return StringRef(LineString[LineNumber - 1]);
+  }
+  static unsigned getLineNumberUnittest(clang::tooling::UnifiedPath FilePath,
+                                        unsigned Offset) {
+    static std::vector<unsigned> LineOffsets = {0, 11, 22, 33, 44};
+    auto Iter =
+        std::upper_bound(LineOffsets.begin(), LineOffsets.end(), Offset);
+    if (Iter == LineOffsets.end())
+      return LineOffsets.size();
+    return std::distance(LineOffsets.begin(), Iter);
+  }
+  static unsigned
+  getLineBeginOffsetUnittest(clang::tooling::UnifiedPath FilePath,
+                             unsigned LineNumber) {
+    static std::unordered_map<unsigned, unsigned> LineOffsets = {
+        {1, 0}, {2, 11}, {3, 22}, {4, 33}, {5, 44}};
+    return LineOffsets[LineNumber];
+  }
+};
+
+TEST_F(ReMigrationTest2, splitReplInOrderToNotCrossLines) {
+  // Example:
+  //
+  // Original repl:
+  // (ccc\ndddeeeefff\nggg) =>（jjj\nkkk）
+  // (zz\nyy) =>（xx)
+  //
+  // Splitted repls:
+  // (ccc\n) =>（jjj\nkkk）
+  // (dddeeeefff\n) => ""
+  // (ggg) => ""
+  // (zz\n) => (xx)
+  // (yy) => ""
+
+  getLineStringHook = this->getLineStringUnittest;
+  getLineNumberHook = this->getLineNumberUnittest;
+  getLineBeginOffsetHook = this->getLineBeginOffsetUnittest;
   std::vector<Replacement> Repls = {Replacement("file1.cpp", 7, 18, "jjj\nkkk"),
                                     Replacement("file1.cpp", 41, 5, "xx")};
   std::vector<Replacement> Expected = {
@@ -210,9 +205,11 @@ eee bb ccc
   EXPECT_EQ(Expected, Result);
 }
 
-TEST_F(ReMigrationTest, convertReplcementsLineString) {
+class ReMigrationTest3 : public ::testing::Test {
+protected:
+  void SetUp() override {}
+  void TearDown() override {}
   // clang-format off
-  // Old base:
 /*
 aaa bb ccc
 aaa bb ccc
@@ -225,6 +222,34 @@ aaa bb ccc
 aaa bb ccc
 aaa bb ccc
 */
+  // clang-format on
+  static StringRef getLineStringUnittest(clang::tooling::UnifiedPath FilePath,
+                                         unsigned LineNumber) {
+    static std::string S = "aaa bb ccc\n";
+    return StringRef(S);
+  }
+  static unsigned getLineNumberUnittest(clang::tooling::UnifiedPath FilePath,
+                                        unsigned Offset) {
+    static std::vector<unsigned> LineOffsets = {0,  11, 22, 33, 44,
+                                                55, 66, 77, 88, 99};
+    auto Iter =
+        std::upper_bound(LineOffsets.begin(), LineOffsets.end(), Offset);
+    if (Iter == LineOffsets.end())
+      return LineOffsets.size();
+    return std::distance(LineOffsets.begin(), Iter);
+  }
+  static unsigned
+  getLineBeginOffsetUnittest(clang::tooling::UnifiedPath FilePath,
+                             unsigned LineNumber) {
+    static std::unordered_map<unsigned, unsigned> LineOffsets = {
+        {1, 0},  {2, 11}, {3, 22}, {4, 33}, {5, 44},
+        {6, 55}, {7, 66}, {8, 77}, {9, 88}, {10, 99}};
+    return LineOffsets[LineNumber];
+  }
+};
+
+TEST_F(ReMigrationTest3, convertReplcementsLineString) {
+  // clang-format off
   // After appling repls:
 /*
 aaa zzz ccc
@@ -239,16 +264,15 @@ aaa bb ddd
 eee bb ccc
 */
   // clang-format on
-  getLineStringHook = getLineStringUnittest;
-  getLineNumberHook = getLineNumberUnittest;
-  getLineBeginOffsetHook = getLineBeginOffsetUnittest;
+  getLineStringHook = this->getLineStringUnittest;
+  getLineNumberHook = this->getLineNumberUnittest;
+  getLineBeginOffsetHook = this->getLineBeginOffsetUnittest;
   std::vector<Replacement> Repls = {
       Replacement("file1.cpp", 4, 2, "zzz"),
       Replacement("file1.cpp", 64, 3, "q\nqqq"),
       Replacement("file1.cpp", 33, 11, "aaa yyy ccc\n"),
       Replacement("file1.cpp", 11, 0, "ppp "),
-      Replacement("file1.cpp", 84, 18, "ddd\neee")
-    };
+      Replacement("file1.cpp", 84, 18, "ddd\neee")};
   std::map<unsigned, std::string> Expected = {{1, "aaa zzz ccc\n"},
                                               {2, "ppp aaa bb ccc\n"},
                                               {4, "aaa yyy ccc\n"},
@@ -256,15 +280,14 @@ eee bb ccc
                                               {7, "aa bb ccc\n"},
                                               {8, "aaa bb ddd\neee"},
                                               {9, ""},
-                                              {10, " bb ccc\n"}
-                                            };
+                                              {10, " bb ccc\n"}};
   auto Result = convertReplcementsLineString(Repls);
   EXPECT_EQ(Expected, Result);
 }
 
-TEST_F(ReMigrationTest, mergeMapsByLine) {
-  getLineBeginOffsetHook = getLineBeginOffsetUnittest;
-  getLineStringHook = getLineStringUnittest;
+TEST_F(ReMigrationTest3, mergeMapsByLine) {
+  getLineBeginOffsetHook = this->getLineBeginOffsetUnittest;
+  getLineStringHook = this->getLineStringUnittest;
   std::map<unsigned, std::string> MapA = {{1, "zzzzz\n"}, {3, "xxxx1\n"},
                                           {4, "wwww1\n"}, {5, "vvvvv\n"},
                                           {7, "ppppp\n"}, {9, "iiijjjkkk\n"}};
