@@ -201,3 +201,43 @@
 // CHECK_SELECT_UNIQUE-NEXT:   dpct::queue_ptr stream;
 // CHECK_SELECT_UNIQUE-NEXT:   stream = dpct::get_current_device().create_queue();
 // CHECK_SELECT_UNIQUE-NEXT:   stream->fill(d_num_selected_out, std::distance(d_out, oneapi::dpl::unique_copy(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + num_items, d_out)), 1).wait();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceHistogram::MultiHistogramRange | FileCheck %s -check-prefix=CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMRANGE
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMRANGE:  CUDA API:
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMRANGE:    void *d_temp_storage = nullptr;
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMRANGE:    size_t temp_storage_bytes = 0;
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMRANGE:    cub::DeviceHistogram::MultiHistogramRange<4, 3>(d_temp_storage/*void **/, temp_storage_bytes/*size_t*/, d_samples/*unsigned char **/, d_histogram/*int *(&)[3]*/, num_levels/*int(&)[3]*/, d_levels/*unsigned int *(&)[3]*/, num_pixels/*int*/);
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMRANGE:    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMRANGE:    cub::DeviceHistogram::MultiHistogramRange<4, 3>(d_temp_storage/*void **/, temp_storage_bytes/*size_t*/, d_samples/*unsigned char **/, d_histogram/*int *(&)[3]*/, num_levels/*int(&)[3]*/, d_levels/*unsigned int *(&)[3]*/, num_pixels/*int*/);
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMRANGE:  Is migrated to:
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMRANGE:    dpct::multi_histogram_range<4, 3>(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, d_levels, num_pixels);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceHistogram::MultiHistogramEven | FileCheck %s -check-prefix=CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMEVEN
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMEVEN:  CUDA API:
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMEVEN:    void *d_temp_storage = nullptr;
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMEVEN:    size_t temp_storage_bytes = 0;
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMEVEN:    cub::DeviceHistogram::MultiHistogramEven<4, 3>(d_temp_storage/*void **/, temp_storage_bytes/*size_t*/, d_samples/*unsigned char **/, d_histogram/*int *(&)[3]*/, num_levels/*int(&)[3]*/, lower_level/*unsigned int(&)[3]*/, upper_level/*unsigned int(&)[3]*/, num_pixels/*int*/, S/*cudaStream_t*/);
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMEVEN:    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMEVEN:    cub::DeviceHistogram::MultiHistogramEven<4, 3>(d_temp_storage/*void **/, temp_storage_bytes/*size_t*/, d_samples/*unsigned char **/, d_histogram/*int *(&)[3]*/, num_levels/*int(&)[3]*/, lower_level/*unsigned int(&)[3]*/, upper_level/*unsigned int(&)[3]*/, num_pixels/*int*/, S/*cudaStream_t*/);
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMEVEN:  Is migrated to:
+// CHECK_DEVICEHISTOGRAM_MULTIHISTOGRAMEVEN:    dpct::multi_histogram_even<4, 3>(oneapi::dpl::execution::device_policy(*S), d_samples, d_histogram, num_levels, lower_level, upper_level, num_pixels);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceHistogram::HistogramEven | FileCheck %s -check-prefix=CHECK_DEVICEHISTOGRAM_HISTOGRAMEVEN
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMEVEN:  CUDA API:
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMEVEN:    void *d_temp_storage = nullptr;
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMEVEN:    size_t temp_storage_bytes = 0;
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMEVEN:    cub::DeviceHistogram::HistogramEven(d_temp_storage/*void **/, temp_storage_bytes/*size_t*/, d_samples/*float **/, d_histogram/*int **/, num_levels/*int*/, lower_level/*float*/, upper_level/*float*/, num_samples/*int*/);
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMEVEN:    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMEVEN:    cub::DeviceHistogram::HistogramEven(d_temp_storage/*void **/, temp_storage_bytes/*size_t*/, d_samples/*float **/, d_histogram/*int **/, num_levels/*int*/, lower_level/*float*/, upper_level/*float*/, num_samples/*int*/);
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMEVEN:  Is migrated to:
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMEVEN:    dpct::histogram_even(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DeviceHistogram::HistogramRange | FileCheck %s -check-prefix=CHECK_DEVICEHISTOGRAM_HISTOGRAMRANGE
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMRANGE:  CUDA API:
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMRANGE:    void *d_temp_storage = nullptr;
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMRANGE:    size_t temp_storage_bytes = 0;
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMRANGE:    cub::DeviceHistogram::HistogramRange(d_temp_storage/*void **/, temp_storage_bytes/*size_t*/, d_samples/*float **/, d_histogram/*int **/, num_levels/*int*/, d_levels/*float **/, num_samples/*int*/);
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMRANGE:    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMRANGE:    cub::DeviceHistogram::HistogramRange(d_temp_storage/*void **/, temp_storage_bytes/*size_t*/, d_samples/*float **/, d_histogram/*int **/, num_levels/*int*/, d_levels/*float **/, num_samples/*int*/);
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMRANGE:  Is migrated to:
+// CHECK_DEVICEHISTOGRAM_HISTOGRAMRANGE:    dpct::histogram_range(oneapi::dpl::execution::device_policy(q_ct1), d_samples, d_histogram, num_levels, d_levels, num_samples);

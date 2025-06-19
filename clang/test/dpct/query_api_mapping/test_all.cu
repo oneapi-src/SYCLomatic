@@ -761,6 +761,10 @@
 // CHECK-NEXT: cub::BlockShuffle::Rotate
 // CHECK-NEXT: cub::BlockShuffle::Up
 // CHECK-NEXT: cub::BlockStore::Store
+// CHECK-NEXT: cub::DeviceHistogram::HistogramEven
+// CHECK-NEXT: cub::DeviceHistogram::HistogramRange
+// CHECK-NEXT: cub::DeviceHistogram::MultiHistogramEven
+// CHECK-NEXT: cub::DeviceHistogram::MultiHistogramRange
 // CHECK-NEXT: cub::DeviceReduce::ArgMax
 // CHECK-NEXT: cub::DeviceReduce::ArgMin
 // CHECK-NEXT: cub::DeviceReduce::Max
