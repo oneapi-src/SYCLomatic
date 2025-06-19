@@ -1,11 +1,11 @@
+// Option: --use-experimental-features=nd_range_barrier,root-group
 #include <cooperative_groups.h>
 #include <cooperative_groups/scan.h>
 
 __global__ void test() {
 
-  cooperative_groups::grid_group grid = cooperative_groups::this_grid();
-
   // Start
-  grid.num_threads() /* grid_group::num_threads */;
+  cooperative_groups::grid_group grid = cooperative_groups::this_grid();
+  grid.num_threads();
   // End
 }

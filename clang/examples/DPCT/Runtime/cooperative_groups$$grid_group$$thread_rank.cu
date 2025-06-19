@@ -2,9 +2,8 @@
 
 __global__ void test() {
 
-  cooperative_groups::grid_group grid = cooperative_groups::this_grid();
-
   // Start
+  cooperative_groups::grid_group grid = cooperative_groups::this_grid();
   grid.thread_rank() /* grid_group::thread_rank */;
   // End
 }

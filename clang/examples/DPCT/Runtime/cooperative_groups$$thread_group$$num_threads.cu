@@ -3,9 +3,8 @@
 
 __global__ void test() {
 
-  cooperative_groups::thread_group tg =
-      cooperative_groups::this_thread_block();
   // Start
-    tg.num_threads()/* thread_group::num_threads */;
+  cooperative_groups::thread_group tg = cooperative_groups::this_thread_block();
+  tg.num_threads();
   // End
 }

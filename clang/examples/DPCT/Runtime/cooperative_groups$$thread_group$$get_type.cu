@@ -2,10 +2,8 @@
 #include <cooperative_groups/scan.h>
 
 __global__ void test() {
-
-  cooperative_groups::thread_group tg =
-      cooperative_groups::this_thread_block();
   // Start
-    tg.get_type()/* thread_group::get_type */;
+  cooperative_groups::thread_group tg = cooperative_groups::this_thread_block();
+  tg.get_type();
   // End
 }

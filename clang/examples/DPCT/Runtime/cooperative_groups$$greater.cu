@@ -1,4 +1,3 @@
-// Option: --use-experimental-features=logical-group 
 #include "cooperative_groups.h"
 #include <cooperative_groups/reduce.h>
 

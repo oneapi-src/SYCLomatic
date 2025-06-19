@@ -2,11 +2,8 @@
 #include <cooperative_groups/scan.h>
 
 __global__ void test() {
-
-  cooperative_groups::thread_block tb =
-      cooperative_groups::this_thread_block();
-
   // Start
-    tb.size()/* thread_block::size */;
+  cooperative_groups::thread_block tb = cooperative_groups::this_thread_block();
+  tb.size();
   // End
 }

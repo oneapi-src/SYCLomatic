@@ -3,10 +3,8 @@
 
 __global__ void test() {
 
-  cooperative_groups::thread_group tg =
-      cooperative_groups::this_thread_block();
-
   // Start
-    tg.size()/* thread_group::size */;
+  cooperative_groups::thread_group tg = cooperative_groups::this_thread_block();
+  tg.size();
   // End
 }

@@ -4,6 +4,6 @@
 __global__ void test() {
   // Start
   cooperative_groups::thread_group tg = cooperative_groups::this_thread_block();
-  tg.thread_rank() /* thread_group::thread_rank */;
+  tg.thread_rank();
   // End
 }

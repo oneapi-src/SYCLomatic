@@ -7,6 +7,6 @@ __global__ void test() {
   cooperative_groups::thread_block_tile<32> ctile32 = cooperative_groups::tiled_partition<32>(block);
 
   // Start
-  ctile32.meta_group_rank(); // thread_block_tile<tile size>::meta_group_rank
+  ctile32.meta_group_rank();// thread_block_tile<tile size>::meta_group_rank
   // End
 }

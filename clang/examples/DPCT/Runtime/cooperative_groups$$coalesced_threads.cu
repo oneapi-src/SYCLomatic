@@ -1,6 +1,5 @@
-// Option: --use-experimental-features=logical-group
 // Option: --use-experimental-features=non-uniform-groups
-#include "cooperative_groups.h"
+#include <cooperative_groups.h>
 #include <cooperative_groups/reduce.h>
 
 __global__ void test() {
