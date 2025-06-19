@@ -171,6 +171,45 @@ TEST_F(ReMigrationTest, groupReplcementsByFile) {
   }
 }
 
+TEST_F(ReMigrationTest, splitReplInOrderToNotCrossLines) {
+  // clang-format off
+  // Old base:
+/*
+Example:
+aaabbbbccc
+dddeeeefff
+ggghhhhiii
+zzzzzzzzzz
+yyyyyyyyyy
+//
+// Original repl:
+// (ccc\ndddeeeefff\nggg) =>（jjj\nkkk）
+// (zz\nyy) =>（xx)
+//
+// Splitted repls:
+// (ccc\n) =>（jjj\nkkk）
+// (dddeeeefff\n) => ""
+// (ggg) => ""
+// (zz\n) => (xx)
+// (yy) => ""
+eee bb ccc
+*/
+  // clang-format on
+  getLineStringHook = getLineStringUnittest;
+  getLineNumberHook = getLineNumberUnittest;
+  getLineBeginOffsetHook = getLineBeginOffsetUnittest;
+  std::vector<Replacement> Repls = {Replacement("file1.cpp", 7, 18, "jjj\nkkk"),
+                                    Replacement("file1.cpp", 41, 5, "xx")};
+  std::vector<Replacement> Expected = {
+      Replacement("file1.cpp", 7, 4, "jjj\nkkk"),
+      Replacement("file1.cpp", 11, 11, ""), Replacement("file1.cpp", 22, 3, ""),
+      Replacement("file1.cpp", 41, 3, "xx"),
+      Replacement("file1.cpp", 44, 2, "")};
+  auto Result = splitReplInOrderToNotCrossLines(Repls);
+  std::sort(Result.begin(), Result.end());
+  EXPECT_EQ(Expected, Result);
+}
+
 TEST_F(ReMigrationTest, convertReplcementsLineString) {
   // clang-format off
   // Old base:

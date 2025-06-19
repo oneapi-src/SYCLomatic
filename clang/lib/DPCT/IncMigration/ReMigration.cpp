@@ -287,7 +287,7 @@ convertReplcementsLineString(const std::vector<tooling::Replacement> &InRepls) {
   return Result;
 }
 
-std::map<unsigned, std::string>
+static std::map<unsigned, std::string>
 convertReplcementsLineString(const tooling::Replacements &Repls) {
   std::vector<tooling::Replacement> ReplsVec;
   for (const auto &R : Repls) {

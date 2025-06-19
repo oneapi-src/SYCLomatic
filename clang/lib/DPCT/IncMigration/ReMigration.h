@@ -100,6 +100,8 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
                        const clang::tooling::Replacements &NewRepl);
 std::map<std::string, std::vector<tooling::Replacement>>
 groupReplcementsByFile(const std::vector<tooling::Replacement> &Repls);
+std::vector<tooling::Replacement> splitReplInOrderToNotCrossLines(
+    const std::vector<tooling::Replacement> &InRepls);
 std::map<unsigned, std::string>
 convertReplcementsLineString(const std::vector<tooling::Replacement> &Repls);
 } // namespace dpct
