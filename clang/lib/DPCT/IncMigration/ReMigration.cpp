@@ -255,8 +255,6 @@ convertReplcementsLineString(const std::vector<Replacement> &InRepls) {
       NewLineStr += Repl.getReplacementText().str();
       Pos = StrOffset + Repl.getLength();
     }
-    std::cout << "OriginalLineStr:" << OriginalLineStr << "!!!" << std::endl;
-    std::cout << "Pos:" << Pos << std::endl;
     NewLineStr += OriginalLineStr.substr(Pos);
     Result[LineNum] = NewLineStr;
   }
@@ -352,17 +350,22 @@ static bool hasConflict(const Replacement &R1, const Replacement &R2) {
 }
 
 // Merge Repl_C1 and Repl_C2. If has conflict, keep repl from Repl_C2.
-std::vector<Replacement> mergeC1AndC2(const std::vector<Replacement> &Repl_C1,
-                                      const GitDiffChanges &Repl_C2) {
+std::vector<Replacement> mergeC1AndC2(
+    const std::vector<Replacement> &Repl_C1, const GitDiffChanges &Repl_C2,
+    const std::map<UnifiedPath /*SYCL name*/, UnifiedPath /*CUDA name*/>
+        &FileNameMap) {
   std::vector<Replacement> Result;
   std::vector<Replacement> Repl_C2_vec;
-  std::for_each(Repl_C2.ModifyFileHunks.begin(), Repl_C2.ModifyFileHunks.end(),
-                [&Repl_C2_vec](const Replacement &Hunk) {
-                  Replacement Replacement(Hunk.getFilePath(), Hunk.getOffset(),
-                                          Hunk.getLength(),
-                                          Hunk.getReplacementText());
-                  Repl_C2_vec.push_back(Replacement);
-                });
+  std::for_each(
+      Repl_C2.ModifyFileHunks.begin(), Repl_C2.ModifyFileHunks.end(),
+      [&Repl_C2_vec, FileNameMap](const Replacement &Hunk) {
+        UnifiedPath OldFilePath =
+            FileNameMap.at(UnifiedPath(Hunk.getFilePath()));
+        Replacement Replacement(OldFilePath.getCanonicalPath(),
+                                Hunk.getOffset(), Hunk.getLength(),
+                                Hunk.getReplacementText());
+        Repl_C2_vec.push_back(Replacement);
+      });
   for (const auto &ReplInC1 : Repl_C1) {
     bool HasConflict = false;
     for (const auto &ReplInC2 : Repl_C2_vec) {
@@ -419,15 +422,17 @@ std::vector<Replacement> mergeC1AndC2(const std::vector<Replacement> &Repl_C1,
 // 3. Merge Repl_D and Repl_B. May have conflicts.
 std::map<std::string, std::vector<Replacement>> reMigrationMerge(
     const GitDiffChanges &Repl_A, const std::vector<Replacement> &Repl_B,
-    const std::vector<Replacement> &Repl_C1, const GitDiffChanges &Repl_C2) {
+    const std::vector<Replacement> &Repl_C1, const GitDiffChanges &Repl_C2,
+    const std::map<UnifiedPath /*SYCL name*/, UnifiedPath /*CUDA name*/>
+        &FileNameMap) {
   assert(Repl_C2.AddFileHunks.empty() && Repl_C2.DeleteFileHunks.empty() &&
          Repl_C2.MoveFileHunks.empty() &&
          "Repl_C2 should only have ModifiyFileHunks.");
   // Merge Repl_C1 and Repl_C2. If has conflict, keep repl from Repl_C2.
   // TODO: Repl_C1 has name like file1.cpp, file2.cpp, file3.cu, file4.cuh
   // but Repl_C2 has name like file1.cpp, file2.cpp.dp.cpp, file3.dp.cpp, file4.dp.hpp
-  // we need map different file names (or just convert the filename in Repl_C2 to CUDA style)
-  std::vector<Replacement> Repl_C = mergeC1AndC2(Repl_C1, Repl_C2);
+  // we need convert the filename in Repl_C2 to CUDA style
+  std::vector<Replacement> Repl_C = mergeC1AndC2(Repl_C1, Repl_C2, FileNameMap);
 
   // Convert vector in Repl_A to map for quick lookup.
   std::map<std::string, std::map<unsigned /*Offset*/, unsigned /*Length*/>>

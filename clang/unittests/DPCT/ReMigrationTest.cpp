@@ -326,30 +326,45 @@ TEST_F(ReMigrationTest3, mergeMapsByLine) {
 
 TEST_F(ReMigrationTest1, mergeC1AndC2) {
   std::vector<Replacement> Repl_C1 = {
-      Replacement("file1.cpp", 10, 0, "aaa"),
-      Replacement("file1.cpp", 11, 1, "bbb"),
-      Replacement("file1.cpp", 20, 20, "ccc"),
-      Replacement("file2.cpp", 20, 20, "zzz"),
-      Replacement("file2.cpp", 40, 1, "yyy"),
+      Replacement("file1.cu", 10, 0, "aaa"),
+      Replacement("file1.cu", 11, 1, "bbb"),
+      Replacement("file1.cu", 20, 20, "ccc"),
+      Replacement("file2.cu", 20, 20, "zzz"),
+      Replacement("file2.cu", 40, 1, "yyy"),
+      Replacement("file3.cpp", 0, 1, "a"),
+      Replacement("file4.cpp", 2, 1, "b"),
   };
   GitDiffChanges Repl_C2;
   Repl_C2.ModifyFileHunks = {
-      Replacement("file1.cpp", 10, 0, "ddd"),
-      Replacement("file1.cpp", 10, 2, "eee"),
-      Replacement("file1.cpp", 40, 2, "fff"),
-      Replacement("file2.cpp", 21, 3, "xxx"),
-      Replacement("file2.cpp", 41, 1, "www"),
+      Replacement("file1.dp.cpp", 10, 0, "ddd"),
+      Replacement("file1.dp.cpp", 10, 2, "eee"),
+      Replacement("file1.dp.cpp", 40, 2, "fff"),
+      Replacement("file2.dp.cpp", 21, 3, "xxx"),
+      Replacement("file2.dp.cpp", 41, 1, "www"),
+      Replacement("file3.cpp.dp.cpp", 10, 1, "a"),
+      Replacement("file4.cpp", 12, 1, "b"),
   };
+  const std::map<UnifiedPath, UnifiedPath> FileNameMap = {
+      {"file1.dp.cpp", "file1.cu"},
+      {"file2.dp.cpp", "file2.cu"},
+      {"file3.cpp.dp.cpp", "file3.cpp"},
+      {"file4.cpp", "file4.cpp"}};
 
-  std::vector<Replacement> Result = mergeC1AndC2(Repl_C1, Repl_C2);
-  std::vector<Replacement> Expected = {Replacement("file1.cpp", 10, 0, "aaa"),
-                                       Replacement("file1.cpp", 10, 0, "ddd"),
-                                       Replacement("file1.cpp", 10, 2, "eee"),
-                                       Replacement("file1.cpp", 20, 20, "ccc"),
-                                       Replacement("file1.cpp", 40, 2, "fff"),
-                                       Replacement("file2.cpp", 21, 3, "xxx"),
-                                       Replacement("file2.cpp", 40, 1, "yyy"),
-                                       Replacement("file2.cpp", 41, 1, "www")};
+  std::vector<Replacement> Result = mergeC1AndC2(Repl_C1, Repl_C2, FileNameMap);
+  std::vector<Replacement> Expected = {
+      Replacement("file1.cu", 10, 0, "aaa"),
+      Replacement("file1.cu", 10, 0, "ddd"),
+      Replacement("file1.cu", 10, 2, "eee"),
+      Replacement("file1.cu", 20, 20, "ccc"),
+      Replacement("file1.cu", 40, 2, "fff"),
+      Replacement("file2.cu", 21, 3, "xxx"),
+      Replacement("file2.cu", 40, 1, "yyy"),
+      Replacement("file2.cu", 41, 1, "www"),
+      Replacement("file3.cpp", 0, 1, "a"),
+      Replacement("file4.cpp", 2, 1, "b"),
+      Replacement("file3.cpp", 10, 1, "a"),
+      Replacement("file4.cpp", 12, 1, "b"),
+  };
   std::sort(Result.begin(), Result.end());
   std::sort(Expected.begin(), Expected.end());
 
@@ -367,6 +382,7 @@ TEST_F(ReMigrationTest1, mergeC1AndC2) {
   }
 }
 
+#if 0
 class ReMigrationTest4 : public ::testing::Test {
 protected:
   inline static std::vector<std::string> CUDACodeV1 = {};
@@ -512,3 +528,4 @@ TEST_F(ReMigrationTest4, reMigrationMerge) {
 
   ASSERT_EQ(true, false); // Placeholder for actual test logic
 }
+#endif

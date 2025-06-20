@@ -110,13 +110,18 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
                 const clang::tooling::UnifiedPath &FilePath);
 std::vector<tooling::Replacement>
 mergeC1AndC2(const std::vector<tooling::Replacement> &Repl_C1,
-             const GitDiffChanges &Repl_C2);
+             const GitDiffChanges &Repl_C2,
+             const std::map<tooling::UnifiedPath /*SYCL name*/,
+                            tooling::UnifiedPath /*CUDA name*/> &FileNameMap);
 
 std::map<std::string, std::vector<clang::tooling::Replacement>>
-reMigrationMerge(const GitDiffChanges &Repl_A,
-                 const std::vector<tooling::Replacement> &Repl_B,
-                 const std::vector<tooling::Replacement> &Repl_C1,
-                 const GitDiffChanges &Repl_C2);
+reMigrationMerge(
+    const GitDiffChanges &Repl_A,
+    const std::vector<tooling::Replacement> &Repl_B,
+    const std::vector<tooling::Replacement> &Repl_C1,
+    const GitDiffChanges &Repl_C2,
+    const std::map<tooling::UnifiedPath /*SYCL name*/,
+                   tooling::UnifiedPath /*CUDA name*/> &FileNameMap);
 } // namespace dpct
 } // namespace clang
 
