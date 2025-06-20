@@ -108,6 +108,10 @@ std::vector<tooling::Replacement>
 mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
                 const std::map<unsigned, std::string> &MapB,
                 const clang::tooling::UnifiedPath &FilePath);
+std::vector<tooling::Replacement>
+mergeC1AndC2(const std::vector<tooling::Replacement> &Repl_C1,
+             const GitDiffChanges &Repl_C2);
+
 std::map<std::string, std::vector<clang::tooling::Replacement>>
 reMigrationMerge(const GitDiffChanges &Repl_A,
                  const std::vector<tooling::Replacement> &Repl_B,

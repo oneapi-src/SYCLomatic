@@ -324,6 +324,49 @@ TEST_F(ReMigrationTest3, mergeMapsByLine) {
   EXPECT_EQ(Expected, Result);
 }
 
+TEST_F(ReMigrationTest1, mergeC1AndC2) {
+  std::vector<Replacement> Repl_C1 = {
+      Replacement("file1.cpp", 10, 0, "aaa"),
+      Replacement("file1.cpp", 11, 1, "bbb"),
+      Replacement("file1.cpp", 20, 20, "ccc"),
+      Replacement("file2.cpp", 20, 20, "zzz"),
+      Replacement("file2.cpp", 40, 1, "yyy"),
+  };
+  GitDiffChanges Repl_C2;
+  Repl_C2.ModifyFileHunks = {
+      Replacement("file1.cpp", 10, 0, "ddd"),
+      Replacement("file1.cpp", 10, 2, "eee"),
+      Replacement("file1.cpp", 40, 2, "fff"),
+      Replacement("file2.cpp", 21, 3, "xxx"),
+      Replacement("file2.cpp", 41, 1, "www"),
+  };
+
+  std::vector<Replacement> Result = mergeC1AndC2(Repl_C1, Repl_C2);
+  std::vector<Replacement> Expected = {Replacement("file1.cpp", 10, 0, "aaa"),
+                                       Replacement("file1.cpp", 10, 0, "ddd"),
+                                       Replacement("file1.cpp", 10, 2, "eee"),
+                                       Replacement("file1.cpp", 20, 20, "ccc"),
+                                       Replacement("file1.cpp", 40, 2, "fff"),
+                                       Replacement("file2.cpp", 21, 3, "xxx"),
+                                       Replacement("file2.cpp", 40, 1, "yyy"),
+                                       Replacement("file2.cpp", 41, 1, "www")};
+  std::sort(Result.begin(), Result.end());
+  std::sort(Expected.begin(), Expected.end());
+
+  ASSERT_EQ(Expected.size(), Result.size());
+  size_t Num = Expected.size();
+  auto ExpectedIt = Expected.begin();
+  auto ResultIt = Result.begin();
+  for (size_t i = 0; i < Num; ++i) {
+    EXPECT_EQ(ExpectedIt->getFilePath(), ResultIt->getFilePath());
+    EXPECT_EQ(ExpectedIt->getOffset(), ResultIt->getOffset());
+    EXPECT_EQ(ExpectedIt->getLength(), ResultIt->getLength());
+    EXPECT_EQ(ExpectedIt->getReplacementText(), ResultIt->getReplacementText());
+    ExpectedIt++;
+    ResultIt++;
+  }
+}
+
 class ReMigrationTest4 : public ::testing::Test {
 protected:
   void SetUp() override {}
@@ -371,5 +414,5 @@ TEST_F(ReMigrationTest4, reMigrationMerge) {
   getLineStringHook = this->getLineStringUnittest;
   getLineNumberHook = this->getLineNumberUnittest;
   getLineBeginOffsetHook = this->getLineBeginOffsetUnittest;
-
+  ASSERT_EQ(true, true); // Placeholder for actual test logic
 }

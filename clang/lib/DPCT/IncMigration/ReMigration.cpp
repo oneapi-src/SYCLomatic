@@ -30,14 +30,14 @@ std::optional<std::function<unsigned(clang::tooling::UnifiedPath, unsigned)>>
     getLineBeginOffsetHook = std::nullopt;
 
 namespace clang::dpct {
+using namespace clang::tooling;
 static GitDiffChanges UpstreamChanges;
 static GitDiffChanges UserChanges;
 AddFileHunk::AddFileHunk(std::string NewFilePath)
-    : Hunk(AddFile),
-      NewFilePath(tooling::UnifiedPath(NewFilePath).getCanonicalPath()) {}
+    : Hunk(AddFile), NewFilePath(UnifiedPath(NewFilePath).getCanonicalPath()) {}
 DeleteFileHunk::DeleteFileHunk(std::string OldFilePath)
     : Hunk(DeleteFile),
-      OldFilePath(tooling::UnifiedPath(OldFilePath).getCanonicalPath()) {}
+      OldFilePath(UnifiedPath(OldFilePath).getCanonicalPath()) {}
 GitDiffChanges &getUpstreamChanges() { return UpstreamChanges; }
 GitDiffChanges &getUserChanges() { return UserChanges; }
 static void dumpGitDiffChanges(const GitDiffChanges &GHC) {
@@ -85,8 +85,7 @@ void tryLoadingUpstreamChangesAndUserChanges() {
   }
 }
 
-static StringRef getLineString(clang::tooling::UnifiedPath FilePath,
-                               unsigned LineNumber) {
+static StringRef getLineString(UnifiedPath FilePath, unsigned LineNumber) {
 #ifndef NDEBUG
   if (getLineStringHook.has_value()) {
     return getLineStringHook.value()(FilePath, LineNumber);
@@ -97,8 +96,7 @@ static StringRef getLineString(clang::tooling::UnifiedPath FilePath,
   return Line;
 }
 
-static unsigned getLineNumber(clang::tooling::UnifiedPath FilePath,
-                              unsigned Offset) {
+static unsigned getLineNumber(UnifiedPath FilePath, unsigned Offset) {
 #ifndef NDEBUG
   if (getLineNumberHook.has_value()) {
     return getLineNumberHook.value()(FilePath, Offset);
@@ -108,8 +106,7 @@ static unsigned getLineNumber(clang::tooling::UnifiedPath FilePath,
   return FileInfo->getLineNumber(Offset);
 }
 
-static unsigned getLineBeginOffset(clang::tooling::UnifiedPath FilePath,
-                                   unsigned LineNumber) {
+static unsigned getLineBeginOffset(UnifiedPath FilePath, unsigned LineNumber) {
 #ifndef NDEBUG
   if (getLineBeginOffsetHook.has_value()) {
     return getLineBeginOffsetHook.value()(FilePath, LineNumber);
@@ -138,7 +135,7 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
   for (const auto &R : NewRepl) {
     // Check if the range (BOffset, EOffset - BOffset) is overlapped with any
     // repl in Repls
-    std::optional<tooling::Replacement> MaxNotGreater = std::nullopt;
+    std::optional<Replacement> MaxNotGreater = std::nullopt;
     for (const auto &ExistingR : Repls) {
       if (ExistingR.getOffset() <= R.getOffset())
         MaxNotGreater = ExistingR;
@@ -146,7 +143,8 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
         break;
     }
     if (MaxNotGreater.has_value()) {
-      if (MaxNotGreater->getOffset() + MaxNotGreater->getLength() > R.getOffset())
+      if (MaxNotGreater->getOffset() + MaxNotGreater->getLength() >
+          R.getOffset())
         continue; // has overlap
     }
 
@@ -155,16 +153,15 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
         Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
     if (BOffset > EOffset)
       continue;
-    llvm::cantFail(Result.add(tooling::Replacement(
+    llvm::cantFail(Result.add(Replacement(
         R.getFilePath(), BOffset, EOffset - BOffset, R.getReplacementText())));
   }
   return Result;
 }
 
-std::map<std::string, std::vector<tooling::Replacement>>
-groupReplcementsByFile(
-    const std::vector<tooling::Replacement> &Repls) {
-  std::map<std::string, std::vector<tooling::Replacement>> Result;
+std::map<std::string, std::vector<Replacement>>
+groupReplcementsByFile(const std::vector<Replacement> &Repls) {
+  std::map<std::string, std::vector<Replacement>> Result;
   for (const auto &R : Repls) {
     Result[R.getFilePath().str()].push_back(R);
   }
@@ -184,10 +181,10 @@ groupReplcementsByFile(
 // (ccc\n) =>（jjj\nkkk）
 // (dddeeefff\n) => ""
 // (ggg) => ""
-std::vector<tooling::Replacement> splitReplInOrderToNotCrossLines(
-    const std::vector<tooling::Replacement> &InRepls) {
+std::vector<Replacement>
+splitReplInOrderToNotCrossLines(const std::vector<Replacement> &InRepls) {
   std::string FilePath = InRepls[0].getFilePath().str();
-  std::vector<tooling::Replacement> Result;
+  std::vector<Replacement> Result;
 
   for (const auto &Repl : InRepls) {
     unsigned StartOffset = Repl.getOffset();
@@ -231,13 +228,13 @@ std::vector<tooling::Replacement> splitReplInOrderToNotCrossLines(
 }
 
 std::map<unsigned, std::string>
-convertReplcementsLineString(const std::vector<tooling::Replacement> &InRepls) {
-  std::vector<tooling::Replacement> Replacements =
+convertReplcementsLineString(const std::vector<Replacement> &InRepls) {
+  std::vector<Replacement> Replacements =
       splitReplInOrderToNotCrossLines(InRepls);
-  tooling::UnifiedPath FilePath(InRepls[0].getFilePath());
+  UnifiedPath FilePath(InRepls[0].getFilePath());
 
   // group replacement by line
-  std::map<unsigned, std::vector<tooling::Replacement>> ReplacementsByLine;
+  std::map<unsigned, std::vector<Replacement>> ReplacementsByLine;
   for (const auto &Repl : Replacements) {
     unsigned LineNum = getLineNumber(FilePath, Repl.getOffset());
     ReplacementsByLine[LineNum].push_back(Repl);
@@ -268,26 +265,26 @@ convertReplcementsLineString(const std::vector<tooling::Replacement> &InRepls) {
 
 static std::map<unsigned, std::string>
 convertReplcementsLineString(const tooling::Replacements &Repls) {
-  std::vector<tooling::Replacement> ReplsVec;
+  std::vector<Replacement> ReplsVec;
   for (const auto &R : Repls) {
     ReplsVec.push_back(R);
   }
   return convertReplcementsLineString(ReplsVec);
 }
 
-std::vector<tooling::Replacement>
+std::vector<Replacement>
 mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
                 const std::map<unsigned, std::string> &MapB,
-                const clang::tooling::UnifiedPath &FilePath) {
+                const UnifiedPath &FilePath) {
   auto genReplacement = [&](unsigned LineNumber,
                             const std::string &LineContent) {
     unsigned Offset = getLineBeginOffset(FilePath, LineNumber);
     unsigned StrLen = getLineString(FilePath, LineNumber).size();
-    return tooling::Replacement(FilePath.getCanonicalPath(), Offset, StrLen,
-                                LineContent);
+    return Replacement(FilePath.getCanonicalPath(), Offset, StrLen,
+                       LineContent);
   };
 
-  std::vector<tooling::Replacement> Result;
+  std::vector<Replacement> Result;
   auto ItA = MapA.begin();
   auto ItB = MapB.begin();
 
@@ -337,6 +334,50 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
   return Result;
 }
 
+static bool hasConflict(const Replacement &R1, const Replacement &R2) {
+  if (R1.getFilePath() != R2.getFilePath())
+    return false;
+  if (R1.getOffset() == R2.getOffset()) {
+    if (R1.getLength() && R2.getLength()) {
+      return true;
+    }
+  }
+  if ((R1.getOffset() < R2.getOffset() &&
+       R1.getOffset() + R1.getLength() > R2.getOffset()) ||
+      (R2.getOffset() < R1.getOffset() &&
+       R2.getOffset() + R2.getLength() > R1.getOffset())) {
+    return true;
+  }
+  return false;
+}
+
+// Merge Repl_C1 and Repl_C2. If has conflict, keep repl from Repl_C2.
+std::vector<Replacement> mergeC1AndC2(const std::vector<Replacement> &Repl_C1,
+                                      const GitDiffChanges &Repl_C2) {
+  std::vector<Replacement> Result;
+  std::vector<Replacement> Repl_C2_vec;
+  std::for_each(Repl_C2.ModifyFileHunks.begin(), Repl_C2.ModifyFileHunks.end(),
+                [&Repl_C2_vec](const Replacement &Hunk) {
+                  Replacement Replacement(Hunk.getFilePath(), Hunk.getOffset(),
+                                          Hunk.getLength(),
+                                          Hunk.getReplacementText());
+                  Repl_C2_vec.push_back(Replacement);
+                });
+  for (const auto &ReplInC1 : Repl_C1) {
+    bool HasConflict = false;
+    for (const auto &ReplInC2 : Repl_C2_vec) {
+      if (HasConflict = hasConflict(ReplInC1, ReplInC2))
+        break;
+    }
+    if (!HasConflict) {
+      Result.push_back(ReplInC1);
+    }
+  }
+  Result.insert(Result.end(), Repl_C2_vec.begin(), Repl_C2_vec.end());
+  return Result;
+}
+
+// clang-format off
 //                               Repl A
 // [CUDA code 1] -----------------------------------------> [CUDA code 2]
 //       |                                                  /     |
@@ -364,8 +405,11 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
 //   Repl_A_3: Deleted files.
 //   Repl_A_4: Replacements in moved files.
 //
+// clang-format on
+//
 // Merge process:
-// 1. Merge Repl_C1 and Repl_C2 directly, named Repl_C. (If there is conlict, keep Repl_C2)
+// 1. Merge Repl_C1 and Repl_C2 directly, named Repl_C. If there is conlict,
+// we keep Repl_C2.
 //    Repl_C can be divided in to 2 parts:
 //      Repl_C_x: Replacements which in ranges of Repl_A_3 or delete hunks in
 //                Repl_A_2/Repl_A_4.
@@ -373,24 +417,14 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
 //    Repl_C_x will be ignored during this merge.
 // 2. Shfit Repl_C_y with Repl_A, called Repl_D.
 // 3. Merge Repl_D and Repl_B. May have conflicts.
-std::map<std::string, std::vector<clang::tooling::Replacement>>
-reMigrationMerge(const GitDiffChanges &Repl_A,
-                 const std::vector<tooling::Replacement> &Repl_B,
-                 const std::vector<tooling::Replacement> &Repl_C1,
-                 const GitDiffChanges &Repl_C2) {
+std::map<std::string, std::vector<Replacement>> reMigrationMerge(
+    const GitDiffChanges &Repl_A, const std::vector<Replacement> &Repl_B,
+    const std::vector<Replacement> &Repl_C1, const GitDiffChanges &Repl_C2) {
   assert(Repl_C2.AddFileHunks.empty() && Repl_C2.DeleteFileHunks.empty() &&
          Repl_C2.MoveFileHunks.empty() &&
          "Repl_C2 should only have ModifiyFileHunks.");
-  std::vector<tooling::Replacement> Repl_C;
-  // Merge Repl_C1 and Repl_C2
-  // TODO: resolve conflict.
-  Repl_C.insert(Repl_C.end(), Repl_C1.begin(), Repl_C1.end());
-  for (const auto &Hunk : Repl_C2.ModifyFileHunks) {
-    tooling::Replacement Replacement(
-        Hunk.getFilePath(), Hunk.getOffset(), Hunk.getLength(),
-        Hunk.getReplacementText());
-    Repl_C.push_back(Replacement);
-  }
+  // Merge Repl_C1 and Repl_C2. If has conflict, keep repl from Repl_C2.
+  std::vector<Replacement> Repl_C = mergeC1AndC2(Repl_C1, Repl_C2);
 
   // Convert vector in Repl_A to map for quick lookup.
   std::map<std::string, std::map<unsigned /*Offset*/, unsigned /*Length*/>>
@@ -402,8 +436,8 @@ reMigrationMerge(const GitDiffChanges &Repl_A,
           Hunk.getLength();
     }
     llvm::cantFail(ModifiedParts[Hunk.getFilePath().str()].add(
-        tooling::Replacement(Hunk.getFilePath().str(), Hunk.getOffset(),
-                             Hunk.getLength(), Hunk.getReplacementText())));
+        Replacement(Hunk.getFilePath().str(), Hunk.getOffset(),
+                    Hunk.getLength(), Hunk.getReplacementText())));
   }
   for (const auto &Hunk : Repl_A.MoveFileHunks) {
     if (Hunk.getLength() != 0 && Hunk.getReplacementText().size() == 0) {
@@ -411,8 +445,8 @@ reMigrationMerge(const GitDiffChanges &Repl_A,
           Hunk.getLength();
     }
     llvm::cantFail(ModifiedParts[Hunk.getFilePath().str()].add(
-        tooling::Replacement(Hunk.getFilePath().str(), Hunk.getOffset(),
-                             Hunk.getLength(), Hunk.getReplacementText())));
+        Replacement(Hunk.getFilePath().str(), Hunk.getOffset(),
+                    Hunk.getLength(), Hunk.getReplacementText())));
   }
   for (const auto &Hunk : Repl_A.DeleteFileHunks) {
     DeletedParts[Hunk.getOldFilePath()] = std::map<unsigned, unsigned>();
@@ -421,27 +455,26 @@ reMigrationMerge(const GitDiffChanges &Repl_A,
   // Get Repl_C_y
   std::map<std::string, clang::tooling::Replacements> Repl_C_y;
   for (const auto &Repl : Repl_C) {
-    // The gitdiff changes are line-based while clang replacements are character-based.
-    // So here assume there is no overlap between delete hunks and replacements.
+    // The gitdiff changes are line-based while clang replacements are
+    // character-based. So here assume there is no overlap (only repl totally
+    // covered by delete hunk) between delete hunks and replacements.
     const auto &It = DeletedParts.find(Repl.getFilePath().str());
     if (It == DeletedParts.end()) {
       llvm::cantFail(Repl_C_y[Repl.getFilePath().str()].add(
-          tooling::Replacement(Repl.getFilePath().str(), Repl.getOffset(),
-                               Repl.getLength(), Repl.getReplacementText())));
+          Replacement(Repl.getFilePath().str(), Repl.getOffset(),
+                      Repl.getLength(), Repl.getReplacementText())));
       continue;
     }
 
     // Check if the replacement is in a deleted part.
-    // TODO: Use Interval Tree to speed up the lookup.
     for (const auto &Part : It->second) {
-      if (Repl.getOffset() >= Part.first &&
-          Repl.getOffset() + Repl.getLength() <= Part.first + Part.second) {
+      if (hasConflict(Repl, Replacement(Repl.getFilePath(), Part.first,
+                                        Part.second, "")))
         break;
-      }
     }
     llvm::cantFail(Repl_C_y[Repl.getFilePath().str()].add(
-        tooling::Replacement(Repl.getFilePath().str(), Repl.getOffset(),
-                             Repl.getLength(), Repl.getReplacementText())));
+        Replacement(Repl.getFilePath().str(), Repl.getOffset(),
+                    Repl.getLength(), Repl.getReplacementText())));
   }
 
   // Shift Repl_C_y with Repl_A(ModifiedParts)
@@ -461,10 +494,8 @@ reMigrationMerge(const GitDiffChanges &Repl_A,
   // Group Repl_B by file
   const auto Repl_B_by_file = groupReplcementsByFile(Repl_B);
   // Merge Repl_D and Repl_B
-  // 1. we should convert the replacements to a map <line_number, new_text>. We will have 2 maps.
-  // 2. we need a vector<offset /*line end offset*/> for current file (CUDA code 2)
-  // 3. merge line by line
-  std::map<std::string, std::vector<clang::tooling::Replacement>> Result;
+  // Convert the repls to a map <line_number, new_text> then merge line by line
+  std::map<std::string, std::vector<Replacement>> Result;
   for (const auto &Pair : Repl_B_by_file) {
     std::map<unsigned, std::string> ReplBInLines =
         convertReplcementsLineString(Pair.second);
