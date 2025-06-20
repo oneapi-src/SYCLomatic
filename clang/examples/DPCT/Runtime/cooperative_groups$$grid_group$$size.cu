@@ -1,4 +1,4 @@
-// Option: --use-experimental-features=nd_range_barrier,root-group
+// Option: --use-experimental-features=root-group
 #include <cooperative_groups.h>
 #include <cooperative_groups/scan.h>
 

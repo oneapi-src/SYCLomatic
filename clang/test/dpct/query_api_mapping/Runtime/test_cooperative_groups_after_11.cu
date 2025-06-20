@@ -98,7 +98,7 @@
 // CG_GG_SYNC: CUDA API:
 // CG_GG_SYNC-NEXT:  cooperative_groups::grid_group grid = cooperative_groups::this_grid();
 // CG_GG_SYNC-NEXT:   grid.sync();
-// CG_GG_SYNC-NEXT: Is migrated to (with the option --use-experimental-features=nd_range_barrier,root-group):
+// CG_GG_SYNC-NEXT: Is migrated to (with the option --use-experimental-features=root-group):
 // CG_GG_SYNC-NEXT:   sycl::ext::oneapi::experimental::root_group grid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().ext_oneapi_get_root_group();
 // CG_GG_SYNC-NEXT:   sycl::group_barrier(grid);
 
@@ -106,7 +106,7 @@
 // CG_GG_SIZE: CUDA API:
 // CG_GG_SIZE-NEXT:  cooperative_groups::grid_group grid = cooperative_groups::this_grid();
 // CG_GG_SIZE-NEXT:   grid.size();
-// CG_GG_SIZE-NEXT: Is migrated to (with the option --use-experimental-features=nd_range_barrier,root-group):
+// CG_GG_SIZE-NEXT: Is migrated to (with the option --use-experimental-features=root-group):
 // CG_GG_SIZE-NEXT:   sycl::ext::oneapi::experimental::root_group grid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().ext_oneapi_get_root_group();
 // CG_GG_SIZE-NEXT:   grid.get_local_linear_range();
 
@@ -114,7 +114,7 @@
 // CG_GG_NUM_THREADS: CUDA API:
 // CG_GG_NUM_THREADS-NEXT:  cooperative_groups::grid_group grid = cooperative_groups::this_grid();
 // CG_GG_NUM_THREADS-NEXT:  grid.num_threads();
-// CG_GG_NUM_THREADS-NEXT:Is migrated to (with the option --use-experimental-features=nd_range_barrier,root-group):
+// CG_GG_NUM_THREADS-NEXT:Is migrated to (with the option --use-experimental-features=root-group):
 // CG_GG_NUM_THREADS-NEXT:  sycl::ext::oneapi::experimental::root_group grid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().ext_oneapi_get_root_group();
 // CG_GG_NUM_THREADS-NEXT:  grid.get_local_linear_range();
 
@@ -122,7 +122,7 @@
 // CG_GG_NUM_BLOCKS: CUDA API:
 // CG_GG_NUM_BLOCKS-NEXT:   cooperative_groups::grid_group grid = cooperative_groups::this_grid();
 // CG_GG_NUM_BLOCKS-NEXT:   grid.num_blocks();
-// CG_GG_NUM_BLOCKS-NEXT: Is migrated to (with the option --use-experimental-features=nd_range_barrier,root-group):
+// CG_GG_NUM_BLOCKS-NEXT: Is migrated to (with the option --use-experimental-features=root-group):
 // CG_GG_NUM_BLOCKS-NEXT:   sycl::ext::oneapi::experimental::root_group grid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().ext_oneapi_get_root_group();
 // CG_GG_NUM_BLOCKS-NEXT:   grid.get_group_linear_range();
 
@@ -130,7 +130,7 @@
 // CG_GG_BLOCK_RANK: CUDA API:
 // CG_GG_BLOCK_RANK-NEXT:   cooperative_groups::grid_group grid = cooperative_groups::this_grid();
 // CG_GG_BLOCK_RANK-NEXT:   grid.block_rank();
-// CG_GG_BLOCK_RANK-NEXT: Is migrated to (with the option --use-experimental-features=nd_range_barrier,root-group):
+// CG_GG_BLOCK_RANK-NEXT: Is migrated to (with the option --use-experimental-features=root-group):
 // CG_GG_BLOCK_RANK-NEXT:   sycl::ext::oneapi::experimental::root_group grid = sycl::ext::oneapi::this_work_item::get_nd_item<3>().ext_oneapi_get_root_group();
 // CG_GG_BLOCK_RANK-NEXT:   grid.get_group_linear_id();
 
