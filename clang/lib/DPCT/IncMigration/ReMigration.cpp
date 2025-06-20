@@ -424,6 +424,9 @@ std::map<std::string, std::vector<Replacement>> reMigrationMerge(
          Repl_C2.MoveFileHunks.empty() &&
          "Repl_C2 should only have ModifiyFileHunks.");
   // Merge Repl_C1 and Repl_C2. If has conflict, keep repl from Repl_C2.
+  // TODO: Repl_C1 has name like file1.cpp, file2.cpp, file3.cu, file4.cuh
+  // but Repl_C2 has name like file1.cpp, file2.cpp.dp.cpp, file3.dp.cpp, file4.dp.hpp
+  // we need map different file names (or just convert the filename in Repl_C2 to CUDA style)
   std::vector<Replacement> Repl_C = mergeC1AndC2(Repl_C1, Repl_C2);
 
   // Convert vector in Repl_A to map for quick lookup.

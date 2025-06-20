@@ -369,31 +369,54 @@ TEST_F(ReMigrationTest1, mergeC1AndC2) {
 
 class ReMigrationTest4 : public ::testing::Test {
 protected:
-  void SetUp() override {}
-  void TearDown() override {}
-  // clang-format off
-/*
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-aaa bb ccc
-*/
-  // clang-format on
+  inline static std::vector<std::string> CUDACodeV1 = {};
+  inline static std::vector<unsigned> LineOffsets = {};
+  void SetUp() override {
+    // clang-format off
+    const std::string CUDACode = R"(#include <stdio.h>
+
+#define CUDA_CHECK(call)                                                       \
+  do {                                                                         \
+    cudaError_t err = call;                                                    \
+    if (err != cudaSuccess) {                                                  \
+      printf("CUDA error in %s at line %d: %s\n", __FILE__, __LINE__,          \
+             cudaGetErrorString(err));                                         \
+      exit(EXIT_FAILURE);                                                      \
+    }                                                                          \
+  } while (0)
+
+void foo() {
+  float *f;
+  CUDA_CHECK(cudaMalloc(&f, 100 * sizeof(float)));
+  float *g;
+  CUDA_CHECK(cudaMalloc(&g, 100 * sizeof(float)));
+  cudaMemcpy(f, g, 100 * sizeof(float), cudaMemcpyDeviceToDevice);
+  cudaDeviceSynchronize();
+  cudaFree(f);
+  cudaFree(g);
+}
+)";
+    // clang-format on
+    std::istringstream ISS(CUDACode);
+    std::string Line;
+    while (std::getline(ISS, Line)) {
+      if (ISS.eof() && Line.empty())
+        break;
+      Line += '\n';
+      LineOffsets.push_back(LineOffsets.empty() ? 0
+                                                : LineOffsets.back() +
+                                                      CUDACodeV1.back().size());
+      CUDACodeV1.push_back(Line);
+    }
+    LineOffsets.insert(LineOffsets.begin(), 0);
+  }
+  void TearDown() override { CUDACodeV1.clear(); }
   static StringRef getLineStringUnittest(clang::tooling::UnifiedPath FilePath,
                                          unsigned LineNumber) {
-    static std::string S = "aaa bb ccc\n";
-    return StringRef(S);
+    return StringRef(CUDACodeV1[LineNumber - 1]);
   }
   static unsigned getLineNumberUnittest(clang::tooling::UnifiedPath FilePath,
                                         unsigned Offset) {
-    static std::vector<unsigned> LineOffsets = {0,  11, 22, 33, 44,
-                                                55, 66, 77, 88, 99};
     auto Iter =
         std::upper_bound(LineOffsets.begin(), LineOffsets.end(), Offset);
     if (Iter == LineOffsets.end())
@@ -403,9 +426,6 @@ aaa bb ccc
   static unsigned
   getLineBeginOffsetUnittest(clang::tooling::UnifiedPath FilePath,
                              unsigned LineNumber) {
-    static std::unordered_map<unsigned, unsigned> LineOffsets = {
-        {1, 0},  {2, 11}, {3, 22}, {4, 33}, {5, 44},
-        {6, 55}, {7, 66}, {8, 77}, {9, 88}, {10, 99}};
     return LineOffsets[LineNumber];
   }
 };
@@ -414,5 +434,81 @@ TEST_F(ReMigrationTest4, reMigrationMerge) {
   getLineStringHook = this->getLineStringUnittest;
   getLineNumberHook = this->getLineNumberUnittest;
   getLineBeginOffsetHook = this->getLineBeginOffsetUnittest;
-  ASSERT_EQ(true, true); // Placeholder for actual test logic
+
+  std::vector<Replacement> Repl_C1 = {
+      Replacement("test.cu", 0, 0,
+                  "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n"),
+      Replacement(
+          "test.cu", 20, 0,
+          "/*\nDPCT1009:0: SYCL reports errors using exceptions and does not "
+          "use error codes. Please replace the \"get_error_string_dummy(...)\" "
+          "with a real error-handling function.\n*/\n"),
+      Replacement("test.cu", 186, 11, "dpct::err0"),
+      Replacement("test.cu", 267, 325, ""),
+      Replacement("test.cu", 694, 0, " try "),
+      Replacement(
+          "test.cu", 695, 0,
+          "\n  dpct::device_ext &dev_ct1 = dpct::get_current_device();\n  "
+          "sycl::queue &q_ct1 = dev_ct1.in_order_queue();"),
+      Replacement(
+          "test.cu", 721, 35,
+          "DPCT_CHECK_ERROR(f = sycl::malloc_device<float>(100, q_ct1))"),
+      Replacement(
+          "test.cu", 784, 35,
+          "DPCT_CHECK_ERROR(g = sycl::malloc_device<float>(100, q_ct1))"),
+      Replacement("test.cu", 824, 63,
+                  "q_ct1.memcpy(f, g, 100 * sizeof(float))"),
+      Replacement("test.cu", 891, 23, "dev_ct1.queues_wait_and_throw()"),
+      Replacement("test.cu", 918, 11, "dpct::dpct_free(f, q_ct1)"),
+      Replacement("test.cu", 933, 11, "dpct::dpct_free(g, q_ct1)"),
+      Replacement("test.cu", 947, 0,
+                  "\ncatch (sycl::exception const &exc) {\n  std::cerr << "
+                  "exc.what() << \"Exception caught at file:\" << __FILE__ << "
+                  "\", line:\" << __LINE__ << std::endl;\n  std::exit(1);\n}")};
+
+  std::vector<Replacement> Repl_C2 = {
+      Replacement("test.dp.cpp", 70, 527, "void foo() {\n"),
+      Replacement("test.dp.cpp", 716, 76,
+                  "  f = sycl::malloc_device<float>(100, q_ct1);\n"),
+      Replacement("test.dp.cpp", 804, 76,
+                  "  g = sycl::malloc_device<float>(100, q_ct1);\n")};
+
+  std::vector<Replacement> Repl_A = {
+      Replacement("test.cu", 696, 63, ""),
+      Replacement(
+          "test.cu", 822, 67,
+          "  float *h;\n  CUDA_CHECK(cudaMalloc(&h, 100 * sizeof(float)));\n"),
+      Replacement("test.cu", 916, 15, ""),
+      Replacement("test.cu", 946, 0, "  cudaFree(h);\n")};
+
+  std::vector<Replacement> Repl_B = {
+      Replacement("test.cu", 0, 0,
+                  "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n"),
+      Replacement(
+          "test.cu", 20, 0,
+          "/*\nDPCT1009:0: SYCL reports errors using exceptions and does not "
+          "use error codes. Please replace the \"get_error_string_dummy(...)\" "
+          "with a real error-handling function.\n*/\n"),
+      Replacement("test.cu", 186, 11, "dpct::err0"),
+      Replacement("test.cu", 267, 325, ""),
+      Replacement("test.cu", 694, 0, " try "),
+      Replacement(
+          "test.cu", 695, 0,
+          "\n  dpct::device_ext &dev_ct1 = dpct::get_current_device();\n  "
+          "sycl::queue &q_ct1 = dev_ct1.in_order_queue();"),
+      Replacement(
+          "test.cu", 721, 35,
+          "DPCT_CHECK_ERROR(g = sycl::malloc_device<float>(100, q_ct1))"),
+      Replacement(
+          "test.cu", 784, 35,
+          "DPCT_CHECK_ERROR(h = sycl::malloc_device<float>(100, q_ct1))"),
+      Replacement("test.cu", 824, 23, "dev_ct1.queues_wait_and_throw()"),
+      Replacement("test.cu", 851, 11, "dpct::dpct_free(g, q_ct1)"),
+      Replacement("test.cu", 866, 11, "dpct::dpct_free(h, q_ct1)"),
+      Replacement("test.cu", 880, 0,
+                  "\ncatch (sycl::exception const &exc) {\n  std::cerr << "
+                  "exc.what() << \"Exception caught at file:\" << __FILE__ << "
+                  "\", line:\" << __LINE__ << std::endl;\n  std::exit(1);\n}")};
+
+  ASSERT_EQ(true, false); // Placeholder for actual test logic
 }
