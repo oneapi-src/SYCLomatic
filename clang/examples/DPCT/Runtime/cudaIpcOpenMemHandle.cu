@@ -6,6 +6,6 @@ void test() {
   cudaIpcMemHandle_t *handle;
   void *ptr;
   // Start
-  cudaIpcOpenMemHandle((void **)&ptr, *handle, cudaIpcMemLazyEnablePeerAccess);
+  cudaIpcOpenMemHandle((void **)&ptr/*void ***/, *handle/*cudaIpcMemHandle_t*/, cudaIpcMemLazyEnablePeerAccess/*unsigned int*/);
   // End
 }

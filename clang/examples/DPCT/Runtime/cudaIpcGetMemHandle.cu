@@ -5,6 +5,6 @@ void test() {
   cudaIpcMemHandle_t *handle;
   void *ptr;
   // Start
-  cudaIpcGetMemHandle(handle, ptr);
+  cudaIpcGetMemHandle(handle/*cudaIpcMemHandle_t **/, ptr/*void **/);
   // End
 }

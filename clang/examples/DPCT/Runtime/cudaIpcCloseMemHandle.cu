@@ -4,6 +4,6 @@
 void test() {
   void *ptr;
   // Start
-  cudaIpcCloseMemHandle(ptr);
+  cudaIpcCloseMemHandle(ptr /*void **/);
   // End
 }
