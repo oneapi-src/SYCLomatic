@@ -4,6 +4,6 @@
 
 void test(int res) {
   // Start
-  cub::SmVersionUncached(res);
+  cub::SmVersionUncached(res/*int*/);
   // End
 }

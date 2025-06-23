@@ -4,6 +4,6 @@
 
 void test(int r) {
   // Start
-  cub::PtxVersion(r);
+  cub::PtxVersion(r/*int*/);
   // End
 }

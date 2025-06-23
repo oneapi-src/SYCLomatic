@@ -4,6 +4,6 @@
 
 __device__ void test(int id, int *data, int (&thread_data)[4]) {
   // Start
-  cub::StoreDirectStriped<128>(id, data, thread_data);
+  cub::StoreDirectStriped<128>(id/*int*/, data/*int **/, thread_data/*int (&)[4]*/);
   // End
 }

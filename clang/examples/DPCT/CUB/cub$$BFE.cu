@@ -4,6 +4,6 @@
 
 __device__ void test(int input, unsigned int bit_start, unsigned int num_bits) {
   // Start
-  cub::BFE(input, bit_start, num_bits);
+  cub::BFE(input/*int*/, bit_start/*unsigned int*/, num_bits/*unsigned int*/);
   // End
 }

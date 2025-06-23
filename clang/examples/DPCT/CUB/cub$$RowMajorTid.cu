@@ -4,6 +4,6 @@
 
 __device__ void test(int r, int dim_x, int dim_y, int dim_z) {
   // Start
-  r = cub::RowMajorTid(dim_x, dim_y, dim_z);
+  r = cub::RowMajorTid(dim_x/*int*/, dim_y/*int*/, dim_z/*int*/);
   // End
 }

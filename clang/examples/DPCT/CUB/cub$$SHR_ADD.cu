@@ -4,6 +4,6 @@
 
 __device__ void test(int res, int a, int b, int c) {
   // Start
-  res = cub::SHR_ADD(a, b, c);
+  res = cub::SHR_ADD(a/*int*/, b/*int*/, c/*int*/);
   // End
 }

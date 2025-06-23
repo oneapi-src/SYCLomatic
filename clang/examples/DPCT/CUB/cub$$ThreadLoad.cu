@@ -4,6 +4,6 @@
 
 __device__ void test(int res, int *data) {
   // Start
-  res = cub::ThreadLoad<cub::LOAD_CA>(data);
+  res = cub::ThreadLoad<cub::LOAD_CA>(data/*int **/);
   // End
 }

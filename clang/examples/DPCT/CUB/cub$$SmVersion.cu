@@ -4,6 +4,6 @@
 
 void test(int res) {
   // Start
-  cub::SmVersion(res);
+  cub::SmVersion(res/*int*/);
   // End
 }

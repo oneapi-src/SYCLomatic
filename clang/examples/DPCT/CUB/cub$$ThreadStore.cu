@@ -4,6 +4,6 @@
 
 __device__ void test(int *dst, int data) {
   // Start
-  cub::ThreadStore<cub::STORE_CG>(dst, data);
+  cub::ThreadStore<cub::STORE_CG>(dst/*int **/, data/*int*/);
   // End
 }

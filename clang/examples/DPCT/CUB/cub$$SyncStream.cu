@@ -4,6 +4,6 @@
 
 __device__ void test(cudaStream_t s) {
   // Start
-  cub::SyncStream(s);
+  cub::SyncStream(s/*cudaStream_t*/);
   // End
 }

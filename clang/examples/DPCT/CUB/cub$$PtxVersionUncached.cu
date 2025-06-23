@@ -4,6 +4,6 @@
 
 void test(int r) {
   // Start
-  cub::PtxVersionUncached(r);
+  cub::PtxVersionUncached(r/*int*/);
   // End
 }

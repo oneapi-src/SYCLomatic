@@ -2,8 +2,8 @@
 #include <cstddef>
 #include <cub/cub.cuh>
 
-__device__ void test(cudaError_t e) {
+__device__ void test(cudaError_t e, const char* filename, int line) {
   // Start
-  cub::Debug(e, __FILE__, __LINE__);
+  cub::Debug(e/*cudaError_t*/, filename/*const char**/, line/*int*/);
   // End
 }
