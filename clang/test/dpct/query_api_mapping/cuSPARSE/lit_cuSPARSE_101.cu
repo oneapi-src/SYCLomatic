@@ -1,5 +1,7 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
+
+// cuda 10.2 and 10.2 only support this API on linux
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCreateCoo | FileCheck %s -check-prefix=cusparseCreateCoo
 // cusparseCreateCoo: CUDA API:
