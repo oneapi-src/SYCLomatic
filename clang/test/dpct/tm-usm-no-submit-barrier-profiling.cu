@@ -39,7 +39,7 @@ int main() {
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
-   // CHECK:    *start = q_ct1.single_task([=](){});
+   // CHECK:     dpct::sync_barrier(start, &q_ct1);
     cudaEventRecord(start, 0);
 
     // CHECK: q_ct1.memcpy(da, ha, N*sizeof(int));
@@ -49,7 +49,7 @@ int main() {
     // CHECK: stream->memcpy(da, ha, N*sizeof(int));
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, stream);
 
-    // CHECK:    *stop = q_ct1.single_task([=](){});
+    // CHECK:    dpct::sync_barrier(stop, &q_ct1);
     // CHECK:    stop->wait_and_throw();
     // CHECK:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(stop, 0);
@@ -94,7 +94,7 @@ void foo_usm() {
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  SAFE_CALL(DPCT_CHECK_ERROR(*stop = q_ct1.single_task([=](){})));
+  // CHECK-NEXT:  SAFE_CALL(DPCT_CHECK_ERROR(dpct::sync_barrier(stop, &q_ct1)));
   // CHECK-NEXT:  SAFE_CALL(DPCT_CHECK_ERROR(stop->wait_and_throw()));
   // CHECK-NEXT:  float Time = 0.0f;
   // CHECK-NEXT:  Time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
@@ -171,7 +171,7 @@ void foo()
                                                     width);
             }
 
-// CHECK:            *stop = q_ct1.single_task([=](){});
+// CHECK:            dpct::sync_barrier(stop, &q_ct1);
 // CHECK-NEXT:             stop->wait_and_throw();
 // CHECK-NEXT:             t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
@@ -198,7 +198,7 @@ void foo()
                         (kernelRepFactor, d_out);
             }
 
-// CHECK:            *stop = q_ct1.single_task([=](){});
+// CHECK:            dpct::sync_barrier(stop, &q_ct1);
 // CHECK-NEXT:            stop->wait_and_throw();
 // CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
@@ -227,7 +227,7 @@ void foo()
                                 (kernelRepFactor, d_out, width, height);
             }
 
-// CHECK:             *stop = q_ct1.single_task([=](){});
+// CHECK:              dpct::sync_barrier(stop, &q_ct1);
 // CHECK-NEXT:            stop->wait_and_throw();
 // CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
@@ -258,22 +258,22 @@ void barr(int maxCalls) {
     time[i] = 0.0;
   }
 
-  // CHECK: *evtStart[0] = q_ct1.single_task([=](){});
+  // CHECK: dpct::sync_barrier( evtStart[0], &q_ct1 );
   cudaEventRecord( evtStart[0], 0 );
   kernelFunc<<<1, 1>>>();
-  // CHECK: *evtEnd[0] = q_ct1.single_task([=](){});
+  // CHECK: dpct::sync_barrier( evtEnd[0], &q_ct1 );
   cudaEventRecord( evtEnd[0], 0 );
 
-  // CHECK: *evtStart[1] = q_ct1.single_task([=](){});
+  // CHECK: dpct::sync_barrier( evtStart[1], &q_ct1 );
   cudaEventRecord( evtStart[1], 0 );
   kernelFunc<<<1, 1>>>();
-  // CHECK: *evtEnd[1] = q_ct1.single_task([=](){});
+  // CHECK: dpct::sync_barrier( evtEnd[1], &q_ct1 );
   cudaEventRecord( evtEnd[1], 0 );
 
-  // CHECK: *evtStart[2] = q_ct1.single_task([=](){});
+  // CHECK: dpct::sync_barrier( evtStart[2], &q_ct1 );
   cudaEventRecord( evtStart[2], 0 );
   kernelFunc<<<1, 1>>>();
-  // CHECK: *evtEnd[2] = q_ct1.single_task([=](){});
+  // CHECK: dpct::sync_barrier( evtEnd[2], &q_ct1 );
   cudaEventRecord( evtEnd[2], 0 );
 
   // CHECK: dev_ct1.queues_wait_and_throw();
@@ -392,7 +392,7 @@ void test_1999(void* ref_image, void* cur_image,
                                                   image_height_macroblocks,
                                                   imgRef);
 
-// CHECK:    *sad_calc_stop = q_ct1.single_task([=](){});
+// CHECK:    dpct::sync_barrier(sad_calc_stop);
     cudaEventRecord(sad_calc_stop);
 
 // CHECK:    dpct::event_ptr sad_calc_8_start, sad_calc_8_stop;
@@ -413,7 +413,7 @@ void test_1999(void* ref_image, void* cur_image,
       foo_kernel_2_blocks_in_grid,
       foo_kernel_2_threads_in_block>>>(d_sads, image_width_macroblocks,
                                             image_height_macroblocks);
-// CHECK:    *sad_calc_8_stop = q_ct1.single_task([=](){});
+// CHECK:    dpct::sync_barrier(sad_calc_8_stop);
     cudaEventRecord(sad_calc_8_stop);
 
 
@@ -435,7 +435,7 @@ void test_1999(void* ref_image, void* cur_image,
       foo_kernel_3_blocks_in_grid,
       foo_kernel_3_threads_in_block>>>(d_sads, image_width_macroblocks,
                                              image_height_macroblocks);
-// CHECK:    *sad_calc_16_stop = q_ct1.single_task([=](){});
+// CHECK:    dpct::sync_barrier(sad_calc_16_stop);
     cudaEventRecord(sad_calc_16_stop);
 
     cudaMallocHost((void **)h_sads, nsads * sizeof(unsigned short));

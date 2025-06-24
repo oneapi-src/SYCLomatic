@@ -1068,6 +1068,8 @@ int runDPCT(int argc, const char **argv) {
             Experimentals.addValue(ExperimentalFeatures::Exp_Prefetch);
           else if (Option.ends_with("level_zero"))
             Experimentals.addValue(ExperimentalFeatures::Exp_LevelZero);
+          else if (Option.ends_with("non-uniform-groups"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_NonUniformGroups);
         } else if (Option == "--no-dry-pattern") {
           NoDRYPattern.setValue(true);
         }

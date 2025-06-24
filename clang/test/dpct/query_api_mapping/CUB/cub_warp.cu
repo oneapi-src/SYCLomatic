@@ -37,3 +37,20 @@
 // CHECK_WARPSCAN_BROADCAST:  Is migrated to:
 // CHECK_WARPSCAN_BROADCAST:    sycl::group_broadcast(sycl::ext::oneapi::this_work_item::get_sub_group(), thread_data, 0);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::WarpReduce::Sum | FileCheck %s -check-prefix=CHECK_WARPREDUCE_SUM
+// CHECK_WARPREDUCE_SUM:  CUDA API:
+// CHECK_WARPREDUCE_SUM:    __shared__ typename cub::WarpReduce<int>::TempStorage temp_storage;
+// CHECK_WARPREDUCE_SUM:    int result1 = cub::WarpReduce<int>(temp_storage).Sum(thread_data/*int*/);
+// CHECK_WARPREDUCE_SUM:    int result2 = cub::WarpReduce<int>(temp_storage).Sum(thread_data/*int*/, valid_items/*int*/);
+// CHECK_WARPREDUCE_SUM:  Is migrated to:
+// CHECK_WARPREDUCE_SUM:    int result1 = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), thread_data, sycl::plus<>());
+// CHECK_WARPREDUCE_SUM:    int result2 = dpct::group::reduce_over_partial_group(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), thread_data, valid_items, sycl::plus<>());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::WarpReduce::Reduce | FileCheck %s -check-prefix=CHECK_WARPREDUCE_REDUCE
+// CHECK_WARPREDUCE_REDUCE:  CUDA API:
+// CHECK_WARPREDUCE_REDUCE:    __shared__ typename cub::WarpReduce<int>::TempStorage temp_storage;
+// CHECK_WARPREDUCE_REDUCE:    int result1 = cub::WarpReduce<int>(temp_storage).Reduce(thread_data/*int*/, cub::Min()/*ReductionOp*/);
+// CHECK_WARPREDUCE_REDUCE:    int result2 = cub::WarpReduce<int>(temp_storage).Reduce(thread_data/*int*/, cub::Min()/*ReductionOp*/, valid_items/*int*/);
+// CHECK_WARPREDUCE_REDUCE:  Is migrated to:
+// CHECK_WARPREDUCE_REDUCE:    int result1 = sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_sub_group(), thread_data, sycl::minimum<>());
+// CHECK_WARPREDUCE_REDUCE:    int result2 = dpct::group::reduce_over_partial_group(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), thread_data, valid_items, sycl::minimum<>());
