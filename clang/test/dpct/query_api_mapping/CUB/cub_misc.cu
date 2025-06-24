@@ -158,3 +158,33 @@
 // CHECK_WARPID:    res = cub::WarpId();
 // CHECK_WARPID:  Is migrated to:
 // CHECK_WARPID:    res = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_sub_group().get_group_linear_id();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::ArgIndexInputIterator | FileCheck %s -check-prefix=CHECK_ARGINDEXINPUTITERATOR
+// CHECK_ARGINDEXINPUTITERATOR:  CUDA API:
+// CHECK_ARGINDEXINPUTITERATOR:    cub::ArgIndexInputIterator<int *> Iter(d_in);
+// CHECK_ARGINDEXINPUTITERATOR:  Is migrated to:
+// CHECK_ARGINDEXINPUTITERATOR:    dpct::arg_index_input_iterator<int *> Iter(d_in);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::ConstantInputIterator | FileCheck %s -check-prefix=CHECK_CONSTANTINPUTITERATOR
+// CHECK_CONSTANTINPUTITERATOR:  CUDA API:
+// CHECK_CONSTANTINPUTITERATOR:    cub::ConstantInputIterator<int> Iter(d_in);
+// CHECK_CONSTANTINPUTITERATOR:  Is migrated to:
+// CHECK_CONSTANTINPUTITERATOR:    dpct::constant_iterator<int> Iter(d_in);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::CountingInputIterator | FileCheck %s -check-prefix=CHECK_COUNTINGINPUTITERATOR
+// CHECK_COUNTINGINPUTITERATOR:  CUDA API:
+// CHECK_COUNTINGINPUTITERATOR:    cub::CountingInputIterator<int> Iter(d_in);
+// CHECK_COUNTINGINPUTITERATOR:  Is migrated to:
+// CHECK_COUNTINGINPUTITERATOR:    oneapi::dpl::counting_iterator<int> Iter(d_in);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::DiscardOutputIterator | FileCheck %s -check-prefix=CHECK_DISCARDOUTPUTITERATOR
+// CHECK_DISCARDOUTPUTITERATOR:  CUDA API:
+// CHECK_DISCARDOUTPUTITERATOR:    cub::DiscardOutputIterator<int> Iter;
+// CHECK_DISCARDOUTPUTITERATOR:  Is migrated to:
+// CHECK_DISCARDOUTPUTITERATOR:    oneapi::dpl::discard_iterator Iter;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::TransformInputIterator | FileCheck %s -check-prefix=CHECK_TRANSFORMINPUTITERATOR
+// CHECK_TRANSFORMINPUTITERATOR:  CUDA API:
+// CHECK_TRANSFORMINPUTITERATOR:    cub::TransformInputIterator<double, UserDefMul, double *> iter(d_in /*double **/, op /*Op*/);
+// CHECK_TRANSFORMINPUTITERATOR:  Is migrated to:
+// CHECK_TRANSFORMINPUTITERATOR:    oneapi::dpl::transform_iterator<double *, UserDefMul> iter(d_in /*double **/, op /*Op*/);

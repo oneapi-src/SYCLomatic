@@ -830,6 +830,7 @@
 // CHECK-NEXT: cuTexRefSetFilterMode
 // CHECK-NEXT: cuTexRefSetFlags
 // CHECK-NEXT: cuTexRefSetFormat
+// CHECK-NEXT: cub::ArgIndexInputIterator
 // CHECK-NEXT: cub::BFE
 // CHECK-NEXT: cub::BFI
 // CHECK-NEXT: cub::BlockExchange::BlockedToStriped
@@ -854,6 +855,8 @@
 // CHECK-NEXT: cub::BlockShuffle::Rotate
 // CHECK-NEXT: cub::BlockShuffle::Up
 // CHECK-NEXT: cub::BlockStore::Store
+// CHECK-NEXT: cub::ConstantInputIterator
+// CHECK-NEXT: cub::CountingInputIterator
 // CHECK-NEXT: cub::CurrentDevice
 // CHECK-NEXT: cub::Debug
 // CHECK-NEXT: cub::DeviceCount
@@ -914,6 +917,7 @@
 // CHECK-NEXT: cub::DeviceSelect::Unique
 // CHECK-NEXT: cub::DeviceSelect::UniqueByKey
 // CHECK-NEXT: cub::DeviceSpmv::CsrMV
+// CHECK-NEXT: cub::DiscardOutputIterator
 // CHECK-NEXT: cub::IADD3
 // CHECK-NEXT: cub::LaneId
 // CHECK-NEXT: cub::LoadDirectBlocked
@@ -932,6 +936,7 @@
 // CHECK-NEXT: cub::SyncStream
 // CHECK-NEXT: cub::ThreadLoad
 // CHECK-NEXT: cub::ThreadStore
+// CHECK-NEXT: cub::TransformInputIterator
 // CHECK-NEXT: cub::WarpId
 // CHECK-NEXT: cub::WarpReduce::Reduce
 // CHECK-NEXT: cub::WarpReduce::Sum
@@ -1600,17 +1605,21 @@
 // CHECK-NEXT: cudnnGetConvolution2dDescriptor
 // CHECK-NEXT: cudnnGetConvolution2dForwardOutputDim
 // CHECK-NEXT: cudnnGetConvolutionBackwardDataAlgorithm
+// CHECK-NEXT: cudnnGetConvolutionBackwardDataAlgorithmMaxCount
 // CHECK-NEXT: cudnnGetConvolutionBackwardDataAlgorithm_v7
 // CHECK-NEXT: cudnnGetConvolutionBackwardDataWorkspaceSize
 // CHECK-NEXT: cudnnGetConvolutionBackwardFilterAlgorithm
+// CHECK-NEXT: cudnnGetConvolutionBackwardFilterAlgorithmMaxCount
 // CHECK-NEXT: cudnnGetConvolutionBackwardFilterAlgorithm_v7
 // CHECK-NEXT: cudnnGetConvolutionBackwardFilterWorkspaceSize
 // CHECK-NEXT: cudnnGetConvolutionForwardAlgorithm
+// CHECK-NEXT: cudnnGetConvolutionForwardAlgorithmMaxCount
 // CHECK-NEXT: cudnnGetConvolutionForwardAlgorithm_v7
 // CHECK-NEXT: cudnnGetConvolutionForwardWorkspaceSize
 // CHECK-NEXT: cudnnGetConvolutionGroupCount
 // CHECK-NEXT: cudnnGetConvolutionNdDescriptor
 // CHECK-NEXT: cudnnGetConvolutionNdForwardOutputDim
+// CHECK-NEXT: cudnnGetCudartVersion
 // CHECK-NEXT: cudnnGetDropoutDescriptor
 // CHECK-NEXT: cudnnGetErrorString
 // CHECK-NEXT: cudnnGetFilter4dDescriptor

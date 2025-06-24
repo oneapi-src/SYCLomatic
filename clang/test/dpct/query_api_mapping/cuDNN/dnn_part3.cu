@@ -625,3 +625,39 @@
 // cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   dpct::dnnl::convolution_algorithm_info r;
 // cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   r.algo = dnnl::algorithm::convolution_auto;
 // cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   *realc = 1;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionBackwardDataAlgorithmMaxCount | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardDataAlgorithmMaxCount
+// cudnnGetConvolutionBackwardDataAlgorithmMaxCount:  CUDA API:
+// cudnnGetConvolutionBackwardDataAlgorithmMaxCount-NEXT:    cudnnHandle_t h;
+// cudnnGetConvolutionBackwardDataAlgorithmMaxCount-NEXT:    cudnnCreate(&h /*cudnnHandle_t **/);
+// cudnnGetConvolutionBackwardDataAlgorithmMaxCount-NEXT:    cudnnGetConvolutionBackwardDataAlgorithmMaxCount(h /*cudnnHandle_t */, &max_count /*int **/);
+// cudnnGetConvolutionBackwardDataAlgorithmMaxCount-NEXT:  Is migrated to:
+// cudnnGetConvolutionBackwardDataAlgorithmMaxCount-NEXT:    dpct::dnnl::engine_ext h;
+// cudnnGetConvolutionBackwardDataAlgorithmMaxCount-NEXT:    h.create_engine();
+// cudnnGetConvolutionBackwardDataAlgorithmMaxCount-NEXT:    max_count = 1;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionBackwardFilterAlgorithmMaxCount | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardFilterAlgorithmMaxCount
+// cudnnGetConvolutionBackwardFilterAlgorithmMaxCount: CUDA API:
+// cudnnGetConvolutionBackwardFilterAlgorithmMaxCount-NEXT:   cudnnHandle_t h;
+// cudnnGetConvolutionBackwardFilterAlgorithmMaxCount-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
+// cudnnGetConvolutionBackwardFilterAlgorithmMaxCount-NEXT:   cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(h /*cudnnHandle_t */, &max_count /*int **/);
+// cudnnGetConvolutionBackwardFilterAlgorithmMaxCount-NEXT: Is migrated to:
+// cudnnGetConvolutionBackwardFilterAlgorithmMaxCount-NEXT:   dpct::dnnl::engine_ext h;
+// cudnnGetConvolutionBackwardFilterAlgorithmMaxCount-NEXT:   h.create_engine();
+// cudnnGetConvolutionBackwardFilterAlgorithmMaxCount-NEXT:   max_count = 1;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionForwardAlgorithmMaxCount | FileCheck %s -check-prefix=cudnnGetConvolutionForwardAlgorithmMaxCount
+// cudnnGetConvolutionForwardAlgorithmMaxCount:  CUDA API:
+// cudnnGetConvolutionForwardAlgorithmMaxCount-NEXT:    cudnnHandle_t h;
+// cudnnGetConvolutionForwardAlgorithmMaxCount-NEXT:    cudnnCreate(&h /*cudnnHandle_t **/);
+// cudnnGetConvolutionForwardAlgorithmMaxCount-NEXT:    cudnnGetConvolutionForwardAlgorithmMaxCount(h /*cudnnHandle_t */, &max_count /*int **/);
+// cudnnGetConvolutionForwardAlgorithmMaxCount-NEXT:  Is migrated to:
+// cudnnGetConvolutionForwardAlgorithmMaxCount-NEXT:    dpct::dnnl::engine_ext h;
+// cudnnGetConvolutionForwardAlgorithmMaxCount-NEXT:    h.create_engine();
+// cudnnGetConvolutionForwardAlgorithmMaxCount-NEXT:    max_count = 1;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetCudartVersion | FileCheck %s -check-prefix=cudnnGetCudartVersion
+// cudnnGetCudartVersion:  CUDA API:
+// cudnnGetCudartVersion-NEXT:    version /*size_t*/ = cudnnGetCudartVersion();
+// cudnnGetCudartVersion-NEXT:  Is migrated to:
+// cudnnGetCudartVersion-NEXT:    version /*size_t*/ = dpct::get_major_version(dpct::get_current_device());
