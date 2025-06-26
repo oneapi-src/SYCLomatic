@@ -188,3 +188,21 @@
 // CHECK_TRANSFORMINPUTITERATOR:    cub::TransformInputIterator<double, UserDefMul, double *> iter(d_in /*double **/, op /*Op*/);
 // CHECK_TRANSFORMINPUTITERATOR:  Is migrated to:
 // CHECK_TRANSFORMINPUTITERATOR:    oneapi::dpl::transform_iterator<double *, UserDefMul> iter(d_in /*double **/, op /*Op*/);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::ShuffleUp | FileCheck %s -check-prefix=CHECK_SHUFFLEUP
+// CHECK_SHUFFLEUP:  CUDA API:
+// CHECK_SHUFFLEUP:    output /*int*/ = cub::ShuffleUp<32>(input /*int*/, src_offset /*int*/, first_thread /*int*/, member_mask /*unsigned int*/);
+// CHECK_SHUFFLEUP:  Is migrated to (with the option --use-experimental-features=non-uniform-groups):
+// CHECK_SHUFFLEUP:    output /*int*/ = dpct::experimental::shift_sub_group_right<32>(sycl::ext::oneapi::this_work_item::get_sub_group(), input, src_offset, first_thread, member_mask);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::ShuffleDown | FileCheck %s -check-prefix=CHECK_SHUFFLEDOWN
+// CHECK_SHUFFLEDOWN:  CUDA API:
+// CHECK_SHUFFLEDOWN:    output /*int*/ = cub::ShuffleDown<32>(input /*int*/, src_offset /*int*/, last_thread /*int*/, member_mask /*unsigned int*/);
+// CHECK_SHUFFLEDOWN:  Is migrated to (with the option --use-experimental-features=non-uniform-groups):
+// CHECK_SHUFFLEDOWN:    output /*int*/ = dpct::experimental::shift_sub_group_left<32>(sycl::ext::oneapi::this_work_item::get_sub_group(), input, src_offset, last_thread, member_mask);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cub::ShuffleIndex | FileCheck %s -check-prefix=CHECK_SHUFFLEINDEX
+// CHECK_SHUFFLEINDEX:  CUDA API:
+// CHECK_SHUFFLEINDEX:    output /*int*/ = cub::ShuffleIndex<32>(input /*int*/, src_lane /*int*/, member_mask /*unsigned int*/);
+// CHECK_SHUFFLEINDEX:  Is migrated to (with the option --use-experimental-features=non-uniform-groups):
+// CHECK_SHUFFLEINDEX:    output /*int*/ = dpct::experimental::select_from_sub_group(member_mask, sycl::ext::oneapi::this_work_item::get_sub_group(), input, src_lane);

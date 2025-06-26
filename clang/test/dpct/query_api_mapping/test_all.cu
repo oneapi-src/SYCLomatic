@@ -928,6 +928,9 @@
 // CHECK-NEXT: cub::RowMajorTid
 // CHECK-NEXT: cub::SHL_ADD
 // CHECK-NEXT: cub::SHR_ADD
+// CHECK-NEXT: cub::ShuffleDown
+// CHECK-NEXT: cub::ShuffleIndex
+// CHECK-NEXT: cub::ShuffleUp
 // CHECK-NEXT: cub::SmVersion
 // CHECK-NEXT: cub::SmVersionUncached
 // CHECK-NEXT: cub::StoreDirectBlocked
