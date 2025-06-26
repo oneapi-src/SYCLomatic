@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
-#include "MigrationReport/RecommandLibraries.h"
+#include "MigrationReport/RecommendLibraries.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "CommandOption/ValidateArguments.h"

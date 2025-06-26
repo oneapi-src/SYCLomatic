@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "RecommandLibraries.h"
+#include "RecommendLibraries.h"
 #include "FileGenerator/GenFiles.h"
 #include "Statics.h"
 #include <string>
@@ -38,7 +38,7 @@ std::vector<clang::dpct::RecommendLib> RecommendLibList;
 #define RECOMMENDLIBRARY(NAME, Feature, VERSION, COMPTYPE, REPLACEMENT, MSG)   \
   RecommendLib DepRecommend_##NAME(RecommendLibs, Feature, VERSION, COMPTYPE,  \
                                    REPLACEMENT, MSG);
-#include "RecommandLibrariesVersion.inc"
+#include "RecommendLibrariesVersion.inc"
 
 void CollectDepLib(ReplTy &Repls) {
   for (auto Entry : RecommendLibs) {
@@ -82,7 +82,7 @@ void PrintRecommendLibs(llvm::raw_ostream &OStream) {
   if (DpctGlobalInfo::isAnalysisModeEnabled())
     OStream << llvm::raw_ostream::Colors::BLUE;
 
-  OStream << "Recommand Library Dependencies of SYCL Project:\n";
+  OStream << "Recommend Library Dependencies of SYCL Project:\n";
 
   if (DpctGlobalInfo::isAnalysisModeEnabled())
     OStream << llvm::raw_ostream::Colors::RESET;

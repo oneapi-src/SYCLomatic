@@ -8,7 +8,7 @@
 #include "MigrationReport/Statics.h"
 #include "ASTTraversal.h"
 #include "RulesInclude/InclusionHeaders.h"
-#include "MigrationReport/RecommandLibraries.h"
+#include "MigrationReport/RecommendLibraries.h"
 
 #include <numeric>
 #include <unordered_set>
