@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include "FileGenerator/GenFiles.h"
 #include "Statics.h"
-#include "Run.h"
+#include "RecommandLibraries.h"
 
 namespace clang {
 namespace dpct {
@@ -25,8 +25,6 @@ void CollectDepsResult(ReplTy &MainSrcFilesRepls) {
     [&]() {
       for (auto Repl : MainSrcFilesRepls) {
         for (auto Item : Repl.second) {
-          llvm::outs() << "XXXXXXXXXX " << Item.getReplacementText().str() <<"\n";
-          llvm::outs() << "XXXXXXXXXX2222 " << Status.ReplacementText <<"\n";
           if (Item.getReplacementText().str().find(Status.ReplacementText) !=
               std::string::npos) {
             DepStatusVec.push_back(Status);
@@ -37,6 +35,7 @@ void CollectDepsResult(ReplTy &MainSrcFilesRepls) {
     }();
   }
 }
+
 std::string ComponentTypeToString(ComponentType version) {
   switch (version) {
   case ComponentType::DPCPP:

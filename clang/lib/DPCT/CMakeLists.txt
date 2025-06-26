@@ -212,7 +212,7 @@ add_clang_library(DPCT
   Diagnostics/Diagnostics.cpp
   ErrorHandle/Error.cpp
   MigrationReport/Statics.cpp
-  MigrationReport/Run.cpp
+  MigrationReport/RecommandLibraries.cpp
   RuleInfra/ExprAnalysis.cpp
   ExtReplacements.cpp
   RuleInfra/MapNames.cpp

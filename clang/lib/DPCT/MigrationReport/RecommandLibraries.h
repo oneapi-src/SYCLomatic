@@ -1,11 +1,11 @@
-#ifndef MIGRATIONREPORT_RUN_H
-#define MIGRATIONREPORT_RUN_H
+#ifndef RECOMMEND_LIBRARIES_H
+#define RECOMMEND_LIBRARIES_H
 
-#include <string>
-#include <unordered_map>
+#include "AnalysisInfo.h"
 #include "FileGenerator/GenFiles.h"
 #include "llvm/Support/raw_ostream.h"
-#include "AnalysisInfo.h"
+#include <string>
+#include <unordered_map>
 
 namespace clang {
 namespace dpct {
@@ -25,30 +25,36 @@ struct DependencyStatus {
                    ComponentType CT, std::string ReplacementText,
                    std::string Description)
       : Feature(Feature), SupportedVersion(SupportedVersion),
-        ReplacementText(ReplacementText), CompType(CT), Description(Description) {
+        ReplacementText(ReplacementText), CompType(CT),
+        Description(Description) {
     Table[CT] = *this;
   }
 };
-extern std::unordered_map<clang::dpct::ComponentType, clang::dpct::DependencyStatus>
-  DepStatus;
+extern std::unordered_map<clang::dpct::ComponentType,
+                          clang::dpct::DependencyStatus>
+    DepStatus;
 extern std::vector<clang::dpct::DependencyStatus> DepStatusVec;
+
 void CollectDepsResult(ReplTy &MainSrcFilesRepls);
-std::string ComponentTypeToString(ComponentType version);
+
+std::string ComponentTypeToString(ComponentType Type);
 
 inline void ShowDepsResult(llvm::raw_ostream &OStream) {
   if (DepStatusVec.empty())
     return;
   if (DpctGlobalInfo::isAnalysisModeEnabled())
     OStream << llvm::raw_ostream::Colors::BLUE;
+
   OStream << "Recommand Library Dependencies of SYCL Project:\n";
+
   if (DpctGlobalInfo::isAnalysisModeEnabled())
     OStream << llvm::raw_ostream::Colors::RESET;
   for (auto &Status : DepStatusVec) {
     OStream << "  - The " + Status.Feature + " is supported in " +
-                    ComponentTypeToString(Status.CompType) + " and fter " +
-                    Status.SupportedVersion + ". " + Status.Description + "\n";
+                   ComponentTypeToString(Status.CompType) + " and after " +
+                   Status.SupportedVersion + ". " + Status.Description + "\n";
   }
 }
 } // namespace dpct
 } // namespace clang
-#endif // MIGRATIONREPORT_RUN_H
+#endif // RECOMMEND_LIBRARIES_H

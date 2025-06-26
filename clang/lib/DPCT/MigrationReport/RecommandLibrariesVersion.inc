@@ -15,5 +15,5 @@
 #ifndef RECOMMENDLIBRARY
 #define RECOMMENDLIBRARY
 #endif
-
-RECOMMENDLIBRARY(FreeQuery, "SYCL free function query", "20250623", ComponentType::DPCPP, "this_work_item", "See https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/proposed/sycl_ext_oneapi_free_function_kernels.asciidoc for more details.")
+// Example:
+// RECOMMENDLIBRARY(FreeQuery, "SYCL free function query", "Time", ComponentType::DPCPP, "this_work_item", "See https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/proposed/sycl_ext_oneapi_free_function_kernels.asciidoc for more details.")

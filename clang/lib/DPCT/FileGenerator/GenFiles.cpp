@@ -34,7 +34,7 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_os_ostream.h"
 
-#include "MigrationReport/Run.h"
+#include "MigrationReport/RecommandLibraries.h"
 
 #include <algorithm>
 #include <cassert>
