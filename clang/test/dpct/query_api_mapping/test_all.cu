@@ -11,6 +11,7 @@
 // CHECK-NEXT: __assertfail
 // CHECK-NEXT: __ballot
 // CHECK-NEXT: __ballot_sync
+// CHECK-NEXT: __barrier_sync
 // CHECK-NEXT: __bfloat1622float2
 // CHECK-NEXT: __bfloat162bfloat162
 // CHECK-NEXT: __bfloat162float
@@ -2293,6 +2294,7 @@
 // CHECK-NEXT: min
 // CHECK-NEXT: modf
 // CHECK-NEXT: modff
+// CHECK-NEXT: mul24
 // CHECK-NEXT: nan
 // CHECK-NEXT: nanf
 // CHECK-NEXT: ncclAllReduce
