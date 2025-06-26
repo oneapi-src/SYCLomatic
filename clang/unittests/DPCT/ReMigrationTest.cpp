@@ -184,11 +184,11 @@ TEST_F(ReMigrationTest2, splitReplInOrderToNotCrossLines) {
   // (zz\nyy) =>（xx)
   //
   // Splitted repls:
-  // (ccc\n) =>（jjj\nkkk）
+  // (ccc\n) =>（jjj\nkkkhhhhiii\n）
   // (dddeeeefff\n) => ""
-  // (ggg) => ""
-  // (zz\n) => (xx)
-  // (yy) => ""
+  // (ggghhhhiii\n) => ""
+  // (zz\n) => (xxyyyyyyyy\n)
+  // (yyyyyyyyyy) => ""
 
   getLineStringHook = this->getLineStringUnittest;
   getLineNumberHook = this->getLineNumberUnittest;
@@ -196,10 +196,11 @@ TEST_F(ReMigrationTest2, splitReplInOrderToNotCrossLines) {
   std::vector<Replacement> Repls = {Replacement("file1.cpp", 7, 18, "jjj\nkkk"),
                                     Replacement("file1.cpp", 41, 5, "xx")};
   std::vector<Replacement> Expected = {
-      Replacement("file1.cpp", 7, 4, "jjj\nkkk"),
-      Replacement("file1.cpp", 11, 11, ""), Replacement("file1.cpp", 22, 3, ""),
-      Replacement("file1.cpp", 41, 3, "xx"),
-      Replacement("file1.cpp", 44, 2, "")};
+      Replacement("file1.cpp", 7, 4, "jjj\nkkkhhhhiii\n"),
+      Replacement("file1.cpp", 11, 11, ""),
+      Replacement("file1.cpp", 22, 11, ""),
+      Replacement("file1.cpp", 41, 3, "xxyyyyyyyy\n"),
+      Replacement("file1.cpp", 44, 11, "")};
   auto Result = splitReplInOrderToNotCrossLines(Repls);
   std::sort(Result.begin(), Result.end());
   EXPECT_EQ(Expected, Result);
@@ -275,12 +276,13 @@ eee bb ccc
       Replacement("file1.cpp", 84, 18, "ddd\neee")};
   std::map<unsigned, std::string> Expected = {{1, "aaa zzz ccc\n"},
                                               {2, "ppp aaa bb ccc\n"},
-                                              {4, "aaa yyy ccc\n"},
-                                              {6, "aaa bb ccq\nqqq"},
-                                              {7, "aa bb ccc\n"},
-                                              {8, "aaa bb ddd\neee"},
+                                              {4, "aaa yyy ccc\naaa bb ccc\n"},
+                                              {5, ""},
+                                              {6, "aaa bb ccq\nqqqaa bb ccc\n"},
+                                              {7, ""},
+                                              {8, "aaa bb ddd\neee bb ccc\n"},
                                               {9, ""},
-                                              {10, " bb ccc\n"}};
+                                              {10, ""}};
   auto Result = convertReplcementsLineString(Repls);
   EXPECT_EQ(Expected, Result);
 }
@@ -325,46 +327,48 @@ TEST_F(ReMigrationTest3, mergeMapsByLine) {
 }
 
 TEST_F(ReMigrationTest1, mergeC1AndC2) {
+  // clang-format off
+  // original file:
+/*
+0123456789
+0123456789
+0123456789
+0123456789
+0123456789
+*/
+  // migrated file:
+/*
+0123456789aaa
+bbb12345678ccc789
+0123456789
+*/
+  // updated file:
+/*
+0123zzz456789aaa
+bbyyy2345678xxxc78www0123456789
+*/
+  // clang-format on
   std::vector<Replacement> Repl_C1 = {
       Replacement("file1.cu", 10, 0, "aaa"),
       Replacement("file1.cu", 11, 1, "bbb"),
       Replacement("file1.cu", 20, 20, "ccc"),
-      Replacement("file2.cu", 20, 20, "zzz"),
-      Replacement("file2.cu", 40, 1, "yyy"),
-      Replacement("file3.cpp", 0, 1, "a"),
-      Replacement("file4.cpp", 2, 1, "b"),
   };
   GitDiffChanges Repl_C2;
   Repl_C2.ModifyFileHunks = {
-      Replacement("file1.dp.cpp", 10, 0, "ddd"),
-      Replacement("file1.dp.cpp", 10, 2, "eee"),
-      Replacement("file1.dp.cpp", 40, 2, "fff"),
-      Replacement("file2.dp.cpp", 21, 3, "xxx"),
-      Replacement("file2.dp.cpp", 41, 1, "www"),
-      Replacement("file3.cpp.dp.cpp", 10, 1, "a"),
-      Replacement("file4.cpp", 12, 1, "b"),
+      Replacement("file1.dp.cpp", 30, 2, "www"),
+      Replacement("file1.dp.cpp", 25, 2, "xxx"),
+      Replacement("file1.dp.cpp", 16, 2, "yyy"),
+      Replacement("file1.dp.cpp", 4, 0, "zzz"),
   };
   const std::map<UnifiedPath, UnifiedPath> FileNameMap = {
-      {"file1.dp.cpp", "file1.cu"},
-      {"file2.dp.cpp", "file2.cu"},
-      {"file3.cpp.dp.cpp", "file3.cpp"},
-      {"file4.cpp", "file4.cpp"}};
+      {"file1.dp.cpp", "file1.cu"}};
 
   std::vector<Replacement> Result = mergeC1AndC2(Repl_C1, Repl_C2, FileNameMap);
-  std::vector<Replacement> Expected = {
-      Replacement("file1.cu", 10, 0, "aaa"),
-      Replacement("file1.cu", 10, 0, "ddd"),
-      Replacement("file1.cu", 10, 2, "eee"),
-      Replacement("file1.cu", 20, 20, "ccc"),
-      Replacement("file1.cu", 40, 2, "fff"),
-      Replacement("file2.cu", 21, 3, "xxx"),
-      Replacement("file2.cu", 40, 1, "yyy"),
-      Replacement("file2.cu", 41, 1, "www"),
-      Replacement("file3.cpp", 0, 1, "a"),
-      Replacement("file4.cpp", 2, 1, "b"),
-      Replacement("file3.cpp", 10, 1, "a"),
-      Replacement("file4.cpp", 12, 1, "b"),
-  };
+  std::vector<Replacement> Expected = {Replacement("file1.cu", 4, 0, "zzz"),
+                                       Replacement("file1.cu", 10, 0, "aaa"),
+                                       Replacement("file1.cu", 11, 2, "bbyyy"),
+                                       Replacement("file1.cu", 20, 20, "xxxc"),
+                                       Replacement("file1.cu", 42, 2, "www")};
   std::sort(Result.begin(), Result.end());
   std::sort(Expected.begin(), Expected.end());
 
@@ -382,14 +386,13 @@ TEST_F(ReMigrationTest1, mergeC1AndC2) {
   }
 }
 
-#if 0
 class ReMigrationTest4 : public ::testing::Test {
 protected:
-  inline static std::vector<std::string> CUDACodeV1 = {};
+  inline static std::vector<std::string> CUDACodeV2Vec = {};
   inline static std::vector<unsigned> LineOffsets = {};
   void SetUp() override {
     // clang-format off
-    const std::string CUDACode = R"(#include <stdio.h>
+    const std::string CUDACodeV2 = R"(#include <stdio.h>
 
 #define CUDA_CHECK(call)                                                       \
   do {                                                                         \
@@ -402,42 +405,48 @@ protected:
   } while (0)
 
 void foo() {
-  float *f;
-  CUDA_CHECK(cudaMalloc(&f, 100 * sizeof(float)));
   float *g;
   CUDA_CHECK(cudaMalloc(&g, 100 * sizeof(float)));
-  cudaMemcpy(f, g, 100 * sizeof(float), cudaMemcpyDeviceToDevice);
+  float *h;
+  CUDA_CHECK(cudaMalloc(&h, 100 * sizeof(float)));
   cudaDeviceSynchronize();
-  cudaFree(f);
   cudaFree(g);
+  cudaFree(h);
 }
 )";
     // clang-format on
-    std::istringstream ISS(CUDACode);
+    std::istringstream ISS(CUDACodeV2);
     std::string Line;
-    while (std::getline(ISS, Line)) {
-      if (ISS.eof() && Line.empty())
+    // TODO: This code only considers the last line is empty (file ending by a \n).
+    //       What if the last line is not empty?
+    while (true) {
+      bool LastLine = false;
+      if (!std::getline(ISS, Line))
+        LastLine = true;
+      else
+        Line += '\n';
+      LineOffsets.push_back(LineOffsets.empty()
+                                ? 0
+                                : LineOffsets.back() +
+                                      CUDACodeV2Vec.back().size());
+      CUDACodeV2Vec.push_back(Line);
+      if (LastLine)
         break;
-      Line += '\n';
-      LineOffsets.push_back(LineOffsets.empty() ? 0
-                                                : LineOffsets.back() +
-                                                      CUDACodeV1.back().size());
-      CUDACodeV1.push_back(Line);
     }
     LineOffsets.insert(LineOffsets.begin(), 0);
   }
-  void TearDown() override { CUDACodeV1.clear(); }
+  void TearDown() override { CUDACodeV2Vec.clear(); }
   static StringRef getLineStringUnittest(clang::tooling::UnifiedPath FilePath,
                                          unsigned LineNumber) {
-    return StringRef(CUDACodeV1[LineNumber - 1]);
+    return StringRef(CUDACodeV2Vec[LineNumber - 1]);
   }
   static unsigned getLineNumberUnittest(clang::tooling::UnifiedPath FilePath,
                                         unsigned Offset) {
     auto Iter =
-        std::upper_bound(LineOffsets.begin(), LineOffsets.end(), Offset);
+        std::upper_bound(LineOffsets.begin() + 1, LineOffsets.end(), Offset);
     if (Iter == LineOffsets.end())
       return LineOffsets.size();
-    return std::distance(LineOffsets.begin(), Iter);
+    return std::distance(LineOffsets.begin() + 1, Iter);
   }
   static unsigned
   getLineBeginOffsetUnittest(clang::tooling::UnifiedPath FilePath,
@@ -450,6 +459,9 @@ TEST_F(ReMigrationTest4, reMigrationMerge) {
   getLineStringHook = this->getLineStringUnittest;
   getLineNumberHook = this->getLineNumberUnittest;
   getLineBeginOffsetHook = this->getLineBeginOffsetUnittest;
+
+  const std::map<UnifiedPath, UnifiedPath> FileNameMap = {
+      {"test.dp.cpp", "test.cu"}};
 
   std::vector<Replacement> Repl_C1 = {
       Replacement("test.cu", 0, 0,
@@ -482,14 +494,17 @@ TEST_F(ReMigrationTest4, reMigrationMerge) {
                   "exc.what() << \"Exception caught at file:\" << __FILE__ << "
                   "\", line:\" << __LINE__ << std::endl;\n  std::exit(1);\n}")};
 
-  std::vector<Replacement> Repl_C2 = {
-      Replacement("test.dp.cpp", 70, 527, "void foo() {\n"),
-      Replacement("test.dp.cpp", 716, 76,
+  GitDiffChanges Repl_C2;
+  Repl_C2.ModifyFileHunks = {
+      Replacement("test.dp.cpp", 70, 526, "void foo() {\n"),
+      Replacement("test.dp.cpp", 715, 76,
                   "  f = sycl::malloc_device<float>(100, q_ct1);\n"),
-      Replacement("test.dp.cpp", 804, 76,
-                  "  g = sycl::malloc_device<float>(100, q_ct1);\n")};
+      Replacement("test.dp.cpp", 803, 76,
+                  "  g = sycl::malloc_device<float>(100, q_ct1);\n"),
+      Replacement("test.dp.cpp", 1017, 163, "")};
 
-  std::vector<Replacement> Repl_A = {
+  GitDiffChanges Repl_A;
+  Repl_A.ModifyFileHunks = {
       Replacement("test.cu", 696, 63, ""),
       Replacement(
           "test.cu", 822, 67,
@@ -526,6 +541,79 @@ TEST_F(ReMigrationTest4, reMigrationMerge) {
                   "exc.what() << \"Exception caught at file:\" << __FILE__ << "
                   "\", line:\" << __LINE__ << std::endl;\n  std::exit(1);\n}")};
 
-  ASSERT_EQ(true, false); // Placeholder for actual test logic
+  std::map<std::string, std::vector<Replacement>> ResultMap =
+      reMigrationMerge(Repl_A, Repl_B, Repl_C1, Repl_C2, FileNameMap);
+
+  std::vector<Replacement> Result = ResultMap.begin()->second;
+  std::vector<Replacement> Expected = {
+      Replacement("test.cu", 0, 19, R"(#include <sycl/sycl.hpp>
+#include <dpct/dpct.hpp>
+#include <stdio.h>
+)"),
+      Replacement("test.cu", 20, 81, R"xxx(<<<<<<<
+/*
+DPCT1009:0: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+*/
+#define CUDA_CHECK(call)                                                       \
+=======
+void foo() {
+  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+>>>>>>>
+)xxx"),
+      Replacement("test.cu", 101, 81, R"()"),
+      Replacement("test.cu", 182, 486, R"(<<<<<<<
+    dpct::err0 err = call;                                                    \
+                                                                              \
+=======
+>>>>>>>
+)"),
+      Replacement("test.cu", 668, 14, R"()"),
+      Replacement("test.cu", 682, 1, R"()"),
+      Replacement("test.cu", 683, 13, R"(<<<<<<<
+void foo()  try {
+  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+=======
+>>>>>>>
+)"),
+      Replacement("test.cu", 708, 51, R"(<<<<<<<
+  CUDA_CHECK(DPCT_CHECK_ERROR(g = sycl::malloc_device<float>(100, q_ct1)));
+=======
+  g = sycl::malloc_device<float>(100, q_ct1);
+  float *h;
+>>>>>>>
+)"),
+      Replacement("test.cu", 759, 12, R"()"),
+      Replacement(
+          "test.cu", 771, 51,
+          R"(  CUDA_CHECK(DPCT_CHECK_ERROR(h = sycl::malloc_device<float>(100, q_ct1)));
+)"),
+      Replacement("test.cu", 822, 27, R"(  dev_ct1.queues_wait_and_throw();
+)"),
+      Replacement("test.cu", 849, 15, R"(  dpct::dpct_free(g, q_ct1);
+)"),
+      Replacement("test.cu", 864, 15, R"(  dpct::dpct_free(h, q_ct1);
+)"),
+      Replacement("test.cu", 879, 2, R"(}
+catch (sycl::exception const &exc) {
+  std::cerr << exc.what() << "Exception caught at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
+  std::exit(1);
 }
-#endif
+)")};
+  std::sort(Result.begin(), Result.end());
+  std::sort(Expected.begin(), Expected.end());
+
+  ASSERT_EQ(Expected.size(), Result.size());
+  size_t Num = Expected.size();
+  auto ExpectedIt = Expected.begin();
+  auto ResultIt = Result.begin();
+  for (size_t i = 0; i < Num; ++i) {
+    EXPECT_EQ(ExpectedIt->getFilePath(), ResultIt->getFilePath());
+    EXPECT_EQ(ExpectedIt->getOffset(), ResultIt->getOffset());
+    EXPECT_EQ(ExpectedIt->getLength(), ResultIt->getLength());
+    EXPECT_EQ(ExpectedIt->getReplacementText(), ResultIt->getReplacementText());
+    ExpectedIt++;
+    ResultIt++;
+  }
+}

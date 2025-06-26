@@ -210,7 +210,10 @@ std::vector<Replacement> parseDiff(const std::string &diffOutput,
   HunkContext HC;
   std::vector<unsigned> CurrentOldFileOffset;
 
-  while (std::getline(iss, line)) {
+  // Don't use std::getline as condition of the while loop, because it will
+  // return false if the last line only containing EOF.
+  while (iss.good()) {
+    std::getline(iss, line);
     if (startsWith(line, "diff --git")) {
       HC.FastForward = false;
       continue;

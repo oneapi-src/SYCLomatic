@@ -5,6 +5,26 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+// Workflow: 
+//      CUDA code v1
+//           |
+//           |  dpct (--format-range=off) => MainSourceFiles.yaml and *.h.yaml
+//           v
+//      SYCL code v1
+//           |  1. git init and commit
+//           |  2. manual format with clang-format
+//           |  3. manual fix
+//           v  4. gitdiff2yaml => UserChange.yaml
+//      SYCL code v1.1
+//
+//      CUDA code v2
+//           |
+//           |  dpct (--format-range=off)
+//           |    + MainSourceFiles.yaml and *.h.yaml
+//           |    + UserChange.yaml
+//           v
+//      SYCL code v2
+//===----------------------------------------------------------------------===//
 
 #include "ReMigration.h"
 #include "AnalysisInfo.h"
@@ -85,6 +105,8 @@ void tryLoadingUpstreamChangesAndUserChanges() {
   }
 }
 
+/// Below 3 functions only used for merging Repl_B and repl_D. So they only
+/// need to read CUDA code v2.
 static StringRef getLineString(UnifiedPath FilePath, unsigned LineNumber) {
 #ifndef NDEBUG
   if (getLineStringHook.has_value()) {
@@ -121,7 +143,7 @@ static unsigned getLineBeginOffset(UnifiedPath FilePath, unsigned LineNumber) {
 /// This shfit may have conflicts.
 /// Since \p NewRepl (from Repl_C_y) is line based and \p Repls (from Repl_A) is
 /// character based, we assume that if there is a conflict, the range from
-/// Repl_C_y is always covering the range from Repl_A. Then we just ignore the
+/// Repl_A is always covering the range from Repl_C_y. Then we just ignore the
 /// \p NewRepl (from Repl_C_y) since the old CUDA code is changed, so the
 /// migration repl is out-of-date.
 /// \param Repls Replacements to apply.
@@ -169,18 +191,22 @@ groupReplcementsByFile(const std::vector<Replacement> &Repls) {
 }
 
 // If repl range is cross lines, we treat the \n itself belongs to current line.
-// Example:
-// aaabbbccc
-// dddeeefff
-// ggghhhiii
+// case:
+/*
+aaaaa
+bbbbb
+ccccc
+ddddd
+*/
+// replacement is: offset:6, length:11, text:xxx\nyyy
 //
-// Original repl:
-// (ccc\ndddeeefff\nggg) =>（jjj\nkkk）
-//
-// Splitted repls:
-// (ccc\n) =>（jjj\nkkk）
-// (dddeeefff\n) => ""
-// (ggg) => ""
+// If the splited repl of line 2 does not end with \n, if there is conflict at
+// this line, the mark will not correct.
+// In other words, if there is no conflict, the repl is correct since there is
+// \n after the repl. While the conflict mark assumes that the repl is endding
+// with \n so it can at the beginning of each line, this is the problem.
+// So we need to merge the left part of the last line into the repl (the first
+// line).
 std::vector<Replacement>
 splitReplInOrderToNotCrossLines(const std::vector<Replacement> &InRepls) {
   std::string FilePath = InRepls[0].getFilePath().str();
@@ -202,26 +228,30 @@ splitReplInOrderToNotCrossLines(const std::vector<Replacement> &InRepls) {
     unsigned CurrentOffset = StartOffset;
 
     // The first line
+    // We need merge the left part of the last line into the replacement
     unsigned LineEndOffset = getLineBeginOffset(FilePath, StartLine + 1);
     unsigned FirstLineLength = LineEndOffset - StartOffset;
-    Result.emplace_back(FilePath, CurrentOffset, FirstLineLength,
-                        Repl.getReplacementText());
+    Replacement ReplFisrtLine(FilePath, CurrentOffset, FirstLineLength,
+      Repl.getReplacementText());
     CurrentOffset += FirstLineLength;
 
     // middle lines
     for (unsigned Line = StartLine + 1; Line < EndLine; ++Line) {
       LineEndOffset = getLineBeginOffset(FilePath, Line + 1);
-      unsigned lineLength = LineEndOffset - CurrentOffset;
-      Result.emplace_back(Repl.getFilePath(), CurrentOffset, lineLength, "");
-      CurrentOffset += lineLength;
+      unsigned LineLength = LineEndOffset - CurrentOffset;
+      Result.emplace_back(Repl.getFilePath(), CurrentOffset, LineLength, "");
+      CurrentOffset += LineLength;
     }
 
     // The last line
+    std::string LastLineStr = getLineString(FilePath, EndLine).str();
     unsigned LastLineLength = EndOffset - CurrentOffset;
-    if (LastLineLength > 0) {
-      Result.emplace_back(Repl.getFilePath(), CurrentOffset, LastLineLength,
-                          "");
-    }
+    Result.emplace_back(Repl.getFilePath(), ReplFisrtLine.getOffset(),
+                        ReplFisrtLine.getLength(),
+                        ReplFisrtLine.getReplacementText().str() +
+                            LastLineStr.substr(LastLineLength));
+    Result.emplace_back(Repl.getFilePath(), CurrentOffset, LastLineStr.size(),
+                        "");
   }
 
   return Result;
@@ -300,6 +330,14 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
       Result.push_back(genReplacement(ItB->first, ItB->second));
       ++ItB;
     } else {
+      // ItB->first == ItA->first
+      if (ItB->second == ItA->second) {
+        // No conflict, just add one of them
+        Result.push_back(genReplacement(ItA->first, ItA->second));
+        ++ItA;
+        ++ItB;
+        continue;
+      }
       // Conflict line(s)
       std::vector<std::string> ConflictA;
       std::vector<std::string> ConflictB;
@@ -307,13 +345,15 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
       unsigned ConflictLength = 0;
 
       // Collect continuous conflicting lines
+      unsigned CurrentLineNum = ItA->first;
       while (ItA != MapA.end() && ItB != MapB.end() &&
-             ItA->first == ItB->first) {
+             CurrentLineNum == ItA->first && CurrentLineNum == ItB->first) {
         ConflictA.push_back(ItA->second);
         ConflictB.push_back(ItB->second);
+        ConflictLength += getLineString(FilePath, ItA->first).size();
         ++ItA;
         ++ItB;
-        ConflictLength += getLineString(FilePath, ItA->first).size();
+        ++CurrentLineNum;
       }
 
       // generate merged string
@@ -349,6 +389,159 @@ static bool hasConflict(const Replacement &R1, const Replacement &R2) {
   return false;
 }
 
+class ReplacementMerger {
+public:
+  static std::vector<Replacement> merge(const std::vector<Replacement> &A,
+                                        const std::vector<Replacement> &B) {
+    // 1. 建立A组替换后的offset映射
+    auto [a_map, a_modified] = buildAMapping(A);
+    std::string FilePath = A[0].getFilePath().str();
+
+    std::vector<Replacement> final_repls;
+    std::vector<Replacement> a_repls;
+    for (const auto &repl : a_modified) {
+      a_repls.push_back(
+          {FilePath, std::get<0>(repl), std::get<1>(repl), std::get<2>(repl)});
+    }
+    std::vector<Replacement> b_repls = B;
+    std::sort(
+        a_repls.begin(),
+        a_repls.end()); // The length in replA is based on original text, so for
+                        // below calculation which is based on modified text, we
+                        // need to use text.size() instead.
+    std::sort(b_repls.begin(), b_repls.end());
+
+    auto IterA = a_repls.begin();
+    auto IterB = b_repls.begin();
+
+    std::optional<std::tuple<unsigned /*offset(after a)*/, unsigned /*length*/,
+                             std::string>>
+        UnfinishedRepl = std::nullopt;
+    while (IterA != a_repls.end() || IterB != b_repls.end()) {
+      if (UnfinishedRepl) {
+        unsigned Off = std::get<0>(*UnfinishedRepl);
+        unsigned Len = std::get<1>(*UnfinishedRepl);
+        std::string Text = std::get<2>(*UnfinishedRepl);
+        if ((Off + Len) < IterA->getOffset() &&
+            (Off + Len) < IterB->getOffset()) {
+          // Finished
+          final_repls.push_back(
+              {FilePath, mapToOriginal(Off, a_map),
+               mapToOriginal(Off + Len, a_map) - mapToOriginal(Off, a_map),
+               Text});
+          UnfinishedRepl = std::nullopt;
+          continue;
+        }
+        if ((Off + Len) >= IterB->getOffset()) {
+          // Unfinished repl overlapping with next B repl.
+          // We process B first because it has higher priority.
+          std::get<1>(*UnfinishedRepl) =
+              IterB->getLength() + IterB->getOffset() - Off;
+          std::get<2>(*UnfinishedRepl) =
+              Text.substr(0, IterB->getOffset() - Off) +
+              IterB->getReplacementText().str();
+          ++IterB;
+          continue;
+        }
+        // (Off + Len) >= IterA->getOffset()
+        if ((Off + Len) >=
+            (IterA->getOffset() + IterA->getReplacementText().size())) {
+          // case 1: totally cover IterA
+          ++IterA;
+          continue;
+        }
+        // case 2: partially cover IterA
+        std::get<1>(*UnfinishedRepl) =
+            IterA->getReplacementText().size() + IterA->getOffset() - Off;
+        std::get<2>(*UnfinishedRepl) =
+            Text + IterA->getReplacementText().str().substr(Off + Len -
+                                                            IterA->getOffset());
+        ++IterA;
+        continue;
+      }
+      if (IterA == a_repls.end()) {
+        // only left B group replacements
+        final_repls.push_back(
+            {FilePath, mapToOriginal(IterB->getOffset(), a_map),
+             mapToOriginal(IterB->getOffset() + IterB->getLength(), a_map) -
+                 mapToOriginal(IterB->getOffset(), a_map),
+             IterB->getReplacementText()});
+        ++IterB;
+        continue;
+      }
+      if (IterB == b_repls.end()) {
+        // only left A group replacements
+        final_repls.push_back(*IterA);
+        ++IterA;
+        continue;
+      }
+      if (IterA->getOffset() < IterB->getOffset()) {
+        UnfinishedRepl = std::make_tuple(IterA->getOffset(),
+                                         IterA->getReplacementText().size(),
+                                         IterA->getReplacementText().str());
+        ++IterA;
+      } else {
+        UnfinishedRepl = std::make_tuple(IterB->getOffset(), IterB->getLength(),
+                                         IterB->getReplacementText().str());
+        ++IterB;
+      }
+    }
+
+    std::sort(final_repls.begin(), final_repls.end());
+    return final_repls;
+  }
+
+private:
+  // 建立A组替换映射关系
+  static std::pair<std::vector<std::pair<unsigned, unsigned>>,
+                   std::vector<std::tuple<unsigned, unsigned, std::string>>>
+  buildAMapping(const std::vector<Replacement> &A) {
+    std::vector<std::pair<unsigned, unsigned>> offset_map;
+    std::vector<std::tuple<unsigned, unsigned, std::string>> modified_ranges;
+    unsigned orig_pos = 0;
+    unsigned modified_pos = 0;
+
+    auto sorted_A = A;
+    std::sort(sorted_A.begin(), sorted_A.end());
+
+    for (const auto &repl : sorted_A) {
+      // 添加替换前的区间
+      if (repl.getOffset() > orig_pos) {
+        unsigned len = repl.getOffset() - orig_pos;
+        offset_map.emplace_back(modified_pos, orig_pos);
+        modified_pos += len;
+        orig_pos += len;
+      }
+
+      // 记录修改区域
+      modified_ranges.emplace_back(modified_pos, repl.getLength(),
+                                   repl.getReplacementText().str());
+
+      // 添加替换后的映射
+      offset_map.emplace_back(modified_pos, repl.getOffset());
+      modified_pos += repl.getReplacementText().size();
+      orig_pos += repl.getLength();
+    }
+
+    // 添加最后一段
+    offset_map.emplace_back(modified_pos, orig_pos);
+    return {offset_map, modified_ranges};
+  }
+
+  // 将修改后offset映射回原始offset
+  static unsigned
+  mapToOriginal(unsigned modified_offset,
+                const std::vector<std::pair<unsigned, unsigned>> &mapping) {
+    auto it = std::upper_bound(
+        mapping.begin(), mapping.end(), std::make_pair(modified_offset, 0),
+        [](const auto &a, const auto &b) { return a.first < b.first; });
+
+    if (it != mapping.begin())
+      --it;
+    return it->second + (modified_offset - it->first);
+  }
+};
+
 // Merge Repl_C1 and Repl_C2. If has conflict, keep repl from Repl_C2.
 std::vector<Replacement> mergeC1AndC2(
     const std::vector<Replacement> &Repl_C1, const GitDiffChanges &Repl_C2,
@@ -356,27 +549,31 @@ std::vector<Replacement> mergeC1AndC2(
         &FileNameMap) {
   std::vector<Replacement> Result;
   std::vector<Replacement> Repl_C2_vec;
-  std::for_each(
-      Repl_C2.ModifyFileHunks.begin(), Repl_C2.ModifyFileHunks.end(),
-      [&Repl_C2_vec, FileNameMap](const Replacement &Hunk) {
-        UnifiedPath OldFilePath =
-            FileNameMap.at(UnifiedPath(Hunk.getFilePath()));
-        Replacement Replacement(OldFilePath.getCanonicalPath(),
-                                Hunk.getOffset(), Hunk.getLength(),
-                                Hunk.getReplacementText());
-        Repl_C2_vec.push_back(Replacement);
-      });
-  for (const auto &ReplInC1 : Repl_C1) {
-    bool HasConflict = false;
-    for (const auto &ReplInC2 : Repl_C2_vec) {
-      if (HasConflict = hasConflict(ReplInC1, ReplInC2))
-        break;
+  std::for_each(Repl_C2.ModifyFileHunks.begin(), Repl_C2.ModifyFileHunks.end(),
+                [&Repl_C2_vec, FileNameMap](const Replacement &Hunk) {
+                  UnifiedPath OldFilePath =
+                      FileNameMap.at(UnifiedPath(Hunk.getFilePath()));
+                  Replacement Replacement(OldFilePath.getCanonicalPath(),
+                                          Hunk.getOffset(), Hunk.getLength(),
+                                          Hunk.getReplacementText());
+                  Repl_C2_vec.push_back(Replacement);
+                });
+
+  auto C1 = groupReplcementsByFile(Repl_C1);
+  auto C2 = groupReplcementsByFile(Repl_C2_vec);
+  for (const auto &[FilePath, Repls_C1] : C1) {
+    auto ItC2 = C2.find(FilePath);
+    if (ItC2 == C2.end()) {
+      // No replacements in C2 for this file, just add C1
+      Result.insert(Result.end(), Repls_C1.begin(), Repls_C1.end());
+      continue;
     }
-    if (!HasConflict) {
-      Result.push_back(ReplInC1);
-    }
+    // Merge replacements in C1 and C2 for this file
+    auto Repls_C2 = ItC2->second;
+    auto Merged = ReplacementMerger::merge(Repls_C1, Repls_C2);
+    Result.insert(Result.end(), Merged.begin(), Merged.end());
   }
-  Result.insert(Result.end(), Repl_C2_vec.begin(), Repl_C2_vec.end());
+
   return Result;
 }
 
@@ -429,9 +626,11 @@ std::map<std::string, std::vector<Replacement>> reMigrationMerge(
          Repl_C2.MoveFileHunks.empty() &&
          "Repl_C2 should only have ModifiyFileHunks.");
   // Merge Repl_C1 and Repl_C2. If has conflict, keep repl from Repl_C2.
-  // TODO: Repl_C1 has name like file1.cpp, file2.cpp, file3.cu, file4.cuh
-  // but Repl_C2 has name like file1.cpp, file2.cpp.dp.cpp, file3.dp.cpp, file4.dp.hpp
-  // we need convert the filename in Repl_C2 to CUDA style
+  // 1. Repl_C1 has name like file1.cpp, file2.cpp, file3.cu, file4.cuh
+  //    but Repl_C2 has name like file1.cpp, file2.cpp.dp.cpp, file3.dp.cpp,
+  //    file4.dp.hpp. We need convert the filename in Repl_C2 to CUDA style
+  // 2. Repl_C1 is based on CUDA code, Repl_C2 is based on the migrated SYCL
+  //    code, the result Repl_C should based on the original CUDA code.
   std::vector<Replacement> Repl_C = mergeC1AndC2(Repl_C1, Repl_C2, FileNameMap);
 
   // Convert vector in Repl_A to map for quick lookup.
@@ -462,6 +661,7 @@ std::map<std::string, std::vector<Replacement>> reMigrationMerge(
 
   // Get Repl_C_y
   std::map<std::string, clang::tooling::Replacements> Repl_C_y;
+
   for (const auto &Repl : Repl_C) {
     // The gitdiff changes are line-based while clang replacements are
     // character-based. So here assume there is no overlap (only repl totally
@@ -475,14 +675,17 @@ std::map<std::string, std::vector<Replacement>> reMigrationMerge(
     }
 
     // Check if the replacement is in a deleted part.
+    bool HasConflict = false;
     for (const auto &Part : It->second) {
-      if (hasConflict(Repl, Replacement(Repl.getFilePath(), Part.first,
-                                        Part.second, "")))
+      if (HasConflict =
+              hasConflict(Repl, Replacement(Repl.getFilePath(), Part.first,
+                                            Part.second, "")))
         break;
     }
-    llvm::cantFail(Repl_C_y[Repl.getFilePath().str()].add(
-        Replacement(Repl.getFilePath().str(), Repl.getOffset(),
-                    Repl.getLength(), Repl.getReplacementText())));
+    if (!HasConflict)
+      llvm::cantFail(Repl_C_y[Repl.getFilePath().str()].add(
+          Replacement(Repl.getFilePath().str(), Repl.getOffset(),
+                      Repl.getLength(), Repl.getReplacementText())));
   }
 
   // Shift Repl_C_y with Repl_A(ModifiedParts)
