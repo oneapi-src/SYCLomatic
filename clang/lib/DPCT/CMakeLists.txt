@@ -212,6 +212,7 @@ add_clang_library(DPCT
   Diagnostics/Diagnostics.cpp
   ErrorHandle/Error.cpp
   MigrationReport/Statics.cpp
+  MigrationReport/Run.cpp
   RuleInfra/ExprAnalysis.cpp
   ExtReplacements.cpp
   RuleInfra/MapNames.cpp
@@ -233,7 +234,6 @@ add_clang_library(DPCT
   MigrateScript/GenMakefile.cpp
   RulesInclude/InclusionHeaders.cpp
   IncMigration/IncrementalMigrationUtility.cpp
-  ComponentVersion/ComponentVersion.cpp
   UserDefinedRules/UserDefinedRules.cpp
   UserDefinedRules/PatternRewriter.cpp
   MigrateScript/MigrateBuildScript.cpp

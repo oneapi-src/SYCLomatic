@@ -555,14 +555,6 @@ DPCT_FLAG_OPTION(
     llvm::cl::cat(CtHelpCatAll))
 
 DPCT_FLAG_OPTION(
-    CompatibleComps, clang::dpct::DpctOptionClass::OC_Attribute,
-    DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
-    "supported-components",
-    llvm::cl::desc("Show the supported components and their compatibility "
-                   "version information.\n"),
-    llvm::cl::cat(CtHelpCatAll))
-
-DPCT_FLAG_OPTION(
     EnableCTAD, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration,
                         clang::dpct::DpctActionKind::DAK_Analysis),

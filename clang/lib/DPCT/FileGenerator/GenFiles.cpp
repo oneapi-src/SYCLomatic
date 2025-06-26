@@ -34,6 +34,8 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_os_ostream.h"
 
+#include "MigrationReport/Run.h"
+
 #include <algorithm>
 #include <cassert>
 #include <fstream>
@@ -911,22 +913,6 @@ void genCodePinHeader(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
   RS << "#endif" << getNL();
 }
 
-void GenVerifiedCmpVer(
-    const std::vector<clang::tooling::Replacement> &MainSrcFilesRepls) {
-  auto CompStatusList = dpct::DpctGlobalInfo::getCompatibleCompsStatus();
-  auto CompsInfo = dpct::DpctGlobalInfo::getSupportedComponentInfo();
-  for (auto CompStatus : CompStatusList) {
-    for (auto Repl : MainSrcFilesRepls) {
-      if (Repl.getReplacementText().str().find(CompStatus->ReplacementText) !=
-          std::string::npos) {
-        // If the replacement text is already in the list, skip it.
-        updateComInfoByCompStatus(CompsInfo[CompStatus->CompType], CompStatus);
-        break;
-      }
-    }
-  }
-  displayComponentDetailsInfo(CompsInfo);
-}
 /// Apply all generated replacements, and immediately save the results to files
 /// in output directory.
 ///
@@ -1012,7 +998,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
               clang::dpct::RT_CUDAWithCodePin))
         return RewriteStatus;
     }
-    GenVerifiedCmpVer(MainSrcFilesRepls);
+    ShowDepsResult(llvm::outs());
     // Print the in-root path and the number of processed files
     size_t ProcessedFileNumber;
     if (ProcessAll) {
@@ -1048,7 +1034,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     } else {
       ReportMsg += "\n";
     }
-
+   
     ReportMsg += "\n";
     ReportMsg += DiagRef;
 

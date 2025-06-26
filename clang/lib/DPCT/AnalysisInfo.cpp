@@ -2416,7 +2416,6 @@ std::shared_ptr<clang::tooling::TranslationUnitReplacements>
 clang::tooling::UnifiedPath DpctGlobalInfo::InRoot;
 clang::tooling::UnifiedPath DpctGlobalInfo::OutRoot;
 std::vector<clang::tooling::UnifiedPath> DpctGlobalInfo::AnalysisScope;
-std::vector<std::shared_ptr<CompStatus>> DpctGlobalInfo::CompatibleCompsStatus;
 std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::SYCLSourceExtension = std::string();
 std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();
@@ -2435,7 +2434,6 @@ format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
 bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::EnableCodePin = false;
-bool DpctGlobalInfo::CompatibleComps = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::MigrateBuildScriptOnly = false;

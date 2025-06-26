@@ -19,7 +19,6 @@
 #include "TextModification.h"
 #include "Utility.h"
 #include "CommandOption/ValidateArguments.h"
-#include "ComponentVersion/ComponentVersion.h"
 #include <bitset>
 #include <memory>
 #include <optional>
@@ -736,24 +735,6 @@ public:
   }
   static const std::vector<clang::tooling::UnifiedPath> &getAnalysisScope() {
     return AnalysisScope;
-  }
-  static void
-  setCompatibleCompsStatus(const std::vector<std::shared_ptr<CompStatus>> &CompStatus) {
-    CompatibleCompsStatus = CompStatus;
-  }
-  static const std::vector<std::shared_ptr<CompStatus>> &getCompatibleCompsStatus() {
-    return CompatibleCompsStatus;
-  }
-static const std::unordered_map<ComponentType, ComponentInfo> &
-  getSupportedComponentInfo() {
-    static std::unordered_map<ComponentType, ComponentInfo> Components = {
-        {ComponentType::DPCPP, ComponentInfo("DPCPP")},
-        {ComponentType::oneDPL, ComponentInfo("oneDPL")},
-        {ComponentType::oneMKL, ComponentInfo("oneMKL")},
-        {ComponentType::oneDNNL, ComponentInfo("oneDNNL")},
-        {ComponentType::oneCCL, ComponentInfo("oneCCL")},
-        {ComponentType::ISHMEM, ComponentInfo("ISHMEM")}};
-    return Components;
   }
   static void addChangeExtensions(const std::string &Extension) {
     assert(!Extension.empty());
@@ -1604,7 +1585,6 @@ private:
   static clang::tooling::UnifiedPath InRoot;
   static clang::tooling::UnifiedPath OutRoot;
   static std::vector<clang::tooling::UnifiedPath> AnalysisScope;
-  static std::vector<std::shared_ptr<CompStatus>> CompatibleCompsStatus;
   static std::unordered_set<std::string> ChangeExtensions;
   static std::string SYCLSourceExtension;
   static std::string SYCLHeaderExtension;
@@ -1623,7 +1603,6 @@ private:
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
   static bool EnableCodePin;
-  static bool CompatibleComps;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
   static bool MigrateBuildScriptOnly;

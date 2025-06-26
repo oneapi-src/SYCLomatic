@@ -7,11 +7,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
+#include "MigrationReport/Run.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "CommandOption/ValidateArguments.h"
 #include "Config.h"
-#include "ComponentVersion/ComponentVersion.h"
 #include "ErrorHandle/CrashRecovery.h"
 #include "ErrorHandle/Error.h"
 #include "FileGenerator/GenFiles.h"
@@ -977,23 +977,6 @@ int runDPCT(int argc, const char **argv) {
   
   ExtraIncPaths = OptParser->getExtraIncPathList();
   
-  {
-    SmallString<128> FilePath1(DpctInstallPath.getCanonicalPath());
-    llvm::sys::path::append(FilePath1,
-                            Twine("extensions/supported_components/component_version.yaml"));
-    SmallString<128> FilePath2(DpctInstallPath.getCanonicalPath());
-    llvm::sys::path::append(FilePath2,
-                            Twine("opt/dpct/extensions/supported_components/component_version.yaml"));
-
-    std::vector<clang::tooling::UnifiedPath> SupportedComponents{
-        llvm::sys::fs::exists(FilePath1) ? FilePath1.c_str()
-                                         : FilePath2.c_str()};
-    parseSupportComponentStatus(SupportedComponents, CompatibleComps);
-  }
-  if (CompatibleComps) {
-    displaySupportedComponents(CompatibleComps);
-    return 0;
-  }
   if (isCUDAHeaderRequired()) {
     // TODO: implement one of this for each source language.
     CudaPath = getCudaInstallPath(OriginalArgc, argv);
@@ -1497,7 +1480,9 @@ int runDPCT(int argc, const char **argv) {
     return showAPIMapping(QueryAPIMappingSrc, QueryAPIMappingOpt, Tool,
                           ReplSYCL);
   }
-
+  if (!ReplSYCL.empty()) {
+      CollectDepsResult(ReplSYCL);
+    }
   // OC_Action: Analysis mode
   if (DpctGlobalInfo::isAnalysisModeEnabled()) {
     if (AnalysisModeOutputFile.getValue().empty()) {

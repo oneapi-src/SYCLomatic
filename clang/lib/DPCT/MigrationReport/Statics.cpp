@@ -8,6 +8,7 @@
 #include "MigrationReport/Statics.h"
 #include "ASTTraversal.h"
 #include "RulesInclude/InclusionHeaders.h"
+#include "MigrationReport/Run.h"
 
 #include <numeric>
 #include <unordered_set>
@@ -27,6 +28,8 @@ std::unordered_map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
 // std::string -> APIName ,types information
 // unsigned int -> Times met
 std::map<std::string, unsigned int> SrcAPIStaticsMap;
+
+extern std::vector<clang::dpct::DependencyStatus> DepStatusVec;
 
 int VerboseLevel = VL_NonVerbose;
 
@@ -363,6 +366,8 @@ public:
       }
     }
     LineStream(OS, Indent) << LastMsg;
+
+    ShowDepsResult(OS);
   }
 
   static void recordApisOrTypes(SourceLocation SL, StringRef Name,
