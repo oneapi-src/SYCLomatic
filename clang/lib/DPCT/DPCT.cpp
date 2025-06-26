@@ -1481,7 +1481,7 @@ int runDPCT(int argc, const char **argv) {
                           ReplSYCL);
   }
   if (!ReplSYCL.empty()) {
-      CollectDepsResult(ReplSYCL);
+      CollectDepLib(ReplSYCL);
     }
   // OC_Action: Analysis mode
   if (DpctGlobalInfo::isAnalysisModeEnabled()) {

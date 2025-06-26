@@ -998,7 +998,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
               clang::dpct::RT_CUDAWithCodePin))
         return RewriteStatus;
     }
-    ShowDepsResult(llvm::outs());
+    PrintRecommendLibs(llvm::outs());
     // Print the in-root path and the number of processed files
     size_t ProcessedFileNumber;
     if (ProcessAll) {
@@ -1034,7 +1034,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     } else {
       ReportMsg += "\n";
     }
-   
+
     ReportMsg += "\n";
     ReportMsg += DiagRef;
 

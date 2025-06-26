@@ -29,8 +29,6 @@ std::unordered_map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
 // unsigned int -> Times met
 std::map<std::string, unsigned int> SrcAPIStaticsMap;
 
-extern std::vector<clang::dpct::DependencyStatus> DepStatusVec;
-
 int VerboseLevel = VL_NonVerbose;
 
 void StaticsInfo::printMigrationRules(
@@ -367,7 +365,7 @@ public:
     }
     LineStream(OS, Indent) << LastMsg;
 
-    ShowDepsResult(OS);
+    PrintRecommendLibs(OS);
   }
 
   static void recordApisOrTypes(SourceLocation SL, StringRef Name,
