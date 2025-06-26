@@ -309,6 +309,7 @@
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1134.html">DPCT1134</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1135.html">DPCT1135</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1136.html">DPCT1136</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1137.html">DPCT1137</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct2001.html">DPCT2001</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct3000.html">DPCT3000</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct3001.html">DPCT3001</a></li>
@@ -544,7 +545,7 @@ document.write(`
                   
   <section id="cuda-api-migration-support">
 <span id="mapping-status"></span><h1>CUDA API Migration Support<a class="headerlink" href="#cuda-api-migration-support" title="Permalink to this headline">#</a></h1>
-<p>Migration support status updated on 25 March, 2025.</p>
+<p>Migration support status updated on 26 June, 2025.</p>
 <p>The following tables provide the current status for CUDA* API migration support.</p>
 <section id="asm-api">
 <h2>ASM API<a class="headerlink" href="#asm-api" title="Permalink to this headline">#</a></h2>
@@ -626,7 +627,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>brkpt</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>brx</p></td>
@@ -654,8 +655,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cp</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
 </tr>
 <tr class="row-even"><td><p>createpolicy</p></td>
 <td><p>NO</p></td>
@@ -730,8 +731,8 @@ document.write(`
 <td><p>Partial</p></td>
 </tr>
 <tr class="row-even"><td><p>ldmatrix</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
 </tr>
 <tr class="row-odd"><td><p>ldu</p></td>
 <td><p>NO</p></td>
@@ -782,8 +783,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>mma</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
 </tr>
 <tr class="row-even"><td><p>mov</p></td>
 <td><p>YES</p></td>
@@ -842,8 +843,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>red</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
 </tr>
 <tr class="row-odd"><td><p>redux</p></td>
 <td><p>NO</p></td>
@@ -922,8 +923,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>stmatrix</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
 </tr>
 <tr class="row-odd"><td><p>sub</p></td>
 <td><p>YES</p></td>
@@ -1232,11 +1233,11 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cub::BlockExchange::WarpStripedToBlocked</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cub::BlockExchange::BlockedToWarpStriped</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cub::BlockExchange::ScatterToBlocked</p></td>
@@ -1748,11 +1749,11 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cub::LoadDirectWarpStriped</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cub::StoreDirectWarpStriped</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cub::SHR_ADD</p></td>
@@ -6227,6 +6228,14 @@ document.write(`
 <td><p>NO</p></td>
 <td></td>
 </tr>
+<tr class="row-even"><td><p>cudnnBackendPopulateCudaGraph</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>cudnnBackendUpdateCudaGraph</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -9344,11 +9353,11 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseCreateCsrsm2Info</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseDestroyCsrsm2Info</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseCreateCsric02Info</p></td>
@@ -9400,11 +9409,11 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseCreateCsrgemm2Info</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseDestroyCsrgemm2Info</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseCreatePruneInfo</p></td>
@@ -9940,51 +9949,51 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseScsrsm2_bufferSizeExt</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseDcsrsm2_bufferSizeExt</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseCcsrsm2_bufferSizeExt</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseZcsrsm2_bufferSizeExt</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseScsrsm2_analysis</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseDcsrsm2_analysis</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseCcsrsm2_analysis</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseZcsrsm2_analysis</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseScsrsm2_solve</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseDcsrsm2_solve</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseCcsrsm2_solve</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseZcsrsm2_solve</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseXcsrsm2_zeroPivot</p></td>
@@ -10084,39 +10093,39 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseScsrgemm2_bufferSizeExt</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseDcsrgemm2_bufferSizeExt</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseCcsrgemm2_bufferSizeExt</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseZcsrgemm2_bufferSizeExt</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseXcsrgemm2Nnz</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseScsrgemm2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseDcsrgemm2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseCcsrgemm2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cusparseZcsrgemm2</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cusparseScsric0</p></td>
@@ -12065,6 +12074,14 @@ document.write(`
 <td><p>YES</p></td>
 <td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1009.html#dpct1009"><span class="std std-ref">DPCT1009</span></a></p></td>
 </tr>
+<tr class="row-odd"><td><p>ncclCommInitRankConfig</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>ncclCommInitRankScalable</p></td>
+<td><p>NO</p></td>
+<td></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -13382,24 +13399,24 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaIpcCloseMemHandle</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cudaIpcGetEventHandle</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaIpcGetMemHandle</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cudaIpcOpenEventHandle</p></td>
 <td><p>NO</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaIpcOpenMemHandle</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cudaSetDevice</p></td>
 <td><p>YES</p></td>
@@ -13590,7 +13607,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaDestroyExternalSemaphore</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cudaExternalMemoryGetMappedBuffer</p></td>
@@ -13606,15 +13623,15 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaImportExternalSemaphore</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cudaSignalExternalSemaphoresAsync</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaWaitExternalSemaphoresAsync</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cudaFuncGetAttributes</p></td>
@@ -13666,7 +13683,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cudaLaunchHostFunc</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaLaunchKernel</p></td>
@@ -14558,8 +14575,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaGraphDestroy</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cudaGraphDestroyNode</p></td>
 <td><p>NO</p></td>
@@ -14670,12 +14687,12 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaGraphGetNodes</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cudaGraphGetRootNodes</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cudaGraphHostNodeGetParams</p></td>
 <td><p>NO</p></td>
@@ -14798,8 +14815,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cudaGraphNodeGetType</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cudaGraphNodeSetEnabled</p></td>
 <td><p>NO</p></td>
@@ -16130,7 +16147,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>make_bfloat162</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>acosf</p></td>
@@ -18686,8 +18703,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuDevicePrimaryCtxGetState</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1026.html#dpct1026"><span class="std std-ref">DPCT1026</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1027.html#dpct1027"><span class="std std-ref">DPCT1027</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cuDevicePrimaryCtxRelease</p></td>
 <td><p>YES</p></td>
@@ -18702,8 +18719,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuDevicePrimaryCtxSetFlags</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1026.html#dpct1026"><span class="std std-ref">DPCT1026</span></a> / <a class="reference internal" href="reference/diagnostic_ref/dpct1027.html#dpct1027"><span class="std std-ref">DPCT1027</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>cuCtxCreate</p></td>
 <td><p>YES</p></td>
@@ -18954,7 +18971,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuArray3DGetDescriptor</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuArrayCreate</p></td>
@@ -18966,7 +18983,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuArrayGetDescriptor</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuArrayGetMemoryRequirements</p></td>
@@ -19086,7 +19103,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuMemcpy2DUnaligned</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuMemcpy3D</p></td>
@@ -19218,15 +19235,15 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuMipmappedArrayCreate</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuMipmappedArrayDestroy</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuMipmappedArrayGetLevel</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuMipmappedArrayGetMemoryRequirements</p></td>
@@ -19398,8 +19415,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuPointerGetAttribute</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
 </tr>
 <tr class="row-odd"><td><p>cuPointerGetAttributes</p></td>
 <td><p>YES</p></td>
@@ -20074,11 +20091,11 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuTexRefCreate</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuTexRefDestroy</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuTexRefGetAddress</p></td>
@@ -20090,7 +20107,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuTexRefGetArray</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuTexRefGetBorderColor</p></td>
@@ -20114,7 +20131,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuTexRefGetMipmapFilterMode</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuTexRefGetMipmapLevelBias</p></td>
@@ -20122,11 +20139,11 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuTexRefGetMipmapLevelClamp</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuTexRefGetMipmappedArray</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuTexRefSetAddress</p></td>
@@ -20166,7 +20183,7 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuTexRefSetMipmapFilterMode</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuTexRefSetMipmapLevelBias</p></td>
@@ -20178,15 +20195,15 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuTexRefSetMipmappedArray</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuSurfRefGetArray</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cuSurfRefSetArray</p></td>
-<td><p>NO</p></td>
+<td><p>YES</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>cuTexObjectCreate</p></td>
@@ -20246,8 +20263,8 @@ document.write(`
 <td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1031.html#dpct1031"><span class="std std-ref">DPCT1031</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cuDeviceGetP2PAttribute</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p>Partial</p></td>
 </tr>
 <tr class="row-odd"><td><p>cuGraphicsMapResources</p></td>
 <td><p>YES</p></td>
@@ -20634,8 +20651,8 @@ document.write(`
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>cooperative_groups::this_thread</p></td>
-<td><p>NO</p></td>
-<td></td>
+<td><p>YES</p></td>
+<td><p><a class="reference internal" href="reference/diagnostic_ref/dpct1119.html#dpct1119"><span class="std std-ref">DPCT1119</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p>cooperative_groups::this_grid</p></td>
 <td><p>YES</p></td>
@@ -22103,7 +22120,7 @@ document.write(`
   <div class="footer-item">
     
 <div class="extra_footer">
-  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 25 March, 2025</div>
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 26 June, 2025</div>
 </div>
   </div>
   

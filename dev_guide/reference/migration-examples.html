@@ -309,6 +309,7 @@
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct1134.html">DPCT1134</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct1135.html">DPCT1135</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct1136.html">DPCT1136</a></li>
+<li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct1137.html">DPCT1137</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct2001.html">DPCT2001</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct3000.html">DPCT3000</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic_ref/dpct3001.html">DPCT3001</a></li>
@@ -565,6 +566,10 @@ Vulkan Interoperability with CUDA using option
 <li><p><strong>CudaExternalMemoryGetMappedBuffer</strong></p></li>
 <li><p><strong>cudaExternalMemoryGetMappedMipmappedArray</strong></p></li>
 <li><p><strong>cudaImportExternalMemory</strong></p></li>
+<li><p><strong>cudaDestroyExternalSemaphore</strong></p></li>
+<li><p><strong>cudaImportExternalSemaphore</strong></p></li>
+<li><p><strong>cudaSignalExternalSemaphoresAsync</strong></p></li>
+<li><p><strong>cudaWaitExternalSemaphoresAsync</strong></p></li>
 </ul>
 </section>
 <section id="examples">
@@ -631,53 +636,102 @@ delete cudaResource;
 <section id="vulkan-cuda-interoperability">
 <h4>Vulkan-CUDA Interoperability<a class="headerlink" href="#vulkan-cuda-interoperability" title="Permalink to this headline">#</a></h4>
 <p>CUDA</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// Create a resource using Vulkan APIs
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>VkDevice device = {};
+
+// Create a texture resource using Vulkan APIs
 VkImage vkTexture;
+VkImageCreateInfo imageCreateInfo = {}; // init and fill texture descriptor
+vkCreateImage(device, &amp;imageCreateInfo, nullptr, &amp;vkTexture);
 
-cudaExternalMemoryHandleDesc memHandleDesc; cudaExternalMemoryMipmappedArrayDesc mipmapDesc;
+// Create a semaphore resource using Vulkan APIs
+VkSemaphore vkSemaphore;
+VkSemaphoreCreateInfo semaphoreInfo = {}; // init and fill semaphore descriptor
+vkCreateSemaphore(device, &amp;semaphoreInfo, nullptr, &amp;vkSemaphore);
+
+cudaStream_t stream;
+cudaStreamCreate(&amp;stream);
+
+cudaExternalMemoryHandleDesc memHandleDesc;
+cudaExternalMemoryMipmappedArrayDesc mipmapDesc;
 cudaExternalMemory_t externalMemory;
+cudaExternalSemaphoreHandleDesc semHandleDesc;
+cudaExternalSemaphore_t externalSemaphore;
+cudaExternalSemaphoreWaitParams waitParams;
+cudaExternalSemaphoreSignalParams signalParams;
 
-// Import the memory from external resource (Vulkan)
+
+// Import the memory from external resource (vkTexture)
 cudaImportExternalMemory(&amp;externalMemory, &amp;memHandleDesc);
+// Import the semaphore from external resource (vkSemaphore)
+cudaImportExternalSemaphore(&amp;externalSemaphore, &amp;semHandleDesc);
+
+// Wait on the semaphore using external resource
+cudaWaitExternalSemaphoresAsync(&amp;externalSemaphore, &amp;waitParams, 1, stream);
 
 // Get the mapped array from the CUDA resource
 cudaMipmappedArray_t cudaMipmappedArray = nullptr;
-cudaExternalMemoryGetMappedMipmappedArray(&amp;cudaMipmappedArray,
-                                          externalMemory,
-                                          &amp;mipmapDesc);
+cudaExternalMemoryGetMappedMipmappedArray(&amp;cudaMipmappedArray, externalMemory, &amp;mipmapDesc);
+
+// Signal the semaphore using external resource
+cudaSignalExternalSemaphoresAsync(&amp;externalSemaphore, &amp;signalParams, 1, stream);
 
 // Retrieve the tex data as a cudaArray from cudaMipmappedArray
 cudaArray_t cudaArr;
 cudaGetMipmappedArrayLevel(&amp;cudaArr, cudaMipmappedArray, 0);
 
-// Destroy the CUDA resource
+// Destroy the CUDA resources
 cudaDestroyExternalMemory(externalMemory);
+cudaDestroyExternalSemaphore(externalSemaphore);
 </pre></div>
 </div>
 <p>Migrated Code</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// Create a resource using Vulkan APIs
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>VkDevice device = {};
+
+// Create a texture resource using Vulkan APIs
 VkImage vkTexture;
+VkImageCreateInfo imageCreateInfo = {}; // init and fill texture descriptor
+vkCreateImage(device, &amp;imageCreateInfo, nullptr, &amp;vkTexture);
+
+// Create a semaphore resource using Vulkan APIs
+VkSemaphore vkSemaphore;
+VkSemaphoreCreateInfo semaphoreInfo = {}; // init and fill semaphore descriptor
+vkCreateSemaphore(device, &amp;semaphoreInfo, nullptr, &amp;vkSemaphore);
+
+dpct::queue_ptr stream;
+stream = dpct::get_current_device().create_queue();
 
 dpct::experimental::external_mem_handle_desc memHandleDesc;
 dpct::experimental::external_mem_img_desc mipmapDesc;
 sycl::ext::oneapi::experimental::external_mem externalMemory;
+dpct::experimental::external_sem_handle_desc semHandleDesc;
+dpct::experimental::external_sem_wrapper_ptr externalSemaphore;
+dpct::experimental::external_sem_params waitParams;
+dpct::experimental::external_sem_params signalParams;
 
-// Import the memory from external resource (Vulkan)
+
+// Import the memory from external resource (vkTexture)
 dpct::experimental::import_external_memory(&amp;externalMemory, &amp;memHandleDesc));
+// Import the semaphore from external resource (vkSemaphore)
+dpct::experimental::import_external_semaphore(&amp;externalSemaphore, &amp;semHandleDesc);
+
+// Wait on the semaphore using external resource
+dpct::experimental::wait_external_semaphore(&amp;externalSemaphore, &amp;waitParams, 1, stream);
 
 // Get the mapped array from the CUDA resource
 dpct::experimental::image_mem_wrapper_ptr cudaMipmappedArray = nullptr;
-cudaMipmappedArray = new dpct::experimental::image_mem_wrapper(
-                             externalMemory,
-                             &amp;mipmapDesc);
+cudaMipmappedArray = new dpct::experimental::image_mem_wrapper(externalMemory, &amp;mipmapDesc);
+
+// Signal the semaphore using external resource
+dpct::experimental::signal_external_semaphore(&amp;externalSemaphore, &amp;signalParams, 1, stream);
 
 // Retrieve the tex data as a cudaArray from cudaMipmappedArray
 dpct::experimental::image_mem_wrapper_ptr cudaArr;
 cudaArr = cudaMipmappedArray-&gt;get_mip_level(0);
 
-// Destroy the CUDA resource
+// Destroy the CUDA resources
 sycl::ext::oneapi::experimental::release_external_memory(
         externalMemory, dpct::get_in_order_queue());
+delete externalSemaphore;
 </pre></div>
 </div>
 </section>
@@ -798,7 +852,7 @@ of bitcracker to SYCL version.</p>
   <div class="footer-item">
     
 <div class="extra_footer">
-  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 25 March, 2025</div>
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 26 June, 2025</div>
 </div>
   </div>
   
