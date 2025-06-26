@@ -1,5 +1,5 @@
 // REQUIRES: system-linux
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.2
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7
 // RUN: dpct --format-range=none -out-root %T/nvshmem %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/nvshmem/sig_ops.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/nvshmem/sig_ops.dp.cpp -o %T/nvshmem/sig_ops.dp.o %}

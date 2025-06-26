@@ -3226,9 +3226,7 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
     const CallExpr *CE, const MatchFinder::MatchResult &Result,
     bool IsAssigned) {
   int NumArgs = CE->getNumArgs();
-  const Expr *StreamArg = CE->getArg(NumArgs - 1);
   if (NumArgs == 3) { // Special process for cudaEventRecordWithFlags().
-    StreamArg = CE->getArg(1);
     auto APIName = CE->getDirectCallee()->getNameInfo().getName().getAsString();
     const Expr *SecArg = CE->getArg(2);
     ExprAnalysis Arg2EA(SecArg);
@@ -3241,195 +3239,32 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
     emplaceTransformation(removeArg(CE, 2, *Result.SourceManager));
   }
 
-  auto EventArg = CE->getArg(0);
-  ExprAnalysis StreamEA(StreamArg);
-  ExprAnalysis Arg0EA(EventArg);
-  auto StreamName = StreamEA.getReplacedString();
-  auto ArgName = Arg0EA.getReplacedString();
-  bool IsDefaultStream = isDefaultStream(StreamArg);
   auto IndentLoc = CE->getBeginLoc();
   auto &SM = DpctGlobalInfo::getSourceManager();
-
-  if (needExtraParens(EventArg)) {
-    ArgName = "(" + ArgName + ")";
-  }
-
-  if (needExtraParensInMemberExpr(StreamArg)) {
-    StreamName = "(" + StreamName + ")";
-  }
 
   if (IndentLoc.isMacroID())
     IndentLoc = SM.getExpansionLoc(IndentLoc);
 
+  if (isPlaceholderIdxDuplicated(CE))
+    return;
+  int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+  buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+
+  if (DpctGlobalInfo::useSYCLCompat()) {
+    report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+           "cudaEventRecord");
+    return;
+  }
+  std::string ReplaceStr;
+  ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
+  emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
+
   if (IsAssigned) {
-
-    std::string StmtStr;
-    if (IsDefaultStream) {
-      if (isPlaceholderIdxDuplicated(CE))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-      std::string Str;
-      if (!DpctGlobalInfo::useEnqueueBarrier()) {
-        // ext_oneapi_submit_barrier is specified in the value of option
-        // --no-dpcpp-extensions.
-        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-
-          Str = MapNames::getDpctNamespace() +
-                "get_current_device().queues_wait_and_throw();";
-          Str += getNL();
-          Str += getIndent(IndentLoc, SM).str();
-          std::string SubStr = "{{NEEDREPLACEQ" + std::to_string(Index) +
-                               "}}.single_task([=](){});";
-          SubStr = "*" + ArgName + " = " + SubStr;
-          Str += SubStr;
-
-          Str += getNL();
-          Str += getIndent(IndentLoc, SM).str();
-          Str += MapNames::getDpctNamespace() +
-                 "get_current_device().queues_wait_and_throw();";
-          Str += getNL();
-          Str += getIndent(IndentLoc, SM).str();
-          Str += "return 0;";
-
-          Str = "[&](){" + Str + "}()";
-          emplaceTransformation(new ReplaceStmt(CE, std::move(Str)));
-          return;
-        }
-        Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
-              "}}.single_task([=](){})";
-
-      } else {
-        if (DpctGlobalInfo::useSYCLCompat()) {
-          report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
-                 "cudaEventRecord");
-          return;
-        }
-        std::string ReplaceStr;
-        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
-        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
-        emplaceTransformation(new InsertBeforeStmt(CE, MapNames::getCheckErrorMacroName() + "("));
-        emplaceTransformation(new InsertAfterStmt(CE, ")"));
-        report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
-        return;
-      }
-      StmtStr = "*" + ArgName + " = " + Str;
-    } else {
-      std::string Str;
-      if (!DpctGlobalInfo::useEnqueueBarrier()) {
-        // ext_oneapi_submit_barrier is specified in the value of option
-        // --no-dpcpp-extensions.
-
-        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-
-          Str = MapNames::getDpctNamespace() +
-                "get_current_device().queues_wait_and_throw();";
-          Str += getNL();
-          Str += getIndent(IndentLoc, SM).str();
-          Str += StreamName + "->" + "single_task([=](){});";
-          Str += getNL();
-          Str += getIndent(IndentLoc, SM).str();
-          Str += MapNames::getDpctNamespace() +
-                 "get_current_device().queues_wait_and_throw(); return 0;";
-
-          Str = "[&](){" + Str + "}()";
-          emplaceTransformation(new ReplaceStmt(CE, std::move(Str)));
-          return;
-        }
-        Str = StreamName + "->" + "single_task([=](){})";
-
-      } else {
-        Str = StreamName + "->" + "ext_oneapi_submit_barrier()";
-      }
-      StmtStr = "*" + ArgName + " = " + Str;
-    }
-    StmtStr = MapNames::getCheckErrorMacroName() + "(" + StmtStr + ")";
-
-    emplaceTransformation(new ReplaceStmt(CE, std::move(StmtStr)));
-
+    emplaceTransformation(
+        new InsertBeforeStmt(CE, MapNames::getCheckErrorMacroName() + "("));
+    emplaceTransformation(new InsertAfterStmt(CE, ")"));
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
-
-  } else {
-    std::string ReplStr;
-    if (IsDefaultStream) {
-      if (isPlaceholderIdxDuplicated(CE))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-      std::string Str;
-      if (!DpctGlobalInfo::useEnqueueBarrier()) {
-        // ext_oneapi_submit_barrier is specified in the value of option
-        // --no-dpcpp-extensions.
-
-        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-
-          Str = MapNames::getDpctNamespace() +
-                "get_current_device().queues_wait_and_throw();";
-          Str += getNL();
-          Str += getIndent(IndentLoc, SM).str();
-          Str += "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
-                 "}}.single_task([=](){});";
-          Str += getNL();
-          Str += getIndent(IndentLoc, SM).str();
-          Str += MapNames::getDpctNamespace() +
-                 "get_current_device().queues_wait_and_throw()";
-
-        } else {
-          Str = "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
-                "}}.single_task([=](){})";
-        }
-
-      } else {
-        if (DpctGlobalInfo::useSYCLCompat()) {
-          report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
-                 "cudaEventRecord");
-          return;
-        }
-        std::string ReplaceStr;
-        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
-        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
-        return;
-      }
-      ReplStr += Str;
-    } else {
-
-      std::string Str;
-      if (!DpctGlobalInfo::useEnqueueBarrier()) {
-        // ext_oneapi_submit_barrier is specified in the value of option
-        // --no-dpcpp-extensions.
-
-        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-
-          Str = MapNames::getDpctNamespace() +
-                "get_current_device().queues_wait_and_throw();";
-          Str += getNL();
-          Str += getIndent(IndentLoc, SM).str();
-
-          Str += "*" + ArgName + " = " + StreamName + "->single_task([=](){});";
-          Str += getNL();
-          Str += getIndent(IndentLoc, SM).str();
-          Str += MapNames::getDpctNamespace() +
-                 "get_current_device().queues_wait_and_throw()";
-
-        } else {
-          Str = "*" + ArgName + " = " + StreamName + "->single_task([=](){})";
-        }
-
-      } else {
-        if (DpctGlobalInfo::useSYCLCompat()) {
-          report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
-                 "cudaEventRecord");
-          return;
-        }
-        std::string ReplaceStr;
-        ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
-        emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
-        return;
-      }
-      ReplStr += Str;
-    }
-
-    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+    return;
   }
 }
 

@@ -121,20 +121,16 @@ int enqueued_barriers() {
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
 
-  // CHECK:   dpct::get_current_device().queues_wait_and_throw();
-  // CHECK-NEXT:    *start = q_ct1.single_task([=](){});
-  // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
+  // CHECK: dpct::sync_barrier(start, &q_ct1);
   cudaEventRecord(start, 0);
 
   cudaMemcpyAsync(da, ha, N * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpyAsync(da, ha, N * sizeof(int), cudaMemcpyHostToDevice, 0);
   cudaMemcpyAsync(da, ha, N * sizeof(int), cudaMemcpyHostToDevice, stream);
 
-  // CHECK:    dpct::get_current_device().queues_wait_and_throw();
-  // CHECK-NEXT:    *stop = q_ct1.single_task([=](){});
-  // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
-  // CHECK-NEXT:     stop->wait_and_throw();
-  // CHECK-NEXT:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
+  // CHECK: dpct::sync_barrier(stop, &q_ct1);
+  // CHECK-NEXT: stop->wait_and_throw();
+  // CHECK-NEXT: elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   cudaEventRecord(stop, 0);
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&elapsedTime, start, stop);
