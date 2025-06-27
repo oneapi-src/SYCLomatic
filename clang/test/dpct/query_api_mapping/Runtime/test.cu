@@ -519,3 +519,55 @@
 // CUDARUNTIMEGETVERSION-NEXT:   cudaRuntimeGetVersion(pi /*int **/);
 // CUDARUNTIMEGETVERSION-NEXT: Is migrated to:
 // CUDARUNTIMEGETVERSION-NEXT:   *pi = dpct::get_major_version(dpct::get_current_device());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaEventRecordWithFlags | FileCheck %s -check-prefix=CUDAEVENTRECORDWITHFLAGS
+// CUDAEVENTRECORDWITHFLAGS: CUDA API:
+// CUDAEVENTRECORDWITHFLAGS-NEXT:   cudaEventRecordWithFlags(event/*cudaEvent_t*/, stream/*cudaStream_t*/, flags/*unsigned int*/);
+// CUDAEVENTRECORDWITHFLAGS-NEXT: Is migrated to: 
+// CUDAEVENTRECORDWITHFLAGS-NEXT:     *event = flags->ext_oneapi_submit_barrier();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaLaunchHostFunc | FileCheck %s -check-prefix=CUDALAUNCHHOSTFUNC
+// CUDALAUNCHHOSTFUNC: CUDA API:
+// CUDALAUNCHHOSTFUNC-NEXT:   cudaLaunchHostFunc(stream/*cudaStream_t*/, fn/*cudaHostFn_t*/, userData/*void**/);
+// CUDALAUNCHHOSTFUNC-NEXT: Is migrated to: 
+// CUDALAUNCHHOSTFUNC-NEXT:   stream->submit([&](sycl::handler &cgh) {
+// CUDALAUNCHHOSTFUNC-NEXT:     cgh.host_task([=](){
+// CUDALAUNCHHOSTFUNC-NEXT:       fn(userData);
+// CUDALAUNCHHOSTFUNC-NEXT:     });
+// CUDALAUNCHHOSTFUNC-NEXT:   });
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaMemcpy3DPeer | FileCheck %s -check-prefix=CUDAMEMCPY3DPEER
+// CUDAMEMCPY3DPEER: CUDA API:
+// CUDAMEMCPY3DPEER-NEXT:   cudaMemcpy3DPeer(p/*const cudaMemcpy3DPeerParms**/);
+// CUDAMEMCPY3DPEER-NEXT: Is migrated to: 
+// CUDAMEMCPY3DPEER-NEXT:   dpct::dpct_memcpy(*p/*const cudaMemcpy3DPeerParms**/);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaMemcpy3DPeerAsync | FileCheck %s -check-prefix=CUDAMEMCPY3DPEERASYNC
+// CUDAMEMCPY3DPEERASYNC: CUDA API:
+// CUDAMEMCPY3DPEERASYNC-NEXT:   cudaMemcpy3DPeerAsync(p/*const cudaMemcpy3DPeerParms**/, stream/*cudaStream_t*/);
+// CUDAMEMCPY3DPEERASYNC-NEXT: Is migrated to: 
+// CUDAMEMCPY3DPEERASYNC-NEXT:   dpct::async_dpct_memcpy(*p/*const cudaMemcpy3DPeerParms**/, *stream/*cudaStream_t*/);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaMemcpyPeer | FileCheck %s -check-prefix=CUDAMEMCPYPEER
+// CUDAMEMCPYPEER: CUDA API:
+// CUDAMEMCPYPEER-NEXT:   cudaMemcpyPeer(dst/*void**/, dstDevice/*int*/, src/*const void**/, srcDevice/*int*/, count/*size_t*/);
+// CUDAMEMCPYPEER-NEXT: Is migrated to: 
+// CUDAMEMCPYPEER-NEXT:   dpct::dpct_memcpy(dst/*void**/, dstDevice/*int*/, src/*const void**/, srcDevice/*int*/, count/*size_t*/);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaMemcpyPeerAsync | FileCheck %s -check-prefix=CUDAMEMCPYPEERASYNC
+// CUDAMEMCPYPEERASYNC: CUDA API:
+// CUDAMEMCPYPEERASYNC-NEXT:   cudaMemcpyPeerAsync(dst/*void**/, dstDevice/*int*/, src/*const void**/, srcDevice/*int*/, count/*size_t*/, stream/*cudaStream_t*/);
+// CUDAMEMCPYPEERASYNC-NEXT: Is migrated to: 
+// CUDAMEMCPYPEERASYNC-NEXT:   dpct::async_dpct_memcpy(dst/*void**/, dstDevice/*int*/, src/*const void**/, srcDevice/*int*/, count/*size_t*/, *stream/*cudaStream_t*/);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaProfilerStart | FileCheck %s -check-prefix=CUDAPROFILERSTART
+// CUDAPROFILERSTART: CUDA API:
+// CUDAPROFILERSTART-NEXT:   cudaProfilerStart();
+// CUDAPROFILERSTART-NEXT: The API is Removed.
+// CUDAPROFILERSTART-EMPTY: 
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaProfilerStop | FileCheck %s -check-prefix=CUDAPROFILERSTOP
+// CUDAPROFILERSTOP: CUDA API:
+// CUDAPROFILERSTOP-NEXT:   cudaProfilerStop();
+// CUDAPROFILERSTOP-NEXT: The API is Removed.
+// CUDAPROFILERSTOP-EMPTY: 
