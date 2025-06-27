@@ -276,8 +276,7 @@ eee bb ccc
       Replacement("file1.cpp", 84, 18, "ddd\neee")};
   std::map<unsigned, std::string> Expected = {{1, "aaa zzz ccc\n"},
                                               {2, "ppp aaa bb ccc\n"},
-                                              {4, "aaa yyy ccc\naaa bb ccc\n"},
-                                              {5, ""},
+                                              {4, "aaa yyy ccc\n"},
                                               {6, "aaa bb ccq\nqqqaa bb ccc\n"},
                                               {7, ""},
                                               {8, "aaa bb ddd\neee bb ccc\n"},
@@ -581,10 +580,8 @@ void foo()  try {
   CUDA_CHECK(DPCT_CHECK_ERROR(g = sycl::malloc_device<float>(100, q_ct1)));
 =======
   g = sycl::malloc_device<float>(100, q_ct1);
-  float *h;
 >>>>>>>
 )"),
-      Replacement("test.cu", 759, 12, R"()"),
       Replacement(
           "test.cu", 771, 51,
           R"(  CUDA_CHECK(DPCT_CHECK_ERROR(h = sycl::malloc_device<float>(100, q_ct1)));

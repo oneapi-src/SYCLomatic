@@ -205,8 +205,11 @@ ddddd
 // In other words, if there is no conflict, the repl is correct since there is
 // \n after the repl. While the conflict mark assumes that the repl is endding
 // with \n so it can at the beginning of each line, this is the problem.
-// So we need to merge the left part of the last line into the repl (the first
-// line).
+// So the solution is:
+// 1. If the newtext is not ending with \n, we merge the left part of the last
+// line into the repl (the first line).
+// 2. If the newtext is ending with \n, we still keep the last line at the last
+// line.
 std::vector<Replacement>
 splitReplInOrderToNotCrossLines(const std::vector<Replacement> &InRepls) {
   std::string FilePath = InRepls[0].getFilePath().str();
@@ -228,11 +231,15 @@ splitReplInOrderToNotCrossLines(const std::vector<Replacement> &InRepls) {
     unsigned CurrentOffset = StartOffset;
 
     // The first line
-    // We need merge the left part of the last line into the replacement
+    // We need merge the left part of the last line into the replacement if the
+    // newText is not ending with \n.
+    bool IsFisrtLineEndingWithNL = Repl.getReplacementText().ends_with('\n');
     unsigned LineEndOffset = getLineBeginOffset(FilePath, StartLine + 1);
     unsigned FirstLineLength = LineEndOffset - StartOffset;
     Replacement ReplFisrtLine(FilePath, CurrentOffset, FirstLineLength,
-      Repl.getReplacementText());
+                              Repl.getReplacementText());
+    if (IsFisrtLineEndingWithNL)
+      Result.push_back(ReplFisrtLine);
     CurrentOffset += FirstLineLength;
 
     // middle lines
@@ -246,12 +253,19 @@ splitReplInOrderToNotCrossLines(const std::vector<Replacement> &InRepls) {
     // The last line
     std::string LastLineStr = getLineString(FilePath, EndLine).str();
     unsigned LastLineLength = EndOffset - CurrentOffset;
-    Result.emplace_back(Repl.getFilePath(), ReplFisrtLine.getOffset(),
-                        ReplFisrtLine.getLength(),
-                        ReplFisrtLine.getReplacementText().str() +
-                            LastLineStr.substr(LastLineLength));
-    Result.emplace_back(Repl.getFilePath(), CurrentOffset, LastLineStr.size(),
-                        "");
+    if (IsFisrtLineEndingWithNL) {
+      if (LastLineLength > 0) {
+        Result.emplace_back(Repl.getFilePath(), CurrentOffset, LastLineLength,
+                            "");
+      }
+    } else {
+      Result.emplace_back(Repl.getFilePath(), ReplFisrtLine.getOffset(),
+                          ReplFisrtLine.getLength(),
+                          ReplFisrtLine.getReplacementText().str() +
+                              LastLineStr.substr(LastLineLength));
+      Result.emplace_back(Repl.getFilePath(), CurrentOffset, LastLineStr.size(),
+                          "");
+    }
   }
 
   return Result;
