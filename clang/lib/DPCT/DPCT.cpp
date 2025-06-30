@@ -516,14 +516,13 @@ void updateCompatibilityVersionInfo(clang::tooling::UnifiedPath OutRoot,
   OutFile.close();
 }
 
-static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
-  std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
-                                        DpctGlobalInfo::getYamlFileName());
+static void loadMainSrcFileInfo(clang::tooling::UnifiedPath YamlFilePath) {
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
-  if (llvm::sys::fs::exists(YamlFilePath)) {
+  if (llvm::sys::fs::exists(YamlFilePath.getCanonicalPath())) {
     if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
-      llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
+      llvm::errs() << getLoadYamlFailWarning();
     }
+    DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
 
     if (MigrateBuildScriptOnly && !DpctGlobalInfo::migratePythonScripts() ||
         DpctGlobalInfo::migrateCMakeScripts()) {
@@ -679,7 +678,6 @@ int migrateBuildScripts(const clang::tooling::UnifiedPath &InRoot,
 }
 
 void doBuildScriptMigration() {
-  loadMainSrcFileInfo(OutRootPath);
   collectBuildScripts(InRootPath, OutRootPath);
   migrateBuildScripts(InRootPath, OutRootPath);
 }
@@ -817,6 +815,9 @@ int runDPCT(int argc, const char **argv) {
   std::string OutRootPathCUDACodepin = "";
   CudaIncludePath = CudaInclude;
   SDKPath = SDKPathOpt;
+
+  loadMainSrcFileInfo(OutRootPath.getCanonicalPath() + "/MainSourceFiles.yaml");
+
   std::transform(
       RuleFile.begin(), RuleFile.end(),
       std::back_insert_iterator<std::vector<clang::tooling::UnifiedPath>>(
@@ -1394,7 +1395,6 @@ int runDPCT(int argc, const char **argv) {
   }
   // OC_Action: only migrate Build scripts.
   if (MigrateBuildScriptOnly) {
-    loadMainSrcFileInfo(OutRootPath);
     collectBuildScriptsSpecified(OptParser, InRootPath, OutRootPath);
     migrateBuildScripts(InRootPath, OutRootPath);
 

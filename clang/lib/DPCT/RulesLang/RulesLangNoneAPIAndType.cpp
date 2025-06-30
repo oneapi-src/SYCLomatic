@@ -490,8 +490,8 @@ bool ConstantMemVarMigrationRule::currentIsDevice(
       }
 
       // 2. if no info found, check info from yaml
-      if (FileInfo->PreviousTUReplFromYAML) {
-        auto &ReplsFromYAML = FileInfo->getReplacements();
+      if (FileInfo->PreviousReplVecFromYAML) {
+        auto &ReplsFromYAML = FileInfo->PreviousReplVecFromYAML.value();
         for (auto &R : ReplsFromYAML) {
           if (R.getConstantFlag() == dpct::ConstantFlagType::Host &&
               R.getConstantOffset() == TM->getConstantOffset()) {
@@ -616,8 +616,8 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
       }
 
       // 2. if no info found, check info from yaml
-      if (FileInfo->PreviousTUReplFromYAML) {
-        auto &ReplsFromYAML = FileInfo->getReplacements();
+      if (FileInfo->PreviousReplVecFromYAML) {
+        auto &ReplsFromYAML = FileInfo->PreviousReplVecFromYAML.value();
         for (auto &R : ReplsFromYAML) {
           if (R.getConstantFlag() == dpct::ConstantFlagType::Device &&
               R.getConstantOffset() == TM->getConstantOffset()) {

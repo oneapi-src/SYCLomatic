@@ -38,7 +38,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                  clang::tooling::UnifiedPath CUDAMigratedOutRoot,
                  ReplTy &ReplCUDA, ReplTy &ReplSYCL);
 
-void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path);
+void addReplFromYAMLIntoFileInfo(clang::tooling::UnifiedPath Path);
 
 // clang::tooling::UnifiedPath:  source file name including path.
 // bool: false: the source file has no replacement.

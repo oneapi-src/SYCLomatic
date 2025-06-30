@@ -368,23 +368,14 @@ bool printOptions(
 // return true: dpct do migration continually
 // return false: dpct should exit
 bool canContinueMigration(std::string &Msg) {
-  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
-  // Try to load the MainSourceFiles.yaml file
-  SmallString<128> YamlFilePathStr(DpctGlobalInfo::getOutRoot().getCanonicalPath());
-  llvm::sys::path::append(YamlFilePathStr, "MainSourceFiles.yaml");
-  clang::tooling::UnifiedPath YamlFilePath = YamlFilePathStr;
-
-  if (!llvm::sys::fs::exists(YamlFilePath.getCanonicalPath()))
+  auto PreTU = DpctGlobalInfo::getMainSourceYamlTUR();
+  if (!PreTU)
     return true;
-  if (loadFromYaml(YamlFilePath.getCanonicalPath(), *PreTU) != 0) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
-    return true;
-  }
 
   // check version
   auto VerCompRes = compareToolVersion(PreTU->DpctVersion);
   if (VerCompRes == VersionCmpResult::VCR_CMP_FAILED) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
+    llvm::errs() << getLoadYamlFailWarning();
     return true;
   }
   if (VerCompRes == VersionCmpResult::VCR_CURRENT_IS_NEWER ||
@@ -397,7 +388,7 @@ bool canContinueMigration(std::string &Msg) {
   int Res =
       checkDpctOptionSet(DpctGlobalInfo::getCurrentOptMap(), PreTU->OptionMap);
   if (Res == -2) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
+    llvm::errs() << getLoadYamlFailWarning();
     return true;
   }
 
@@ -406,13 +397,11 @@ bool canContinueMigration(std::string &Msg) {
     bool Ret = printOptions(PreTU->OptionMap, Msg);
     if (!Ret) {
       // parsing error, skip yaml
-      llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
+      llvm::errs() << getLoadYamlFailWarning();
       return true;
     }
     return false;
   }
-
-  DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
   return true;
 }
 
