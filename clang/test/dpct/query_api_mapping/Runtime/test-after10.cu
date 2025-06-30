@@ -21,3 +21,15 @@
 // CUDASTREAMISCAPTURING-NEXT:                         ps /* enum cudaStreamCaptureStatus **/);
 // CUDASTREAMISCAPTURING-NEXT: Is migrated to (with the option --use-experimental-features=graph):
 // CUDASTREAMISCAPTURING-NEXT: *ps = s->ext_oneapi_get_state();
+
+
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaLaunchHostFunc | FileCheck %s -check-prefix=CUDALAUNCHHOSTFUNC
+// CUDALAUNCHHOSTFUNC: CUDA API:
+// CUDALAUNCHHOSTFUNC-NEXT:   cudaLaunchHostFunc(stream/*cudaStream_t*/, fn/*cudaHostFn_t*/, userData/*void**/);
+// CUDALAUNCHHOSTFUNC-NEXT: Is migrated to: 
+// CUDALAUNCHHOSTFUNC-NEXT:   stream->submit([&](sycl::handler &cgh) {
+// CUDALAUNCHHOSTFUNC-NEXT:     cgh.host_task([=](){
+// CUDALAUNCHHOSTFUNC-NEXT:       fn(userData);
+// CUDALAUNCHHOSTFUNC-NEXT:     });
+// CUDALAUNCHHOSTFUNC-NEXT:   });
