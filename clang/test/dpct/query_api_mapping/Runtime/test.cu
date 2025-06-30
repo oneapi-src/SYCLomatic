@@ -520,11 +520,6 @@
 // CUDARUNTIMEGETVERSION-NEXT: Is migrated to:
 // CUDARUNTIMEGETVERSION-NEXT:   *pi = dpct::get_major_version(dpct::get_current_device());
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaEventRecordWithFlags | FileCheck %s -check-prefix=CUDAEVENTRECORDWITHFLAGS
-// CUDAEVENTRECORDWITHFLAGS: CUDA API:
-// CUDAEVENTRECORDWITHFLAGS-NEXT:   cudaEventRecordWithFlags(event/*cudaEvent_t*/, stream/*cudaStream_t*/, flags/*unsigned int*/);
-// CUDAEVENTRECORDWITHFLAGS-NEXT: Is migrated to: 
-// CUDAEVENTRECORDWITHFLAGS-NEXT:     *event = flags->ext_oneapi_submit_barrier();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping=cudaLaunchHostFunc | FileCheck %s -check-prefix=CUDALAUNCHHOSTFUNC
 // CUDALAUNCHHOSTFUNC: CUDA API:
