@@ -216,9 +216,13 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       }
     }
-    if (!HasTypeCasted && Decl->hasAttr<CUDAConstantAttr>() &&
-        (MemVarRef->getType()->getTypeClass() ==
-         Type::TypeClass::ConstantArray)) {
+    auto CE = dpct::DpctGlobalInfo::findAncestor<CallExpr>(MemVarRef);
+    if (CE && !isa<CXXMemberCallExpr>(CE) &&
+        !DpctGlobalInfo::isInCudaPath(CE->getCalleeDecl()->getBeginLoc())) {
+      emplaceTransformation(new InsertAfterStmt(MemVarRef, ".get_ptr()"));
+    } else if (!HasTypeCasted && Decl->hasAttr<CUDAConstantAttr>() &&
+               (MemVarRef->getType()->getTypeClass() ==
+                Type::TypeClass::ConstantArray)) {
       const Expr *RHS = getRHSOfTheNonConstAssignedVar(MemVarRef);
       if (RHS) {
         auto Range = GetReplRange(RHS);
