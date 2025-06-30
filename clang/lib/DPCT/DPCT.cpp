@@ -809,7 +809,7 @@ int runDPCT(int argc, const char **argv) {
   CudaIncludePath = CudaInclude;
   SDKPath = SDKPathOpt;
 
-  loadMainSrcFileInfo(OutRootPath.getCanonicalPath() + "/MainSourceFiles.yaml"); //1
+  loadMainSrcFileInfo(OutRootPath.getCanonicalPath() + "/MainSourceFiles.yaml");
 
   std::transform(
       RuleFile.begin(), RuleFile.end(),
@@ -1378,7 +1378,7 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_UseSYCLCompat, UseSYCLCompat.getValue(),
                      UseSYCLCompat.getNumOccurrences());
 
-    checkIncMigrationOrExit(); //2
+    checkIncMigrationOrExit();
   }
 
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {

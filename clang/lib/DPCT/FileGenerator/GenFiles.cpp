@@ -628,7 +628,7 @@ int writeReplacementsToFiles(
               *Result, clang::SrcMgr::C_User /*normal user code*/))
           .write(OutStream);
     } else {
-      ///// !!!!!!!!!!!!!!!!!!! If we use remigration, we need to disable pattern rewriter.
+      // TODO: If we use remigration, we need to disable pattern rewriter.
       std::string OutputString;
       llvm::raw_string_ostream RSW(OutputString);
       Rewrite
