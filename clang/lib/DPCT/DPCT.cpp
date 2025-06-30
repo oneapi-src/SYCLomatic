@@ -468,11 +468,6 @@ void updateCompatibilityVersionInfo(clang::tooling::UnifiedPath OutRoot,
   const std::string CmakeHelpFile =
       appendPath(OutRoot.getCanonicalPath().str(), "dpct.cmake");
   std::ifstream InFile(CmakeHelpFile);
-  if (!InFile) {
-    std::string ErrMsg = "Failed to open file: " + CmakeHelpFile;
-    ShowStatus(MigrationErrorReadWriteCMakeHelperFile, std::move(ErrMsg));
-    dpctExit(MigrationErrorReadWriteCMakeHelperFile);
-  }
 
   const std::string VersionStr = Major + "." + Minor;
   const int CompatibilityValue = std::stoi(Major) * 10 + std::stoi(Minor);
@@ -517,39 +512,31 @@ void updateCompatibilityVersionInfo(clang::tooling::UnifiedPath OutRoot,
 }
 
 static void loadMainSrcFileInfo(clang::tooling::UnifiedPath YamlFilePath) {
-  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (llvm::sys::fs::exists(YamlFilePath.getCanonicalPath())) {
+    auto PreTU =
+        std::make_shared<clang::tooling::TranslationUnitReplacements>();
     if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
       llvm::errs() << getLoadYamlFailWarning();
     }
     DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
 
-    if (MigrateBuildScriptOnly && !DpctGlobalInfo::migratePythonScripts() ||
-        DpctGlobalInfo::migrateCMakeScripts()) {
-      std::string Major = PreTU->SDKVersionMajor;
-      std::string Minor = PreTU->SDKVersionMinor;
-      if (!Major.empty() && !Minor.empty()) {
-        updateCompatibilityVersionInfo(OutRoot, Major, Minor);
-      }
+    for (auto &Entry : PreTU->MainSourceFilesDigest) {
+      if (Entry.HasCUDASyntax)
+        MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
     }
-  }
 
-  for (auto &Entry : PreTU->MainSourceFilesDigest) {
-    if (Entry.HasCUDASyntax)
-      MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
-  }
-
-  // Currently, when "--use-experimental-features=device_global" and
-  // "--use-experimental-features=all" are specified, the migrated code should
-  // be compiled with C++20 or later.
-  auto Iter = PreTU->OptionMap.find("ExperimentalFlag");
-  if (Iter != PreTU->OptionMap.end()) {
-    if (Iter->second.Specified) {
-      const std::string Value = Iter->second.Value;
-      unsigned int UValue = std::stoul(Value);
-      if (UValue & (1 << static_cast<unsigned>(
-                        ExperimentalFeatures::Exp_DeviceGlobal))) {
-        LANG_Cplusplus_20_Used = true;
+    // Currently, when "--use-experimental-features=device_global" and
+    // "--use-experimental-features=all" are specified, the migrated code should
+    // be compiled with C++20 or later.
+    auto Iter = PreTU->OptionMap.find("ExperimentalFlag");
+    if (Iter != PreTU->OptionMap.end()) {
+      if (Iter->second.Specified) {
+        const std::string Value = Iter->second.Value;
+        unsigned int UValue = std::stoul(Value);
+        if (UValue & (1 << static_cast<unsigned>(
+                          ExperimentalFeatures::Exp_DeviceGlobal))) {
+          LANG_Cplusplus_20_Used = true;
+        }
       }
     }
   }
@@ -634,6 +621,12 @@ void showReportHeader() {
 }
 
 void checkIncMigrationOrExit() {
+  auto PreTU = DpctGlobalInfo::getMainSourceYamlTUR();
+  if (!PreTU) {
+    PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
+    DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
+    return;
+  }
   if (!MigrateBuildScriptOnly &&
       clang::dpct::DpctGlobalInfo::isIncMigration()) {
     std::string Msg;
@@ -816,7 +809,7 @@ int runDPCT(int argc, const char **argv) {
   CudaIncludePath = CudaInclude;
   SDKPath = SDKPathOpt;
 
-  loadMainSrcFileInfo(OutRootPath.getCanonicalPath() + "/MainSourceFiles.yaml");
+  loadMainSrcFileInfo(OutRootPath.getCanonicalPath() + "/MainSourceFiles.yaml"); //1
 
   std::transform(
       RuleFile.begin(), RuleFile.end(),
@@ -1342,8 +1335,6 @@ int runDPCT(int argc, const char **argv) {
                      UseDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPattern.getValue(),
                      NoDRYPattern.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
-                     OptParser->isPSpecified());
 #ifdef _WIN32
     if (!VcxprojFilePath.getPath().empty()) {
       setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
@@ -1387,7 +1378,7 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_UseSYCLCompat, UseSYCLCompat.getValue(),
                      UseSYCLCompat.getNumOccurrences());
 
-    checkIncMigrationOrExit();
+    checkIncMigrationOrExit(); //2
   }
 
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
@@ -1395,6 +1386,16 @@ int runDPCT(int argc, const char **argv) {
   }
   // OC_Action: only migrate Build scripts.
   if (MigrateBuildScriptOnly) {
+    if (!DpctGlobalInfo::migratePythonScripts() ||
+        DpctGlobalInfo::migrateCMakeScripts()) {
+      std::string Major =
+          DpctGlobalInfo::getMainSourceYamlTUR()->SDKVersionMajor;
+      std::string Minor =
+          DpctGlobalInfo::getMainSourceYamlTUR()->SDKVersionMinor;
+      if (!Major.empty() && !Minor.empty()) {
+        updateCompatibilityVersionInfo(OutRoot, Major, Minor);
+      }
+    }
     collectBuildScriptsSpecified(OptParser, InRootPath, OutRootPath);
     migrateBuildScripts(InRootPath, OutRootPath);
 

@@ -1,10 +1,10 @@
-// RUN: dpct --format-range=none -out-root %T/vector_add %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/out %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
 // RUN: dpct --format-range=none --enable-codepin -out-root %T/vector_add %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
-// RUN: cat %S/dpct_output_ref/vectorAdd_build_in_type.dp.cpp >> %T/vector_add/vectorAdd_build_in_type.dp.cpp
+// RUN: cat %S/dpct_output_ref/vectorAdd_build_in_type.dp.cpp >> %T/out/vectorAdd_build_in_type.dp.cpp
 // RUN: cat %S/dpct_output_codepin_cuda_ref/vectorAdd_build_in_type.cu >> %T/vector_add_codepin_cuda/vectorAdd_build_in_type.cu
 // RUN: cat %S/dpct_output_codepin_sycl_ref/vectorAdd_build_in_type.dp.cpp >> %T/vector_add_codepin_sycl/vectorAdd_build_in_type.dp.cpp
 // RUN: FileCheck --match-full-lines --input-file %T/vector_add_codepin_cuda/vectorAdd_build_in_type.cu %T/vector_add_codepin_cuda/vectorAdd_build_in_type.cu
-// RUN: FileCheck --match-full-lines --input-file %T/vector_add/vectorAdd_build_in_type.dp.cpp %T/vector_add/vectorAdd_build_in_type.dp.cpp
+// RUN: FileCheck --match-full-lines --input-file %T/out/vectorAdd_build_in_type.dp.cpp %T/out/vectorAdd_build_in_type.dp.cpp
 // RUN: FileCheck --match-full-lines --input-file %T/vector_add_codepin_sycl/vectorAdd_build_in_type.dp.cpp %T/vector_add_codepin_sycl/vectorAdd_build_in_type.dp.cpp
 
 //==============================================================

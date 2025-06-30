@@ -463,6 +463,18 @@ updateMainSrcFilesInfo(const clang::tooling::MainSourceFileInfo &Info) {
 static void saveUpdatedMigrationDataIntoYAML(
     std::vector<clang::tooling::Replacement> &AllFilesRepls,
     std::unordered_map<std::string, bool> &MainSrcFileMap) {
+  // For files which are not in AllFilesRepls but in previous yaml file, we need
+  // to add them into AllFilesRepls
+  std::unordered_set<std::string> CurrentFileSet;
+  for (const auto &Repl : AllFilesRepls) {
+    CurrentFileSet.insert(Repl.getFilePath().str());
+  }
+  for (const auto &Repl :
+       DpctGlobalInfo::getMainSourceYamlTUR()->Replacements) {
+    if (CurrentFileSet.find(Repl.getFilePath().str()) == CurrentFileSet.end()) {
+      AllFilesRepls.push_back(Repl);
+    }
+  }
   if (!AllFilesRepls.empty() || !CompileCmdsPerTarget.empty()) {
     save2Yaml(AllFilesRepls, CompileCmdsPerTarget);
   }

@@ -2408,8 +2408,7 @@ void DpctGlobalInfo::recordTokenSplit(SourceLocation SL, unsigned Len) {
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.
 std::shared_ptr<clang::tooling::TranslationUnitReplacements>
-    DpctGlobalInfo::MainSourceYamlTUR =
-        std::make_shared<clang::tooling::TranslationUnitReplacements>();
+    DpctGlobalInfo::MainSourceYamlTUR = nullptr;
 clang::tooling::UnifiedPath DpctGlobalInfo::InRoot;
 clang::tooling::UnifiedPath DpctGlobalInfo::OutRoot;
 std::vector<clang::tooling::UnifiedPath> DpctGlobalInfo::AnalysisScope;

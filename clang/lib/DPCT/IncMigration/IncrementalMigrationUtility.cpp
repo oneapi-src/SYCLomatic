@@ -111,38 +111,10 @@ int checkDpctOptionSet(
       } else if (CurrentOpt.first == OPTION_AnalysisScopePath) {
         if (checkListOptions(OPTION_AnalysisScopePath))
           return -1;
-      }
-#ifdef _WIN32
-      else if (CurrentOpt.first == OPTION_VcxprojFile) {
-        if (!PreviousOpts.count(OPTION_CompilationsDir)) {
-          return -2;
-        }
-        if ((PreviousOpts.at(OPTION_VcxprojFile).Specified &&
-             !CurrentOpts.at(OPTION_VcxprojFile).Specified) ||
-            (!PreviousOpts.at(OPTION_VcxprojFile).Specified &&
-             CurrentOpts.at(OPTION_VcxprojFile).Specified)) {
-          if (PreviousOpts.at(OPTION_CompilationsDir).Value !=
-              CurrentOpts.at(OPTION_CompilationsDir).Value) {
-            return -1;
-          }
-        } else {
-          if (PreviousOpts.at(CurrentOpt.first).Value !=
-              CurrentOpt.second.Value) {
-            return -1;
-          }
-        }
-      } else {
-        if (PreviousOpts.at(CurrentOpt.first).Value !=
-            CurrentOpt.second.Value) {
-          return -1;
-        }
-      }
-#else
-      else if (PreviousOpts.at(CurrentOpt.first).Value !=
-               CurrentOpt.second.Value) {
+      } else if (PreviousOpts.at(CurrentOpt.first).Value !=
+                 CurrentOpt.second.Value) {
         return -1;
       }
-#endif
     } else {
       return -2;
     }
@@ -245,8 +217,9 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--no-dry-pattern");
     }
-    if (Key == clang::dpct::OPTION_CompilationsDir && Specified) {
-      Opts.emplace_back("--compilation-database=\"" + Value + "\"");
+    if (Key == clang::dpct::OPTION_CodePinEnabled && Specified) {
+      if ("true" == Value)
+        Opts.emplace_back("--enable-codepin");
     }
 #ifdef _WIN32
     if (Key == clang::dpct::OPTION_VcxprojFile && Specified) {
@@ -369,8 +342,6 @@ bool printOptions(
 // return false: dpct should exit
 bool canContinueMigration(std::string &Msg) {
   auto PreTU = DpctGlobalInfo::getMainSourceYamlTUR();
-  if (!PreTU)
-    return true;
 
   // check version
   auto VerCompRes = compareToolVersion(PreTU->DpctVersion);
