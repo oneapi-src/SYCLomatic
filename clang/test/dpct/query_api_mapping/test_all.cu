@@ -1443,6 +1443,7 @@
 // CHECK-NEXT: cudaEventElapsedTime
 // CHECK-NEXT: cudaEventQuery
 // CHECK-NEXT: cudaEventRecord
+// CHECK-NEXT: cudaEventRecordWithFlags
 // CHECK-NEXT: cudaEventSynchronize
 // CHECK-NEXT: cudaExternalMemoryGetMappedBuffer
 // CHECK-NEXT: cudaExternalMemoryGetMappedMipmappedArray
@@ -1485,6 +1486,7 @@
 // CHECK-NEXT: cudaIpcGetMemHandle
 // CHECK-NEXT: cudaIpcOpenMemHandle
 // CHECK-NEXT: cudaLaunchCooperativeKernel
+// CHECK-NEXT: cudaLaunchHostFunc
 // CHECK-NEXT: cudaLaunchKernel
 // CHECK-NEXT: cudaMalloc
 // CHECK-NEXT: cudaMalloc3D
@@ -1507,12 +1509,16 @@
 // CHECK-NEXT: cudaMemcpy2DToArrayAsync
 // CHECK-NEXT: cudaMemcpy3D
 // CHECK-NEXT: cudaMemcpy3DAsync
+// CHECK-NEXT: cudaMemcpy3DPeer
+// CHECK-NEXT: cudaMemcpy3DPeerAsync
 // CHECK-NEXT: cudaMemcpyArrayToArray
 // CHECK-NEXT: cudaMemcpyAsync
 // CHECK-NEXT: cudaMemcpyFromArray
 // CHECK-NEXT: cudaMemcpyFromArrayAsync
 // CHECK-NEXT: cudaMemcpyFromSymbol
 // CHECK-NEXT: cudaMemcpyFromSymbolAsync
+// CHECK-NEXT: cudaMemcpyPeer
+// CHECK-NEXT: cudaMemcpyPeerAsync
 // CHECK-NEXT: cudaMemcpyToArray
 // CHECK-NEXT: cudaMemcpyToArrayAsync
 // CHECK-NEXT: cudaMemcpyToSymbol
@@ -1526,6 +1532,8 @@
 // CHECK-NEXT: cudaOccupancyMaxActiveBlocksPerMultiprocessor
 // CHECK-NEXT: cudaPeekAtLastError
 // CHECK-NEXT: cudaPointerGetAttributes
+// CHECK-NEXT: cudaProfilerStart
+// CHECK-NEXT: cudaProfilerStop
 // CHECK-NEXT: cudaRuntimeGetVersion
 // CHECK-NEXT: cudaSetDevice
 // CHECK-NEXT: cudaSetDeviceFlags
