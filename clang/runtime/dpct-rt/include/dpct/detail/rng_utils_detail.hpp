@@ -328,6 +328,8 @@ private:
       // oneapi::mkl::rng::mrg32k3a_mode is only supported for GPU device. For
       // other devices, this argument will be ignored.
       if (queue->get_device().is_gpu()) {
+#if __cplusplus < 202002L
+        // before C++20
         switch (mode) {
         case random_mode::best:
           return engine_t(*queue, seed,
@@ -339,6 +341,18 @@ private:
           return engine_t(*queue, seed,
                           oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
         }
+#else
+        // since C++20
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma message("warning: oneapi::mkl::rng::mrg32k3a_mode::custom cannot be "  \
+                "initialized with a value since C++20. Ignore the parameter "  \
+                "`mode`.")
+#else
+#warning "oneapi::mkl::rng::mrg32k3a_mode::custom cannot be initialized with " \
+         "a value since C++20. Ignore the parameter `mode`."
+#endif
+        return engine_t(*queue, dimensions);
+#endif
       }
     } else if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mt2203>) {
       if (engine_idx.has_value()) {

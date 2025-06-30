@@ -1,0 +1,7 @@
+[
+    {
+    "command": "nvcc -c -I \"./test\" -isystem \"./test\" ./case_in_db.c",
+    "directory": ".",
+    "file": "./case_in_db.c"
+    }
+]

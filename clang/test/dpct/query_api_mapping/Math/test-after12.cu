@@ -98,3 +98,241 @@
 // __HNEU2_MASK-NEXT: Is migrated to:
 // __HNEU2_MASK-NEXT:   dpct::unordered_compare_mask(h1, h2, std::not_equal_to<>());
 // __HNEU2_MASK-NEXT:   dpct::unordered_compare_mask(b1, b2, std::not_equal_to<>());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmax_s16x2 | FileCheck %s -check-prefix=__viaddmax_s16x2
+// __viaddmax_s16x2: CUDA API:
+// __viaddmax_s16x2-NEXT:   __viaddmax_s16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __viaddmax_s16x2-NEXT:                    c /*const unsigned int*/);
+// __viaddmax_s16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmax_s16x2-NEXT:   sycl::ext::intel::math::viaddmax_s16x2<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmax_s16x2_relu | FileCheck %s -check-prefix=__viaddmax_s16x2_relu
+// __viaddmax_s16x2_relu: CUDA API:
+// __viaddmax_s16x2_relu-NEXT:   __viaddmax_s16x2_relu(a /*const unsigned int*/, b /*const unsigned int*/,
+// __viaddmax_s16x2_relu-NEXT:                         c /*const unsigned int*/);
+// __viaddmax_s16x2_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmax_s16x2_relu-NEXT:   sycl::ext::intel::math::viaddmax_s16x2_relu<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmax_s32 | FileCheck %s -check-prefix=__viaddmax_s32
+// __viaddmax_s32: CUDA API:
+// __viaddmax_s32-NEXT:   __viaddmax_s32(a /*const int*/, b /*const int*/, c /*const int*/);
+// __viaddmax_s32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmax_s32-NEXT:   sycl::ext::intel::math::viaddmax_s32<int>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmax_s32_relu | FileCheck %s -check-prefix=__viaddmax_s32_relu
+// __viaddmax_s32_relu: CUDA API:
+// __viaddmax_s32_relu-NEXT:   __viaddmax_s32_relu(a /*const int*/, b /*const int*/, c /*const int*/);
+// __viaddmax_s32_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmax_s32_relu-NEXT:   sycl::ext::intel::math::viaddmax_s32_relu<int>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmax_u16x2 | FileCheck %s -check-prefix=__viaddmax_u16x2
+// __viaddmax_u16x2: CUDA API:
+// __viaddmax_u16x2-NEXT:   __viaddmax_u16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __viaddmax_u16x2-NEXT:                    c /*const unsigned int*/);
+// __viaddmax_u16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmax_u16x2-NEXT:   sycl::ext::intel::math::viaddmax_u16x2<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmax_u32 | FileCheck %s -check-prefix=__viaddmax_u32
+// __viaddmax_u32: CUDA API:
+// __viaddmax_u32-NEXT:   __viaddmax_u32(a /*const unsigned int*/, b /*const unsigned int*/,
+// __viaddmax_u32-NEXT:                  c /*const unsigned int*/);
+// __viaddmax_u32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmax_u32-NEXT:   sycl::ext::intel::math::viaddmax_u32<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmin_s16x2 | FileCheck %s -check-prefix=__viaddmin_s16x2
+// __viaddmin_s16x2: CUDA API:
+// __viaddmin_s16x2-NEXT:   __viaddmin_s16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __viaddmin_s16x2-NEXT:                    c /*const unsigned int*/);
+// __viaddmin_s16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmin_s16x2-NEXT:   sycl::ext::intel::math::viaddmin_s16x2<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmin_s16x2_relu | FileCheck %s -check-prefix=__viaddmin_s16x2_relu
+// __viaddmin_s16x2_relu: CUDA API:
+// __viaddmin_s16x2_relu-NEXT:   __viaddmin_s16x2_relu(a /*const unsigned int*/, b /*const unsigned int*/,
+// __viaddmin_s16x2_relu-NEXT:                         c /*const unsigned int*/);
+// __viaddmin_s16x2_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmin_s16x2_relu-NEXT:   sycl::ext::intel::math::viaddmin_s16x2_relu<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmin_s32 | FileCheck %s -check-prefix=__viaddmin_s32
+// __viaddmin_s32: CUDA API:
+// __viaddmin_s32-NEXT:   __viaddmin_s32(a /*const int*/, b /*const int*/, c /*const int*/);
+// __viaddmin_s32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmin_s32-NEXT:   sycl::ext::intel::math::viaddmin_s32<int>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmin_s32_relu | FileCheck %s -check-prefix=__viaddmin_s32_relu
+// __viaddmin_s32_relu: CUDA API:
+// __viaddmin_s32_relu-NEXT:   __viaddmin_s32_relu(a /*const int*/, b /*const int*/, c /*const int*/);
+// __viaddmin_s32_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmin_s32_relu-NEXT:   sycl::ext::intel::math::viaddmin_s32_relu<int>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmin_u16x2 | FileCheck %s -check-prefix=__viaddmin_u16x2
+// __viaddmin_u16x2: CUDA API:
+// __viaddmin_u16x2-NEXT:   __viaddmin_u16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __viaddmin_u16x2-NEXT:                    c /*const unsigned int*/);
+// __viaddmin_u16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmin_u16x2-NEXT:   sycl::ext::intel::math::viaddmin_u16x2<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__viaddmin_u32 | FileCheck %s -check-prefix=__viaddmin_u32
+// __viaddmin_u32: CUDA API:
+// __viaddmin_u32-NEXT:   __viaddmin_u32(a /*const unsigned int*/, b /*const unsigned int*/,
+// __viaddmin_u32-NEXT:                  c /*const unsigned int*/);
+// __viaddmin_u32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __viaddmin_u32-NEXT:   sycl::ext::intel::math::viaddmin_u32<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vibmax_s16x2 | FileCheck %s -check-prefix=__vibmax_s16x2
+// __vibmax_s16x2: CUDA API:
+// __vibmax_s16x2-NEXT:   __vibmax_s16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vibmax_s16x2-NEXT:                  pred_hi /*bool *const*/, pred_lo /*bool *const*/);
+// __vibmax_s16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vibmax_s16x2-NEXT:   sycl::ext::intel::math::vibmax_s16x2<unsigned>(a, b, pred_hi, pred_lo);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vibmax_s32 | FileCheck %s -check-prefix=__vibmax_s32
+// __vibmax_s32: CUDA API:
+// __vibmax_s32-NEXT:   __vibmax_s32(a /*const int*/, b /*const int*/, pred /*bool *const*/);
+// __vibmax_s32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vibmax_s32-NEXT:   sycl::ext::intel::math::vibmax_s32<int>(a, b, pred);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vibmax_u16x2 | FileCheck %s -check-prefix=__vibmax_u16x2
+// __vibmax_u16x2: CUDA API:
+// __vibmax_u16x2-NEXT:   __vibmax_u16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vibmax_u16x2-NEXT:                  pred_hi /*bool *const*/, pred_lo /*bool *const*/);
+// __vibmax_u16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vibmax_u16x2-NEXT:   sycl::ext::intel::math::vibmax_u16x2<unsigned>(a, b, pred_hi, pred_lo);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vibmax_u32 | FileCheck %s -check-prefix=__vibmax_u32
+// __vibmax_u32: CUDA API:
+// __vibmax_u32-NEXT:   __vibmax_u32(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vibmax_u32-NEXT:                pred /*bool *const*/);
+// __vibmax_u32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vibmax_u32-NEXT:   sycl::ext::intel::math::vibmax_u32<unsigned>(a, b, pred);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vibmin_s16x2 | FileCheck %s -check-prefix=__vibmin_s16x2
+// __vibmin_s16x2: CUDA API:
+// __vibmin_s16x2-NEXT:   __vibmin_s16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vibmin_s16x2-NEXT:                  pred_hi /*bool *const*/, pred_lo /*bool *const*/);
+// __vibmin_s16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vibmin_s16x2-NEXT:   sycl::ext::intel::math::vibmin_s16x2<unsigned>(a, b, pred_hi, pred_lo);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vibmin_s32 | FileCheck %s -check-prefix=__vibmin_s32
+// __vibmin_s32: CUDA API:
+// __vibmin_s32-NEXT:   __vibmin_s32(a /*const int*/, b /*const int*/, pred /*bool *const*/);
+// __vibmin_s32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vibmin_s32-NEXT:   sycl::ext::intel::math::vibmin_s32<int>(a, b, pred);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vibmin_u16x2 | FileCheck %s -check-prefix=__vibmin_u16x2
+// __vibmin_u16x2: CUDA API:
+// __vibmin_u16x2-NEXT:   __vibmin_u16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vibmin_u16x2-NEXT:                  pred_hi /*bool *const*/, pred_lo /*bool *const*/);
+// __vibmin_u16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vibmin_u16x2-NEXT:   sycl::ext::intel::math::vibmin_u16x2<unsigned>(a, b, pred_hi, pred_lo);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vibmin_u32 | FileCheck %s -check-prefix=__vibmin_u32
+// __vibmin_u32: CUDA API:
+// __vibmin_u32-NEXT:   __vibmin_u32(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vibmin_u32-NEXT:                pred /*bool *const*/);
+// __vibmin_u32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vibmin_u32-NEXT:   sycl::ext::intel::math::vibmin_u32<unsigned>(a, b, pred);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimax3_s16x2 | FileCheck %s -check-prefix=__vimax3_s16x2
+// __vimax3_s16x2: CUDA API:
+// __vimax3_s16x2-NEXT:   __vimax3_s16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vimax3_s16x2-NEXT:                  c /*const unsigned int*/);
+// __vimax3_s16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimax3_s16x2-NEXT:   sycl::ext::intel::math::vimax3_s16x2<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimax3_s16x2_relu | FileCheck %s -check-prefix=__vimax3_s16x2_relu
+// __vimax3_s16x2_relu: CUDA API:
+// __vimax3_s16x2_relu-NEXT:   __vimax3_s16x2_relu(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vimax3_s16x2_relu-NEXT:                       c /*const unsigned int*/);
+// __vimax3_s16x2_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimax3_s16x2_relu-NEXT:   sycl::ext::intel::math::vimax3_s16x2_relu<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimax3_s32 | FileCheck %s -check-prefix=__vimax3_s32
+// __vimax3_s32: CUDA API:
+// __vimax3_s32-NEXT:   __vimax3_s32(a /*const int*/, b /*const int*/, c /*const int*/);
+// __vimax3_s32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimax3_s32-NEXT:   sycl::ext::intel::math::vimax3_s32<int>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimax3_s32_relu | FileCheck %s -check-prefix=__vimax3_s32_relu
+// __vimax3_s32_relu: CUDA API:
+// __vimax3_s32_relu-NEXT:   __vimax3_s32_relu(a /*const int*/, b /*const int*/, c /*const int*/);
+// __vimax3_s32_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimax3_s32_relu-NEXT:   sycl::ext::intel::math::vimax3_s32_relu<int>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimax3_u16x2 | FileCheck %s -check-prefix=__vimax3_u16x2
+// __vimax3_u16x2: CUDA API:
+// __vimax3_u16x2-NEXT:   __vimax3_u16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vimax3_u16x2-NEXT:                  c /*const unsigned int*/);
+// __vimax3_u16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimax3_u16x2-NEXT:   sycl::ext::intel::math::vimax3_u16x2<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimax3_u32 | FileCheck %s -check-prefix=__vimax3_u32
+// __vimax3_u32: CUDA API:
+// __vimax3_u32-NEXT:   __vimax3_u32(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vimax3_u32-NEXT:                c /*const unsigned int*/);
+// __vimax3_u32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimax3_u32-NEXT:   sycl::ext::intel::math::vimax3_u32<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimax_s16x2_relu | FileCheck %s -check-prefix=__vimax_s16x2_relu
+// __vimax_s16x2_relu: CUDA API:
+// __vimax_s16x2_relu-NEXT:   __vimax_s16x2_relu(a /*const unsigned int*/, b /*const unsigned int*/);
+// __vimax_s16x2_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimax_s16x2_relu-NEXT:   sycl::ext::intel::math::vimax_s16x2_relu<unsigned>(a, b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimax_s32_relu | FileCheck %s -check-prefix=__vimax_s32_relu
+// __vimax_s32_relu: CUDA API:
+// __vimax_s32_relu-NEXT:   __vimax_s32_relu(a /*const int*/, b /*const int*/);
+// __vimax_s32_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimax_s32_relu-NEXT:   sycl::ext::intel::math::vimax_s32_relu<int>(a, b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimin3_s16x2 | FileCheck %s -check-prefix=__vimin3_s16x2
+// __vimin3_s16x2: CUDA API:
+// __vimin3_s16x2-NEXT:   __vimin3_s16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vimin3_s16x2-NEXT:                  c /*const unsigned int*/);
+// __vimin3_s16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimin3_s16x2-NEXT:   sycl::ext::intel::math::vimin3_s16x2<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimin3_s16x2_relu | FileCheck %s -check-prefix=__vimin3_s16x2_relu
+// __vimin3_s16x2_relu: CUDA API:
+// __vimin3_s16x2_relu-NEXT:   __vimin3_s16x2_relu(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vimin3_s16x2_relu-NEXT:                       c /*const unsigned int*/);
+// __vimin3_s16x2_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimin3_s16x2_relu-NEXT:   sycl::ext::intel::math::vimin3_s16x2_relu<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimin3_s32 | FileCheck %s -check-prefix=__vimin3_s32
+// __vimin3_s32: CUDA API:
+// __vimin3_s32-NEXT:   __vimin3_s32(a /*const int*/, b /*const int*/, c /*const int*/);
+// __vimin3_s32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimin3_s32-NEXT:   sycl::ext::intel::math::vimin3_s32<int>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimin3_s32_relu | FileCheck %s -check-prefix=__vimin3_s32_relu
+// __vimin3_s32_relu: CUDA API:
+// __vimin3_s32_relu-NEXT:   __vimin3_s32_relu(a /*const int*/, b /*const int*/, c /*const int*/);
+// __vimin3_s32_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimin3_s32_relu-NEXT:   sycl::ext::intel::math::vimin3_s32_relu<int>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimin3_u16x2 | FileCheck %s -check-prefix=__vimin3_u16x2
+// __vimin3_u16x2: CUDA API:
+// __vimin3_u16x2-NEXT:   __vimin3_u16x2(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vimin3_u16x2-NEXT:                  c /*const unsigned int*/);
+// __vimin3_u16x2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimin3_u16x2-NEXT:   sycl::ext::intel::math::vimin3_u16x2<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimin3_u32 | FileCheck %s -check-prefix=__vimin3_u32
+// __vimin3_u32: CUDA API:
+// __vimin3_u32-NEXT:   __vimin3_u32(a /*const unsigned int*/, b /*const unsigned int*/,
+// __vimin3_u32-NEXT:                c /*const unsigned int*/);
+// __vimin3_u32-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimin3_u32-NEXT:   sycl::ext::intel::math::vimin3_u32<unsigned>(a, b, c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimin_s16x2_relu | FileCheck %s -check-prefix=__vimin_s16x2_relu
+// __vimin_s16x2_relu: CUDA API:
+// __vimin_s16x2_relu-NEXT:   __vimin_s16x2_relu(a /*const unsigned int*/, b /*const unsigned int*/);
+// __vimin_s16x2_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimin_s16x2_relu-NEXT:   sycl::ext::intel::math::vimin_s16x2_relu<unsigned>(a, b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vimin_s32_relu | FileCheck %s -check-prefix=__vimin_s32_relu
+// __vimin_s32_relu: CUDA API:
+// __vimin_s32_relu-NEXT:   __vimin_s32_relu(a /*const int*/, b /*const int*/);
+// __vimin_s32_relu-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __vimin_s32_relu-NEXT:   sycl::ext::intel::math::vimin_s32_relu<int>(a, b);

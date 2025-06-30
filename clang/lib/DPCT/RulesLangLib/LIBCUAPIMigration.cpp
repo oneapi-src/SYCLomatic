@@ -37,6 +37,13 @@ void LIBCURule::registerMatcher(ast_matchers::MatchFinder &MF) {
                         "compare_exchange_strong", "fetch_add", "fetch_sub",
                         "at");
     };
+    auto LIBCUMemberHasNames = [&]() {
+      return anyOf(
+          hasMemberName("load"), hasMemberName("store"),
+          hasMemberName("exchange"), hasMemberName("compare_exchange_weak"),
+          hasMemberName("compare_exchange_strong"), hasMemberName("fetch_add"),
+          hasMemberName("fetch_sub"), hasMemberName("at"));
+    };
     auto LIBCUTypesHasNames = [&]() {
       return hasAnyName("cuda::atomic", "cuda::std::atomic",
                         "cuda::std::array");
@@ -47,6 +54,9 @@ void LIBCURule::registerMatcher(ast_matchers::MatchFinder &MF) {
                             callee(cxxMethodDecl(LIBCUMemberFuncHasNames()))))
                       .bind("MemberCall"),
                   this);
+    MF.addMatcher(cxxDependentScopeMemberExpr(LIBCUMemberHasNames())
+                      .bind("DependentMemCall"),
+                  this);
   }
   {
     MF.addMatcher(dependentScopeDeclRefExpr().bind("DependentScope"),
@@ -55,7 +65,8 @@ void LIBCURule::registerMatcher(ast_matchers::MatchFinder &MF) {
   {
     auto LIBCUTypesNames = [&]() {
       return hasAnyName("atomic", "cuda::std::complex", "cuda::std::array",
-                        "cuda::std::tuple");
+                        "cuda::std::tuple", "cuda::atomic_ref",
+                        "cuda::std::atomic_ref");
     };
     MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
                               hasDeclaration(namedDecl(LIBCUTypesNames()))))))
@@ -88,6 +99,16 @@ void LIBCURule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const CXXMemberCallExpr *MC =
           getNodeAsType<CXXMemberCallExpr>(Result, "MemberCall")) {
     EA.analyze(MC);
+  } else if (const CXXDependentScopeMemberExpr *CDSE =
+                 getNodeAsType<CXXDependentScopeMemberExpr>(
+                     Result, "DependentMemCall")) {
+    auto Parent = dpct::DpctGlobalInfo::getContext().getParents(*CDSE);
+    auto *CE = Parent[0].get<CallExpr>();
+    if (CE) {
+      for (size_t i = 0; i < CE->getNumArgs(); i++) {
+        EA.analyze(CE->getArg(i));
+      }
+    }
   } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall")) {
     EA.analyze(CE);
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "TypeLoc")) {

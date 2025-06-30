@@ -61,4 +61,19 @@ __device__ inline void store_streaming_short2(short2 *addr, short x, short y) {
     asm("st.cs.global.v2.s16 [%0+0], {%1, %2};" ::__PTR(addr), "h"(x), "h"(y));
 }
 
+// CHECK: __dpct_inline__ void st_flag_release(int* flag_addr, int flag) {
+// CHECK-NEXT:  sycl::atomic_fence(sycl::memory_order::seq_cst,sycl::memory_scope::system);
+// CHECK-NEXT:  *((uint32_t *)(uintptr_t)flag_addr) = flag;
+// CHECK-NEXT: }
+__device__ __forceinline__ void st_flag_release(int* flag_addr, int flag) {
+  asm volatile("membar.sys; st.volatile.global.u32 [%1], %0;" ::"r"(flag), "l"(flag_addr));
+}
+
+// CHECK: __dpct_inline__ void st_flag_volatile(int* flag_addr, int flag) {
+// CHECK-NEXT:   *((uint32_t *)(uintptr_t)flag_addr) = flag;
+// CHECK-NEXT: }
+__device__ __forceinline__ void st_flag_volatile(int* flag_addr, int flag) {
+  asm volatile("st.volatile.global.u32 [%1], %0;" ::"r"(flag), "l"(flag_addr));
+}
+
 // clang-format on

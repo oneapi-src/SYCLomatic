@@ -946,10 +946,14 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
       if (isTypeInAnalysisScope(ObjCanonicalType.getTypePtr())) {
         continue;
       } else if (ObjTypeStr.find("class cub::WarpScan") == 0 ||
-                 ObjTypeStr.find("class cub::WarpReduce") == 0) {
+                 ObjTypeStr.find("class cub::WarpReduce") == 0 ||
+                 ObjTypeStr.find("WarpScan<") == 0 ||
+                 ObjTypeStr.find("WarpReduce<") == 0) {
         Repl = DpctGlobalInfo::getSubGroup(DRE);
       } else if (ObjTypeStr.find("class cub::BlockScan") == 0 ||
-                 ObjTypeStr.find("class cub::BlockReduce") == 0) {
+                 ObjTypeStr.find("class cub::BlockReduce") == 0 ||
+                 ObjTypeStr.find("BlockScan<") == 0 ||
+                 ObjTypeStr.find("BlockReduce<") == 0) {
         Repl = DpctGlobalInfo::getGroup(DRE);
       } else {
         continue;
@@ -975,9 +979,12 @@ void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
   std::string TypeName = TD->getNameAsString();
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  auto MyMatcher = compoundStmt(forEachDescendant(
-      typeLoc(loc(qualType(hasDeclaration(typedefDecl(hasName(TypeName))))))
-          .bind("typeLoc")));
+
+  auto MyMatcher = compoundStmt(
+      forEachDescendant(typeLoc(loc(qualType(hasDeclaration(
+                                    anyOf(typedefDecl(hasName(TypeName)),
+                                          typeAliasDecl(hasName(TypeName)))))))
+                            .bind("typeLoc")));
   auto MatcherScope = DpctGlobalInfo::findAncestor<CompoundStmt>(TD);
   if (!MatcherScope)
     return;
@@ -1033,6 +1040,7 @@ void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
       }
     }
   }
+
   if (DeleteFlag) {
     emplaceTransformation(new ReplaceDecl(TD, ""));
   } else {

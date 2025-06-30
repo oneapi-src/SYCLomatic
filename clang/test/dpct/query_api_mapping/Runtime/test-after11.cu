@@ -22,3 +22,9 @@
 // CUDASTREAMSETATTRIBUTE-NEXT:                          pv /*cudaStreamAttrValue **/);
 // CUDASTREAMSETATTRIBUTE-NEXT: The API is Removed.
 // CUDASTREAMSETATTRIBUTE-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__cvta_generic_to_shared | FileCheck %s -check-prefix=__cvta_generic_to_shared
+// __cvta_generic_to_shared: CUDA API:
+// __cvta_generic_to_shared-NEXT:   size_t addr = __cvta_generic_to_shared(ptr /*const void **/);
+// __cvta_generic_to_shared-NEXT: Is migrated to:
+// __cvta_generic_to_shared-NEXT:   auto addr = ptr;

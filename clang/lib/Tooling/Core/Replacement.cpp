@@ -661,9 +661,9 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
 #endif // SYCLomatic_CUSTOMIZATION
       Result = I->apply(Rewrite) && Result;
 #ifdef SYCLomatic_CUSTOMIZATION
-      } catch (std::exception &e) {
-        std::string FaultMsg =
-            "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
+      } catch (std::exception &) {
+        std::string FaultMsg = "Error: dpct internal error. dpct tries to "
+                               "recover and write the migration result.\n";
         llvm::errs() << FaultMsg;
       }
 #endif // SYCLomatic_CUSTOMIZATION
