@@ -112,6 +112,8 @@ int loadFromYaml(const clang::tooling::UnifiedPath &Input,
 void mergeAndUniqueReps(
     Replacements &Replaces,
     const std::vector<clang::tooling::Replacement> &PreRepls) {
+  if (!DpctGlobalInfo::isIncMigration())
+    return;
 
   bool DupFlag = false;
   for (const auto &OldR : PreRepls) {
