@@ -18,14 +18,21 @@ __host__  void* qudaGetSymbolAddress(const void* symbol) {
 
 }
 
+__host__  void* qudaGetSymbolAddress2() {
+
+    void* ptr;
+    // CHECK:  *(&ptr) = device_const_buffer.get_ptr();
+    cudaGetSymbolAddress(&ptr, device_const_buffer);
+    return ptr;
+
+}
+
 
 template <typename T>
 __host__ void process_buffer(T* data) {
     
     if(data) printf("Processed: %f\n", static_cast<float>(data[0]));
 }
-
-
 
 
 int main() {
@@ -35,6 +42,7 @@ int main() {
     cudaMemcpyToSymbol(device_const_buffer, h_data, sizeof(h_data));
 // CHECK: void* host_ptr = qudaGetSymbolAddress(device_const_buffer.get_ptr());
     void* host_ptr = qudaGetSymbolAddress(device_const_buffer);
+    void* host_ptr2 = qudaGetSymbolAddress2();
     process_buffer<float>(static_cast<float*>(host_ptr));
     cudaDeviceSynchronize();
     

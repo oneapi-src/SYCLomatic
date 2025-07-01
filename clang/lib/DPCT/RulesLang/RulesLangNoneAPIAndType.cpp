@@ -216,10 +216,14 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       }
     }
+    auto FD = dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(MemVarRef);
     auto CE = dpct::DpctGlobalInfo::findAncestor<CallExpr>(MemVarRef);
-    if (CE && !isa<CXXMemberCallExpr>(CE) &&
-        !DpctGlobalInfo::isInCudaPath(CE->getCalleeDecl()->getBeginLoc())) {
-      emplaceTransformation(new InsertAfterStmt(MemVarRef, ".get_ptr()"));
+    if (FD &&
+        !dyn_cast<VarDecl>(MemVarRef->getDecl())->isLocalVarDeclOrParm() &&
+        !isCudaKernelFuncDecl(FD)) {
+      if (CE &&
+          !DpctGlobalInfo::isInCudaPath(CE->getCalleeDecl()->getBeginLoc()))
+        emplaceTransformation(new InsertAfterStmt(MemVarRef, ".get_ptr()"));
     } else if (!HasTypeCasted && Decl->hasAttr<CUDAConstantAttr>() &&
                (MemVarRef->getType()->getTypeClass() ==
                 Type::TypeClass::ConstantArray)) {
@@ -239,7 +243,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     if (VD == nullptr)
       return;
     auto Var = Global.findMemVarInfo(VD);
-    if (Func->hasAttr<CUDAGlobalAttr>() || Func->hasAttr<CUDADeviceAttr>()) {
+    if (isCudaKernelFuncDecl(Func)) {
       if (DpctGlobalInfo::useGroupLocalMemory() &&
           VD->hasAttr<CUDASharedAttr>() && VD->getStorageClass() != SC_Extern) {
         if (!Var)
@@ -833,7 +837,7 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
     auto Var = MemVarInfo::buildMemVarInfo(VD);
-    if (Func->hasAttr<CUDAGlobalAttr>() || Func->hasAttr<CUDADeviceAttr>()) {
+    if (isCudaKernelFuncDecl(Func)) {
       if (!(DpctGlobalInfo::useGroupLocalMemory() &&
             VD->hasAttr<CUDASharedAttr>() &&
             VD->getStorageClass() != SC_Extern)) {
@@ -1029,7 +1033,7 @@ void ZeroLengthArrayRule::runRule(const MatchFinder::MatchResult &Result) {
     const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
     if (FD) {
       // Check if the array is in device code
-      if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
+      if (!isCudaKernelFuncDecl(FD))
         return;
     }
   }

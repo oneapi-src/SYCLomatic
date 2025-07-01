@@ -5185,8 +5185,7 @@ void DeviceFunctionDeclRule::runRule(
 
   // We need skip lambda in host code, but cannot skip lambda in device code.
   if (const FunctionDecl *OuterMostFD = findTheOuterMostFunctionDecl(FD);
-      OuterMostFD && (!OuterMostFD->hasAttr<CUDADeviceAttr>() &&
-                      !OuterMostFD->hasAttr<CUDAGlobalAttr>()))
+      OuterMostFD && !isCudaKernelFuncDecl(OuterMostFD))
     return;
 
   if (FD->isVariadic()) {
