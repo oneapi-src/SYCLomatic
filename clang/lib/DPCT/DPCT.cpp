@@ -1335,17 +1335,6 @@ int runDPCT(int argc, const char **argv) {
                      UseDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPattern.getValue(),
                      NoDRYPattern.getNumOccurrences());
-#ifdef _WIN32
-    if (!VcxprojFilePath.getPath().empty()) {
-      setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
-                       VcxprojFilePath.getCanonicalPath().str(),
-                       OptParser->isVcxprojfileSpecified());
-    } else {
-      setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
-                       VcxprojFilePath.getPath().str(),
-                       OptParser->isVcxprojfileSpecified());
-    }
-#endif
     setValueToOptMap(clang::dpct::OPTION_ProcessAll, ProcessAll.getValue(),
                      ProcessAll.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda, SyclNamedLambda.getValue(),

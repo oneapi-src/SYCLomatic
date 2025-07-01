@@ -221,11 +221,6 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--enable-codepin");
     }
-#ifdef _WIN32
-    if (Key == clang::dpct::OPTION_VcxprojFile && Specified) {
-      Opts.emplace_back("--vcxprojfile=\"" + Value + "\"");
-    }
-#endif
     if (Key == clang::dpct::OPTION_ProcessAll) {
       if ("true" == Value)
         Opts.emplace_back("--process-all");
