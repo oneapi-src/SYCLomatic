@@ -1,0 +1,68 @@
+#include "cuda_runtime.h"
+#include "cublas_v2.h"
+#include <cstdio>
+
+#define CHECK_CUDA(call)                                                       \
+  do {                                                                         \
+    cudaError_t err = call;                                                    \
+    if (err != cudaSuccess) {                                                  \
+      fprintf(stderr, "CUDA error in %s at line %d: %s\n", __FILE__, __LINE__, \
+              cudaGetErrorString(err));                                        \
+      exit(EXIT_FAILURE);                                                      \
+    }                                                                          \
+  } while (0)
+
+#define CHECK_CUBLAS(call)                                                     \
+  do {                                                                         \
+    cublasStatus_t err = call;                                                 \
+    if (err != CUBLAS_STATUS_SUCCESS) {                                        \
+      fprintf(stderr, "CUBLAS error in %s at line %d: %d\n", __FILE__,         \
+              __LINE__, err);                                                  \
+      exit(EXIT_FAILURE);                                                      \
+    }                                                                          \
+  } while (0)
+
+__global__ void scale_kernel(float *data, float scale, float *output) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  output[idx] = data[idx] * scale;
+}
+
+void scale_cublas(float *data, float scale, float *output, int size) {
+  cublasHandle_t handle;
+  CHECK_CUBLAS(cublasCreate(&handle));
+  float alpha = scale;
+  CHECK_CUBLAS(cublasSscal(handle, size, &alpha, data, 1));
+  CHECK_CUDA(cudaDeviceSynchronize());
+  CHECK_CUBLAS(cublasDestroy(handle));
+}
+
+template<bool use_cublas>
+void scale(float *data, float scale, float *output, int size) {
+  float *input_d, *output_d;
+  CHECK_CUDA(cudaMalloc(&input_d, size * sizeof(float)));
+  CHECK_CUDA(cudaMalloc(&output_d, size * sizeof(float)));
+  CHECK_CUDA(
+      cudaMemcpy(input_d, data, size * sizeof(float), cudaMemcpyHostToDevice));
+
+  if (use_cublas) {
+    scale_cublas(input_d, scale, output_d, size);
+  } else {
+    int blockSize = 256;
+    int numBlocks = (size + blockSize - 1) / blockSize;
+    scale_kernel<<<numBlocks, blockSize>>>(input_d, scale, output_d);
+    CHECK_CUDA(cudaDeviceSynchronize());
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+      fprintf(stderr, "CUDA kernel launch failed: %s\n",
+              cudaGetErrorString(err));
+      cudaFree(input_d);
+      cudaFree(output_d);
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  CHECK_CUDA(cudaMemcpy(output, output_d, size * sizeof(float),
+                        cudaMemcpyDeviceToHost));
+  CHECK_CUDA(cudaFree(input_d));
+  CHECK_CUDA(cudaFree(output_d));
+}

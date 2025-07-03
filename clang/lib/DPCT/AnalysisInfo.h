@@ -1362,6 +1362,8 @@ public:
   static bool isCVersionCUDALaunchUsed() { return CVersionCUDALaunchUsedFlag; }
   static void setUseSYCLCompat(bool Flag = true) { UseSYCLCompatFlag = Flag; }
   static bool useSYCLCompat() { return UseSYCLCompatFlag; }
+  static void setReMigration(bool Flag = true) { ReMigrationFlag = Flag; }
+  static bool useReMigration() { return ReMigrationFlag; }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
@@ -1699,6 +1701,7 @@ private:
   static unsigned HelperFuncPreferenceFlag;
   static bool AnalysisModeFlag;
   static bool UseSYCLCompatFlag;
+  static bool ReMigrationFlag;
   static bool CVersionCUDALaunchUsedFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>

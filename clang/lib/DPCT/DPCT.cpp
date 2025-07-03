@@ -1245,6 +1245,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
   DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtension);
   DpctGlobalInfo::setUseSYCLCompat(UseSYCLCompat);
+  DpctGlobalInfo::setReMigration(ReMigration);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRootPath;
 

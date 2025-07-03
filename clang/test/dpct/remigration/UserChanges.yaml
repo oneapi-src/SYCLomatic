@@ -1,0 +1,27 @@
+---
+ModifyFileHunks:
+  - FilePath:        'test.dp.cpp'
+    Offset:          69
+    Length:          508
+    ReplacementText: ""
+  - FilePath:        'test.dp.cpp'
+    Offset:          709
+    Length:          92
+    ReplacementText: "  int idx = item_ct1.get_group(2) * item_ct1.get_local_range(2) +\n            item_ct1.get_local_id(2);\n"
+  - FilePath:        'test.dp.cpp'
+    Offset:          839
+    Length:          69
+    ReplacementText: "void scale(float *data, float scale, float *output, int size) try {\n"
+  - FilePath:        'test.dp.cpp'
+    Offset:          1044
+    Length:          264
+    ReplacementText: "  input_d = sycl::malloc_device<float>(size, q_ct1);\n  output_d = sycl::malloc_device<float>(size, q_ct1);\n  q_ct1.memcpy(input_d, data, size * sizeof(float)).wait();\n"
+  - FilePath:        'test.dp.cpp'
+    Offset:          1386
+    Length:          1252
+    ReplacementText: "  q_ct1.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, numBlocks) *\n                                           sycl::range<3>(1, 1, blockSize),\n                                       sycl::range<3>(1, 1, blockSize)),\n                     [=](sycl::nd_item<3> item_ct1) {\n                       scale_kernel(input_d, scale, output_d);\n                     });\n  dev_ct1.queues_wait_and_throw();\n"
+  - FilePath:        'test.dp.cpp'
+    Offset:          2639
+    Length:          371
+    ReplacementText: "  q_ct1.memcpy(output, output_d, size * sizeof(float)).wait();\n  dpct::dpct_free(input_d, q_ct1);\n  dpct::dpct_free(output_d, q_ct1);\n} catch (sycl::exception const &exc) {\n  std::cerr << exc.what() << \"Exception caught at file:\" << __FILE__\n            << \", line:\" << __LINE__ << std::endl;\n"
+...
