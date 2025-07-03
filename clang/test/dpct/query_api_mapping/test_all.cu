@@ -1443,7 +1443,6 @@
 // CHECK-NEXT: cudaEventElapsedTime
 // CHECK-NEXT: cudaEventQuery
 // CHECK-NEXT: cudaEventRecord
-// CHECK-NEXT: cudaEventRecordWithFlags
 // CHECK-NEXT: cudaEventSynchronize
 // CHECK-NEXT: cudaExternalMemoryGetMappedBuffer
 // CHECK-NEXT: cudaExternalMemoryGetMappedMipmappedArray
