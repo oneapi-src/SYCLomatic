@@ -2339,6 +2339,10 @@
 // CHECK-NEXT: normcdfinv
 // CHECK-NEXT: normcdfinvf
 // CHECK-NEXT: normf
+// CHECK-NEXT: nvcuda::wmma::fill_fragment
+// CHECK-NEXT: nvcuda::wmma::load_matrix_sync
+// CHECK-NEXT: nvcuda::wmma::mma_sync
+// CHECK-NEXT: nvcuda::wmma::store_matrix_sync
 // CHECK-NEXT: nvshmem_align
 // CHECK-NEXT: nvshmem_calloc
 // CHECK-NEXT: nvshmem_finalize

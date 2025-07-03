@@ -1063,6 +1063,8 @@ int runDPCT(int argc, const char **argv) {
             Experimentals.addValue(ExperimentalFeatures::Exp_LevelZero);
           else if (Option.ends_with("non-uniform-groups"))
             Experimentals.addValue(ExperimentalFeatures::Exp_NonUniformGroups);
+          else if (Option.ends_with("matrix"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_Matrix);
         } else if (Option == "--no-dry-pattern") {
           NoDRYPattern.setValue(true);
         } else if (Option == "--enable-profiling") {
