@@ -575,6 +575,17 @@ std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
     }
   }
 
+  // TODO: figure out why we need this?
+  if (UnfinishedRepl) {
+    Result.push_back(
+        {FilePath, mapToOriginalOffset(std::get<0>(*UnfinishedRepl), OffsetMap),
+         mapToOriginalOffset(std::get<0>(*UnfinishedRepl) +
+                                 std::get<1>(*UnfinishedRepl),
+                             OffsetMap) -
+             mapToOriginalOffset(std::get<0>(*UnfinishedRepl), OffsetMap),
+         std::get<2>(*UnfinishedRepl)});
+  }
+
   std::sort(Result.begin(), Result.end());
   return Result;
 }
