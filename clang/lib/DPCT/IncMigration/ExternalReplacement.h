@@ -48,7 +48,7 @@ void mergeAndUniqueReps(
     clang::tooling::Replacements &Replaces,
     const std::vector<clang::tooling::Replacement> &PreRepls);
 
-void tryLoadingUpstreamChangesAndUserChanges();
+bool tryLoadingUpstreamChangesAndUserChanges();
 } // namespace dpct
 } // namespace clang
 

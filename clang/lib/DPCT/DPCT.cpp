@@ -79,7 +79,7 @@ using namespace clang::tooling;
 using namespace llvm::cl;
 
 extern bool isDPCT;
-
+extern bool ReMigrationReady;
 namespace clang {
 namespace tooling {
 UnifiedPath getFormatSearchPath();
@@ -1402,7 +1402,7 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationSucceeded, false);
   }
 
-  tryLoadingUpstreamChangesAndUserChanges();
+  ReMigrationReady = tryLoadingUpstreamChangesAndUserChanges();
 
   ReplTy ReplCUDA, ReplSYCL;
   volatile int RunCount = 0;

@@ -94,6 +94,7 @@ struct GitDiffChanges {
 };
 GitDiffChanges &getUpstreamChanges();
 GitDiffChanges &getUserChanges();
+clang::tooling::TranslationUnitReplacements &getLastMigration();
 
 clang::tooling::Replacements
 calculateUpdatedRanges(const clang::tooling::Replacements &Repls,

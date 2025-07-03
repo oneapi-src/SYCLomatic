@@ -53,6 +53,7 @@ namespace clang::dpct {
 using namespace clang::tooling;
 static GitDiffChanges UpstreamChanges;
 static GitDiffChanges UserChanges;
+static TranslationUnitReplacements LastMigration;
 AddFileHunk::AddFileHunk(std::string NewFilePath)
     : Hunk(AddFile), NewFilePath(UnifiedPath(NewFilePath).getCanonicalPath()) {}
 DeleteFileHunk::DeleteFileHunk(std::string OldFilePath)
@@ -60,6 +61,7 @@ DeleteFileHunk::DeleteFileHunk(std::string OldFilePath)
       OldFilePath(UnifiedPath(OldFilePath).getCanonicalPath()) {}
 GitDiffChanges &getUpstreamChanges() { return UpstreamChanges; }
 GitDiffChanges &getUserChanges() { return UserChanges; }
+TranslationUnitReplacements &getLastMigration() { return LastMigration; }
 static void dumpGitDiffChanges(const GitDiffChanges &GHC) {
   llvm::errs() << "GitDiffChanges:\n";
   llvm::errs() << "  ModifyFileHunks:\n";
@@ -89,20 +91,31 @@ static void dumpGitDiffChanges(const GitDiffChanges &GHC) {
   }
 }
 
-void tryLoadingUpstreamChangesAndUserChanges() {
+bool tryLoadingUpstreamChangesAndUserChanges() {
+  unsigned int Found = 0;
   llvm::SmallString<128> UpstreamChangesFilePath(
       DpctGlobalInfo::getInRoot().getCanonicalPath());
   llvm::SmallString<128> UserChangesFilePath(
       DpctGlobalInfo::getInRoot().getCanonicalPath());
+  llvm::SmallString<128> LastMigrationFilePath(
+      DpctGlobalInfo::getInRoot().getCanonicalPath());
   llvm::sys::path::append(UpstreamChangesFilePath, "UpstreamChanges.yaml");
   llvm::sys::path::append(UserChangesFilePath, "UserChanges.yaml");
+  llvm::sys::path::append(LastMigrationFilePath, "LastMigration.yaml");
 
   if (llvm::sys::fs::exists(UpstreamChangesFilePath)) {
     ::loadGDCFromYaml(UpstreamChangesFilePath, getUpstreamChanges());
+    Found++;
   }
   if (llvm::sys::fs::exists(UserChangesFilePath)) {
     ::loadGDCFromYaml(UserChangesFilePath, getUserChanges());
+    Found++;
   }
+  if (llvm::sys::fs::exists(LastMigrationFilePath)) {
+    ::loadTUFromYaml(LastMigrationFilePath, getLastMigration());
+    Found++;
+  }
+  return (Found == 3) ? true : false;
 }
 
 /// Below 3 functions only used for merging Repl_B and repl_D. So they only
@@ -489,12 +502,14 @@ std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
                            unsigned /*length*/, std::string>>
       UnfinishedRepl = std::nullopt;
   while (IterA != AGroupRepls.end() || IterB != BGroupRepls.end()) {
+    bool NoA = IterA == AGroupRepls.end();
+    bool NoB = IterB == BGroupRepls.end();
     if (UnfinishedRepl) {
       unsigned Off = std::get<0>(*UnfinishedRepl);
       unsigned Len = std::get<1>(*UnfinishedRepl);
       std::string Text = std::get<2>(*UnfinishedRepl);
-      if ((Off + Len) < IterA->getOffset() &&
-          (Off + Len) < IterB->getOffset()) {
+      if ((NoA || (Off + Len) < IterA->getOffset()) &&
+          (NoB || (Off + Len) < IterB->getOffset())) {
         // Finished
         Result.push_back({FilePath, mapToOriginalOffset(Off, OffsetMap),
                           mapToOriginalOffset(Off + Len, OffsetMap) -
@@ -503,7 +518,7 @@ std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
         UnfinishedRepl = std::nullopt;
         continue;
       }
-      if ((Off + Len) >= IterB->getOffset()) {
+      if (!NoB && (Off + Len) >= IterB->getOffset()) {
         // Unfinished repl overlapping with next B repl.
         // We process B first because it has higher priority.
         std::get<1>(*UnfinishedRepl) =
@@ -514,23 +529,24 @@ std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
         ++IterB;
         continue;
       }
-      // (Off + Len) >= IterA->getOffset()
-      if ((Off + Len) >=
-          (IterA->getOffset() + IterA->getReplacementText().size())) {
-        // case 1: totally cover IterA
+      if (!NoA && (Off + Len) >= IterA->getOffset()) {
+        if ((Off + Len) >=
+            (IterA->getOffset() + IterA->getReplacementText().size())) {
+          // case 1: totally cover IterA
+          ++IterA;
+          continue;
+        }
+        // case 2: partially cover IterA
+        std::get<1>(*UnfinishedRepl) =
+            IterA->getReplacementText().size() + IterA->getOffset() - Off;
+        std::get<2>(*UnfinishedRepl) =
+            Text + IterA->getReplacementText().str().substr(Off + Len -
+                                                            IterA->getOffset());
         ++IterA;
         continue;
       }
-      // case 2: partially cover IterA
-      std::get<1>(*UnfinishedRepl) =
-          IterA->getReplacementText().size() + IterA->getOffset() - Off;
-      std::get<2>(*UnfinishedRepl) =
-          Text + IterA->getReplacementText().str().substr(Off + Len -
-                                                          IterA->getOffset());
-      ++IterA;
-      continue;
     }
-    if (IterA == AGroupRepls.end()) {
+    if (NoA) {
       // only left B group replacements
       Result.push_back(
           {FilePath, mapToOriginalOffset(IterB->getOffset(), OffsetMap),
@@ -541,7 +557,7 @@ std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
       ++IterB;
       continue;
     }
-    if (IterB == BGroupRepls.end()) {
+    if (NoB) {
       // only left A group replacements
       Result.push_back(*IterA);
       ++IterA;

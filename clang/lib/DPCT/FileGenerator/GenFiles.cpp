@@ -48,6 +48,7 @@ extern DpctOption<clang::dpct::opt, bool> ProcessAll;
 extern DpctOption<dpct::opt, std::string> BuildScriptFile;
 extern DpctOption<dpct::opt, bool> GenBuildScript;
 extern std::map<std::string, uint64_t> ErrorCnt;
+bool ReMigrationReady = false;
 
 namespace clang {
 namespace tooling {
@@ -508,7 +509,7 @@ void applyPatternRewriter(const std::string &InputString,
 }
 
 int writeReplacementsToFiles(
-    ReplTy &Replset, Rewriter &Rewrite, const std::string &Folder,
+    ReplTy &Replset2, Rewriter &Rewrite, const std::string &Folder,
     clang::tooling::UnifiedPath &InRoot,
     std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesInfo,
     std::unordered_map<std::string, bool> &MainSrcFileMap,
@@ -522,6 +523,42 @@ int writeReplacementsToFiles(
 
   volatile ProcessStatus status = MigrationSucceeded;
   clang::tooling::UnifiedPath OutPath;
+
+  ReplTy Replset;
+  if (ReMigrationReady) {
+    std::vector<clang::tooling::Replacement> Repl_B;
+    std::vector<clang::tooling::Replacement> Repl_C1;
+    // TODO: test only
+    std::map<clang::tooling::UnifiedPath /*SYCL name*/,
+             clang::tooling::UnifiedPath /*CUDA name*/>
+        FileNameMap;
+    for (const auto &Entry : Replset2) {
+      clang::tooling::UnifiedPath Path = Entry.first;
+      rewriteFileName(Path);
+      FileNameMap[Path] = Entry.first;
+      for (const auto &Repl : Entry.second) {
+        Repl_B.push_back(Repl);
+      }
+    }
+
+    for (const auto &Repl : clang::dpct::getLastMigration().Replacements) {
+      Repl_C1.push_back(Repl);
+    }
+    std::map<std::string, std::vector<clang::tooling::Replacement>> Result =
+        clang::dpct::reMigrationMerge(clang::dpct::getUpstreamChanges(), Repl_B,
+                                      Repl_C1, clang::dpct::getUserChanges(),
+                                      FileNameMap);
+    for (const auto &Entry : Result) {
+      clang::tooling::Replacements Repls;
+      for (const auto &Repl : Entry.second) {
+        llvm::cantFail(Repls.add(Repl));
+      }
+      Replset.insert(std::make_pair(Entry.first, Repls));
+    }
+  } else {
+    // If not re-migration, just use the original Replset.
+    Replset = Replset2;
+  }
 
   for (auto &Entry : Replset) {
     OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
@@ -649,6 +686,7 @@ int writeReplacementsToFiles(
     // We have written a migrated file; Update the output file path info
     OutFilePath2InFilePath[OutPath.getCanonicalPath().str()] = Entry.first;
   }
+  Replset2 = Replset;
   return status;
 }
 

@@ -109,7 +109,10 @@ int loadTUFromYaml(const clang::tooling::UnifiedPath &Input,
     }
   }
 
-  if (IsSrcFileChanged) {
+  // TODO: test only
+  const bool ReMigrationEnabled = true;
+
+  if (IsSrcFileChanged && !ReMigrationEnabled) {
     // File doesn't appear to be a header change description. Ignore it.
     TU = clang::tooling::TranslationUnitReplacements();
     return -1;
