@@ -96,20 +96,37 @@ GitDiffChanges &getUpstreamChanges();
 GitDiffChanges &getUserChanges();
 clang::tooling::TranslationUnitReplacements &getLastMigration();
 
-clang::tooling::Replacements
+class TaggedReplacement : public clang::tooling::Replacement {
+public:
+  TaggedReplacement() = default;
+  TaggedReplacement(const clang::tooling::Replacement &R,
+                    bool ContainsManualFix)
+      : clang::tooling::Replacement(R), ContainsManualFix(ContainsManualFix) {}
+
+  TaggedReplacement(StringRef FilePath, unsigned Offset, unsigned Length,
+                    StringRef ReplacementText, bool ContainsManualFix)
+      : TaggedReplacement(clang::tooling::Replacement(FilePath, Offset, Length,
+                                                      ReplacementText),
+                          ContainsManualFix) {}
+  bool containsManualFix() const { return ContainsManualFix; }
+
+private:
+  bool ContainsManualFix = true;
+};
+std::vector<TaggedReplacement>
 calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
-                       const clang::tooling::Replacements &NewRepl);
+                       const std::vector<TaggedReplacement> &NewRepl);
 std::map<std::string, std::vector<tooling::Replacement>>
 groupReplcementsByFile(const std::vector<tooling::Replacement> &Repls);
-std::vector<tooling::Replacement> splitReplInOrderToNotCrossLines(
-    const std::vector<tooling::Replacement> &InRepls);
-std::map<unsigned, std::string>
-convertReplcementsLineString(const std::vector<tooling::Replacement> &Repls);
+std::vector<TaggedReplacement>
+splitReplInOrderToNotCrossLines(const std::vector<TaggedReplacement> &InRepls);
+std::map<unsigned, std::pair<std::string, bool>>
+convertReplcementsLineString(const std::vector<TaggedReplacement> &Repls);
 std::vector<tooling::Replacement>
 mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
-                const std::map<unsigned, std::string> &MapB,
+                const std::map<unsigned, std::pair<std::string, bool>> &MapB,
                 const clang::tooling::UnifiedPath &FilePath);
-std::vector<tooling::Replacement>
+std::vector<TaggedReplacement>
 mergeC1AndC2(const std::vector<tooling::Replacement> &Repl_C1,
              const GitDiffChanges &Repl_C2,
              const std::map<tooling::UnifiedPath /*SYCL name*/,

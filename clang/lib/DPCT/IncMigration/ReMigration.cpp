@@ -162,11 +162,11 @@ static unsigned getLineBeginOffset(UnifiedPath FilePath, unsigned LineNumber) {
 /// \param Repls Replacements to apply.
 /// \param NewRepl Replacements before applying \p Repls.
 /// \return The result Repls.
-clang::tooling::Replacements
+std::vector<TaggedReplacement>
 calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
-                       const clang::tooling::Replacements &NewRepl) {
+                       const std::vector<TaggedReplacement> &NewRepl) {
   // Assumption: no overlap in the each groups.
-  clang::tooling::Replacements Result;
+  std::vector<TaggedReplacement> Result;
   for (const auto &R : NewRepl) {
     // Check if the range (BOffset, EOffset - BOffset) is overlapped with any
     // repl in Repls
@@ -188,8 +188,8 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
         Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
     if (BOffset > EOffset)
       continue;
-    llvm::cantFail(Result.add(Replacement(
-        R.getFilePath(), BOffset, EOffset - BOffset, R.getReplacementText())));
+    Result.push_back({R.getFilePath(), BOffset, EOffset - BOffset,
+                      R.getReplacementText(), R.containsManualFix()});
   }
   return Result;
 }
@@ -223,16 +223,17 @@ ddddd
 // line into the repl (the first line).
 // 2. If the newtext is ending with \n, we still keep the last line at the last
 // line.
-std::vector<Replacement>
-splitReplInOrderToNotCrossLines(const std::vector<Replacement> &InRepls) {
+std::vector<TaggedReplacement>
+splitReplInOrderToNotCrossLines(const std::vector<TaggedReplacement> &InRepls) {
   std::string FilePath = InRepls[0].getFilePath().str();
-  std::vector<Replacement> Result;
+  std::vector<TaggedReplacement> Result;
 
   for (const auto &Repl : InRepls) {
     unsigned StartOffset = Repl.getOffset();
     unsigned EndOffset = StartOffset + Repl.getLength();
     unsigned StartLine = getLineNumber(FilePath, StartOffset);
     unsigned EndLine = getLineNumber(FilePath, EndOffset);
+    bool Tag = Repl.containsManualFix();
 
     if (StartLine == EndLine) {
       // Single line replacement
@@ -249,8 +250,8 @@ splitReplInOrderToNotCrossLines(const std::vector<Replacement> &InRepls) {
     bool IsFisrtLineEndingWithNL = Repl.getReplacementText().ends_with('\n');
     unsigned LineEndOffset = getLineBeginOffset(FilePath, StartLine + 1);
     unsigned FirstLineLength = LineEndOffset - StartOffset;
-    Replacement ReplFisrtLine(FilePath, CurrentOffset, FirstLineLength,
-                              Repl.getReplacementText());
+    TaggedReplacement ReplFisrtLine(FilePath, CurrentOffset, FirstLineLength,
+                                    Repl.getReplacementText(), Tag);
     if (IsFisrtLineEndingWithNL)
       Result.push_back(ReplFisrtLine);
     CurrentOffset += FirstLineLength;
@@ -259,7 +260,8 @@ splitReplInOrderToNotCrossLines(const std::vector<Replacement> &InRepls) {
     for (unsigned Line = StartLine + 1; Line < EndLine; ++Line) {
       LineEndOffset = getLineBeginOffset(FilePath, Line + 1);
       unsigned LineLength = LineEndOffset - CurrentOffset;
-      Result.emplace_back(Repl.getFilePath(), CurrentOffset, LineLength, "");
+      Result.emplace_back(Repl.getFilePath(), CurrentOffset, LineLength, "",
+                          Tag);
       CurrentOffset += LineLength;
     }
 
@@ -269,67 +271,78 @@ splitReplInOrderToNotCrossLines(const std::vector<Replacement> &InRepls) {
     if (IsFisrtLineEndingWithNL) {
       if (LastLineLength > 0) {
         Result.emplace_back(Repl.getFilePath(), CurrentOffset, LastLineLength,
-                            "");
+                            "", Tag);
       }
     } else {
       Result.emplace_back(Repl.getFilePath(), ReplFisrtLine.getOffset(),
                           ReplFisrtLine.getLength(),
                           ReplFisrtLine.getReplacementText().str() +
-                              LastLineStr.substr(LastLineLength));
+                              LastLineStr.substr(LastLineLength),
+                          Tag);
       Result.emplace_back(Repl.getFilePath(), CurrentOffset, LastLineStr.size(),
-                          "");
+                          "", Tag);
     }
   }
 
   return Result;
 }
 
-std::map<unsigned, std::string>
-convertReplcementsLineString(const std::vector<Replacement> &InRepls) {
-  std::vector<Replacement> Replacements =
+std::map<unsigned, std::pair<std::string, bool>>
+convertReplcementsLineString(const std::vector<TaggedReplacement> &InRepls) {
+  std::vector<TaggedReplacement> Replacements =
       splitReplInOrderToNotCrossLines(InRepls);
   UnifiedPath FilePath(InRepls[0].getFilePath());
 
   // group replacement by line
-  std::map<unsigned, std::vector<Replacement>> ReplacementsByLine;
+  std::map<unsigned, std::vector<TaggedReplacement>> ReplacementsByLine;
   for (const auto &Repl : Replacements) {
     unsigned LineNum = getLineNumber(FilePath, Repl.getOffset());
     ReplacementsByLine[LineNum].push_back(Repl);
   }
 
   // process each line
-  std::map<unsigned, std::string> Result;
+  std::map<unsigned, std::pair<std::string, bool>> Result;
   for (auto &[LineNum, Repls] : ReplacementsByLine) {
     std::sort(Repls.begin(), Repls.end());
 
     std::string OriginalLineStr = getLineString(FilePath, LineNum).str();
     unsigned LineStartOffset = getLineBeginOffset(FilePath, LineNum);
     std::string NewLineStr;
+    bool ContainsManualFix = false;
     unsigned Pos = 0;
     for (const auto &Repl : Repls) {
       unsigned StrOffset = Repl.getOffset() - LineStartOffset;
       NewLineStr += OriginalLineStr.substr(Pos, StrOffset - Pos);
       NewLineStr += Repl.getReplacementText().str();
       Pos = StrOffset + Repl.getLength();
+      ContainsManualFix = ContainsManualFix || Repl.containsManualFix();
     }
     NewLineStr += OriginalLineStr.substr(Pos);
-    Result[LineNum] = NewLineStr;
+    Result[LineNum] = std::make_pair(NewLineStr, ContainsManualFix);
   }
   return Result;
 }
 
 static std::map<unsigned, std::string>
-convertReplcementsLineString(const tooling::Replacements &Repls) {
-  std::vector<Replacement> ReplsVec;
+convertReplcementsLineString(const std::vector<Replacement> &Repls) {
+  std::vector<TaggedReplacement> ReplsVec;
   for (const auto &R : Repls) {
-    ReplsVec.push_back(R);
+    ReplsVec.push_back({R, true});
   }
-  return convertReplcementsLineString(ReplsVec);
+  auto Temp = convertReplcementsLineString(ReplsVec);
+  std::map<unsigned, std::string> Result;
+  // Drop the tag info
+  for (const auto &[LineNum, LineStr] : Temp) {
+    Result[LineNum] = LineStr.first;
+  }
+  return Result;
 }
 
 std::vector<Replacement>
-mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
-                const std::map<unsigned, std::string> &MapB,
+mergeMapsByLine(const std::map<unsigned, std::string>
+                    &MapA /*CUDA v2 code migration repls*/,
+                const std::map<unsigned, std::pair<std::string, bool>>
+                    &MapB /*CUDA v1 code migration + manual fix repls*/,
                 const UnifiedPath &FilePath) {
   auto genReplacement = [&](unsigned LineNumber,
                             const std::string &LineContent) {
@@ -345,7 +358,7 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
 
   while (ItA != MapA.end() || ItB != MapB.end()) {
     if (ItA == MapA.end()) {
-      Result.push_back(genReplacement(ItB->first, ItB->second));
+      Result.push_back(genReplacement(ItB->first, ItB->second.first));
       ++ItB;
     } else if (ItB == MapB.end()) {
       Result.push_back(genReplacement(ItA->first, ItA->second));
@@ -354,17 +367,28 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
       Result.push_back(genReplacement(ItA->first, ItA->second));
       ++ItA;
     } else if (ItB->first < ItA->first) {
-      Result.push_back(genReplacement(ItB->first, ItB->second));
+      Result.push_back(genReplacement(ItB->first, ItB->second.first));
       ++ItB;
     } else {
       // ItB->first == ItA->first
-      if (ItB->second == ItA->second) {
+      // Conflict resolution
+
+      if (ItB->second.first == ItA->second) {
         // No conflict, just add one of them
         Result.push_back(genReplacement(ItA->first, ItA->second));
         ++ItA;
         ++ItB;
         continue;
       }
+      if (!ItB->second.second) {
+        // If ItB->second does not contain manual fix, we can use ItA->second
+        // directly
+        Result.push_back(genReplacement(ItA->first, ItA->second));
+        ++ItA;
+        ++ItB;
+        continue;
+      }
+
       // Conflict line(s)
       std::vector<std::string> ConflictA;
       std::vector<std::string> ConflictB;
@@ -376,7 +400,7 @@ mergeMapsByLine(const std::map<unsigned, std::string> &MapA,
       while (ItA != MapA.end() && ItB != MapB.end() &&
              CurrentLineNum == ItA->first && CurrentLineNum == ItB->first) {
         ConflictA.push_back(ItA->second);
-        ConflictB.push_back(ItB->second);
+        ConflictB.push_back(ItB->second.first);
         ConflictLength += getLineString(FilePath, ItA->first).size();
         ++ItA;
         ++ItB;
@@ -475,13 +499,14 @@ mapToOriginalOffset(unsigned MigratedCodeOffset,
   return It->second + (MigratedCodeOffset - It->first);
 }
 
-std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
-                                          const std::vector<Replacement> &B) {
+std::vector<TaggedReplacement>
+mergeC1AndC2Impl(const std::vector<Replacement> &A,
+                 const std::vector<Replacement> &B) {
   // Build 2 mappings
   auto [OffsetMap, ModifiedRangeList] = buildMapping(A);
   std::string FilePath = A[0].getFilePath().str();
 
-  std::vector<Replacement> Result;
+  std::vector<TaggedReplacement> Result;
   std::vector<Replacement> AGroupRepls;
   for (const auto &repl : ModifiedRangeList) {
     AGroupRepls.push_back(
@@ -498,23 +523,24 @@ std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
   auto IterA = AGroupRepls.begin();
   auto IterB = BGroupRepls.begin();
 
-  std::optional<std::tuple<unsigned /*offset(based on TEXT1)*/,
-                           unsigned /*length*/, std::string>>
+  std::optional<
+      std::tuple<unsigned /*offset(based on TEXT1)*/, unsigned /*length*/,
+                 std::string, bool /*ContainsManualFix*/>>
       UnfinishedRepl = std::nullopt;
   while (IterA != AGroupRepls.end() || IterB != BGroupRepls.end()) {
-    bool NoA = IterA == AGroupRepls.end();
-    bool NoB = IterB == BGroupRepls.end();
+    const bool NoA = IterA == AGroupRepls.end();
+    const bool NoB = IterB == BGroupRepls.end();
     if (UnfinishedRepl) {
-      unsigned Off = std::get<0>(*UnfinishedRepl);
-      unsigned Len = std::get<1>(*UnfinishedRepl);
-      std::string Text = std::get<2>(*UnfinishedRepl);
+      const unsigned Off = std::get<0>(*UnfinishedRepl);
+      const unsigned Len = std::get<1>(*UnfinishedRepl);
+      const std::string Text = std::get<2>(*UnfinishedRepl);
       if ((NoA || (Off + Len) < IterA->getOffset()) &&
           (NoB || (Off + Len) < IterB->getOffset())) {
         // Finished
         Result.push_back({FilePath, mapToOriginalOffset(Off, OffsetMap),
                           mapToOriginalOffset(Off + Len, OffsetMap) -
                               mapToOriginalOffset(Off, OffsetMap),
-                          Text});
+                          Text, std::get<3>(*UnfinishedRepl)});
         UnfinishedRepl = std::nullopt;
         continue;
       }
@@ -526,6 +552,7 @@ std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
         std::get<2>(*UnfinishedRepl) =
             Text.substr(0, IterB->getOffset() - Off) +
             IterB->getReplacementText().str();
+        std::get<3>(*UnfinishedRepl) = true;
         ++IterB;
         continue;
       }
@@ -553,24 +580,24 @@ std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
            mapToOriginalOffset(IterB->getOffset() + IterB->getLength(),
                                OffsetMap) -
                mapToOriginalOffset(IterB->getOffset(), OffsetMap),
-           IterB->getReplacementText()});
+           IterB->getReplacementText(), true});
       ++IterB;
       continue;
     }
     if (NoB) {
       // only left A group replacements
-      Result.push_back(*IterA);
+      Result.push_back({*IterA, false});
       ++IterA;
       continue;
     }
     if (IterA->getOffset() < IterB->getOffset()) {
-      UnfinishedRepl = std::make_tuple(IterA->getOffset(),
-                                       IterA->getReplacementText().size(),
-                                       IterA->getReplacementText().str());
+      UnfinishedRepl = std::make_tuple(
+          IterA->getOffset(), IterA->getReplacementText().size(),
+          IterA->getReplacementText().str(), false);
       ++IterA;
     } else {
       UnfinishedRepl = std::make_tuple(IterB->getOffset(), IterB->getLength(),
-                                       IterB->getReplacementText().str());
+                                       IterB->getReplacementText().str(), true);
       ++IterB;
     }
   }
@@ -583,7 +610,7 @@ std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
                                  std::get<1>(*UnfinishedRepl),
                              OffsetMap) -
              mapToOriginalOffset(std::get<0>(*UnfinishedRepl), OffsetMap),
-         std::get<2>(*UnfinishedRepl)});
+         std::get<2>(*UnfinishedRepl), std::get<3>(*UnfinishedRepl)});
   }
 
   std::sort(Result.begin(), Result.end());
@@ -592,11 +619,11 @@ std::vector<Replacement> mergeC1AndC2Impl(const std::vector<Replacement> &A,
 } // namespace
 
 // Merge Repl_C1 and Repl_C2. If has conflict, keep repl from Repl_C2.
-std::vector<Replacement> mergeC1AndC2(
+std::vector<TaggedReplacement> mergeC1AndC2(
     const std::vector<Replacement> &Repl_C1, const GitDiffChanges &Repl_C2,
     const std::map<UnifiedPath /*SYCL name*/, UnifiedPath /*CUDA name*/>
         &FileNameMap) {
-  std::vector<Replacement> Result;
+  std::vector<TaggedReplacement> Result;
   std::vector<Replacement> Repl_C2_vec;
   std::for_each(Repl_C2.ModifyFileHunks.begin(), Repl_C2.ModifyFileHunks.end(),
                 [&Repl_C2_vec, FileNameMap](const Replacement &Hunk) {
@@ -614,7 +641,9 @@ std::vector<Replacement> mergeC1AndC2(
     auto ItC2 = C2.find(FilePath);
     if (ItC2 == C2.end()) {
       // No replacements in C2 for this file, just add C1
-      Result.insert(Result.end(), Repls_C1.begin(), Repls_C1.end());
+      for (const auto &R : Repls_C1) {
+        Result.push_back({R, false}); // false means not containing manual fix
+      }
       continue;
     }
     // Merge replacements in C1 and C2 for this file
@@ -681,7 +710,8 @@ std::map<std::string, std::vector<Replacement>> reMigrationMerge(
   //    file4.dp.hpp. We need convert the filename in Repl_C2 to CUDA style
   // 2. Repl_C1 is based on CUDA code, Repl_C2 is based on the migrated SYCL
   //    code, the result Repl_C should based on the original CUDA code.
-  std::vector<Replacement> Repl_C = mergeC1AndC2(Repl_C1, Repl_C2, FileNameMap);
+  std::vector<TaggedReplacement> Repl_C =
+      mergeC1AndC2(Repl_C1, Repl_C2, FileNameMap);
 
   // Convert vector in Repl_A to map for quick lookup.
   std::map<std::string, std::map<unsigned /*Offset*/, unsigned /*Length*/>>
@@ -710,7 +740,7 @@ std::map<std::string, std::vector<Replacement>> reMigrationMerge(
   }
 
   // Get Repl_C_y
-  std::map<std::string, clang::tooling::Replacements> Repl_C_y;
+  std::map<std::string, std::vector<TaggedReplacement>> Repl_C_y;
 
   for (const auto &Repl : Repl_C) {
     // The gitdiff changes are line-based while clang replacements are
@@ -718,9 +748,7 @@ std::map<std::string, std::vector<Replacement>> reMigrationMerge(
     // covered by delete hunk) between delete hunks and replacements.
     const auto &It = DeletedParts.find(Repl.getFilePath().str());
     if (It == DeletedParts.end()) {
-      llvm::cantFail(Repl_C_y[Repl.getFilePath().str()].add(
-          Replacement(Repl.getFilePath().str(), Repl.getOffset(),
-                      Repl.getLength(), Repl.getReplacementText())));
+      Repl_C_y[Repl.getFilePath().str()].push_back(Repl);
       continue;
     }
 
@@ -733,13 +761,11 @@ std::map<std::string, std::vector<Replacement>> reMigrationMerge(
         break;
     }
     if (!HasConflict)
-      llvm::cantFail(Repl_C_y[Repl.getFilePath().str()].add(
-          Replacement(Repl.getFilePath().str(), Repl.getOffset(),
-                      Repl.getLength(), Repl.getReplacementText())));
+      Repl_C_y[Repl.getFilePath().str()].push_back(Repl);
   }
 
   // Shift Repl_C_y with Repl_A(ModifiedParts)
-  std::map<std::string, clang::tooling::Replacements> Repl_D;
+  std::map<std::string, std::vector<TaggedReplacement>> Repl_D;
   for (const auto &Item : Repl_C_y) {
     const auto &FilePath = Item.first;
     const auto &Repls = Item.second;
@@ -762,7 +788,7 @@ std::map<std::string, std::vector<Replacement>> reMigrationMerge(
         convertReplcementsLineString(Pair.second);
     if (Repl_D.find(Pair.first) != Repl_D.end()) {
       // Merge Repl_D and Repl_B
-      std::map<unsigned, std::string> ReplDInLines =
+      std::map<unsigned, std::pair<std::string, bool>> ReplDInLines =
           convertReplcementsLineString(Repl_D[Pair.first]);
       Result[Pair.first] =
           mergeMapsByLine(ReplBInLines, ReplDInLines, Pair.first);

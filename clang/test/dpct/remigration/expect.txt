@@ -1,12 +1,7 @@
-<<<<<<<
 #include <sycl/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include <dpct/blas_utils.hpp>
 #include <cstdio>
-=======
-#include <sycl/sycl.hpp>
-#include <dpct/dpct.hpp>
->>>>>>>
 
 <<<<<<<
 /*

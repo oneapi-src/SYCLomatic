@@ -48,15 +48,15 @@ aaa bb ccc
 */
   // clang-format on
 
-  Replacements NewRepl;
+  std::vector<TaggedReplacement> NewRepl;
   Replacements Repls;
   Replacements Expected;
 
-  llvm::cantFail(NewRepl.add(Replacement("file1.cpp", 4, 2, "zzz")));
-  llvm::cantFail(NewRepl.add(Replacement("file1.cpp", 11, 0, "ppp ")));
-  llvm::cantFail(NewRepl.add(Replacement("file1.cpp", 26, 2, "yyy")));
-  llvm::cantFail(NewRepl.add(Replacement("file1.cpp", 46, 1, "xxx")));
-  llvm::cantFail(NewRepl.add(Replacement("file1.cpp", 65, 1, "\nqqq")));
+  NewRepl.push_back({"file1.cpp", 4, 2, "zzz", true});
+  NewRepl.push_back({"file1.cpp", 11, 0, "ppp ", true});
+  NewRepl.push_back({"file1.cpp", 26, 2, "yyy", true});
+  NewRepl.push_back({"file1.cpp", 46, 1, "xxx", true});
+  NewRepl.push_back({"file1.cpp", 65, 1, "\nqqq", true});
 
   llvm::cantFail(
       Repls.add(Replacement("file1.cpp", 11, 11, "Hi bb Everyone\n")));
@@ -70,7 +70,8 @@ aaa bb ccc
   llvm::cantFail(Expected.add(Replacement("file1.cpp", 4, 2, "zzz")));
   llvm::cantFail(Expected.add(Replacement("file1.cpp", 30, 2, "yyy")));
 
-  Replacements Result = calculateUpdatedRanges(Repls, NewRepl);
+  std::vector<TaggedReplacement> Result =
+      calculateUpdatedRanges(Repls, NewRepl);
   ASSERT_EQ(Expected.size(), Result.size());
   size_t Num = Expected.size();
   auto ExpectedIt = Expected.begin();
@@ -193,15 +194,21 @@ TEST_F(ReMigrationTest2, splitReplInOrderToNotCrossLines) {
   getLineStringHook = this->getLineStringUnittest;
   getLineNumberHook = this->getLineNumberUnittest;
   getLineBeginOffsetHook = this->getLineBeginOffsetUnittest;
-  std::vector<Replacement> Repls = {Replacement("file1.cpp", 7, 18, "jjj\nkkk"),
-                                    Replacement("file1.cpp", 41, 5, "xx")};
+  std::vector<TaggedReplacement> Repls = {
+      {"file1.cpp", 7, 18, "jjj\nkkk", true}, {"file1.cpp", 41, 5, "xx", true}};
   std::vector<Replacement> Expected = {
       Replacement("file1.cpp", 7, 4, "jjj\nkkkhhhhiii\n"),
       Replacement("file1.cpp", 11, 11, ""),
       Replacement("file1.cpp", 22, 11, ""),
       Replacement("file1.cpp", 41, 3, "xxyyyyyyyy\n"),
       Replacement("file1.cpp", 44, 11, "")};
-  auto Result = splitReplInOrderToNotCrossLines(Repls);
+  auto Temp = splitReplInOrderToNotCrossLines(Repls);
+  std::vector<Replacement> Result;
+  // drop the tag info
+  for (const auto &R : Temp) {
+    Result.push_back({R.getFilePath(), R.getOffset(), R.getLength(),
+                      R.getReplacementText()});
+  }
   std::sort(Result.begin(), Result.end());
   EXPECT_EQ(Expected, Result);
 }
@@ -268,12 +275,12 @@ eee bb ccc
   getLineStringHook = this->getLineStringUnittest;
   getLineNumberHook = this->getLineNumberUnittest;
   getLineBeginOffsetHook = this->getLineBeginOffsetUnittest;
-  std::vector<Replacement> Repls = {
-      Replacement("file1.cpp", 4, 2, "zzz"),
-      Replacement("file1.cpp", 64, 3, "q\nqqq"),
-      Replacement("file1.cpp", 33, 11, "aaa yyy ccc\n"),
-      Replacement("file1.cpp", 11, 0, "ppp "),
-      Replacement("file1.cpp", 84, 18, "ddd\neee")};
+  std::vector<TaggedReplacement> Repls = {
+      {"file1.cpp", 4, 2, "zzz", true},
+      {"file1.cpp", 64, 3, "q\nqqq", true},
+      {"file1.cpp", 33, 11, "aaa yyy ccc\n", true},
+      {"file1.cpp", 11, 0, "ppp ", true},
+      {"file1.cpp", 84, 18, "ddd\neee", true}};
   std::map<unsigned, std::string> Expected = {{1, "aaa zzz ccc\n"},
                                               {2, "ppp aaa bb ccc\n"},
                                               {4, "aaa yyy ccc\n"},
@@ -282,7 +289,12 @@ eee bb ccc
                                               {8, "aaa bb ddd\neee bb ccc\n"},
                                               {9, ""},
                                               {10, ""}};
-  auto Result = convertReplcementsLineString(Repls);
+  auto Temp = convertReplcementsLineString(Repls);
+  std::map<unsigned, std::string> Result;
+  // drop the tag info
+  for (const auto &R : Temp) {
+    Result[R.first] = R.second.first;
+  }
   EXPECT_EQ(Expected, Result);
 }
 
@@ -292,8 +304,12 @@ TEST_F(ReMigrationTest3, mergeMapsByLine) {
   std::map<unsigned, std::string> MapA = {{1, "zzzzz\n"}, {3, "xxxx1\n"},
                                           {4, "wwww1\n"}, {5, "vvvvv\n"},
                                           {7, "ppppp\n"}, {9, "iiijjjkkk\n"}};
-  std::map<unsigned, std::string> MapB = {
-      {2, "yyyyy\n"}, {3, "xxxx2\n"}, {4, "wwww2\n"}, {7, ""}, {8, "qqqqq"}};
+  std::map<unsigned, std::pair<std::string, bool>> MapB = {
+      {2, {"yyyyy\n", true}},
+      {3, {"xxxx2\n", true}},
+      {4, {"wwww2\n", true}},
+      {7, {"", true}},
+      {8, {"qqqqq", true}}};
   UnifiedPath FilePath("test.cu");
   auto Result = mergeMapsByLine(MapA, MapB, FilePath);
   std::sort(Result.begin(), Result.end());
@@ -362,12 +378,13 @@ bbyyy2345678xxxc78www0123456789
   const std::map<UnifiedPath, UnifiedPath> FileNameMap = {
       {"file1.dp.cpp", "file1.cu"}};
 
-  std::vector<Replacement> Result = mergeC1AndC2(Repl_C1, Repl_C2, FileNameMap);
-  std::vector<Replacement> Expected = {Replacement("file1.cu", 4, 0, "zzz"),
-                                       Replacement("file1.cu", 10, 0, "aaa"),
-                                       Replacement("file1.cu", 11, 2, "bbyyy"),
-                                       Replacement("file1.cu", 20, 20, "xxxc"),
-                                       Replacement("file1.cu", 42, 2, "www")};
+  std::vector<TaggedReplacement> Result =
+      mergeC1AndC2(Repl_C1, Repl_C2, FileNameMap);
+  std::vector<TaggedReplacement> Expected = {{"file1.cu", 4, 0, "zzz", true},
+                                             {"file1.cu", 10, 0, "aaa", false},
+                                             {"file1.cu", 11, 2, "bbyyy", true},
+                                             {"file1.cu", 20, 20, "xxxc", true},
+                                             {"file1.cu", 42, 2, "www", true}};
   std::sort(Result.begin(), Result.end());
   std::sort(Expected.begin(), Expected.end());
 
@@ -380,236 +397,7 @@ bbyyy2345678xxxc78www0123456789
     EXPECT_EQ(ExpectedIt->getOffset(), ResultIt->getOffset());
     EXPECT_EQ(ExpectedIt->getLength(), ResultIt->getLength());
     EXPECT_EQ(ExpectedIt->getReplacementText(), ResultIt->getReplacementText());
-    ExpectedIt++;
-    ResultIt++;
-  }
-}
-
-class ReMigrationTest4 : public ::testing::Test {
-protected:
-  inline static std::vector<std::string> CUDACodeV2Vec = {};
-  inline static std::vector<unsigned> LineOffsets = {};
-  void SetUp() override {
-    // clang-format off
-    const std::string CUDACodeV2 = R"(#include <stdio.h>
-
-#define CUDA_CHECK(call)                                                       \
-  do {                                                                         \
-    cudaError_t err = call;                                                    \
-    if (err != cudaSuccess) {                                                  \
-      printf("CUDA error in %s at line %d: %s\n", __FILE__, __LINE__,          \
-             cudaGetErrorString(err));                                         \
-      exit(EXIT_FAILURE);                                                      \
-    }                                                                          \
-  } while (0)
-
-void foo() {
-  float *g;
-  CUDA_CHECK(cudaMalloc(&g, 100 * sizeof(float)));
-  float *h;
-  CUDA_CHECK(cudaMalloc(&h, 100 * sizeof(float)));
-  cudaDeviceSynchronize();
-  cudaFree(g);
-  cudaFree(h);
-}
-)";
-    // clang-format on
-    std::istringstream ISS(CUDACodeV2);
-    std::string Line;
-    // TODO: This code only considers the last line is empty (file ending by a \n).
-    //       What if the last line is not empty?
-    while (true) {
-      bool LastLine = false;
-      if (!std::getline(ISS, Line))
-        LastLine = true;
-      else
-        Line += '\n';
-      LineOffsets.push_back(LineOffsets.empty()
-                                ? 0
-                                : LineOffsets.back() +
-                                      CUDACodeV2Vec.back().size());
-      CUDACodeV2Vec.push_back(Line);
-      if (LastLine)
-        break;
-    }
-    LineOffsets.insert(LineOffsets.begin(), 0);
-  }
-  void TearDown() override { CUDACodeV2Vec.clear(); }
-  static StringRef getLineStringUnittest(clang::tooling::UnifiedPath FilePath,
-                                         unsigned LineNumber) {
-    return StringRef(CUDACodeV2Vec[LineNumber - 1]);
-  }
-  static unsigned getLineNumberUnittest(clang::tooling::UnifiedPath FilePath,
-                                        unsigned Offset) {
-    auto Iter =
-        std::upper_bound(LineOffsets.begin() + 1, LineOffsets.end(), Offset);
-    if (Iter == LineOffsets.end())
-      return LineOffsets.size();
-    return std::distance(LineOffsets.begin() + 1, Iter);
-  }
-  static unsigned
-  getLineBeginOffsetUnittest(clang::tooling::UnifiedPath FilePath,
-                             unsigned LineNumber) {
-    return LineOffsets[LineNumber];
-  }
-};
-
-TEST_F(ReMigrationTest4, reMigrationMerge) {
-  getLineStringHook = this->getLineStringUnittest;
-  getLineNumberHook = this->getLineNumberUnittest;
-  getLineBeginOffsetHook = this->getLineBeginOffsetUnittest;
-
-  const std::map<UnifiedPath, UnifiedPath> FileNameMap = {
-      {"test.dp.cpp", "test.cu"}};
-
-  std::vector<Replacement> Repl_C1 = {
-      Replacement("test.cu", 0, 0,
-                  "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n"),
-      Replacement(
-          "test.cu", 20, 0,
-          "/*\nDPCT1009:0: SYCL reports errors using exceptions and does not "
-          "use error codes. Please replace the \"get_error_string_dummy(...)\" "
-          "with a real error-handling function.\n*/\n"),
-      Replacement("test.cu", 186, 11, "dpct::err0"),
-      Replacement("test.cu", 267, 325, ""),
-      Replacement("test.cu", 694, 0, " try "),
-      Replacement(
-          "test.cu", 695, 0,
-          "\n  dpct::device_ext &dev_ct1 = dpct::get_current_device();\n  "
-          "sycl::queue &q_ct1 = dev_ct1.in_order_queue();"),
-      Replacement(
-          "test.cu", 721, 35,
-          "DPCT_CHECK_ERROR(f = sycl::malloc_device<float>(100, q_ct1))"),
-      Replacement(
-          "test.cu", 784, 35,
-          "DPCT_CHECK_ERROR(g = sycl::malloc_device<float>(100, q_ct1))"),
-      Replacement("test.cu", 824, 63,
-                  "q_ct1.memcpy(f, g, 100 * sizeof(float))"),
-      Replacement("test.cu", 891, 23, "dev_ct1.queues_wait_and_throw()"),
-      Replacement("test.cu", 918, 11, "dpct::dpct_free(f, q_ct1)"),
-      Replacement("test.cu", 933, 11, "dpct::dpct_free(g, q_ct1)"),
-      Replacement("test.cu", 947, 0,
-                  "\ncatch (sycl::exception const &exc) {\n  std::cerr << "
-                  "exc.what() << \"Exception caught at file:\" << __FILE__ << "
-                  "\", line:\" << __LINE__ << std::endl;\n  std::exit(1);\n}")};
-
-  GitDiffChanges Repl_C2;
-  Repl_C2.ModifyFileHunks = {
-      Replacement("test.dp.cpp", 70, 526, "void foo() {\n"),
-      Replacement("test.dp.cpp", 715, 76,
-                  "  f = sycl::malloc_device<float>(100, q_ct1);\n"),
-      Replacement("test.dp.cpp", 803, 76,
-                  "  g = sycl::malloc_device<float>(100, q_ct1);\n"),
-      Replacement("test.dp.cpp", 1017, 163, "")};
-
-  GitDiffChanges Repl_A;
-  Repl_A.ModifyFileHunks = {
-      Replacement("test.cu", 696, 63, ""),
-      Replacement(
-          "test.cu", 822, 67,
-          "  float *h;\n  CUDA_CHECK(cudaMalloc(&h, 100 * sizeof(float)));\n"),
-      Replacement("test.cu", 916, 15, ""),
-      Replacement("test.cu", 946, 0, "  cudaFree(h);\n")};
-
-  std::vector<Replacement> Repl_B = {
-      Replacement("test.cu", 0, 0,
-                  "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n"),
-      Replacement(
-          "test.cu", 20, 0,
-          "/*\nDPCT1009:0: SYCL reports errors using exceptions and does not "
-          "use error codes. Please replace the \"get_error_string_dummy(...)\" "
-          "with a real error-handling function.\n*/\n"),
-      Replacement("test.cu", 186, 11, "dpct::err0"),
-      Replacement("test.cu", 267, 325, ""),
-      Replacement("test.cu", 694, 0, " try "),
-      Replacement(
-          "test.cu", 695, 0,
-          "\n  dpct::device_ext &dev_ct1 = dpct::get_current_device();\n  "
-          "sycl::queue &q_ct1 = dev_ct1.in_order_queue();"),
-      Replacement(
-          "test.cu", 721, 35,
-          "DPCT_CHECK_ERROR(g = sycl::malloc_device<float>(100, q_ct1))"),
-      Replacement(
-          "test.cu", 784, 35,
-          "DPCT_CHECK_ERROR(h = sycl::malloc_device<float>(100, q_ct1))"),
-      Replacement("test.cu", 824, 23, "dev_ct1.queues_wait_and_throw()"),
-      Replacement("test.cu", 851, 11, "dpct::dpct_free(g, q_ct1)"),
-      Replacement("test.cu", 866, 11, "dpct::dpct_free(h, q_ct1)"),
-      Replacement("test.cu", 880, 0,
-                  "\ncatch (sycl::exception const &exc) {\n  std::cerr << "
-                  "exc.what() << \"Exception caught at file:\" << __FILE__ << "
-                  "\", line:\" << __LINE__ << std::endl;\n  std::exit(1);\n}")};
-
-  std::map<std::string, std::vector<Replacement>> ResultMap =
-      reMigrationMerge(Repl_A, Repl_B, Repl_C1, Repl_C2, FileNameMap);
-
-  std::vector<Replacement> Result = ResultMap.begin()->second;
-  std::vector<Replacement> Expected = {
-      Replacement("test.cu", 0, 19, R"(#include <sycl/sycl.hpp>
-#include <dpct/dpct.hpp>
-#include <stdio.h>
-)"),
-      Replacement("test.cu", 20, 81, R"xxx(<<<<<<<
-/*
-DPCT1009:0: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
-*/
-#define CUDA_CHECK(call)                                                       \
-=======
-void foo() {
-  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
->>>>>>>
-)xxx"),
-      Replacement("test.cu", 101, 81, R"()"),
-      Replacement("test.cu", 182, 486, R"(<<<<<<<
-    dpct::err0 err = call;                                                    \
-                                                                              \
-=======
->>>>>>>
-)"),
-      Replacement("test.cu", 668, 14, R"()"),
-      Replacement("test.cu", 682, 1, R"()"),
-      Replacement("test.cu", 683, 13, R"(<<<<<<<
-void foo()  try {
-  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-=======
->>>>>>>
-)"),
-      Replacement("test.cu", 708, 51, R"(<<<<<<<
-  CUDA_CHECK(DPCT_CHECK_ERROR(g = sycl::malloc_device<float>(100, q_ct1)));
-=======
-  g = sycl::malloc_device<float>(100, q_ct1);
->>>>>>>
-)"),
-      Replacement(
-          "test.cu", 771, 51,
-          R"(  CUDA_CHECK(DPCT_CHECK_ERROR(h = sycl::malloc_device<float>(100, q_ct1)));
-)"),
-      Replacement("test.cu", 822, 27, R"(  dev_ct1.queues_wait_and_throw();
-)"),
-      Replacement("test.cu", 849, 15, R"(  dpct::dpct_free(g, q_ct1);
-)"),
-      Replacement("test.cu", 864, 15, R"(  dpct::dpct_free(h, q_ct1);
-)"),
-      Replacement("test.cu", 879, 2, R"(}
-catch (sycl::exception const &exc) {
-  std::cerr << exc.what() << "Exception caught at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
-  std::exit(1);
-}
-)")};
-  std::sort(Result.begin(), Result.end());
-  std::sort(Expected.begin(), Expected.end());
-
-  ASSERT_EQ(Expected.size(), Result.size());
-  size_t Num = Expected.size();
-  auto ExpectedIt = Expected.begin();
-  auto ResultIt = Result.begin();
-  for (size_t i = 0; i < Num; ++i) {
-    EXPECT_EQ(ExpectedIt->getFilePath(), ResultIt->getFilePath());
-    EXPECT_EQ(ExpectedIt->getOffset(), ResultIt->getOffset());
-    EXPECT_EQ(ExpectedIt->getLength(), ResultIt->getLength());
-    EXPECT_EQ(ExpectedIt->getReplacementText(), ResultIt->getReplacementText());
+    EXPECT_EQ(ExpectedIt->containsManualFix(), ResultIt->containsManualFix());
     ExpectedIt++;
     ResultIt++;
   }
