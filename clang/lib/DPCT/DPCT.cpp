@@ -512,31 +512,30 @@ void updateCompatibilityVersionInfo(clang::tooling::UnifiedPath OutRoot,
 }
 
 static void loadMainSrcFileInfo(clang::tooling::UnifiedPath YamlFilePath) {
-  if (llvm::sys::fs::exists(YamlFilePath.getCanonicalPath())) {
-    auto PreTU =
-        std::make_shared<clang::tooling::TranslationUnitReplacements>();
-    if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
-      llvm::errs() << getLoadYamlFailWarning();
-    }
-    DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
+  if (!llvm::sys::fs::exists(YamlFilePath.getCanonicalPath()))
+    return;
+  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
+  if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
+    llvm::errs() << getLoadYamlFailWarning();
+  }
+  DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
 
-    for (auto &Entry : PreTU->MainSourceFilesDigest) {
-      if (Entry.HasCUDASyntax)
-        MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
-    }
+  for (auto &Entry : PreTU->MainSourceFilesDigest) {
+    if (Entry.HasCUDASyntax)
+      MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
+  }
 
-    // Currently, when "--use-experimental-features=device_global" and
-    // "--use-experimental-features=all" are specified, the migrated code should
-    // be compiled with C++20 or later.
-    auto Iter = PreTU->OptionMap.find("ExperimentalFlag");
-    if (Iter != PreTU->OptionMap.end()) {
-      if (Iter->second.Specified) {
-        const std::string Value = Iter->second.Value;
-        unsigned int UValue = std::stoul(Value);
-        if (UValue & (1 << static_cast<unsigned>(
-                          ExperimentalFeatures::Exp_DeviceGlobal))) {
-          LANG_Cplusplus_20_Used = true;
-        }
+  // Currently, when "--use-experimental-features=device_global" and
+  // "--use-experimental-features=all" are specified, the migrated code should
+  // be compiled with C++20 or later.
+  auto Iter = PreTU->OptionMap.find("ExperimentalFlag");
+  if (Iter != PreTU->OptionMap.end()) {
+    if (Iter->second.Specified) {
+      const std::string Value = Iter->second.Value;
+      unsigned int UValue = std::stoul(Value);
+      if (UValue & (1 << static_cast<unsigned>(
+                        ExperimentalFeatures::Exp_DeviceGlobal))) {
+        LANG_Cplusplus_20_Used = true;
       }
     }
   }
@@ -1374,20 +1373,17 @@ int runDPCT(int argc, const char **argv) {
     parseFormatStyle();
   }
   // OC_Action: only migrate Build scripts.
-  if (MigrateBuildScriptOnly) {
-    if (!DpctGlobalInfo::migratePythonScripts() ||
-        DpctGlobalInfo::migrateCMakeScripts()) {
-      std::string Major =
-          DpctGlobalInfo::getMainSourceYamlTUR()->SDKVersionMajor;
-      std::string Minor =
-          DpctGlobalInfo::getMainSourceYamlTUR()->SDKVersionMinor;
-      if (!Major.empty() && !Minor.empty()) {
-        updateCompatibilityVersionInfo(OutRoot, Major, Minor);
-      }
+  if (MigrateBuildScriptOnly && !DpctGlobalInfo::migratePythonScripts() ||
+      DpctGlobalInfo::migrateCMakeScripts()) {
+    std::string Major = DpctGlobalInfo::getMainSourceYamlTUR()->SDKVersionMajor;
+    std::string Minor = DpctGlobalInfo::getMainSourceYamlTUR()->SDKVersionMinor;
+    if (!Major.empty() && !Minor.empty()) {
+      updateCompatibilityVersionInfo(OutRoot, Major, Minor);
     }
+  }
+  if (MigrateBuildScriptOnly) {
     collectBuildScriptsSpecified(OptParser, InRootPath, OutRootPath);
     migrateBuildScripts(InRootPath, OutRootPath);
-
     ShowStatus(MigrationBuildScriptCompleted);
     dpctExit(MigrationSucceeded, false);
   }
