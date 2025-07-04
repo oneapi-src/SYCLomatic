@@ -94,7 +94,8 @@ struct GitDiffChanges {
 };
 GitDiffChanges &getUpstreamChanges();
 GitDiffChanges &getUserChanges();
-clang::tooling::TranslationUnitReplacements &getLastMigration();
+std::shared_ptr<clang::tooling::TranslationUnitReplacements> &
+getLastMigration();
 
 class TaggedReplacement : public clang::tooling::Replacement {
 public:

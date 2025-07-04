@@ -53,7 +53,7 @@ namespace clang::dpct {
 using namespace clang::tooling;
 static GitDiffChanges UpstreamChanges;
 static GitDiffChanges UserChanges;
-static TranslationUnitReplacements LastMigration;
+static std::shared_ptr<TranslationUnitReplacements> LastMigration = nullptr;
 AddFileHunk::AddFileHunk(std::string NewFilePath)
     : Hunk(AddFile), NewFilePath(UnifiedPath(NewFilePath).getCanonicalPath()) {}
 DeleteFileHunk::DeleteFileHunk(std::string OldFilePath)
@@ -61,7 +61,9 @@ DeleteFileHunk::DeleteFileHunk(std::string OldFilePath)
       OldFilePath(UnifiedPath(OldFilePath).getCanonicalPath()) {}
 GitDiffChanges &getUpstreamChanges() { return UpstreamChanges; }
 GitDiffChanges &getUserChanges() { return UserChanges; }
-TranslationUnitReplacements &getLastMigration() { return LastMigration; }
+std::shared_ptr<TranslationUnitReplacements> &getLastMigration() {
+  return LastMigration;
+}
 static void dumpGitDiffChanges(const GitDiffChanges &GHC) {
   llvm::errs() << "GitDiffChanges:\n";
   llvm::errs() << "  ModifyFileHunks:\n";
@@ -111,11 +113,8 @@ bool tryLoadingUpstreamChangesAndUserChanges() {
     ::loadGDCFromYaml(UserChangesFilePath, getUserChanges());
     Found++;
   }
-  if (llvm::sys::fs::exists(LastMigrationFilePath)) {
-    ::loadTUFromYaml(LastMigrationFilePath, getLastMigration());
-    Found++;
-  }
-  return (Found == 3) ? true : false;
+  getLastMigration() = DpctGlobalInfo::getMainSourceYamlTUR();
+  return (Found == 2) ? true : false;
 }
 
 /// Below 3 functions only used for merging Repl_B and repl_D. So they only

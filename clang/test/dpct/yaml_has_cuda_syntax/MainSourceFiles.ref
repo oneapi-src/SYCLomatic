@@ -1,0 +1,7 @@
+// CHECK: MainSourceFilesDigest:
+// CHECK-NEXT:   - MainSourceFile:  '{{(.+)}}common.cpp'
+// CHECK-NEXT:     Digest:          {{(.+)}}
+// CHECK-NEXT:     HasCUDASyntax:   false
+// CHECK-NEXT:   - MainSourceFile:  '{{(.+)}}yaml_has_cuda_syntax/utils.cpp'
+// CHECK-NEXT:     Digest:          {{(.+)}}
+// CHECK-NEXT:     HasCUDASyntax:   true

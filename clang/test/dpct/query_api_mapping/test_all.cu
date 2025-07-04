@@ -11,6 +11,7 @@
 // CHECK-NEXT: __assertfail
 // CHECK-NEXT: __ballot
 // CHECK-NEXT: __ballot_sync
+// CHECK-NEXT: __barrier_sync
 // CHECK-NEXT: __bfloat1622float2
 // CHECK-NEXT: __bfloat162bfloat162
 // CHECK-NEXT: __bfloat162float
@@ -928,6 +929,9 @@
 // CHECK-NEXT: cub::RowMajorTid
 // CHECK-NEXT: cub::SHL_ADD
 // CHECK-NEXT: cub::SHR_ADD
+// CHECK-NEXT: cub::ShuffleDown
+// CHECK-NEXT: cub::ShuffleIndex
+// CHECK-NEXT: cub::ShuffleUp
 // CHECK-NEXT: cub::SmVersion
 // CHECK-NEXT: cub::SmVersionUncached
 // CHECK-NEXT: cub::StoreDirectBlocked
@@ -1443,6 +1447,7 @@
 // CHECK-NEXT: cudaEventElapsedTime
 // CHECK-NEXT: cudaEventQuery
 // CHECK-NEXT: cudaEventRecord
+// CHECK-NEXT: cudaEventRecordWithFlags
 // CHECK-NEXT: cudaEventSynchronize
 // CHECK-NEXT: cudaExternalMemoryGetMappedBuffer
 // CHECK-NEXT: cudaExternalMemoryGetMappedMipmappedArray
@@ -1485,6 +1490,7 @@
 // CHECK-NEXT: cudaIpcGetMemHandle
 // CHECK-NEXT: cudaIpcOpenMemHandle
 // CHECK-NEXT: cudaLaunchCooperativeKernel
+// CHECK-NEXT: cudaLaunchHostFunc
 // CHECK-NEXT: cudaLaunchKernel
 // CHECK-NEXT: cudaMalloc
 // CHECK-NEXT: cudaMalloc3D
@@ -1507,12 +1513,16 @@
 // CHECK-NEXT: cudaMemcpy2DToArrayAsync
 // CHECK-NEXT: cudaMemcpy3D
 // CHECK-NEXT: cudaMemcpy3DAsync
+// CHECK-NEXT: cudaMemcpy3DPeer
+// CHECK-NEXT: cudaMemcpy3DPeerAsync
 // CHECK-NEXT: cudaMemcpyArrayToArray
 // CHECK-NEXT: cudaMemcpyAsync
 // CHECK-NEXT: cudaMemcpyFromArray
 // CHECK-NEXT: cudaMemcpyFromArrayAsync
 // CHECK-NEXT: cudaMemcpyFromSymbol
 // CHECK-NEXT: cudaMemcpyFromSymbolAsync
+// CHECK-NEXT: cudaMemcpyPeer
+// CHECK-NEXT: cudaMemcpyPeerAsync
 // CHECK-NEXT: cudaMemcpyToArray
 // CHECK-NEXT: cudaMemcpyToArrayAsync
 // CHECK-NEXT: cudaMemcpyToSymbol
@@ -1526,6 +1536,8 @@
 // CHECK-NEXT: cudaOccupancyMaxActiveBlocksPerMultiprocessor
 // CHECK-NEXT: cudaPeekAtLastError
 // CHECK-NEXT: cudaPointerGetAttributes
+// CHECK-NEXT: cudaProfilerStart
+// CHECK-NEXT: cudaProfilerStop
 // CHECK-NEXT: cudaRuntimeGetVersion
 // CHECK-NEXT: cudaSetDevice
 // CHECK-NEXT: cudaSetDeviceFlags
@@ -2293,6 +2305,7 @@
 // CHECK-NEXT: min
 // CHECK-NEXT: modf
 // CHECK-NEXT: modff
+// CHECK-NEXT: mul24
 // CHECK-NEXT: nan
 // CHECK-NEXT: nanf
 // CHECK-NEXT: ncclAllReduce
@@ -2424,6 +2437,7 @@
 // CHECK-NEXT: thrust::copy_n
 // CHECK-NEXT: thrust::cos
 // CHECK-NEXT: thrust::cosh
+// CHECK-NEXT: thrust::count
 // CHECK-NEXT: thrust::count_if
 // CHECK-NEXT: thrust::device_delete
 // CHECK-NEXT: thrust::device_free
@@ -2450,6 +2464,7 @@
 // CHECK-NEXT: thrust::generate
 // CHECK-NEXT: thrust::generate_n
 // CHECK-NEXT: thrust::get
+// CHECK-NEXT: thrust::get_temporary_buffer
 // CHECK-NEXT: thrust::inclusive_scan
 // CHECK-NEXT: thrust::inclusive_scan_by_key
 // CHECK-NEXT: thrust::inner_product
@@ -2469,9 +2484,11 @@
 // CHECK-NEXT: thrust::make_tuple
 // CHECK-NEXT: thrust::make_zip_iterator
 // CHECK-NEXT: thrust::malloc
+// CHECK-NEXT: thrust::max
 // CHECK-NEXT: thrust::max_element
 // CHECK-NEXT: thrust::merge
 // CHECK-NEXT: thrust::merge_by_key
+// CHECK-NEXT: thrust::min
 // CHECK-NEXT: thrust::min_element
 // CHECK-NEXT: thrust::minmax_element
 // CHECK-NEXT: thrust::mismatch
@@ -2513,6 +2530,7 @@
 // CHECK-NEXT: thrust::set_union_by_key
 // CHECK-NEXT: thrust::sin
 // CHECK-NEXT: thrust::sinh
+// CHECK-NEXT: thrust::sort
 // CHECK-NEXT: thrust::sort_by_key
 // CHECK-NEXT: thrust::sqrt
 // CHECK-NEXT: thrust::stable_partition

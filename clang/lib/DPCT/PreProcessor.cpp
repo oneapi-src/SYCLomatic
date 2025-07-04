@@ -837,7 +837,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     }
     IsFileInCmd = false;
 
-    loadYAMLIntoFileInfo(InFile.getCanonicalPath());
+    addReplFromYAMLIntoFileInfo(InFile.getCanonicalPath());
   }
 }
 

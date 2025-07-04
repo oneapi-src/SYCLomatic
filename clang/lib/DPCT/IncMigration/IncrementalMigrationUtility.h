@@ -24,10 +24,6 @@ const std::string OPTION_CodePinEnabled = "CodePinEnabled";
 const std::string OPTION_ExtensionDEFlag = "ExtensionDEFlag";
 const std::string OPTION_ExtensionDDFlag = "ExtensionDDFlag";
 const std::string OPTION_NoDRYPattern = "NoDRYPattern";
-const std::string OPTION_CompilationsDir = "CompilationsDir";
-#ifdef _WIN32
-const std::string OPTION_VcxprojFile = "VcxprojFile";
-#endif
 const std::string OPTION_ProcessAll = "ProcessAll";
 const std::string OPTION_SyclNamedLambda = "SyclNamedLambda";
 const std::string OPTION_ExperimentalFlag = "ExperimentalFlag";

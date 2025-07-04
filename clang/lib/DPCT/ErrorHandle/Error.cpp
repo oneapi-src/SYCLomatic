@@ -238,9 +238,8 @@ void ShowStatus(int Status, std::string Message) {
   return;
 }
 
-std::string getLoadYamlFailWarning(const clang::tooling::UnifiedPath &YamlPath) {
-  return "Warning: Failed to load " + YamlPath.getCanonicalPath().str() +
-         ". Migration continues with incremental migration disabled. See "
+std::string getLoadYamlFailWarning() {
+  return "Warning: Migration continues with incremental migration disabled. See "
          "https://www.intel.com/content/www/us/en/docs/"
          "dpcpp-compatibility-tool/developer-guide-reference/current/"
          "overview.html for more "

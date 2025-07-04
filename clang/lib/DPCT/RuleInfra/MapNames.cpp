@@ -1252,6 +1252,9 @@ void MapNames::setExplicitNamespaceMap(
       {"CU_DEVICE_ATTRIBUTE_MAX_PITCH",
        std::make_shared<EnumNameRule>("get_max_pitch",
                                       HelperFeatureEnum::device_ext)},
+      {"CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT",
+       std::make_shared<EnumNameRule>("get_async_engine_count",
+                                      HelperFeatureEnum::device_ext)},
       {"CU_DEVICE_P2P_ATTRIBUTE_ACCESS_SUPPORTED",
        std::make_shared<EnumNameRule>(
            DpctGlobalInfo::usePeerAccess()

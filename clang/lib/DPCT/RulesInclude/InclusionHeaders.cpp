@@ -175,11 +175,12 @@ void IncludesCallbacks::InclusionDirective(
     const auto Extension = path::extension(FileName);
     SmallString<512> NewFileName(FileName.str());
 
-    if (Extension == ".c") {
+    if (Extension == ".c" || Extension == ".cc") {
       auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileList();
       path::replace_extension(
           NewFileName, "{{NEEDREPLACEE" + std::to_string(Vec.size()) + "}}");
-      Vec.push_back(IncludedFile);
+      Vec.push_back(std::pair<tooling::UnifiedPath, std::string>(
+          IncludedFile, Extension.substr(1)));
     } else {
       clang::tooling::UnifiedPath NewFilePath = FileName;
       rewriteFileName(NewFilePath, IncludedFile);

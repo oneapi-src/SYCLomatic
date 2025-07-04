@@ -17,3 +17,9 @@
 // CUDALAUNCHCOOPERATIVEKERNEL-NEXT:                               sharedMem /*size_t*/, s /*cudaStream_t*/);
 // CUDALAUNCHCOOPERATIVEKERNEL-NEXT: Is migrated to:
 // CUDALAUNCHCOOPERATIVEKERNEL-NEXT:   dpct::kernel_launcher::launch(f, gridDim, blockDim, args, sharedMem, s);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__barrier_sync | FileCheck %s -check-prefix=__barrier_sync
+// __barrier_sync: CUDA API:
+// __barrier_sync-NEXT:   __barrier_sync(id /*unsigned*/);
+// __barrier_sync-NEXT: Is migrated to:
+// __barrier_sync-NEXT:   sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();

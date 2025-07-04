@@ -27,19 +27,12 @@ class Replacements;
 
 namespace clang {
 namespace dpct {
-
-int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
-                      clang::tooling::UnifiedPath OutRootSrcFilePath,
-                      clang::tooling::Replacements &Replaces);
 int loadTUFromYaml(const clang::tooling::UnifiedPath &Input,
                    clang::tooling::TranslationUnitReplacements &TU);
 void loadGDCFromYaml(const clang::tooling::UnifiedPath &Input,
                      clang::dpct::GitDiffChanges &GDC);
 int save2Yaml(
-    clang::tooling::UnifiedPath &YamlFile,
-    clang::tooling::UnifiedPath &SrcFileName,
     const std::vector<clang::tooling::Replacement> &Replaces,
-    const std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesDigest,
     const std::map<clang::tooling::UnifiedPath,
                    std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets);
