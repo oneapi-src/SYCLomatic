@@ -290,7 +290,7 @@ Replacements:
     NewHostVarName:  ''
     BlockLevelFormatFlag: false
 MainSourceFilesDigest:
-  - MainSourceFile:  '/home/zhiwei/testfolder/test/test.cu'
+  - MainSourceFile:  'PATH_PLACEHOLDER/test.cu'
     Digest:          63232f272cda678b14a86a4243a28f63
     HasCUDASyntax:   true
 DpctVersion:     21.0.0
@@ -304,7 +304,7 @@ OptionMap:
   AnalysisScopePath:
     Value:           ''
     ValueVec:
-      - '/home/zhiwei/testfolder/test'
+      - 'PATH_PLACEHOLDER'
     Specified:       false
   AsyncHandler:
     Value:           'false'

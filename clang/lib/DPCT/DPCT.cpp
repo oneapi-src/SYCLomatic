@@ -808,6 +808,7 @@ int runDPCT(int argc, const char **argv) {
   CudaIncludePath = CudaInclude;
   SDKPath = SDKPathOpt;
 
+  DpctGlobalInfo::setReMigration(ReMigration);
   loadMainSrcFileInfo(OutRootPath.getCanonicalPath() + "/MainSourceFiles.yaml");
 
   std::transform(
@@ -1240,7 +1241,6 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
   DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtension);
   DpctGlobalInfo::setUseSYCLCompat(UseSYCLCompat);
-  DpctGlobalInfo::setReMigration(ReMigration);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRootPath;
 

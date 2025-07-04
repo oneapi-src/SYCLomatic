@@ -539,7 +539,7 @@ int writeReplacementsToFiles(
       }
     }
 
-    for (const auto &Repl : clang::dpct::getLastMigration().Replacements) {
+    for (const auto &Repl : clang::dpct::getLastMigration()->Replacements) {
       Repl_C1.push_back(Repl);
     }
     std::map<std::string, std::vector<clang::tooling::Replacement>> Result =
