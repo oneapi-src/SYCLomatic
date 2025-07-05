@@ -1,9 +1,9 @@
 // Option: --use-experimental-features=matrix
 #include <mma.h>
 
-__global__ void test(float val) {
+template <typename T> __global__ void test(T val) {
   // Start
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, 16, 16, 16, float> acc_frag;
-  nvcuda::wmma::fill_fragment(acc_frag, val /*float*/);
+  nvcuda::wmma::fill_fragment(acc_frag, val /*const T&*/);
   // End
 }
