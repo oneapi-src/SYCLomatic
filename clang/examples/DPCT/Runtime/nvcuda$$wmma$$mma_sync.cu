@@ -10,8 +10,6 @@ __global__ void test() {
                          nvcuda::wmma::col_major>
       b_frag;
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, 16, 16, 16, float> acc_frag;
-  nvcuda::wmma::mma_sync(acc_frag /* type fragment */,
-                         a_frag /* type fragment */, b_frag /* type fragment */,
-                         acc_frag /* type fragment */);
+  nvcuda::wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);
   // End
 }
