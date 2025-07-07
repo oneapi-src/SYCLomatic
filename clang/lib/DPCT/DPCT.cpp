@@ -520,11 +520,6 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath YamlFilePath) {
   }
   DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
 
-  for (auto &Entry : PreTU->MainSourceFilesDigest) {
-    if (Entry.HasCUDASyntax)
-      MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
-  }
-
   // Currently, when "--use-experimental-features=device_global" and
   // "--use-experimental-features=all" are specified, the migrated code should
   // be compiled with C++20 or later.

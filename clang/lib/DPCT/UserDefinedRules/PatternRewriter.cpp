@@ -28,7 +28,6 @@
 namespace clang {
 namespace dpct {
 
-std::set<std::string> MainSrcFilesHasCudaSyntex;
 bool LANG_Cplusplus_20_Used = false;
 
 struct SpacingElement {};
@@ -465,9 +464,13 @@ static void applyExtenstionNameChange(
   std::string SrcFile = Input.substr(Pos, Next + ExtensionType.length() +
                                               1 /*strlen of "."*/ - Pos);
   bool HasCudaSyntax = false;
-
+  std::set<std::string> MainSrcFilesHasCudaSyntex;
+  for (auto &Entry :
+       DpctGlobalInfo::getMainSourceYamlTUR()->MainSourceFilesDigest) {
+    if (Entry.HasCUDASyntax)
+      MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
+  }
   for (const auto &_File : MainSrcFilesHasCudaSyntex) {
-
     llvm::SmallString<512> File(_File);
     llvm::sys::path::native(File);
 
