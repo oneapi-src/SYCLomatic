@@ -14,7 +14,7 @@
 #include <thrust/execution_policy.h>
 #include <thrust/random.h>
 #include <thrust/reduce.h>
-#include <algorithm>
+#include <thrust/extrema.h>
 #include <thrust/inner_product.h>
 #include <thrust/extrema.h>
 #include <thrust/host_vector.h>
@@ -650,4 +650,35 @@ template <bool is_true> void foo() {
 template <class T> auto foo2(T t) {
   // CHECK: return dpct::make_constant_iterator(std::make_tuple(t, false));
   return thrust::make_constant_iterator(thrust::make_tuple<T, bool>(t, false));
+}
+
+struct key_value {
+   int key;
+   int value;
+};
+
+// CHECK: struct compare_key_value {
+// CHECK-NEXT:   bool operator()(key_value lhs, key_value rhs) {
+// CHECK-NEXT:     return lhs.key < rhs.key;
+// CHECK-NEXT:   }
+// CHECK-NEXT: };
+struct compare_key_value {
+  __host__ __device__ bool operator()(key_value lhs, key_value rhs) {
+    return lhs.key < rhs.key;
+  }
+};
+
+void thrust_max_min() {
+  key_value a = {13, 0};
+  key_value b = {7, 1};
+
+// CHECK:  key_value smaller = std::min(a, b, compare_key_value());
+// CHECK-NEXT:  key_value maxer = std::max(a, b, compare_key_value());
+  key_value smaller = thrust::min(a, b, compare_key_value());
+  key_value maxer = thrust::max(a, b, compare_key_value());
+
+// CHECK:   int min = std::min(1, 2);
+// CHECK-NEXT:  int max = std::max(1, 2);
+  int min = thrust::min(1, 2);
+  int max = thrust::max(1, 2);
 }

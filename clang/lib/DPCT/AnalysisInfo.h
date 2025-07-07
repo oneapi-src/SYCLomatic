@@ -507,9 +507,6 @@ public:
   getConstantMacroTMSet() {
     return ConstantMacroTMSet;
   }
-  std::vector<tooling::Replacement> &getReplacements() {
-    return PreviousTUReplFromYAML->Replacements;
-  }
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>> &
   getAtomicMap() {
     return AtomicMap;
@@ -534,8 +531,8 @@ public:
   void setCCLVerValue(std::string Value) { CCLVerValue = Value; }
   std::string getCCLVerValue() { return CCLVerValue; }
 
-  std::shared_ptr<tooling::TranslationUnitReplacements> PreviousTUReplFromYAML =
-      nullptr;
+  std::optional<std::vector<tooling::Replacement>> PreviousReplVecFromYAML =
+      std::nullopt;
 
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
@@ -1178,11 +1175,11 @@ public:
     return CudaArchMacroRepl;
   }
   CudaArchDefMap &getCudaArchDefinedMap() { return CudaArchDefinedMap; }
-  void insertReplInfoFromYAMLToFileInfo(
-      const clang::tooling::UnifiedPath &FilePath,
-      std::shared_ptr<tooling::TranslationUnitReplacements> TUR);
-  std::shared_ptr<tooling::TranslationUnitReplacements>
-  getReplInfoFromYAMLSavedInFileInfo(clang::tooling::UnifiedPath FilePath);
+  void
+  insertReplVecFromYAMLToFileInfo(const clang::tooling::UnifiedPath &FilePath,
+                                  std::vector<tooling::Replacement> Vec);
+  std::optional<std::vector<tooling::Replacement>>
+  getReplVecFromYAMLSavedInFileInfo(clang::tooling::UnifiedPath FilePath);
   void insertEventSyncTypeInfo(
       const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
       bool NeedReport = false, bool IsAssigned = false);
@@ -1257,16 +1254,6 @@ public:
   static std::set<std::string> &getFileSetInCompilationDB() {
     return FileSetInCompilationDB;
   }
-  static std::unordered_map<std::string,
-                            std::vector<clang::tooling::Replacement>> &
-  getFileRelpsMap() {
-    return FileRelpsMap;
-  }
-  static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo> &
-  getMsfInfoMap() {
-    return MsfInfoMap;
-  }
-  static std::string getYamlFileName() { return YamlFileName; }
   static std::set<std::string> &getGlobalVarNameSet() {
     return GlobalVarNameSet;
   }
@@ -1450,7 +1437,9 @@ public:
   getCubPlaceholderIndexMap() {
     return CubPlaceholderIndexMap;
   }
-  std::vector<tooling::UnifiedPath> &getCSourceFileList() {
+  std::vector<std::pair<tooling::UnifiedPath /*including filename*/,
+                        std::string /*extention name*/>> &
+  getCSourceFileList() {
     return CSourceFileList;
   }
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>> &
@@ -1651,12 +1640,6 @@ private:
   // key: The hash string of the begin location of the macro expansion
   // value: The end location of the macro expansion
   static std::map<std::string, unsigned int> BeginOfEmptyMacros;
-  static std::unordered_map<std::string,
-                            std::vector<clang::tooling::Replacement>>
-      FileRelpsMap;
-  static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo>
-      MsfInfoMap;
-  static const std::string YamlFileName;
   static std::map<std::string, bool> MacroDefines;
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
@@ -1703,7 +1686,9 @@ private:
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
-  static std::vector<tooling::UnifiedPath> CSourceFileList;
+  static std::vector<std::pair<tooling::UnifiedPath /*including filename*/,
+                               std::string /*extention name*/>>
+      CSourceFileList;
   static bool OptimizeMigrationFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;

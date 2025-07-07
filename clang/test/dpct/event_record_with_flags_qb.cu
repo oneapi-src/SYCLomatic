@@ -11,9 +11,9 @@
 #include <cuda_runtime.h>
 
 // CHECK: void cudaEventRecordWithFlags_1() {
-// CHECK-NEXT:  dpct::event_ptr start;
-// CHECK-NEXT:  dpct::queue_ptr stream;
-// CHECK-NEXT:  dpct::sync_barrier(start, stream);
+// CHECK-NEXT:   dpct::event_ptr start;
+// CHECK-NEXT:   dpct::queue_ptr stream;
+// CHECK-NEXT:   dpct::sync_barrier(start, stream);
 // CHECK-NEXT: }
 void cudaEventRecordWithFlags_1() {
   cudaEvent_t start;

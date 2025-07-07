@@ -38,10 +38,7 @@ using clang::tooling::Replacements;
 namespace clang {
 namespace dpct {
 int save2Yaml(
-    clang::tooling::UnifiedPath &YamlFile,
-    clang::tooling::UnifiedPath &SrcFileName,
     const std::vector<clang::tooling::Replacement> &Replaces,
-    const std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesDigest,
     const std::map<clang::tooling::UnifiedPath,
                    std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets) {
@@ -51,11 +48,13 @@ int save2Yaml(
 
   // list all the replacement.
   clang::tooling::TranslationUnitReplacements TUR;
-  TUR.MainSourceFile = SrcFileName.getCanonicalPath();
+  TUR.MainSourceFile = DpctGlobalInfo::getInRoot().getCanonicalPath().str() +
+                       "/MainSrcFiles_placeholder";
   TUR.Replacements.insert(TUR.Replacements.end(), Replaces.begin(),
                           Replaces.end());
 
-  TUR.MainSourceFilesDigest = MainSrcFilesDigest;
+  TUR.MainSourceFilesDigest = DpctGlobalInfo::getMainSourceYamlTUR()
+                                  ->MainSourceFilesDigest;
 
   for (const auto &Entry : CompileTargets) {
     TUR.CompileTargets[Entry.first.getCanonicalPath().str()] = Entry.second;
@@ -71,7 +70,10 @@ int save2Yaml(
 
   YAMLOut << TUR;
   YamlContentStream.flush();
-  clang::dpct::writeDataToFile(YamlFile.getCanonicalPath().str(), YamlContent);
+  clang::dpct::writeDataToFile(
+      DpctGlobalInfo::getOutRoot().getCanonicalPath().str() +
+          "/MainSourceFiles.yaml",
+      YamlContent);
   return 0;
 }
 
@@ -110,6 +112,8 @@ int loadFromYaml(const clang::tooling::UnifiedPath &Input,
 void mergeAndUniqueReps(
     Replacements &Replaces,
     const std::vector<clang::tooling::Replacement> &PreRepls) {
+  if (!DpctGlobalInfo::isIncMigration())
+    return;
 
   bool DupFlag = false;
   for (const auto &OldR : PreRepls) {
@@ -138,38 +142,6 @@ void mergeAndUniqueReps(
       }
     }
   }
-}
-
-int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
-                      clang::tooling::UnifiedPath OutRootSrcFilePath,
-                      Replacements &Replaces) {
-  clang::tooling::UnifiedPath YamlFile =
-      OutRootSrcFilePath.getCanonicalPath() + ".yaml";
-
-  auto PreTU =
-      clang::dpct::DpctGlobalInfo::getInstance()
-          .getReplInfoFromYAMLSavedInFileInfo(std::move(InRootSrcFilePath));
-
-  if (PreTU) {
-    llvm::errs() << YamlFile << " exist, try to merge it.\n";
-
-    mergeAndUniqueReps(Replaces, (*PreTU).Replacements);
-  }
-
-  llvm::errs() << "Saved new version of " << YamlFile << " file\n";
-
-  std::vector<clang::tooling::Replacement> Repls(Replaces.begin(),
-                                                 Replaces.end());
-
-  // For header file, its hash content digest and HasCUDASytax field is not
-  // registed.
-  std::vector<clang::tooling::MainSourceFileInfo> MsfInfo(1);
-
-  std::map<clang::tooling::UnifiedPath,
-           std::vector<clang::tooling::CompilationInfo>>
-      CompileTargets;
-  save2Yaml(YamlFile, OutRootSrcFilePath, Repls, MsfInfo, CompileTargets);
-  return 0;
 }
 } // namespace dpct
 } // namespace clang

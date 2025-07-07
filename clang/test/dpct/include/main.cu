@@ -53,9 +53,6 @@
 // case 4: cuh file not in database.
 // CHECK: #include "test4.dp.hpp"
 #include "test4.cuh"
-// case 5: header file has CUDA syntax, in database.
-// CHECK: #include "test5.h.dp.cpp"
-#include "test5.h"
 // case 6: header file has CUDA syntax, not in database.
 // CHECK: #include "test6.h"
 #include "test6.h"

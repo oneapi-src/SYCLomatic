@@ -468,11 +468,6 @@ void updateCompatibilityVersionInfo(clang::tooling::UnifiedPath OutRoot,
   const std::string CmakeHelpFile =
       appendPath(OutRoot.getCanonicalPath().str(), "dpct.cmake");
   std::ifstream InFile(CmakeHelpFile);
-  if (!InFile) {
-    std::string ErrMsg = "Failed to open file: " + CmakeHelpFile;
-    ShowStatus(MigrationErrorReadWriteCMakeHelperFile, std::move(ErrMsg));
-    dpctExit(MigrationErrorReadWriteCMakeHelperFile);
-  }
 
   const std::string VersionStr = Major + "." + Minor;
   const int CompatibilityValue = std::stoi(Major) * 10 + std::stoi(Minor);
@@ -516,24 +511,14 @@ void updateCompatibilityVersionInfo(clang::tooling::UnifiedPath OutRoot,
   OutFile.close();
 }
 
-static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
-  std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
-                                        DpctGlobalInfo::getYamlFileName());
+static void loadMainSrcFileInfo(clang::tooling::UnifiedPath YamlFilePath) {
+  if (!llvm::sys::fs::exists(YamlFilePath.getCanonicalPath()))
+    return;
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
-  if (llvm::sys::fs::exists(YamlFilePath)) {
-    if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
-      llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
-    }
-
-    if (MigrateBuildScriptOnly && !DpctGlobalInfo::migratePythonScripts() ||
-        DpctGlobalInfo::migrateCMakeScripts()) {
-      std::string Major = PreTU->SDKVersionMajor;
-      std::string Minor = PreTU->SDKVersionMinor;
-      if (!Major.empty() && !Minor.empty()) {
-        updateCompatibilityVersionInfo(OutRoot, Major, Minor);
-      }
-    }
+  if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
+    llvm::errs() << getLoadYamlFailWarning();
   }
+  DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
 
   for (auto &Entry : PreTU->MainSourceFilesDigest) {
     if (Entry.HasCUDASyntax)
@@ -635,6 +620,12 @@ void showReportHeader() {
 }
 
 void checkIncMigrationOrExit() {
+  auto PreTU = DpctGlobalInfo::getMainSourceYamlTUR();
+  if (!PreTU) {
+    PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
+    DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
+    return;
+  }
   if (!MigrateBuildScriptOnly &&
       clang::dpct::DpctGlobalInfo::isIncMigration()) {
     std::string Msg;
@@ -679,7 +670,6 @@ int migrateBuildScripts(const clang::tooling::UnifiedPath &InRoot,
 }
 
 void doBuildScriptMigration() {
-  loadMainSrcFileInfo(OutRootPath);
   collectBuildScripts(InRootPath, OutRootPath);
   migrateBuildScripts(InRootPath, OutRootPath);
 }
@@ -817,6 +807,9 @@ int runDPCT(int argc, const char **argv) {
   std::string OutRootPathCUDACodepin = "";
   CudaIncludePath = CudaInclude;
   SDKPath = SDKPathOpt;
+
+  loadMainSrcFileInfo(OutRootPath.getCanonicalPath() + "/MainSourceFiles.yaml");
+
   std::transform(
       RuleFile.begin(), RuleFile.end(),
       std::back_insert_iterator<std::vector<clang::tooling::UnifiedPath>>(
@@ -1072,6 +1065,8 @@ int runDPCT(int argc, const char **argv) {
             Experimentals.addValue(ExperimentalFeatures::Exp_NonUniformGroups);
         } else if (Option == "--no-dry-pattern") {
           NoDRYPattern.setValue(true);
+        } else if (Option == "--enable-profiling") {
+          EnablepProfiling.setValue(true);
         }
         // Need add more option.
       }
@@ -1341,19 +1336,6 @@ int runDPCT(int argc, const char **argv) {
                      UseDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPattern.getValue(),
                      NoDRYPattern.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
-                     OptParser->isPSpecified());
-#ifdef _WIN32
-    if (!VcxprojFilePath.getPath().empty()) {
-      setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
-                       VcxprojFilePath.getCanonicalPath().str(),
-                       OptParser->isVcxprojfileSpecified());
-    } else {
-      setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
-                       VcxprojFilePath.getPath().str(),
-                       OptParser->isVcxprojfileSpecified());
-    }
-#endif
     setValueToOptMap(clang::dpct::OPTION_ProcessAll, ProcessAll.getValue(),
                      ProcessAll.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda, SyclNamedLambda.getValue(),
@@ -1393,11 +1375,17 @@ int runDPCT(int argc, const char **argv) {
     parseFormatStyle();
   }
   // OC_Action: only migrate Build scripts.
+  if (MigrateBuildScriptOnly && !DpctGlobalInfo::migratePythonScripts() ||
+      DpctGlobalInfo::migrateCMakeScripts()) {
+    std::string Major = DpctGlobalInfo::getMainSourceYamlTUR()->SDKVersionMajor;
+    std::string Minor = DpctGlobalInfo::getMainSourceYamlTUR()->SDKVersionMinor;
+    if (!Major.empty() && !Minor.empty()) {
+      updateCompatibilityVersionInfo(OutRoot, Major, Minor);
+    }
+  }
   if (MigrateBuildScriptOnly) {
-    loadMainSrcFileInfo(OutRootPath);
     collectBuildScriptsSpecified(OptParser, InRootPath, OutRootPath);
     migrateBuildScripts(InRootPath, OutRootPath);
-
     ShowStatus(MigrationBuildScriptCompleted);
     dpctExit(MigrationSucceeded, false);
   }

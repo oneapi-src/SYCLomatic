@@ -267,3 +267,97 @@
 // thrust_make_zip_iterator-NEXT:  typedef dpct::device_vector<float>::iterator float_iterator;
 // thrust_make_zip_iterator-NEXT:  typedef std::tuple<int_iterator, float_iterator> iterator_tuple;
 // thrust_make_zip_iterator-NEXT:  dpct::zip_iterator<iterator_tuple> ret = oneapi::dpl::make_zip_iterator(std::make_tuple(int_in.begin(), float_in.begin()));
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::count --extra-arg="-std=c++14"| FileCheck %s -check-prefix=thrust_count
+// thrust_count: CUDA API:
+// thrust_count-NEXT:   std::vector<int> v;
+// thrust_count-NEXT:   /*1*/ thrust::count(thrust::seq, v.begin(), v.end(), 23);
+// thrust_count-NEXT:   /*2*/ thrust::count(v.begin(), v.end(), 23);
+// thrust_count-NEXT: Is migrated to:
+// thrust_count-NEXT:   std::vector<int> v;
+// thrust_count-NEXT:   /*1*/ std::count(oneapi::dpl::execution::seq, v.begin(), v.end(), 23);
+// thrust_count-NEXT:   /*2*/ std::count(oneapi::dpl::execution::seq, v.begin(), v.end(), 23);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::sort --extra-arg="-std=c++14"| FileCheck %s -check-prefix=thrust_sort
+// thrust_sort: CUDA API:
+// thrust_sort-NEXT:   thrust::host_vector<int> h_vec(10);
+// thrust_sort-NEXT:   thrust::device_vector<int> d_vec(10);
+// thrust_sort-NEXT:   /*1*/ thrust::sort(h_vec.begin(), h_vec.end());
+// thrust_sort-NEXT:   /*2*/ thrust::sort(thrust::device, d_vec.begin(), d_vec.end());
+// thrust_sort-NEXT: Is migrated to:
+// thrust_sort-NEXT:   std::vector<int> h_vec(10);
+// thrust_sort-NEXT:   dpct::device_vector<int> d_vec(10);
+// thrust_sort-NEXT:   /*1*/ oneapi::dpl::sort(oneapi::dpl::execution::seq, h_vec.begin(), h_vec.end());
+// thrust_sort-NEXT:   /*2*/ oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::get_temporary_buffer --extra-arg="-std=c++14"| FileCheck %s -check-prefix=thrust_get_temporary_buffer
+// thrust_get_temporary_buffer: CUDA API:
+// thrust_get_temporary_buffer-NEXT:   const int N = 100;
+// thrust_get_temporary_buffer-NEXT:   typedef thrust::pair<thrust::pointer<int, thrust::device_system_tag>, std::ptrdiff_t> ptr_and_size_t;
+// thrust_get_temporary_buffer-NEXT:   thrust::device_system_tag device_sys;
+// thrust_get_temporary_buffer-NEXT:   ptr_and_size_t ptr_and_size = thrust::get_temporary_buffer<int>(device_sys, N);
+// thrust_get_temporary_buffer-NEXT: Is migrated to:
+// thrust_get_temporary_buffer-NEXT:   const int N = 100;
+// thrust_get_temporary_buffer-NEXT:   typedef std::pair<dpct::tagged_pointer<int, dpct::device_sys_tag>, std::ptrdiff_t> ptr_and_size_t;
+// thrust_get_temporary_buffer-NEXT:   dpct::device_sys_tag device_sys;
+// thrust_get_temporary_buffer-NEXT:   ptr_and_size_t ptr_and_size = dpct::get_temporary_allocation<int>(device_sys, N);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::max --extra-arg="-std=c++14"| FileCheck %s -check-prefix=thrust_max
+// thrust_max: CUDA API:
+// thrust_max-NEXT:   struct key_value {
+// thrust_max-NEXT:     int key;
+// thrust_max-NEXT:     int value;
+// thrust_max-NEXT:   };
+// thrust_max-NEXT:   struct compare_key_value {
+// thrust_max-NEXT:     __host__ __device__ bool operator()(key_value lhs, key_value rhs) {
+// thrust_max-NEXT:       return lhs.key < rhs.key;
+// thrust_max-NEXT:     }
+// thrust_max-NEXT:   };
+// thrust_max-NEXT:   key_value a = {13, 0};
+// thrust_max-NEXT:   key_value b = {7, 1};
+// thrust_max-NEXT:   key_value smaller = thrust::max(a, b, compare_key_value());
+// thrust_max-NEXT:   int value = thrust::max(1, 2);
+// thrust_max-NEXT: Is migrated to:
+// thrust_max-NEXT:   struct key_value {
+// thrust_max-NEXT:     int key;
+// thrust_max-NEXT:     int value;
+// thrust_max-NEXT:   };
+// thrust_max-NEXT:   struct compare_key_value {
+// thrust_max-NEXT:     bool operator()(key_value lhs, key_value rhs) {
+// thrust_max-NEXT:       return lhs.key < rhs.key;
+// thrust_max-NEXT:     }
+// thrust_max-NEXT:   };
+// thrust_max-NEXT:   key_value a = {13, 0};
+// thrust_max-NEXT:   key_value b = {7, 1};
+// thrust_max-NEXT:   key_value smaller = std::max(a, b, compare_key_value());
+// thrust_max-NEXT:   int value = std::max(1, 2);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::min --extra-arg="-std=c++14"| FileCheck %s -check-prefix=thrust_min
+// thrust_min: CUDA API:
+// thrust_min-NEXT:   struct key_value {
+// thrust_min-NEXT:     int key;
+// thrust_min-NEXT:     int value;
+// thrust_min-NEXT:   };
+// thrust_min-NEXT:   struct compare_key_value {
+// thrust_min-NEXT:     __host__ __device__ bool operator()(key_value lhs, key_value rhs) {
+// thrust_min-NEXT:       return lhs.key < rhs.key;
+// thrust_min-NEXT:     }
+// thrust_min-NEXT:   };
+// thrust_min-NEXT:   key_value a = {13, 0};
+// thrust_min-NEXT:   key_value b = {7, 1};
+// thrust_min-NEXT:   key_value smaller = thrust::min(a, b, compare_key_value());
+// thrust_min-NEXT:   int value = thrust::min(1, 2);
+// thrust_min-NEXT: Is migrated to:
+// thrust_min-NEXT:   struct key_value {
+// thrust_min-NEXT:     int key;
+// thrust_min-NEXT:     int value;
+// thrust_min-NEXT:   };
+// thrust_min-NEXT:   struct compare_key_value {
+// thrust_min-NEXT:     bool operator()(key_value lhs, key_value rhs) {
+// thrust_min-NEXT:       return lhs.key < rhs.key;
+// thrust_min-NEXT:     }
+// thrust_min-NEXT:   };
+// thrust_min-NEXT:   key_value a = {13, 0};
+// thrust_min-NEXT:   key_value b = {7, 1};
+// thrust_min-NEXT:   key_value smaller = std::min(a, b, compare_key_value());
+// thrust_min-NEXT:   int value = std::min(1, 2);

@@ -6,3 +6,9 @@
 // saturate-NEXT:   saturate(f /*float*/);
 // saturate-NEXT: Is migrated to:
 // saturate-NEXT:   dpct::clamp<float>(f, 0.0f, 1.0f);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=mul24 | FileCheck %s -check-prefix=mul24
+// mul24: CUDA API:
+// mul24-NEXT:   mul24(a /*int*/, b /*int*/);
+// mul24-NEXT: Is migrated to:
+// mul24-NEXT:   sycl::mul24(a, b);

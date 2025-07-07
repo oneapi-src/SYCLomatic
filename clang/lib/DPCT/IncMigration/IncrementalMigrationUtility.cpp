@@ -111,38 +111,10 @@ int checkDpctOptionSet(
       } else if (CurrentOpt.first == OPTION_AnalysisScopePath) {
         if (checkListOptions(OPTION_AnalysisScopePath))
           return -1;
-      }
-#ifdef _WIN32
-      else if (CurrentOpt.first == OPTION_VcxprojFile) {
-        if (!PreviousOpts.count(OPTION_CompilationsDir)) {
-          return -2;
-        }
-        if ((PreviousOpts.at(OPTION_VcxprojFile).Specified &&
-             !CurrentOpts.at(OPTION_VcxprojFile).Specified) ||
-            (!PreviousOpts.at(OPTION_VcxprojFile).Specified &&
-             CurrentOpts.at(OPTION_VcxprojFile).Specified)) {
-          if (PreviousOpts.at(OPTION_CompilationsDir).Value !=
-              CurrentOpts.at(OPTION_CompilationsDir).Value) {
-            return -1;
-          }
-        } else {
-          if (PreviousOpts.at(CurrentOpt.first).Value !=
-              CurrentOpt.second.Value) {
-            return -1;
-          }
-        }
-      } else {
-        if (PreviousOpts.at(CurrentOpt.first).Value !=
-            CurrentOpt.second.Value) {
-          return -1;
-        }
-      }
-#else
-      else if (PreviousOpts.at(CurrentOpt.first).Value !=
-               CurrentOpt.second.Value) {
+      } else if (PreviousOpts.at(CurrentOpt.first).Value !=
+                 CurrentOpt.second.Value) {
         return -1;
       }
-#endif
     } else {
       return -2;
     }
@@ -245,14 +217,10 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--no-dry-pattern");
     }
-    if (Key == clang::dpct::OPTION_CompilationsDir && Specified) {
-      Opts.emplace_back("--compilation-database=\"" + Value + "\"");
+    if (Key == clang::dpct::OPTION_CodePinEnabled && Specified) {
+      if ("true" == Value)
+        Opts.emplace_back("--enable-codepin");
     }
-#ifdef _WIN32
-    if (Key == clang::dpct::OPTION_VcxprojFile && Specified) {
-      Opts.emplace_back("--vcxprojfile=\"" + Value + "\"");
-    }
-#endif
     if (Key == clang::dpct::OPTION_ProcessAll) {
       if ("true" == Value)
         Opts.emplace_back("--process-all");
@@ -368,23 +336,12 @@ bool printOptions(
 // return true: dpct do migration continually
 // return false: dpct should exit
 bool canContinueMigration(std::string &Msg) {
-  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
-  // Try to load the MainSourceFiles.yaml file
-  SmallString<128> YamlFilePathStr(DpctGlobalInfo::getOutRoot().getCanonicalPath());
-  llvm::sys::path::append(YamlFilePathStr, "MainSourceFiles.yaml");
-  clang::tooling::UnifiedPath YamlFilePath = YamlFilePathStr;
-
-  if (!llvm::sys::fs::exists(YamlFilePath.getCanonicalPath()))
-    return true;
-  if (loadFromYaml(YamlFilePath.getCanonicalPath(), *PreTU) != 0) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
-    return true;
-  }
+  auto PreTU = DpctGlobalInfo::getMainSourceYamlTUR();
 
   // check version
   auto VerCompRes = compareToolVersion(PreTU->DpctVersion);
   if (VerCompRes == VersionCmpResult::VCR_CMP_FAILED) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
+    llvm::errs() << getLoadYamlFailWarning();
     return true;
   }
   if (VerCompRes == VersionCmpResult::VCR_CURRENT_IS_NEWER ||
@@ -397,7 +354,7 @@ bool canContinueMigration(std::string &Msg) {
   int Res =
       checkDpctOptionSet(DpctGlobalInfo::getCurrentOptMap(), PreTU->OptionMap);
   if (Res == -2) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
+    llvm::errs() << getLoadYamlFailWarning();
     return true;
   }
 
@@ -406,13 +363,11 @@ bool canContinueMigration(std::string &Msg) {
     bool Ret = printOptions(PreTU->OptionMap, Msg);
     if (!Ret) {
       // parsing error, skip yaml
-      llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
+      llvm::errs() << getLoadYamlFailWarning();
       return true;
     }
     return false;
   }
-
-  DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
   return true;
 }
 

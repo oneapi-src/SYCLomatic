@@ -57,7 +57,11 @@ void test() {
 
   // CHECK: result7 = dpct::get_device(device).get_max_pitch();
   cuDeviceGetAttribute(&result7,CU_DEVICE_ATTRIBUTE_MAX_PITCH, device);
-  std::cout << " result7 " << result5 << std::endl;
+  std::cout << " result7 " << result7 << std::endl;
+
+  // CHECK: result8 = dpct::get_device(device).get_async_engine_count();
+  cuDeviceGetAttribute(&result8,CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT, device);
+  std::cout << " result8 " << result1 << std::endl;
 
   // CHECK: sycl::ext::oneapi::peer_access p2p_attr;
   CUdevice_P2PAttribute p2p_attr;

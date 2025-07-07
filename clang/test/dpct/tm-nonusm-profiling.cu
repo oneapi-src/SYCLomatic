@@ -478,7 +478,7 @@ int foo_test_4()
         foo_kernel_3<<<grid, block, 0, streams[i]>>>();
         foo_kernel_4<<<grid, block, 0, streams[i]>>>();
 
-// CHECK:        CHECK(DPCT_CHECK_ERROR(*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier()));
+// CHECK:        CHECK(DPCT_CHECK_ERROR(dpct::sync_barrier(kernelEvent[i], streams[i])));
 // CHECK-NEXT:        streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
         CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
