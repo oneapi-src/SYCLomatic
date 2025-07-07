@@ -5,18 +5,12 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-// Usage:
-// $ g++ gitdiff2yaml.cpp -o gitdiff2yaml
-// $ cd /path/to/your/git/repo
-// $ ./gitdiff2yaml <old_commit_id>
-// This will output the clang replacements in YAML format.
-// Limitation:
-// (1) The workspace and the staging area should be clean before running
-// this tool.
-// (2) The line ending in the file should be '\n'.
-//===----------------------------------------------------------------------===//
 
-#include <algorithm>
+#include "gitdiff2yaml.h"
+
+#include "llvm/Support/YAMLTraits.h"
+#include "llvm/Support/raw_os_ostream.h"
+
 #include <array>
 #include <cstdio>
 #include <cstring>
@@ -30,39 +24,6 @@
 #include <vector>
 
 namespace {
-
-const std::string LineEnd = "\\n";
-
-std::string execGitCommand(const std::string &CMD) {
-  std::array<char, 128> Buffer;
-  std::unique_ptr<FILE, int (*)(FILE *)> Pipe(popen(CMD.c_str(), "r"), pclose);
-  if (!Pipe) {
-    throw std::runtime_error("popen() failed!");
-  }
-
-  std::string Result;
-  while (fgets(Buffer.data(), Buffer.size(), Pipe.get()) != nullptr) {
-    Result += Buffer.data();
-  }
-  return Result;
-}
-
-struct Replacement {
-  std::string NewFilePath;
-  std::string OldFilePath;
-  unsigned Offset = 0;
-  unsigned Length = 0;
-  std::string ReplacementText;
-};
-
-struct HunkContext {
-  unsigned OldCurrentLine = 0;
-  bool InHunk = false;
-  bool FastForward = false;
-  std::string CurrentNewFilePath;
-  std::string CurrentOldFilePath;
-};
-
 bool startsWith(const std::string &Str, const std::string &Prefix) {
   return Str.size() >= Prefix.size() &&
          Str.compare(0, Prefix.size(), Prefix) == 0;
@@ -201,6 +162,191 @@ void processHunkBody(const std::string &Line, HunkContext &Ctx,
   }
 }
 
+struct ModifyHunk {
+  ModifyHunk() = default;
+  ModifyHunk(std::string FilePath, unsigned Offset, unsigned Length,
+             std::string ReplacementText)
+      : FilePath(FilePath), Offset(Offset), Length(Length),
+        ReplacementText(ReplacementText) {};
+  std::string FilePath;
+  unsigned Offset = 0;
+  unsigned Length = 0;
+  std::string ReplacementText;
+};
+
+struct AddHunk {
+  AddHunk() = default;
+  AddHunk(std::string NewFilePath) : NewFilePath(NewFilePath) {};
+  std::string NewFilePath;
+};
+
+struct DeleteHunk {
+  DeleteHunk() = default;
+  DeleteHunk(std::string OldFilePath) : OldFilePath(OldFilePath) {};
+  std::string OldFilePath;
+};
+
+struct MoveHunk {
+  MoveHunk() = default;
+  MoveHunk(std::string FilePath, unsigned Offset, unsigned Length,
+           std::string ReplacementText, std::string NewFilePath)
+      : FilePath(FilePath), Offset(Offset), Length(Length),
+        ReplacementText(ReplacementText), NewFilePath(NewFilePath) {};
+  std::string FilePath;
+  unsigned Offset = 0;
+  unsigned Length = 0;
+  std::string ReplacementText;
+  std::string NewFilePath;
+};
+
+struct GitDiffChanges {
+  std::vector<ModifyHunk> ModifyHunks;
+  std::vector<AddHunk> AddHunks;
+  std::vector<DeleteHunk> DeleteHunks;
+  std::vector<MoveHunk> MoveHunks;
+};
+} // namespace
+
+LLVM_YAML_IS_SEQUENCE_VECTOR(ModifyHunk)
+LLVM_YAML_IS_SEQUENCE_VECTOR(AddHunk)
+LLVM_YAML_IS_SEQUENCE_VECTOR(DeleteHunk)
+LLVM_YAML_IS_SEQUENCE_VECTOR(MoveHunk)
+namespace llvm {
+namespace yaml {
+template <> struct MappingTraits<ModifyHunk> {
+  struct NormalizedModifyFileHunk {
+    NormalizedModifyFileHunk(const IO &io) : Offset(0), Length(0) {}
+    NormalizedModifyFileHunk(const IO &io, ModifyHunk &H)
+        : FilePath(H.FilePath), Offset(H.Offset), Length(H.Length),
+          ReplacementText(H.ReplacementText) {}
+    ModifyHunk denormalize(const IO &) {
+      ModifyHunk H(FilePath, Offset, Length, ReplacementText);
+      return H;
+    }
+    std::string FilePath;
+    unsigned int Offset;
+    unsigned int Length;
+    std::string ReplacementText;
+  };
+
+  static void mapping(IO &Io, ModifyHunk &H) {
+    MappingNormalization<NormalizedModifyFileHunk, ModifyHunk> Keys(Io, H);
+    Io.mapRequired("FilePath", Keys->FilePath);
+    Io.mapRequired("Offset", Keys->Offset);
+    Io.mapRequired("Length", Keys->Length);
+    Io.mapRequired("ReplacementText", Keys->ReplacementText);
+  }
+};
+
+template <> struct MappingTraits<AddHunk> {
+  struct NormalizedAddFileHunk {
+    NormalizedAddFileHunk(const IO &io) {}
+    NormalizedAddFileHunk(const IO &io, AddHunk &H)
+        : NewFilePath(H.NewFilePath) {}
+    AddHunk denormalize(const IO &io) {
+      AddHunk H(NewFilePath);
+      return H;
+    }
+    std::string NewFilePath;
+  };
+  static void mapping(IO &Io, AddHunk &H) {
+    MappingNormalization<NormalizedAddFileHunk, AddHunk> Keys(Io, H);
+    Io.mapRequired("NewFilePath", Keys->NewFilePath);
+  }
+};
+
+template <> struct MappingTraits<DeleteHunk> {
+  struct NormalizedDeleteFileHunk {
+    NormalizedDeleteFileHunk(const IO &io) {}
+    NormalizedDeleteFileHunk(const IO &io, DeleteHunk &H)
+        : OldFilePath(H.OldFilePath) {}
+    DeleteHunk denormalize(const IO &io) {
+      DeleteHunk H(OldFilePath);
+      return H;
+    }
+    std::string OldFilePath;
+  };
+  static void mapping(IO &Io, DeleteHunk &H) {
+    MappingNormalization<NormalizedDeleteFileHunk, DeleteHunk> Keys(Io, H);
+    Io.mapRequired("OldFilePath", Keys->OldFilePath);
+  }
+};
+
+template <> struct MappingTraits<MoveHunk> {
+  struct NormalizedMoveFileHunk {
+    NormalizedMoveFileHunk(const IO &io) : Offset(0), Length(0) {}
+    NormalizedMoveFileHunk(const IO &io, MoveHunk &H)
+        : FilePath(H.FilePath), Offset(H.Offset), Length(H.Length),
+          ReplacementText(H.ReplacementText), NewFilePath(H.NewFilePath) {}
+    MoveHunk denormalize(const IO &io) {
+      MoveHunk H(FilePath, Offset, Length, ReplacementText, NewFilePath);
+      return H;
+    }
+    std::string FilePath;
+    unsigned int Offset;
+    unsigned int Length;
+    std::string ReplacementText;
+    std::string NewFilePath;
+  };
+  static void mapping(IO &Io, MoveHunk &H) {
+    MappingNormalization<NormalizedMoveFileHunk, MoveHunk> Keys(Io, H);
+    Io.mapRequired("FilePath", Keys->FilePath);
+    Io.mapRequired("Offset", Keys->Offset);
+    Io.mapRequired("Length", Keys->Length);
+    Io.mapRequired("ReplacementText", Keys->ReplacementText);
+    Io.mapRequired("NewFilePath", Keys->NewFilePath);
+  }
+};
+
+template <> struct MappingTraits<GitDiffChanges> {
+  static void mapping(IO &Io, GitDiffChanges &GDC) {
+    Io.mapOptional("ModifyFileHunks", GDC.ModifyHunks);
+    Io.mapOptional("AddFileHunks", GDC.AddHunks);
+    Io.mapOptional("DeleteFileHunks", GDC.DeleteHunks);
+    Io.mapOptional("MoveFileHunks", GDC.MoveHunks);
+  }
+};
+} // namespace yaml
+} // namespace llvm
+
+void printYaml(std::ostream &stream, const std::vector<Replacement> &Repls) {
+  GitDiffChanges GDC;
+
+  for (const auto &R : Repls) {
+    if (R.OldFilePath == "/dev/null" && R.NewFilePath != "/dev/null") {
+      // Add replacement
+      AddHunk AH(R.NewFilePath);
+      GDC.AddHunks.push_back(AH);
+      continue;
+    }
+    if (R.OldFilePath != "/dev/null" && R.NewFilePath == "/dev/null") {
+      // Delete replacement
+      DeleteHunk DH(R.OldFilePath);
+      GDC.DeleteHunks.push_back(DH);
+      continue;
+    }
+    if (R.OldFilePath == R.NewFilePath && R.OldFilePath != "/dev/null") {
+      // Modify replacement
+      ModifyHunk MH(R.OldFilePath, R.Offset, R.Length, R.ReplacementText);
+      GDC.ModifyHunks.push_back(MH);
+      continue;
+    }
+    if (R.OldFilePath != R.NewFilePath) {
+      // Move replacement
+      MoveHunk MH(R.OldFilePath, R.Offset, R.Length, R.ReplacementText,
+                  R.NewFilePath);
+      GDC.MoveHunks.push_back(MH);
+      continue;
+    }
+    throw std::runtime_error("Invalid replacement: " + R.OldFilePath + " -> " +
+                             R.NewFilePath);
+  }
+
+  llvm::raw_os_ostream raw_os(stream);
+  llvm::yaml::Output yout(raw_os);
+  yout << GDC;
+}
+
 std::vector<Replacement> parseDiff(const std::string &diffOutput,
                                    const std::string &RepoRoot) {
   std::vector<Replacement> replacements;
@@ -265,162 +411,16 @@ std::vector<Replacement> parseDiff(const std::string &diffOutput,
   return replacements;
 }
 
-struct ModifyHunk {
-  std::string FilePath;
-  unsigned Offset = 0;
-  unsigned Length = 0;
-  std::string ReplacementText;
-};
-
-struct AddHunk {
-  std::string NewFilePath;
-};
-
-struct DeleteHunk {
-  std::string OldFilePath;
-};
-
-struct MoveHunk {
-  std::string FilePath;
-  unsigned Offset = 0;
-  unsigned Length = 0;
-  std::string ReplacementText;
-  std::string NewFilePath;
-};
-
-void printYaml(std::ostream &stream, const std::vector<Replacement> &Repls) {
-  std::vector<ModifyHunk> ModifyHunks;
-  std::vector<AddHunk> AddHunks;
-  std::vector<DeleteHunk> DeleteHunks;
-  std::vector<MoveHunk> MoveHunks;
-
-  for (const auto &R : Repls) {
-    if (R.OldFilePath == "/dev/null" && R.NewFilePath != "/dev/null") {
-      // Add replacement
-      AddHunk AH;
-      AH.NewFilePath = R.NewFilePath;
-      AddHunks.push_back(AH);
-      continue;
-    }
-    if (R.OldFilePath != "/dev/null" && R.NewFilePath == "/dev/null") {
-      // Delete replacement
-      DeleteHunk DH;
-      DH.OldFilePath = R.OldFilePath;
-      DeleteHunks.push_back(DH);
-      continue;
-    }
-    if (R.OldFilePath == R.NewFilePath && R.OldFilePath != "/dev/null") {
-      // Modify replacement
-      ModifyHunk MH;
-      MH.FilePath = R.OldFilePath;
-      MH.Offset = R.Offset;
-      MH.Length = R.Length;
-      MH.ReplacementText = R.ReplacementText;
-      ModifyHunks.push_back(MH);
-      continue;
-    }
-    if (R.OldFilePath != R.NewFilePath) {
-      // Move replacement
-      MoveHunk MH;
-      MH.FilePath = R.OldFilePath;
-      MH.Offset = R.Offset;
-      MH.Length = R.Length;
-      MH.ReplacementText = R.ReplacementText;
-      MH.NewFilePath = R.NewFilePath;
-      MoveHunks.push_back(MH);
-      continue;
-    }
-    throw std::runtime_error("Invalid replacement: " + R.OldFilePath + " -> " +
-                             R.NewFilePath);
+std::string execGitCommand(const std::string &CMD) {
+  std::array<char, 128> Buffer;
+  std::unique_ptr<FILE, int (*)(FILE *)> Pipe(popen(CMD.c_str(), "r"), pclose);
+  if (!Pipe) {
+    throw std::runtime_error("popen() failed!");
   }
 
-  stream << "---" << std::endl;
-  if (!ModifyHunks.empty())
-    stream << "ModifyFileHunks:" << std::endl;
-  for (const auto &H : ModifyHunks) {
-    stream << "  - FilePath:        " << "'" << H.FilePath << "'" << std::endl;
-    stream << "    Offset:          " << H.Offset << std::endl;
-    stream << "    Length:          " << H.Length << std::endl;
-    stream << "    ReplacementText: " << "\"" << H.ReplacementText << "\""
-           << std::endl;
+  std::string Result;
+  while (fgets(Buffer.data(), Buffer.size(), Pipe.get()) != nullptr) {
+    Result += Buffer.data();
   }
-  if (!AddHunks.empty())
-    stream << "AddFileHunks:" << std::endl;
-  for (const auto &H : AddHunks) {
-    stream << "  - NewFilePath:     " << "'" << H.NewFilePath << "'"
-           << std::endl;
-  }
-  if (!DeleteHunks.empty())
-    stream << "DeleteFileHunks:" << std::endl;
-  for (const auto &H : DeleteHunks) {
-    stream << "  - OldFilePath:     " << "'" << H.OldFilePath << "'"
-           << std::endl;
-  }
-  if (!MoveHunks.empty())
-    stream << "MoveFileHunks:" << std::endl;
-  for (const auto &H : MoveHunks) {
-    stream << "  - FilePath:        " << "'" << H.FilePath << "'" << std::endl;
-    stream << "    Offset:          " << H.Offset << std::endl;
-    stream << "    Length:          " << H.Length << std::endl;
-    stream << "    ReplacementText: " << "\"" << H.ReplacementText << "\""
-           << std::endl;
-    stream << "    NewFilePath:     " << "'" << H.NewFilePath << "'"
-           << std::endl;
-  }
-  stream << "..." << std::endl;
-}
-
-} // namespace
-
-int main(int argc, char *argv[]) {
-  if (argc != 2 && argc != 4) {
-    std::cerr << "Usage: gitdiff2yaml <old_commit_id> [-o outputfile]"
-              << std::endl;
-    return 1;
-  }
-  bool OutputToFile = false;
-  if (argc == 4) {
-    if (std::string(argv[2]) != "-o") {
-      std::cerr << "Invalid option: " << argv[2] << std::endl;
-      return 1;
-    }
-    OutputToFile = true;
-  }
-
-  std::string OldCommitID = argv[1];
-
-  std::string RepoRoot = execGitCommand("git rev-parse --show-toplevel");
-  RepoRoot = RepoRoot.substr(0, RepoRoot.size() - 1); // Remove the last '\n'
-
-  std::string NewCommitID = execGitCommand("git log -1 --format=\"%H\"");
-  std::string DiffOutput = execGitCommand("git diff " + OldCommitID);
-
-  execGitCommand("git reset --hard " + OldCommitID);
-  std::vector<Replacement> Repls = parseDiff(DiffOutput, RepoRoot);
-
-  // Erase emtpy replacements
-  Repls.erase(std::remove_if(Repls.begin(), Repls.end(),
-                             [](Replacement x) {
-                               return (x.NewFilePath == "" &&
-                                       x.OldFilePath == "" && x.Offset == 0 &&
-                                       x.Length == 0 &&
-                                       x.ReplacementText == "");
-                             }),
-              Repls.end());
-
-  if (OutputToFile) {
-    std::ofstream OutFile(argv[3]);
-    if (!OutFile.is_open()) {
-      std::cerr << "Failed to open output file: " << argv[3] << std::endl;
-      return 1;
-    }
-    printYaml(OutFile, Repls);
-    OutFile.close();
-  } else {
-    printYaml(std::cout, Repls);
-  }
-
-  execGitCommand("git reset --hard " + NewCommitID);
-
-  return 0;
+  return Result;
 }

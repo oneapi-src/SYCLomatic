@@ -52,6 +52,7 @@ add_clang_subdirectory(libclang)
 
 add_clang_subdirectory(dpct)
 add_clang_subdirectory(pattern-rewriter)
+add_clang_subdirectory(gitdiff2yaml)
 add_clang_subdirectory(scan-build-py)
 add_clang_subdirectory(amdgpu-arch)
 add_clang_subdirectory(nvptx-arch)

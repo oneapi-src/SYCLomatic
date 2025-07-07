@@ -6,24 +6,25 @@
 //
 //===----------------------------------------------------------------------===//
 // Workflow: 
-//      CUDA code v1
-//           |
-//           |  dpct (--format-range=off) => MainSourceFiles.yaml and *.h.yaml
-//           v
-//      SYCL code v1
-//           |  1. git init and commit
-//           |  2. manual format with clang-format
-//           |  3. manual fix
-//           v  4. gitdiff2yaml => UserChange.yaml
-//      SYCL code v1.1
-//
-//      CUDA code v2
-//           |
-//           |  dpct (--format-range=off)
-//           |    + MainSourceFiles.yaml and *.h.yaml
-//           |    + UserChange.yaml
-//           v
-//      SYCL code v2
+//   CUDA code v1
+//        |
+//        |  dpct (--format-range=off) => MainSourceFiles.yaml
+//        v
+//   SYCL code v1
+//        |  1. git init and commit
+//        |  2. manual format with clang-format
+//        |  3. manual fix
+//        v  4. gitdiff2yaml => UserChange.yaml
+//   SYCL code v1.1
+// 
+//   CUDA code v2
+//        |
+//        |  dpct (--format-range=off)
+//        |    and MainSourceFiles.yaml
+//        |    and UserChange.yaml
+//        |    and UpStreamChange.yaml
+//        v
+//   SYCL code v2
 //===----------------------------------------------------------------------===//
 
 #include "ReMigration.h"

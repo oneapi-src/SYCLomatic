@@ -1,18 +1,18 @@
 ---
 ModifyFileHunks:
-  - FilePath:        'test.cu'
+  - FilePath:        test.cu
     Offset:          26
     Length:          0
     ReplacementText: "#include \"cublas_v2.h\"\n"
-  - FilePath:        'test.cu'
+  - FilePath:        test.cu
     Offset:          708
     Length:          0
     ReplacementText: "#define CHECK_CUBLAS(call)                                                     \\\n  do {                                                                         \\\n    cublasStatus_t err = call;                                                 \\\n    if (err != CUBLAS_STATUS_SUCCESS) {                                        \\\n      fprintf(stderr, \"CUBLAS error in %s at line %d: %d\\n\", __FILE__,         \\\n              __LINE__, err);                                                  \\\n      exit(EXIT_FAILURE);                                                      \\\n    }                                                                          \\\n  } while (0)\n\n"
-  - FilePath:        'test.cu'
+  - FilePath:        test.cu
     Offset:          869
     Length:          0
     ReplacementText: "void scale_cublas(float *data, float scale, float *output, int size) {\n  cublasHandle_t handle;\n  CHECK_CUBLAS(cublasCreate(&handle));\n  float alpha = scale;\n  CHECK_CUBLAS(cublasSscal(handle, size, &alpha, data, 1));\n  CHECK_CUDA(cudaDeviceSynchronize());\n  CHECK_CUBLAS(cublasDestroy(handle));\n}\n\ntemplate<bool use_cublas>\n"
-  - FilePath:        'test.cu'
+  - FilePath:        test.cu
     Offset:          1174
     Length:          404
     ReplacementText: "  if (use_cublas) {\n    scale_cublas(input_d, scale, output_d, size);\n  } else {\n    int blockSize = 256;\n    int numBlocks = (size + blockSize - 1) / blockSize;\n    scale_kernel<<<numBlocks, blockSize>>>(input_d, scale, output_d);\n    CHECK_CUDA(cudaDeviceSynchronize());\n    cudaError_t err = cudaGetLastError();\n    if (err != cudaSuccess) {\n      fprintf(stderr, \"CUDA kernel launch failed: %s\\n\",\n              cudaGetErrorString(err));\n      cudaFree(input_d);\n      cudaFree(output_d);\n      exit(EXIT_FAILURE);\n    }\n"

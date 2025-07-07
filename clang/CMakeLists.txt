@@ -908,6 +908,7 @@ if (NOT CLANG_BUILT_STANDALONE)
     list(APPEND DPCT_RUN
       install-dpct-intercept-build
       install-dpct-pattern-rewriter
+      install-dpct-gitdiff2yaml
       install-dpct-headers
       install-clang-resource-headers
       install-dpct-binary
