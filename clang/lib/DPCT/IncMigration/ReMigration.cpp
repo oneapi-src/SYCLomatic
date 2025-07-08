@@ -621,19 +621,18 @@ mergeC1AndC2Impl(const std::vector<Replacement> &A,
 // Merge Repl_C1 and Repl_C2. If has conflict, keep repl from Repl_C2.
 std::vector<TaggedReplacement> mergeC1AndC2(
     const std::vector<Replacement> &Repl_C1, const GitDiffChanges &Repl_C2,
-    const std::map<UnifiedPath /*SYCL name*/, UnifiedPath /*CUDA name*/>
+    const std::map<std::string /*SYCL name*/, std::string /*CUDA name*/>
         &FileNameMap) {
   std::vector<TaggedReplacement> Result;
   std::vector<Replacement> Repl_C2_vec;
-  std::for_each(Repl_C2.ModifyFileHunks.begin(), Repl_C2.ModifyFileHunks.end(),
-                [&Repl_C2_vec, FileNameMap](const Replacement &Hunk) {
-                  UnifiedPath OldFilePath =
-                      FileNameMap.at(UnifiedPath(Hunk.getFilePath()));
-                  Replacement Replacement(OldFilePath.getCanonicalPath(),
-                                          Hunk.getOffset(), Hunk.getLength(),
-                                          Hunk.getReplacementText());
-                  Repl_C2_vec.push_back(Replacement);
-                });
+  std::for_each(
+      Repl_C2.ModifyFileHunks.begin(), Repl_C2.ModifyFileHunks.end(),
+      [&Repl_C2_vec, FileNameMap](const Replacement &Hunk) {
+        std::string OldFilePath = FileNameMap.at(Hunk.getFilePath().str());
+        Replacement Replacement(OldFilePath, Hunk.getOffset(), Hunk.getLength(),
+                                Hunk.getReplacementText());
+        Repl_C2_vec.push_back(Replacement);
+      });
 
   auto C1 = groupReplcementsByFile(Repl_C1);
   auto C2 = groupReplcementsByFile(Repl_C2_vec);
@@ -698,7 +697,7 @@ std::vector<TaggedReplacement> mergeC1AndC2(
 std::map<std::string, std::vector<Replacement>> reMigrationMerge(
     const GitDiffChanges &Repl_A, const std::vector<Replacement> &Repl_B,
     const std::vector<Replacement> &Repl_C1, const GitDiffChanges &Repl_C2,
-    const std::map<UnifiedPath /*SYCL name*/, UnifiedPath /*CUDA name*/>
+    const std::map<std::string /*SYCL name*/, std::string /*CUDA name*/>
         &FileNameMap) {
   // TODO: is this assumption true? Will the manual fix delete/add/move file?
   assert(Repl_C2.AddFileHunks.empty() && Repl_C2.DeleteFileHunks.empty() &&

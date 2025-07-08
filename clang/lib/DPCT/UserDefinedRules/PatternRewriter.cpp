@@ -25,6 +25,8 @@
 #include <variant>
 #include <vector>
 
+std::set<std::string> MainSrcFilesHasCudaSyntex;
+
 namespace clang {
 namespace dpct {
 
@@ -464,7 +466,6 @@ static void applyExtenstionNameChange(
   std::string SrcFile = Input.substr(Pos, Next + ExtensionType.length() +
                                               1 /*strlen of "."*/ - Pos);
   bool HasCudaSyntax = false;
-  std::set<std::string> MainSrcFilesHasCudaSyntex;
   for (auto &Entry :
        DpctGlobalInfo::getMainSourceYamlTUR()->MainSourceFilesDigest) {
     if (Entry.HasCUDASyntax)

@@ -49,6 +49,7 @@ extern DpctOption<dpct::opt, std::string> BuildScriptFile;
 extern DpctOption<dpct::opt, bool> GenBuildScript;
 extern std::map<std::string, uint64_t> ErrorCnt;
 bool ReMigrationReady = false;
+extern std::set<std::string> MainSrcFilesHasCudaSyntex;
 
 namespace clang {
 namespace tooling {
@@ -528,21 +529,27 @@ int writeReplacementsToFiles(
   if (ReMigrationReady) {
     std::vector<clang::tooling::Replacement> Repl_B;
     std::vector<clang::tooling::Replacement> Repl_C1;
-    // TODO: test only
-    std::map<clang::tooling::UnifiedPath /*SYCL name*/,
-             clang::tooling::UnifiedPath /*CUDA name*/>
-        FileNameMap;
     for (const auto &Entry : Replset2) {
-      clang::tooling::UnifiedPath Path = Entry.first;
-      rewriteFileName(Path);
-      FileNameMap[Path] = Entry.first;
       for (const auto &Repl : Entry.second) {
         Repl_B.push_back(Repl);
       }
     }
-
     for (const auto &Repl : clang::dpct::getLastMigration()->Replacements) {
       Repl_C1.push_back(Repl);
+    }
+
+    std::map<std::string /*SYCL name*/, std::string /*CUDA name*/> FileNameMap;
+    auto hasCUDASyntax = [](tooling::UnifiedPath Path) -> bool {
+      if (MainSrcFilesHasCudaSyntex.find(Path.getCanonicalPath().str()) !=
+          MainSrcFilesHasCudaSyntex.end())
+        return true;
+      return false;
+    };
+    for (const auto &Entry : Repl_C1) {
+      std::string CUDAFilePath = Entry.getFilePath().str();
+      std::string SYCLFilePath;
+      rewriteFileName(SYCLFilePath, CUDAFilePath, hasCUDASyntax);
+      FileNameMap[SYCLFilePath] = CUDAFilePath;
     }
     std::map<std::string, std::vector<clang::tooling::Replacement>> Result =
         clang::dpct::reMigrationMerge(clang::dpct::getUpstreamChanges(), Repl_B,
