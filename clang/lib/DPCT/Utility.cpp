@@ -783,7 +783,7 @@ bool isCudaMemoryAllocation(const DeclRefExpr *Arg, const CallExpr *CE) {
   return false;
 }
 
-bool isCudaKernelFuncDecl(const FunctionDecl *FD) {
+bool isGlobalOrDeviceFuncDecl(const FunctionDecl *FD) {
   if (FD->hasAttr<CUDADeviceAttr>() || FD->hasAttr<CUDAGlobalAttr>())
     return true;
   return false;

@@ -213,7 +213,7 @@ inline auto IsDirectCallerPureHost = [](const CallExpr *C) -> bool {
   }
   if (!ContextFD)
     return false;
-  if (!isCudaKernelFuncDecl(ContextFD)) {
+  if (!isGlobalOrDeviceFuncDecl(ContextFD)) {
     return true;
   }
   return false;

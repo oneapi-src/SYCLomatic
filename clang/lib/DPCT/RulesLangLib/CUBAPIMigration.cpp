@@ -1054,7 +1054,7 @@ void CubRule::processCubTypeDefOrUsing(const TypedefNameDecl *TD) {
                       MapNames::getClNamespace() + "sub_group", SM));
     } else if (CanonicalTypeStr.find("Block") != std::string::npos) {
       auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TD);
-      if (DeviceFuncDecl && isCudaKernelFuncDecl(DeviceFuncDecl)) {
+      if (DeviceFuncDecl && isGlobalOrDeviceFuncDecl(DeviceFuncDecl)) {
         if (auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl)) {
           auto &Map = DpctGlobalInfo::getInstance().getCubPlaceholderIndexMap();
           Map.insert({PlaceholderIndex, DI});
@@ -1691,7 +1691,7 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
   } else if (TypeName.find("class cub::BlockScan") == 0 ||
              TypeName.find("class cub::BlockReduce") == 0) {
     auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
-    if (DeviceFuncDecl && isCudaKernelFuncDecl(DeviceFuncDecl)) {
+    if (DeviceFuncDecl && isGlobalOrDeviceFuncDecl(DeviceFuncDecl)) {
       if (auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl)) {
         auto &Map = DpctGlobalInfo::getInstance().getCubPlaceholderIndexMap();
         Map.insert({PlaceholderIndex, DI});

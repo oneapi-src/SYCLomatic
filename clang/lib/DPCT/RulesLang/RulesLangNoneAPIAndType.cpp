@@ -220,7 +220,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     auto CE = dpct::DpctGlobalInfo::findAncestor<CallExpr>(MemVarRef);
     if (FD &&
         !dyn_cast<VarDecl>(MemVarRef->getDecl())->isLocalVarDeclOrParm() &&
-        !isCudaKernelFuncDecl(FD)) {
+        !isGlobalOrDeviceFuncDecl(FD)) {
       if (CE &&
           !DpctGlobalInfo::isInCudaPath(CE->getCalleeDecl()->getBeginLoc()))
         emplaceTransformation(new InsertAfterStmt(MemVarRef, ".get_ptr()"));
@@ -243,7 +243,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     if (VD == nullptr)
       return;
     auto Var = Global.findMemVarInfo(VD);
-    if (isCudaKernelFuncDecl(Func)) {
+    if (isGlobalOrDeviceFuncDecl(Func)) {
       if (DpctGlobalInfo::useGroupLocalMemory() &&
           VD->hasAttr<CUDASharedAttr>() && VD->getStorageClass() != SC_Extern) {
         if (!Var)
@@ -837,7 +837,7 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
     auto Var = MemVarInfo::buildMemVarInfo(VD);
-    if (isCudaKernelFuncDecl(Func)) {
+    if (isGlobalOrDeviceFuncDecl(Func)) {
       if (!(DpctGlobalInfo::useGroupLocalMemory() &&
             VD->hasAttr<CUDASharedAttr>() &&
             VD->getStorageClass() != SC_Extern)) {
@@ -1033,7 +1033,7 @@ void ZeroLengthArrayRule::runRule(const MatchFinder::MatchResult &Result) {
     const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
     if (FD) {
       // Check if the array is in device code
-      if (!isCudaKernelFuncDecl(FD))
+      if (!isGlobalOrDeviceFuncDecl(FD))
         return;
     }
   }
