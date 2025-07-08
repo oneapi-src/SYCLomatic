@@ -190,18 +190,10 @@ bool rewriteCanonicalDir(clang::tooling::UnifiedPath &FilePath,
   return Result;
 }
 
-void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
-  rewriteFileName(FileName, FileName);
-}
-
-void rewriteFileName(clang::tooling::UnifiedPath &FileName,
-                     const clang::tooling::UnifiedPath &FullPathName) {
-  std::string FilePath = FileName.getPath().str();
-  rewriteFileName(FilePath, FullPathName.getPath().str());
-  FileName = FilePath;
-}
-
-void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
+static void
+rewriteFileName(std::string &FileName, const std::string &FullPathName,
+                std::function<bool(tooling::UnifiedPath)> HasCUDASyntax =
+                    DpctGlobalInfo::hasCUDASyntax) {
   SmallString<512> CanonicalPathStr(FullPathName);
   const auto Extension = path::extension(CanonicalPathStr);
   SourceProcessType FileType = GetSourceFileType(FullPathName);
@@ -212,8 +204,7 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
     if (FileType & SPT_CudaSource) {
       path::replace_extension(CanonicalPathStr,
                               DpctGlobalInfo::getSYCLSourceExtension());
-    } else if ((FileType & SPT_CppSource) &&
-               DpctGlobalInfo::hasCUDASyntax(FileName)) {
+    } else if ((FileType & SPT_CppSource) && HasCUDASyntax(FileName)) {
       path::replace_extension(CanonicalPathStr,
                               Extension +
                                   DpctGlobalInfo::getSYCLSourceExtension());
@@ -224,6 +215,17 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
     }
   }
   FileName = CanonicalPathStr.c_str();
+}
+
+void rewriteFileName(clang::tooling::UnifiedPath &FileName,
+                     const clang::tooling::UnifiedPath &FullPathName) {
+  std::string FilePath = FileName.getPath().str();
+  rewriteFileName(FilePath, FullPathName.getPath().str());
+  FileName = FilePath;
+}
+
+void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
+  rewriteFileName(FileName, FileName);
 }
 
 static std::vector<std::string> FilesNotInCompilationDB;

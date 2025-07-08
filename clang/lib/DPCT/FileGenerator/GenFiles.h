@@ -76,9 +76,6 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName);
 void rewriteFileName(clang::tooling::UnifiedPath &FileName,
                      const clang::tooling::UnifiedPath &FullPathName);
 
-// Replace file name \p FileName with new migrated name.
-void rewriteFileName(std::string &FileName, const std::string &FullPathName);
-
 // A mapping from output file path to it's corresponding input file.
 extern std::map<std::string, std::string> OutFilePath2InFilePath;
 
