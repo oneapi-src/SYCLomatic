@@ -1,8 +1,0 @@
----
-MoveFileHunks:
-  - FilePath:        'b.txt'
-    Offset:          12
-    Length:          4
-    ReplacementText: "777\n"
-    NewFilePath:     'c.txt'
-...

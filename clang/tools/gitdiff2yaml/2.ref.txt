@@ -1,4 +1,0 @@
----
-DeleteFileHunks:
-  - OldFilePath:     'b.txt'
-...

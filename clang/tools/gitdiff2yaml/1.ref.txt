@@ -1,5 +1,0 @@
----
-AddFileHunks:
-  - NewFilePath:     'b.txt'
-  - NewFilePath:     'c.txt'
-...
