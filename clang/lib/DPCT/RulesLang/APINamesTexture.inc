@@ -467,6 +467,17 @@ CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cuSurfRefGetArray"),
                             ARG("--use-experimental-features=bindless_images")))
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuTexRefGetArray", DEREF(0),
+        CALL(MapNames::getDpctNamespace() + "experimental::get_img_mem",
+             ARG(1)))),
+    UNSUPPORT_FACTORY_ENTRY("cuTexRefGetArray",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuTexRefGetArray"),
+                            ARG("--use-experimental-features=bindless_images")))
+
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,

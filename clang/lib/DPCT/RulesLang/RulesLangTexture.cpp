@@ -589,6 +589,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexRefDestroy",
       "cuSurfRefSetArray",
       "cuSurfRefGetArray",
+      "cuTexRefGetArray",
       "cuTexRefSetArray",
       "cuTexRefSetFormat",
       "cuTexRefSetAddressMode",

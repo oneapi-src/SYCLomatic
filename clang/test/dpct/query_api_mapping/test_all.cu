@@ -757,6 +757,7 @@
 // CHECK-NEXT: cuMemFree
 // CHECK-NEXT: cuMemFreeHost
 // CHECK-NEXT: cuMemGetAllocationGranularity
+// CHECK-NEXT: cuMemGetAllocationPropertiesFromHandle
 // CHECK-NEXT: cuMemGetInfo
 // CHECK-NEXT: cuMemHostAlloc
 // CHECK-NEXT: cuMemHostGetDevicePointer
@@ -804,6 +805,8 @@
 // CHECK-NEXT: cuMemsetD32Async
 // CHECK-NEXT: cuMemsetD8
 // CHECK-NEXT: cuMemsetD8Async
+// CHECK-NEXT: cuMipmappedArrayDestroy
+// CHECK-NEXT: cuMipmappedArrayGetLevel
 // CHECK-NEXT: cuModuleGetFunction
 // CHECK-NEXT: cuModuleGetTexRef
 // CHECK-NEXT: cuModuleLoad
@@ -811,11 +814,13 @@
 // CHECK-NEXT: cuModuleLoadDataEx
 // CHECK-NEXT: cuModuleUnload
 // CHECK-NEXT: cuOccupancyMaxActiveBlocksPerMultiprocessor
+// CHECK-NEXT: cuPointerGetAttribute
 // CHECK-NEXT: cuPointerGetAttributes
 // CHECK-NEXT: cuStreamAddCallback
 // CHECK-NEXT: cuStreamAttachMemAsync
 // CHECK-NEXT: cuStreamCreate
 // CHECK-NEXT: cuStreamDestroy
+// CHECK-NEXT: cuStreamGetCtx
 // CHECK-NEXT: cuStreamQuery
 // CHECK-NEXT: cuStreamSynchronize
 // CHECK-NEXT: cuStreamWaitEvent
@@ -823,9 +828,14 @@
 // CHECK-NEXT: cuTexObjectDestroy
 // CHECK-NEXT: cuTexObjectGetResourceDesc
 // CHECK-NEXT: cuTexObjectGetTextureDesc
+// CHECK-NEXT: cuTexRefCreate
+// CHECK-NEXT: cuTexRefDestroy
 // CHECK-NEXT: cuTexRefGetAddressMode
+// CHECK-NEXT: cuTexRefGetArray
 // CHECK-NEXT: cuTexRefGetFilterMode
 // CHECK-NEXT: cuTexRefGetFlags
+// CHECK-NEXT: cuTexRefGetMipmapFilterMode
+// CHECK-NEXT: cuTexRefGetMipmapLevelClamp
 // CHECK-NEXT: cuTexRefSetAddress
 // CHECK-NEXT: cuTexRefSetAddress2D
 // CHECK-NEXT: cuTexRefSetAddressMode

@@ -1065,6 +1065,9 @@ int runDPCT(int argc, const char **argv) {
           NoDRYPattern.setValue(true);
         } else if (Option == "--enable-profiling") {
           EnablepProfiling.setValue(true);
+        } else if (Option.starts_with("--usm-level=")) {
+          if (Option.ends_with("none"))
+            USMLevel.setValue(UsmLevel::UL_None);
         }
         // Need add more option.
       }

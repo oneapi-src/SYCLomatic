@@ -1,3 +1,4 @@
+#include <cuda.h>
 void test(unsigned int *pu) {
   // Start
   CUtexref t;

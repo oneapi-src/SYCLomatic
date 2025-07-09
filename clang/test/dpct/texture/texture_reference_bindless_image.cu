@@ -75,6 +75,8 @@ void driverTextureReferenceManagement() {
   // CHECK: r->set_channel_type(f);
   // CHECK-NEXT: r->set_channel_num(i);
   cuTexRefSetFormat(r, f, i);
+
+  cuTexRefGetArray(&a, r);
 }
 void test_surf_ref() {
   // CHECK: dpct::experimental::image_mem_wrapper_ptr arr;

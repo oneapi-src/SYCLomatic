@@ -561,3 +561,48 @@
 // CUDEVICECANACCESSPEER-NEXT:   cuDeviceCanAccessPeer(pi /*int **/, d1 /*CUdevice*/, d2 /*CUdevice*/);
 // CUDEVICECANACCESSPEER-NEXT: Is migrated to:
 // CUDEVICECANACCESSPEER-NEXT:   *pi = dpct::get_device(d1).ext_oneapi_can_access_peer(dpct::get_device(d2));
+
+
+/// Bindless Image
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMipmappedArrayDestroy | FileCheck %s -check-prefix=CUMIPMAPPEDARRAYDESTROY
+// CUMIPMAPPEDARRAYDESTROY: CUDA API:
+// CUMIPMAPPEDARRAYDESTROY-NEXT:   cuMipmappedArrayDestroy(mmArray/*CUmipmappedArray*/);
+// CUMIPMAPPEDARRAYDESTROY-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUMIPMAPPEDARRAYDESTROY-NEXT:   delete mmArray;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMipmappedArrayGetLevel | FileCheck %s -check-prefix=CUMIPMAPPEDARRAYGETLEVEL
+// CUMIPMAPPEDARRAYGETLEVEL: CUDA API:
+// CUMIPMAPPEDARRAYGETLEVEL-NEXT:   cuMipmappedArrayGetLevel(&level_arr/*CUarray*/, mmArray/*CUmipmappedArray*/, 1/*level*/);
+// CUMIPMAPPEDARRAYGETLEVEL-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUMIPMAPPEDARRAYGETLEVEL-NEXT:   level_arr = mmArray->get_mip_level(1);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefCreate | FileCheck %s -check-prefix=CUTEXREFCREATE
+// CUTEXREFCREATE: CUDA API:
+// CUTEXREFCREATE-NEXT:   cuTexRefCreate(&r/*CUtexref **/);
+// CUTEXREFCREATE-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUTEXREFCREATE-NEXT:   r = new dpct::experimental::bindless_image_wrapper_base();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefDestroy | FileCheck %s -check-prefix=CUTEXREFDESTROY
+// CUTEXREFDESTROY: CUDA API:
+// CUTEXREFDESTROY-NEXT:   cuTexRefDestroy(r/*CUtexref*/);
+// CUTEXREFDESTROY-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUTEXREFDESTROY-NEXT:   delete r;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefGetArray | FileCheck %s -check-prefix=CUTEXREFGETARRAY
+// CUTEXREFGETARRAY: CUDA API:
+// CUTEXREFGETARRAY-NEXT:   cuTexRefGetArray(phArray /*CUarray **/, hTexRef /*CUtexref*/);
+// CUTEXREFGETARRAY-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUTEXREFGETARRAY-NEXT:   a = dpct::experimental::get_img_mem(r);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefGetMipmapFilterMode | FileCheck %s -check-prefix=CUTEXREFGETMIPMAPFILTERMODE
+// CUTEXREFGETMIPMAPFILTERMODE: CUDA API:
+// CUTEXREFGETMIPMAPFILTERMODE-NEXT:   cuTexRefGetMipmapFilterMode(&fm /*CUfilter_mode **/, texRef /*CUtexref*/);
+// CUTEXREFGETMIPMAPFILTERMODE-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUTEXREFGETMIPMAPFILTERMODE-NEXT:   fm = texRef->get_mip_filtering_mode();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefGetMipmapLevelClamp | FileCheck %s -check-prefix=CUTEXREFGETMIPMAPLEVELCLAMP
+// CUTEXREFGETMIPMAPLEVELCLAMP: CUDA API:
+// CUTEXREFGETMIPMAPLEVELCLAMP-NEXT:   cuTexRefGetMipmapLevelClamp(&min_clamp/*float **/, &max_clamp/*float **/, texRef/*CUtexref*/);
+// CUTEXREFGETMIPMAPLEVELCLAMP-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUTEXREFGETMIPMAPLEVELCLAMP-NEXT:   texRef->get_mip_level_clamp(&min_clamp, &max_clamp);
