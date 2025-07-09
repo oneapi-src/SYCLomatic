@@ -376,7 +376,8 @@ bbyyy2345678xxxc78www0123456789
       Replacement("file1.dp.cpp", 4, 0, "zzz"),
   };
   const std::map<std::string, std::string> FileNameMap = {
-      {"file1.dp.cpp", "file1.cu"}};
+      {UnifiedPath("file1.dp.cpp").getCanonicalPath().str(),
+       UnifiedPath("file1.cu").getCanonicalPath().str()}};
 
   std::vector<TaggedReplacement> Result =
       mergeC1AndC2(Repl_C1, Repl_C2, FileNameMap);
