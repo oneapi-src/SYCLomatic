@@ -630,6 +630,8 @@
 // CHECK-NEXT: cooperative_groups::coalesced_group::thread_rank
 // CHECK-NEXT: cooperative_groups::coalesced_threads
 // CHECK-NEXT: cooperative_groups::exclusive_scan
+// CHECK-NEXT: cooperative_groups::experimental::this_thread_block
+// CHECK-NEXT: cooperative_groups::experimental::tiled_partition
 // CHECK-NEXT: cooperative_groups::greater
 // CHECK-NEXT: cooperative_groups::grid_group::block_rank
 // CHECK-NEXT: cooperative_groups::grid_group::num_blocks
@@ -2339,6 +2341,10 @@
 // CHECK-NEXT: normcdfinv
 // CHECK-NEXT: normcdfinvf
 // CHECK-NEXT: normf
+// CHECK-NEXT: nvcuda::wmma::fill_fragment
+// CHECK-NEXT: nvcuda::wmma::load_matrix_sync
+// CHECK-NEXT: nvcuda::wmma::mma_sync
+// CHECK-NEXT: nvcuda::wmma::store_matrix_sync
 // CHECK-NEXT: nvshmem_align
 // CHECK-NEXT: nvshmem_calloc
 // CHECK-NEXT: nvshmem_finalize

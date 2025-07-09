@@ -2,12 +2,12 @@
 // RUN: %{build} -o %t.out
 // RUN: %{run} %t.out
 
-// The name mangling for free function kernels currently does not work with PTX.
-// UNSUPPORTED: cuda
-
 #include <iostream>
 #include <sycl/detail/core.hpp>
+#include <sycl/ext/oneapi/experimental/free_function_traits.hpp>
 #include <sycl/ext/oneapi/free_function_queries.hpp>
+#include <sycl/ext/oneapi/get_kernel_info.hpp>
+#include <sycl/kernel_bundle.hpp>
 #include <sycl/usm.hpp>
 
 using namespace sycl;
@@ -43,7 +43,6 @@ void ff_4(int *ptr, int start) {}
 bool test_kernel_apis(queue Queue) {
   bool Pass = true;
 
-#ifndef __SYCL_DEVICE_ONLY__
   // Check for a free function, which is known to be a free function.
   // Expect: true.
   bool Pass1 = ext::oneapi::experimental::is_nd_range_kernel_v<ff_2, 2>;
@@ -95,14 +94,12 @@ bool test_kernel_apis(queue Queue) {
   Pass &= Pass8;
 
   std::cout << "Test kernel APIs: " << (Pass ? "PASS" : "FAIL") << std::endl;
-#endif
   return Pass;
 }
 
 bool test_bundle_apis(queue Queue) {
   bool Pass = true;
 
-#ifndef __SYCL_DEVICE_ONLY__
   context Context{Queue.get_context()};
   device Device{Queue.get_device()};
   std::vector<device> Devices{Context.get_devices()};
@@ -210,7 +207,41 @@ bool test_bundle_apis(queue Queue) {
   bool PassR = true;
   std::cout << "PassR=" << PassR << std::endl;
   Pass &= PassR;
-#endif
+
+  kernel_bundle Bundle_ff2 = ext::oneapi::experimental::get_kernel_bundle<
+      ff_2, bundle_state::executable>(Context);
+
+  bool PassS =
+      ext::oneapi::experimental::get_kernel_info<ff_2,
+                                                 info::kernel::function_name>(
+          Context) == Bundle_ff2.ext_oneapi_get_kernel<ff_2>()
+                          .get_info<info::kernel::function_name>();
+  std::cout << "Test retrieving function_name using context: " << PassS
+            << std::endl;
+  Pass &= PassS;
+
+  kernel_bundle Bundle_ff3 = ext::oneapi::experimental::get_kernel_bundle<
+      ff_3<int>, bundle_state::executable>(Context);
+
+  bool PassT =
+      ext::oneapi::experimental::get_kernel_info<
+          ff_3<int>, info::kernel_device_specific::work_group_size>(Context,
+                                                                    Device) ==
+      Bundle_ff3.ext_oneapi_get_kernel<ff_3<int>>()
+          .get_info<info::kernel_device_specific::work_group_size>(Device);
+  std::cout << "Test retrieving work_group_size using context and device: "
+            << PassT << std::endl;
+  Pass &= PassT;
+
+  bool PassU =
+      ext::oneapi::experimental::get_kernel_info<
+          ff_3<int>, info::kernel_device_specific::work_group_size>(Queue) ==
+      Bundle_ff3.ext_oneapi_get_kernel<ff_3<int>>()
+          .get_info<info::kernel_device_specific::work_group_size>(
+              Queue.get_device());
+  std::cout << "Test retrieving work_group_size using queue: " << PassU
+            << std::endl;
+  Pass &= PassU;
 
   std::cout << "Test bundle APIs: " << (Pass ? "PASS" : "FAIL") << std::endl;
   return Pass;

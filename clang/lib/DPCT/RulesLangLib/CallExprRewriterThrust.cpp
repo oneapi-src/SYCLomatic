@@ -129,7 +129,6 @@ inline std::function<std::string(const CallExpr *)>
 makeMappedThrustPolicyEnum(unsigned Idx) {
   auto getBaseType = [](QualType QT) -> std::string {
     auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
-    PP.PrintCanonicalTypes = true;
     return QT.getUnqualifiedType().getAsString(PP);
   };
   auto getMehtodName = [](const ValueDecl *VD) -> std::string {

@@ -232,7 +232,8 @@ static void getCompileInfo(
 
         // Create minimalist CudaInstallationDetector to call the member
         // function validateCudaHeaderDirectory()
-        DiagnosticsEngine E(nullptr, nullptr, nullptr, false);
+        auto DiagOpts = std::make_shared<DiagnosticOptions>();
+        DiagnosticsEngine E(nullptr, *DiagOpts, nullptr, false);
         clang::driver::Driver Driver("", llvm::sys::getDefaultTargetTriple(),
                                      E);
         clang::driver::CudaInstallationDetector CudaIncludeDetector(

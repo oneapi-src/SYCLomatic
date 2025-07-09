@@ -53,16 +53,16 @@ Command-Buffer Creation
 --------------------------------------------------------------------------------
 
 Command-Buffers are tied to a specific ${x}_context_handle_t and
-${x}_device_handle_t. ${x}CommandBufferCreateExp optionally takes a descriptor
+${x}_device_handle_t. ${x}CommandBufferCreateExp takes a descriptor
 to provide additional properties for how the command-buffer should be
 constructed. The members defined in ${x}_exp_command_buffer_desc_t are:
 
 * ``isUpdatable``, which should be set to ``true`` to support :ref:`updating
-command-buffer commands`.
-* ``isInOrder``, which should be set to ``true`` to enable commands enqueued to
-a command-buffer to be executed in an in-order fashion where possible.
+  command-buffer commands`.
+* ``isInOrder``, which should be set to ``true`` to enforce commands appended
+  to a command-buffer to be executed in an in-order fashion.
 * ``enableProfiling``, which should be set to ``true`` to enable profiling of
-the command-buffer.
+  the command-buffer.
 
 Command-buffers are reference counted and can be retained and released by
 calling ${x}CommandBufferRetainExp and ${x}CommandBufferReleaseExp respectively.
@@ -97,6 +97,7 @@ Currently only the following commands are supported:
 * ${x}CommandBufferAppendMemBufferFillExp
 * ${x}CommandBufferAppendUSMPrefetchExp
 * ${x}CommandBufferAppendUSMAdviseExp
+* ${x}CommandBufferAppendNativeCommandExp
 
 It is planned to eventually support any command type from the Core API which can
 actually be appended to the equivalent adapter native constructs.
@@ -107,8 +108,9 @@ Sync-Points
 A sync-point is a value which represents a command inside of a command-buffer
 which is returned from command-buffer append function calls. These can be
 optionally passed to these functions to define execution dependencies on other
-commands within the command-buffer. Sync-points passed to functions may be
-ignored if the command-buffer was created in-order.
+commands within the command-buffer. Both wait-list and return sync-point
+parameters to append functions are ignored if the command-buffer was created
+with the in-order property.
 
 Sync-points are unique and valid for use only within the command-buffer they
 were obtained from.
@@ -187,20 +189,68 @@ command-buffer, before the code path returns to user code for the user to
 enqueue the second command-buffer. Resulting in the first command-buffer's
 wait node completing too early for the intended overall executing ordering.
 
+Native Commands
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The command-buffer interface enables user interop with native backend APIs.
+Through ${x}CommandBufferAppendNativeCommandExp the user can immediately invoke
+some native API calls that add commands to the command-buffer in a way that the
+UR is aware of. In doing so, the UR adapter can respect the dependencies of the
+native commands with the other UR command-buffer commands.
+
+In order for UR to guarantee correct synchronization of commands enqueued
+within the native API through the function passed to
+${x}CommandBufferAppendNativeCommandExp, the ${x}_exp_command_buffer_handle_t
+arguments must only use the native command-buffer accessed through
+${x}CommandBufferGetNativeHandleExp. Use of a native command-buffer that is
+not a native command-buffer returned by ${x}CommandBufferGetNativeHandleExp
+results in undefined behavior.
+
+The ${x}_exp_command_buffer_handle_t ``hChildCommandBuffer`` parameter to
+${x}CommandBufferAppendNativeCommandExp is used by the CUDA & HIP adapters
+to implement this feature, but is ignored by Level-Zero and OpenCL. This
+represents a child graph node that will be added to the parent graph, with
+the child graph node expressing the sync-point dependencies and returned
+sync point. This child graph object will be packed into the ``void* pData``
+argument that will be given to the user in the ``pfnNativeCommand`` callback
+for adding the native nodes to the command-buffer.
+
+Level-Zero & OpenCL backends use barrier nodes to enforce the dependencies
+on the user added nodes, rather than using an append child graph API. As a
+result the native command-buffer object for ``hCommandBuffer`` should
+be packed into ``void* pData``, as the adapters will ignore the
+``hChildCommandBuffer`` parameter.
+
 Enqueueing Command-Buffers
 --------------------------------------------------------------------------------
 
 Command-buffers are submitted for execution on a ${x}_queue_handle_t with an
-optional list of dependent events. An event is returned which tracks the
+optional list of dependent events. An event can be returned which tracks the
 execution of the command-buffer, and will be complete when all appended commands
-have finished executing. It is adapter specific whether command-buffers can be
-enqueued or executed simultaneously, and submissions may be serialized.
+have finished executing.
 
 .. parsed-literal::
     ${x}_event_handle_t executionEvent;
-
     ${x}EnqueueCommandBufferExp(hQueue, hCommandBuffer, 0, nullptr,
                                 &executionEvent);
+
+A command-buffer can be submitted for execution while a previous submission
+of the same command-buffer is still awaiting completion. That is, the user is not
+required to do a blocking wait on the completion of the first command-buffer
+submission before making a second submission of the command-buffer.
+
+Each submissions of a command-buffer is ordered behind previous submissions of
+the same command-buffer. As well as respecting the other synchronization
+dependencies set by the user, such as events, barriers, or in-order queue
+dependencies.
+
+.. parsed-literal::
+    // Submission of hCommandBuffer to hQueueB as an implicit dependency on
+    // prior submission to hQueueA.
+    ${x}EnqueueCommandBufferExp(hQueueA, hCommandBuffer, 0, nullptr,
+                                nullptr);
+    ${x}EnqueueCommandBufferExp(hQueueB, hCommandBuffer, 0, nullptr,
+                                nullptr);
 
 
 Updating Command-Buffer Commands
@@ -386,6 +436,7 @@ Enums
     * ${X}_DEVICE_INFO_COMMAND_BUFFER_SUPPORT_EXP
     * ${X}_DEVICE_INFO_COMMAND_BUFFER_UPDATE_CAPABILITIES_EXP
     * ${X}_DEVICE_INFO_COMMAND_BUFFER_EVENT_SUPPORT_EXP
+    * ${X}_DEVICE_INFO_COMMAND_BUFFER_SUBGRAPH_SUPPORT_EXP
 * ${x}_device_command_buffer_update_capability_flags_t
     * UPDATE_KERNEL_ARGUMENTS
     * LOCAL_WORK_SIZE
@@ -460,10 +511,12 @@ Functions
 * ${x}CommandBufferAppendMemBufferFillExp
 * ${x}CommandBufferAppendUSMPrefetchExp
 * ${x}CommandBufferAppendUSMAdviseExp
+* ${x}CommandBufferAppendNativeCommandExp
 * ${x}CommandBufferUpdateKernelLaunchExp
 * ${x}CommandBufferUpdateSignalEventExp
 * ${x}CommandBufferUpdateWaitEventsExp
 * ${x}CommandBufferGetInfoExp
+* ${x}CommandBufferGetNativeHandleExp
 * ${x}EnqueueCommandBufferExp
 
 Changelog
@@ -496,6 +549,11 @@ Changelog
 | 1.10      | Remove extension string macro, make device info enum  |
 |           | primary mechanism for reporting support.              |
 +-----------+-------------------------------------------------------+
+| 1.11      | Support native commands.                              |
++-----------+-------------------------------------------------------+
+| 1.12      | Strengthen in-order property such that sync-points    |
+|           | parameters to append APIs are ignored.                |
++-----------+-------------------------------------------------------+
 
 Contributors
 --------------------------------------------------------------------------------
@@ -505,3 +563,4 @@ Contributors
 * Maxime France-Pillois `maxime.francepillois@codeplay.com <maxime.francepillois@codeplay.com>`_
 * Aaron Greig `aaron.greig@codeplay.com <aaron.greig@codeplay.com>`_
 * Fábio Mestre `fabio.mestre@codeplay.com <fabio.mestre@codeplay.com>`_
+* Konrad Kusiak `konrad.kusiak@codeplay.com <konrad.kusiak@codeplay.com>`_

@@ -1006,7 +1006,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
 
 void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
-  PP.PrintCanonicalTypes = true;
   const auto ME = dyn_cast<MemberExpr>(CMCE->getCallee());
   if (!ME)
     return;
@@ -1177,7 +1176,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     TyName.clear();
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     auto PP = Context.getPrintingPolicy();
-    PP.PrintCanonicalTypes = 1;
     PrintFullTemplateName(OS, PP, TSTL.getTypePtr()->getTemplateName());
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;

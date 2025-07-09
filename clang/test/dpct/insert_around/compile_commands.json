@@ -1,0 +1,12 @@
+[
+    {
+        "command": "nvcc -c -o float_vector.o ./float_vector.cpp",
+        "directory": ".",
+        "file": "./float_vector.cpp"
+    },
+    {
+        "command": "c++ -c -o float_vector.o ./float_vector.cpp",
+        "directory": ".",
+        "file": "./float_vector.cpp"
+    }
+]
