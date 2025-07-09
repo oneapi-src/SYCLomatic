@@ -9,6 +9,15 @@
 // CUGETERRORSTRING-NEXT:   */
 // CUGETERRORSTRING-NEXT:   *ppc = dpct::get_error_string_dummy(r);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuGetErrorName | FileCheck %s -check-prefix=CUGETERRORNAME
+// CUGETERRORNAME:  CUDA API:
+// CUGETERRORNAME-NEXT:    cuGetErrorName(r /*CUresult*/, pstr /*const char ***/);
+// CUGETERRORNAME-NEXT:  Is migrated to:
+// CUGETERRORNAME-NEXT:    /*
+// CUGETERRORNAME-NEXT:    DPCT1009:0: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CUGETERRORNAME-NEXT:    */
+// CUGETERRORNAME-NEXT:    *pstr = dpct::get_error_string_dummy(r);
+
 /// Initialization
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuInit | FileCheck %s -check-prefix=CUINIT
@@ -440,6 +449,24 @@
 // CUTEXREFGETADDRESSMODE-NEXT: Is migrated to:
 // CUTEXREFGETADDRESSMODE-NEXT:   dpct::image_wrapper_base_p t;
 // CUTEXREFGETADDRESSMODE-NEXT:   *pa = t->get_addressing_mode();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuArray3DGetDescriptor | FileCheck %s -check-prefix=CUARRAY3DGETDESCRIPTOR
+// CUARRAY3DGETDESCRIPTOR:  CUDA API:
+// CUARRAY3DGETDESCRIPTOR-NEXT:    cuArray3DGetDescriptor(desc /*CUDA_ARRAY3D_DESCRIPTOR **/, array /*CUarray*/);
+// CUARRAY3DGETDESCRIPTOR-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUARRAY3DGETDESCRIPTOR-NEXT:    *desc = array->get_desc();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuArrayGetDescriptor | FileCheck %s -check-prefix=CUARRAYGETDESCRIPTOR
+// CUARRAYGETDESCRIPTOR:  CUDA API:
+// CUARRAYGETDESCRIPTOR-NEXT:    cuArrayGetDescriptor(desc /*CUDA_ARRAY_DESCRIPTOR **/, array /*CUarray*/);
+// CUARRAYGETDESCRIPTOR-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUARRAYGETDESCRIPTOR-NEXT:    *desc = array->get_desc();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMipmappedArrayCreate | FileCheck %s -check-prefix=CUMIPMAPPEDARRAYCREATE
+// CUMIPMAPPEDARRAYCREATE:  CUDA API:
+// CUMIPMAPPEDARRAYCREATE-NEXT:    cuMipmappedArrayCreate(array, desc, levels);
+// CUMIPMAPPEDARRAYCREATE-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUMIPMAPPEDARRAYCREATE-NEXT:    *array = new dpct::experimental::image_mem_wrapper(*desc, levels);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefGetFilterMode | FileCheck %s -check-prefix=CUTEXREFGETFILTERMODE
 // CUTEXREFGETFILTERMODE: CUDA API:

@@ -677,8 +677,10 @@
 // CHECK-NEXT: cospi
 // CHECK-NEXT: cospif
 // CHECK-NEXT: cuArray3DCreate
+// CHECK-NEXT: cuArray3DGetDescriptor
 // CHECK-NEXT: cuArrayCreate
 // CHECK-NEXT: cuArrayDestroy
+// CHECK-NEXT: cuArrayGetDescriptor
 // CHECK-NEXT: cuCabs
 // CHECK-NEXT: cuCabsf
 // CHECK-NEXT: cuCadd
@@ -700,6 +702,8 @@
 // CHECK-NEXT: cuCsub
 // CHECK-NEXT: cuCsubf
 // CHECK-NEXT: cuCtxCreate
+// CHECK-NEXT: cuCtxCreate_v3
+// CHECK-NEXT: cuCtxCreate_v4
 // CHECK-NEXT: cuCtxDestroy
 // CHECK-NEXT: cuCtxEnablePeerAccess
 // CHECK-NEXT: cuCtxGetApiVersion
@@ -737,6 +741,7 @@
 // CHECK-NEXT: cuFuncGetAttribute
 // CHECK-NEXT: cuFuncSetAttribute
 // CHECK-NEXT: cuFuncSetCacheConfig
+// CHECK-NEXT: cuGetErrorName
 // CHECK-NEXT: cuGetErrorString
 // CHECK-NEXT: cuGraphicsMapResources
 // CHECK-NEXT: cuGraphicsResourceGetMappedPointer
@@ -802,6 +807,7 @@
 // CHECK-NEXT: cuMemsetD32Async
 // CHECK-NEXT: cuMemsetD8
 // CHECK-NEXT: cuMemsetD8Async
+// CHECK-NEXT: cuMipmappedArrayCreate
 // CHECK-NEXT: cuModuleGetFunction
 // CHECK-NEXT: cuModuleGetTexRef
 // CHECK-NEXT: cuModuleLoad
@@ -2409,6 +2415,11 @@
 // CHECK-NEXT: skipahead_subsequence
 // CHECK-NEXT: sqrt
 // CHECK-NEXT: sqrtf
+// CHECK-NEXT: surf2DLayeredwrite
+// CHECK-NEXT: surf2Dread
+// CHECK-NEXT: surf2Dwrite
+// CHECK-NEXT: surf3Dread
+// CHECK-NEXT: surf3Dwrite
 // CHECK-NEXT: tan
 // CHECK-NEXT: tanf
 // CHECK-NEXT: tanh
