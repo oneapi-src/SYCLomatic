@@ -1,17 +1,12 @@
-set(LLVM_LINK_COMPONENTS
-  Support
-  )
-
 add_clang_unittest(DpctTests
   ReMigrationTest.cpp
-  )
-
-target_link_libraries(DpctTests
-  PRIVATE
+  CLANG_LIBS
   DPCT
   clangBasic
   clangFrontend
   clangRewrite
   clangTooling
   clangToolingCore
+  LLVM_COMPONENTS
+  Support
   )

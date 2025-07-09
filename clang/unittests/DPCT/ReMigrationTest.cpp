@@ -375,7 +375,7 @@ bbyyy2345678xxxc78www0123456789
       Replacement("file1.dp.cpp", 16, 2, "yyy"),
       Replacement("file1.dp.cpp", 4, 0, "zzz"),
   };
-  const std::map<UnifiedPath, UnifiedPath> FileNameMap = {
+  const std::map<std::string, std::string> FileNameMap = {
       {"file1.dp.cpp", "file1.cu"}};
 
   std::vector<TaggedReplacement> Result =
