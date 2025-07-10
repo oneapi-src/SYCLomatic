@@ -12,13 +12,14 @@
 namespace clang {
 namespace dpct {
 
-std::optional<std::string> MathFuncNameRewriter::rewrite() {
+std::optional<std::string> MathFuncNameRewriter::rewrite(ExprAnalysis *Analysis) {
   // If the function is not a target math function, do not migrate it
   if (!isTargetMathFunction(Call->getDirectCallee())) {
     // No actions needed here, just return an empty string
     return {};
   }
 
+  ParentAnalysisGuard Guard(Analysis);
   reportUnsupportedRoundingMode();
   RewriteArgList = getMigratedArgs();
   auto NewFuncName = getNewFuncName();
@@ -158,7 +159,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           std::string ArgT =
               Arg->IgnoreImplicit()->getType().getCanonicalType().getAsString(
                   PrintingPolicy(LO));
-          std::string ArgExpr = Arg->getStmtClassName();
           auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
           std::string ParamType = "float";
@@ -192,7 +192,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           std::string ArgT =
               Arg->IgnoreImplicit()->getType().getCanonicalType().getAsString(
                   PrintingPolicy(LO));
-          std::string ArgExpr = Arg->getStmtClassName();
           auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
           std::string ParamType = "double";
@@ -255,7 +254,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
   return NewFuncName;
 }
 
-std::optional<std::string> MathCallExprRewriter::rewrite() {
+std::optional<std::string> MathCallExprRewriter::rewrite(ExprAnalysis *Analysis) {
+  ParentAnalysisGuard Guard(Analysis);
   RewriteArgList = getMigratedArgs();
   setTargetCalleeName(SourceCalleeName.str());
   return buildRewriteString();
@@ -268,17 +268,18 @@ void MathCallExprRewriter::reportUnsupportedRoundingMode() {
   }
 }
 
-std::optional<std::string> MathUnsupportedRewriter::rewrite() {
+std::optional<std::string> MathUnsupportedRewriter::rewrite(ExprAnalysis *Analysis) {
   report(Diagnostics::API_NOT_MIGRATED, false,
          MapNames::ITFName.at(SourceCalleeName.str()));
-  return Base::rewrite();
+  return Base::rewrite(Analysis);
 }
 
-std::optional<std::string> MathTypeCastRewriter::rewrite() {
+std::optional<std::string> MathTypeCastRewriter::rewrite(ExprAnalysis *Analysis) {
   auto FD = Call->getDirectCallee();
   if (!FD || !FD->hasAttr<CUDADeviceAttr>())
-    return Base::rewrite();
+    return Base::rewrite(Analysis);
 
+  ParentAnalysisGuard Guard(Analysis);
   using SSMap = std::map<std::string, std::string>;
   static SSMap RoundingModeMap{{"", "automatic"},
                                {"rd", "rtn"},
@@ -310,7 +311,7 @@ std::optional<std::string> MathTypeCastRewriter::rewrite() {
   return ReplStr;
 }
 
-std::optional<std::string> MathSimulatedRewriter::rewrite() {
+std::optional<std::string> MathSimulatedRewriter::rewrite(ExprAnalysis *Analysis) {
   std::string NamespaceStr;
   auto DRE = dyn_cast<DeclRefExpr>(Call->getCallee()->IgnoreImpCasts());
   if (DRE) {
@@ -326,7 +327,7 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
 
   auto FD = Call->getDirectCallee();
   if (!FD)
-    return Base::rewrite();
+    return Base::rewrite(Analysis);
 
   if (dpct::DpctGlobalInfo::isInAnalysisScope(FD->getBeginLoc())) {
     return {};
@@ -342,7 +343,7 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
   if (!FD->hasAttr<CUDADeviceAttr>() && ContextFD &&
       !ContextFD->hasAttr<CUDADeviceAttr>() &&
       !ContextFD->hasAttr<CUDAGlobalAttr>())
-    return Base::rewrite();
+    return Base::rewrite(Analysis);
 
   // Do not need to report warnings for pow, funnelshift, or drcp migrations
   if (SourceCalleeName != "pow" && SourceCalleeName != "powf" &&
@@ -352,6 +353,7 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     report(Diagnostics::MATH_EMULATION, false,
            MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
 
+  ParentAnalysisGuard Guard(Analysis);
   const std::string FuncName = SourceCalleeName.str();
   std::string ReplStr;
   llvm::raw_string_ostream OS(ReplStr);
@@ -361,7 +363,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     auto Arg = Call->getArg(0);
     std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
         PrintingPolicy(LangOptions()));
-    std::string ArgExpr = Arg->getStmtClassName();
     auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
     if (ArgT == "int") {
       if (FuncName == "frexpf") {
@@ -411,7 +412,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
       auto Arg = Call->getArg(0);
       std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
           PrintingPolicy(LangOptions()));
-      std::string ArgExpr = Arg->getStmtClassName();
       auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
       if (ArgT == "int") {
         if (FuncName == "remquof") {
@@ -432,7 +432,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
       auto Arg = Call->getArg(1);
       std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
           PrintingPolicy(LangOptions()));
-      std::string ArgExpr = Arg->getStmtClassName();
       auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
       if (ArgT == "int") {
         if (FuncName == "remquof") {
@@ -566,8 +565,9 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
   return ReplStr;
 }
 
-std::optional<std::string> MathBinaryOperatorRewriter::rewrite() {
+std::optional<std::string> MathBinaryOperatorRewriter::rewrite(ExprAnalysis *Analysis) {
   reportUnsupportedRoundingMode();
+  ParentAnalysisGuard Guard(Analysis);
   if (SourceCalleeName == "__hneg" || SourceCalleeName == "__hneg2") {
     setLHS("");
     setRHS(getMigratedArgWithExtraParens(0));
