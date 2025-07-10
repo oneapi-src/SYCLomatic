@@ -464,7 +464,7 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMipmappedArrayCreate | FileCheck %s -check-prefix=CUMIPMAPPEDARRAYCREATE
 // CUMIPMAPPEDARRAYCREATE:  CUDA API:
-// CUMIPMAPPEDARRAYCREATE-NEXT:    cuMipmappedArrayCreate(array, desc, levels);
+// CUMIPMAPPEDARRAYCREATE-NEXT:    cuMipmappedArrayCreate(array /*CUmipmappedArray **/, desc /*CUDA_ARRAY3D_DESCRIPTOR **/, levels /*unsigned int*/);
 // CUMIPMAPPEDARRAYCREATE-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
 // CUMIPMAPPEDARRAYCREATE-NEXT:    *array = new dpct::experimental::image_mem_wrapper(*desc, levels);
 

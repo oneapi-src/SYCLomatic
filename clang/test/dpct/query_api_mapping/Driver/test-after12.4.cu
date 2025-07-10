@@ -3,12 +3,12 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxCreate_v3 | FileCheck %s -check-prefix=CUCTXCREATE_V3
 // CUCTXCREATE_V3:  CUDA API:
-// CUCTXCREATE_V3-NEXT:    cuCtxCreate_v3(ctx, params_array, num, flags, device);
+// CUCTXCREATE_V3-NEXT:    cuCtxCreate_v3(ctx /*CUcontext **/, params_array /*CUexecAffinityParam **/, num /*int*/, flags /*unsigned int*/, device /*CUdevice*/);
 // CUCTXCREATE_V3-NEXT:  Is migrated to:
 // CUCTXCREATE_V3-NEXT:    *ctx = dpct::push_device_for_curr_thread(device);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxCreate_v4 | FileCheck %s -check-prefix=CUCTXCREATE_V4
 // CUCTXCREATE_V4:  CUDA API:
-// CUCTXCREATE_V4-NEXT:    cuCtxCreate_v4(ctx, params_array, flags, device);
+// CUCTXCREATE_V4-NEXT:    cuCtxCreate_v4(ctx /*CUcontext **/, params_array /*CUctxCreateParams **/, flags /*unsigned int*/, device /*CUdevice*/);
 // CUCTXCREATE_V4-NEXT:  Is migrated to:
 // CUCTXCREATE_V4-NEXT:    *ctx = dpct::push_device_for_curr_thread(device);
