@@ -555,9 +555,3 @@
 // CUDAPROFILERSTOP-NEXT:   cudaProfilerStop();
 // CUDAPROFILERSTOP-NEXT: The API is Removed.
 // CUDAPROFILERSTOP-EMPTY: 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventRecordWithFlags | FileCheck %s -check-prefix=cudaEventRecordWithFlags
-// cudaEventRecordWithFlags: CUDA API:
-// cudaEventRecordWithFlags-NEXT:   cudaEventRecordWithFlags(event /*cudaEvent_t*/, stream /*cudaStream_t*/,
-// cudaEventRecordWithFlags-NEXT:                            cudaEventRecordDefault /*unsigned int*/);
-// cudaEventRecordWithFlags-NEXT: Is migrated to (with the option --enable-profiling):
-// cudaEventRecordWithFlags-NEXT:   dpct::sync_barrier(event /*cudaEvent_t*/, stream /*unsigned int*/);

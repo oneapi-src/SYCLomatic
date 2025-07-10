@@ -108,7 +108,6 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   const CXXMemberCallExpr *CMCE = dyn_cast_or_null<CXXMemberCallExpr>(CE);
   if (CMCE) {
     auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
-    PP.PrintCanonicalTypes = true;
     auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
     StringRef BaseTypeRef(BaseType);
     if (BaseTypeRef.starts_with("thrust::cuda_cub::execute_on_stream_base<") &&

@@ -111,12 +111,11 @@ static bool formatFile(const clang::tooling::UnifiedPath &FileName,
   // the first input (the original output of dpct without format), then the
   // result is wrong.
   clang::LangOptions DefaultLangOptions;
-  IntrusiveRefCntPtr<clang::DiagnosticOptions> DiagOpts =
-      new clang::DiagnosticOptions();
-  clang::TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
+  auto DiagOptions = std::make_shared<DiagnosticOptions>();
+  clang::TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), *DiagOptions);
   clang::DiagnosticsEngine Diagnostics(
       IntrusiveRefCntPtr<clang::DiagnosticIDs>(new clang::DiagnosticIDs()),
-      &*DiagOpts, &DiagnosticPrinter, false);
+      *DiagOptions, &DiagnosticPrinter, false);
 
   clang::FileSystemOptions FSO;
   FSO.WorkingDir = ".";
@@ -910,10 +909,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   volatile ProcessStatus status = MigrationSucceeded;
   // Set up Rewriter.
   LangOptions DefaultLangOptions;
-  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
-  TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
+  auto DiagOpts = std::make_shared<DiagnosticOptions>();
+  TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), *DiagOpts);
   DiagnosticsEngine Diagnostics(
-      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), *DiagOpts,
       &DiagnosticPrinter, false);
   SourceManager Sources(Diagnostics, Tool.getFiles());
   Rewriter Rewrite(Sources, DefaultLangOptions);

@@ -181,22 +181,24 @@ std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfoIm
     std::shared_ptr<CompilerInvocation> Invocation, bool &Success) {
   Invocation->getDiagnosticOpts().IgnoreWarnings = true;
   auto DiagConsumer = new TextDiagnosticPrinter(
-      DiagnosticStream, &Invocation->getDiagnosticOpts());
+      DiagnosticStream, Invocation->getDiagnosticOpts());
   auto Info = std::make_shared<TranslationUnitInfo>();
   FileSystemOptions FO;
   FileManager FileMgr(FO);
   auto Diags = CompilerInstance::createDiagnostics(
-      FileMgr.getVirtualFileSystem(), &Invocation->getDiagnosticOpts(),
+      FileMgr.getVirtualFileSystem(), Invocation->getDiagnosticOpts(),
       DiagConsumer,
       /*ShouldOwnClient=*/false, &Invocation->getCodeGenOpts());
   DpctGlobalInfo::setColorOption(Invocation->getDiagnosticOpts().ShowColors);
-  Info->AST = ASTUnit::create(Invocation, Diags, CaptureDiagsKind::None, false);
+  auto DiagOpts = std::make_shared<DiagnosticOptions>();
+  Info->AST = ASTUnit::create(Invocation, DiagOpts, Diags,
+                              CaptureDiagsKind::None, false);
   // Use the FileSystem passed by RefactoringTool.
   Info->AST->getFileManager().setVirtualFileSystem(FS);
   DpctFrontEndAction FEAction(Info.get());
   auto Ret = ASTUnit::LoadFromCompilerInvocationAction(
-      Invocation, std::make_shared<PCHContainerOperations>(), Diags, &FEAction,
-      Info->AST.get());
+      Invocation, std::make_shared<PCHContainerOperations>(), DiagOpts, Diags,
+      &FEAction, Info->AST.get());
   Success = !DiagConsumer->getNumErrors();
   if (Ret && (bool)&Info->AST->getASTContext())
     return Info;

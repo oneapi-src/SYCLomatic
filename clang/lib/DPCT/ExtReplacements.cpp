@@ -305,6 +305,44 @@ void ExtReplacements::markAsAlive(std::shared_ptr<ExtReplacement> Repl) {
   }
 }
 
+void ExtReplacements::markAsDead(std::shared_ptr<ExtReplacement> Repl) {
+  if (auto PairID = Repl->getPairID()) {
+    if (auto &R = PairReplsMap[PairID]) {
+      R->Status = PairReplsStatus::Dead;
+      auto BeginIter = ReplMap.lower_bound(R->Repl->getOffset());
+      auto EndIter = ReplMap.upper_bound(R->Repl->getOffset());
+      for (auto Start = BeginIter; Start != EndIter; Start++) {
+        if (*Start->second == *R->Repl) {
+          ReplMap.erase(Start);
+          break;
+        }
+      }
+    } else {
+      PairReplsMap[PairID] =
+          std::make_shared<PairReplsStatus>(Repl, PairReplsStatus::Dead);
+    }
+  }
+}
+
+bool ExtReplacements::checkLiveness(std::shared_ptr<ExtReplacement> Repl) {
+  if (isAlive(Repl))
+    // If a replacement in the same pair is alive, merge it anyway.
+    return true;
+  // Check if it is duplicate replacement.
+  return !isDuplicated(Repl, ReplMap.lower_bound(Repl->getOffset()),
+                       ReplMap.upper_bound(Repl->getOffset()));
+}
+// Check if its pair has a replacement inserted.
+bool ExtReplacements::isAlive(std::shared_ptr<ExtReplacement> Repl) {
+  if (auto PairID = Repl->getPairID()) {
+    if (auto &R = PairReplsMap[PairID]) {
+      if (!R->Repl->getReplacementText().contains(
+              "namespace dpct_operator_overloading {"))
+        return R->Status == PairReplsStatus::Alive;
+    }
+  }
+  return false;
+}
 bool ExtReplacements::isDuplicated(std::shared_ptr<ExtReplacement> Repl,
                                    ReplIterator Begin, ReplIterator End) {
   while (Begin != End) {

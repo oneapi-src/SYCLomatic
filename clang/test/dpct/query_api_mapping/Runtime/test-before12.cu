@@ -32,3 +32,73 @@
 // CUDAUNBINDTEXTURE-NEXT:   cudaUnbindTexture(ptr /*const textureReference **/);
 // CUDAUNBINDTEXTURE-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
 // CUDAUNBINDTEXTURE-NEXT:   ptr->detach();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaBindTextureToMipmappedArray | FileCheck %s -check-prefix=cudaBindTextureToMipmappedArray
+// cudaBindTextureToMipmappedArray: CUDA API:
+// cudaBindTextureToMipmappedArray-NEXT:   static texture<float4, 3> tex3;
+// cudaBindTextureToMipmappedArray-NEXT:   cudaMipmappedArray_t pMipMapArr;
+// cudaBindTextureToMipmappedArray-NEXT:   cudaBindTextureToMipmappedArray(tex3 /*const struct texture<T, dim, readMode>*/, pMipMapArr /*cudaMipmappedArray_const_t*/);
+// cudaBindTextureToMipmappedArray-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// cudaBindTextureToMipmappedArray-NEXT:   dpct::experimental::bindless_image_wrapper<sycl::float4, 3> tex3;
+// cudaBindTextureToMipmappedArray-NEXT:   dpct::experimental::image_mem_wrapper_ptr pMipMapArr;
+// cudaBindTextureToMipmappedArray-NEXT:   tex3.attach(pMipMapArr);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaCreateChannelDescHalf | FileCheck %s -check-prefix=cudaCreateChannelDescHalf
+// cudaCreateChannelDescHalf: CUDA API:
+// cudaCreateChannelDescHalf-NEXT:   cudaChannelFormatDesc halfChn = cudaCreateChannelDescHalf();
+// cudaCreateChannelDescHalf-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// cudaCreateChannelDescHalf-NEXT:   dpct::image_channel halfChn = dpct::image_channel::create<sycl::half>();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaCreateChannelDescHalf1 | FileCheck %s -check-prefix=cudaCreateChannelDescHalf1
+// cudaCreateChannelDescHalf1: CUDA API:
+// cudaCreateChannelDescHalf1-NEXT:   cudaChannelFormatDesc half1Chn = cudaCreateChannelDescHalf1();
+// cudaCreateChannelDescHalf1-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// cudaCreateChannelDescHalf1-NEXT:   dpct::image_channel half1Chn = dpct::image_channel::create<sycl::half>();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaCreateChannelDescHalf2 | FileCheck %s -check-prefix=cudaCreateChannelDescHalf2
+// cudaCreateChannelDescHalf2: CUDA API:
+// cudaCreateChannelDescHalf2-NEXT:   cudaChannelFormatDesc half2Chn = cudaCreateChannelDescHalf2();
+// cudaCreateChannelDescHalf2-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// cudaCreateChannelDescHalf2-NEXT:   dpct::image_channel half2Chn = dpct::image_channel::create<sycl::half2>();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaCreateChannelDescHalf4 | FileCheck %s -check-prefix=cudaCreateChannelDescHalf4
+// cudaCreateChannelDescHalf4: CUDA API:
+// cudaCreateChannelDescHalf4-NEXT:   cudaChannelFormatDesc half4Chn = cudaCreateChannelDescHalf4();
+// cudaCreateChannelDescHalf4-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// cudaCreateChannelDescHalf4-NEXT:   dpct::image_channel half4Chn = dpct::image_channel::create<sycl::half4>();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaCreateSurfaceObject | FileCheck %s -check-prefix=cudaCreateSurfaceObject
+// cudaCreateSurfaceObject: CUDA API:
+// cudaCreateSurfaceObject-NEXT:   cudaCreateSurfaceObject(&surf /*cudaSurfaceObject_t* */, &resDesc /*const cudaResourceDesc* */);
+// cudaCreateSurfaceObject-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// cudaCreateSurfaceObject-NEXT:   surf = dpct::experimental::create_bindless_image(resDesc);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDestroySurfaceObject | FileCheck %s -check-prefix=cudaDestroySurfaceObject
+// cudaDestroySurfaceObject:  CUDA API:
+// cudaDestroySurfaceObject-NEXT:    cudaDestroySurfaceObject(surf /*cudaSurfaceObject_t*/);
+// cudaDestroySurfaceObject-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// cudaDestroySurfaceObject-NEXT:    dpct::experimental::destroy_bindless_image(surf, dpct::get_in_order_queue());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetSurfaceObjectResourceDesc | FileCheck %s -check-prefix=cudaGetSurfaceObjectResourceDesc
+// cudaGetSurfaceObjectResourceDesc: CUDA API:
+// cudaGetSurfaceObjectResourceDesc-NEXT:   cudaGetSurfaceObjectResourceDesc(&resDesc /*cudaResourceDesc* */, surf /*cudaSurfaceObject_t*/);
+// cudaGetSurfaceObjectResourceDesc-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// cudaGetSurfaceObjectResourceDesc-NEXT:   resDesc = dpct::experimental::get_data(surf);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGraphAddDependencies | FileCheck %s -check-prefix=cudaGraphAddDependencies
+// cudaGraphAddDependencies: CUDA API:
+// cudaGraphAddDependencies-NEXT:   cudaGraphAddDependencies(graph /*cudaGraph_t*/, node4 /*const cudaGraphNode_t* */, node5 /*const cudaGraphNode_t* */, 10 /*size_t*/);
+// cudaGraphAddDependencies-NEXT: Is migrated to (with the option --use-experimental-features=graph):
+// cudaGraphAddDependencies-NEXT:   dpct::experimental::add_dependencies(graph, node4, node5, 10);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGraphAddEmptyNode | FileCheck %s -check-prefix=cudaGraphAddEmptyNode
+// cudaGraphAddEmptyNode: CUDA API:
+// cudaGraphAddEmptyNode-NEXT:   cudaGraphAddEmptyNode(&node /*cudaGraphNode_t* */, graph /*cudaGraph_t*/, node4 /*const cudaGraphNode_t* */, 10 /*size_t*/);
+// cudaGraphAddEmptyNode-NEXT: Is migrated to (with the option --use-experimental-features=graph):
+// cudaGraphAddEmptyNode-NEXT:   dpct::experimental::add_empty_node(&node, graph, node4, 10);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGraphDestroy | FileCheck %s -check-prefix=cudaGraphDestroy
+// cudaGraphDestroy: CUDA API:
+// cudaGraphDestroy-NEXT:   cudaGraphDestroy(graph /*cudaGraph_t*/);
+// cudaGraphDestroy-NEXT: Is migrated to (with the option --use-experimental-features=graph):
+// cudaGraphDestroy-NEXT:   delete (graph);

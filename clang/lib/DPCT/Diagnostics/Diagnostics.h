@@ -353,11 +353,11 @@ public:
 
 private:
   SourceManagerForWarning() {
-    DiagOpts = new DiagnosticOptions();
+    DiagOpts = std::make_shared<DiagnosticOptions>();
     DiagOpts->ShowColors = DpctGlobalInfo::getInstance().getColorOption();
-    DiagnosticPrinter = new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
+    DiagnosticPrinter = new TextDiagnosticPrinter(llvm::errs(), *DiagOpts);
     Diagnostics = new DiagnosticsEngine(
-        IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+        IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), *DiagOpts,
         DiagnosticPrinter, false);
 
     FSO.WorkingDir = ".";
@@ -367,7 +367,7 @@ private:
   }
 
   LangOptions DefaultLangOptions;
-  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts;
+  std::shared_ptr<DiagnosticOptions> DiagOpts;
   TextDiagnosticPrinter *DiagnosticPrinter;
   DiagnosticsEngine *Diagnostics;
   FileSystemOptions FSO;
