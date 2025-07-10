@@ -1171,7 +1171,7 @@ protected:
 
       auto CommonStr = llvm::Twine(Str)
                            .concat("\"")
-                           .concat(GAS->getAsmString()->getString())
+                           .concat(GAS->getAsmString())
                            .concat("\"")
                            .str();
 
@@ -1240,7 +1240,7 @@ protected:
 
     if (DpctGlobalInfo::useSYCLCompat()) {
       report(Diagnostics::UNSUPPORT_SYCLCOMPAT, /*UseTextBegin=*/true,
-             GAS->getAsmString()->getString());
+             GAS->getAsmString());
       cutOffMigration();
       return SYCLGenSuccess();
     }
@@ -2431,7 +2431,7 @@ protected:
   bool HandleVset(const InlineAsmInstruction *I, StringRef Fn) {
     if (DpctGlobalInfo::useSYCLCompat()) {
       report(Diagnostics::UNSUPPORT_SYCLCOMPAT, /*UseTextBegin=*/true,
-             GAS->getAsmString()->getString());
+             GAS->getAsmString());
       cutOffMigration();
       return SYCLGenSuccess();
     }
@@ -3434,7 +3434,7 @@ protected:
   bool HandleCopyWait(const InlineAsmInstruction *Inst) {
     auto CommonStr = llvm::Twine("")
                          .concat("\"")
-                         .concat(GAS->getAsmString()->getString())
+                         .concat(GAS->getAsmString())
                          .concat("\"")
                          .str();
 
@@ -3467,7 +3467,7 @@ protected:
 
     auto CommonStr = llvm::Twine("")
                          .concat("\"")
-                         .concat(GAS->getAsmString()->getString())
+                         .concat(GAS->getAsmString())
                          .concat("\"")
                          .str();
 
@@ -3694,7 +3694,7 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   std::string S = GAS->generateAsmString(C);
   InlineAsmContext Context;
   llvm::SourceMgr Mgr;
-  std::string Buffer = GAS->getAsmString()->getString().str();
+  std::string Buffer = GAS->getAsmString();
   Mgr.AddNewSourceBuffer(llvm::MemoryBuffer::getMemBuffer(Buffer),
                          llvm::SMLoc());
   SYCLIdentiferHandler Handle;

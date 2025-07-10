@@ -92,7 +92,7 @@ public:
   std::string getLibDeviceFile(StringRef Gpu) const {
     return LibDeviceMap.lookup(Gpu);
   }
-  void WarnIfUnsupportedVersion();
+  void WarnIfUnsupportedVersion() const;
 
 #ifdef SYCLomatic_CUSTOMIZATION
 private:
@@ -101,6 +101,7 @@ private:
   bool FindTargetVersion(const std::string &Line, const std::string DefineStr,
                          const std::string VersionStr, std::string &Result);
 #endif // SYCLomatic_CUSTOMIZATION
+
 };
 
 namespace tools {
@@ -184,8 +185,8 @@ namespace toolchains {
 class LLVM_LIBRARY_VISIBILITY NVPTXToolChain : public ToolChain {
 public:
   NVPTXToolChain(const Driver &D, const llvm::Triple &Triple,
-                 const llvm::Triple &HostTriple, const llvm::opt::ArgList &Args,
-                 bool Freestanding);
+                 const llvm::Triple &HostTriple,
+                 const llvm::opt::ArgList &Args);
 
   NVPTXToolChain(const Driver &D, const llvm::Triple &Triple,
                  const llvm::opt::ArgList &Args);
@@ -231,9 +232,6 @@ public:
 protected:
   Tool *buildAssembler() const override; // ptxas.
   Tool *buildLinker() const override;    // nvlink.
-
-private:
-  bool Freestanding = false;
 };
 
 class LLVM_LIBRARY_VISIBILITY CudaToolChain : public NVPTXToolChain {

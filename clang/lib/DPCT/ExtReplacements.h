@@ -66,14 +66,7 @@ private:
   // Check if the Repl is same as source code
   bool isReplRedundant(std::shared_ptr<ExtReplacement> Repl,
                        std::shared_ptr<DpctFileInfo> FileInfo);
-  inline bool checkLiveness(std::shared_ptr<ExtReplacement> Repl) {
-    if (isAlive(Repl))
-      // If a replacement in the same pair is alive, merge it anyway.
-      return true;
-    // Check if it is duplicate replacement.
-    return !isDuplicated(Repl, ReplMap.lower_bound(Repl->getOffset()),
-                         ReplMap.upper_bound(Repl->getOffset()));
-  }
+  bool checkLiveness(std::shared_ptr<ExtReplacement> Repl);
 
   bool isDuplicated(std::shared_ptr<ExtReplacement> Repl, ReplIterator Begin,
                     ReplIterator End);
@@ -136,11 +129,7 @@ private:
   size_t findCR(StringRef Line);
 
   // Mark a replacement as dead.
-  void markAsDead(std::shared_ptr<ExtReplacement> Repl) {
-    if (auto PairID = Repl->getPairID())
-      PairReplsMap[PairID] =
-          std::make_shared<PairReplsStatus>(Repl, PairReplsStatus::Dead);
-  }
+  void markAsDead(std::shared_ptr<ExtReplacement> Repl);
 
   // Mark a replacement as alive and insert into ReplMap
   // If it is not the first encountered replacement and the first one is
@@ -148,13 +137,7 @@ private:
   void markAsAlive(std::shared_ptr<ExtReplacement> Repl);
 
   // Check if its pair has a replacement inserted.
-  bool isAlive(std::shared_ptr<ExtReplacement> Repl) {
-    if (auto PairID = Repl->getPairID()) {
-      if (auto &R = PairReplsMap[PairID])
-        return R->Status == PairReplsStatus::Alive;
-    }
-    return false;
-  }
+  bool isAlive(std::shared_ptr<ExtReplacement> Repl);
 
   clang::tooling::UnifiedPath FilePath;
   ///< Offset, ExtReplacement>

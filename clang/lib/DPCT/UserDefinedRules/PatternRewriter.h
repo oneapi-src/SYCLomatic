@@ -27,7 +27,6 @@ bool fixLineEndings(const std::string &Input, std::string &Output);
 enum SourceFileType { SFT_CAndCXXSource, SFT_CMakeScript, SFT_PySetupScript };
 void setFileTypeProcessed(enum SourceFileType FileType);
 
-extern std::set<std::string> MainSrcFilesHasCudaSyntex;
 extern bool LANG_Cplusplus_20_Used;
 
 } // namespace dpct

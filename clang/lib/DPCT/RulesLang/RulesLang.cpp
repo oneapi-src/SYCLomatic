@@ -1727,8 +1727,8 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorDecl(
     SR = GetFunctionSourceRange(SM, FD->getBeginLoc(), FD->getEndLoc());
   }
   report(SR.getBegin(), Diagnostics::TRNA_WARNING_OVERLOADED_API_FOUND, false);
-  emplaceTransformation(new InsertText(SR.getBegin(), Prologue.str()));
-  emplaceTransformation(new InsertText(SR.getEnd(), Epilogue.str()));
+  insertAroundRange(SR.getBegin(), SR.getEnd(), Prologue.str(),
+                    Epilogue.str());
 }
 
 void VectorTypeOperatorRule::MigrateOverloadedOperatorCall(

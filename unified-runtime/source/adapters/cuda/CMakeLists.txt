@@ -73,12 +73,6 @@ else()
   )
 endif()
 
-if(UMF_ENABLE_POOL_TRACKING)
-  target_compile_definitions("ur_adapter_cuda" PRIVATE UMF_ENABLE_POOL_TRACKING)
-else()
-  message(WARNING "CUDA adapter USM pools are disabled, set UMF_ENABLE_POOL_TRACKING to enable them")
-endif()
-
 # Only enable xpti tracing on Linux as tracing tools aren't available on
 # Windows yet.
 if (UR_ENABLE_TRACING AND UNIX)
@@ -93,9 +87,24 @@ if (UR_ENABLE_TRACING AND UNIX)
     XPTI_ENABLE_INSTRUMENTATION
     XPTI_STATIC_LIBRARY
     )
+
+  # CUDAToolkit_CUPTI_INCLUDE_DIR is provided by FindCUDAToolkit since CMake
+  # 3.24, but we support versions back to 3.20. Find it if not found already.
+  if (NOT CUDAToolkit_CUPTI_INCLUDE_DIR)
+    find_path(CUDAToolkit_CUPTI_INCLUDE_DIR cupti.h PATHS
+      "${CUDAToolkit_ROOT_DIR}/extras/CUPTI/include"
+      ${CUDAToolkit_INCLUDE_DIRS}
+      PATH_SUFFIXES "../extras/CUPTI/include"
+                    "../../../extras/CUPTI/include"
+      REQUIRED
+      NO_DEFAULT_PATH)
+  endif()
+
   target_include_directories(${TARGET_NAME} PRIVATE
     ${XPTI_INCLUDES}
-    ${CUDAToolkit_cupti_INCLUDE_DIR}
+  )
+  target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
+    ${CUDAToolkit_CUPTI_INCLUDE_DIR}
   )
   target_sources(${TARGET_NAME} PRIVATE ${XPTI_PROXY_SRC})
 endif()
@@ -106,6 +115,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     ${PROJECT_NAME}::umf
     Threads::Threads
     cudadrv
+    CUDA::nvml
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE

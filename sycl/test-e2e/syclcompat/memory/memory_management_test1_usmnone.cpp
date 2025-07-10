@@ -10,8 +10,8 @@
 // RUN: %{build} -o %t.out
 // RUN: %{run} %t.out
 
-// UNSUPPORTED: level_zero_v2_adapter
-// UNSUPPORTED-TRACKER: https://github.com/intel/llvm/issues/17271
+// UNSUPPORTED: linux && gpu-intel-gen12 && (!build-mode && run-mode)
+// UNSUPPORTED-TRACKER: https://github.com/intel/llvm/issues/17966
 
 #define SYCLCOMPAT_USM_LEVEL_NONE
 #include <sycl/detail/core.hpp>

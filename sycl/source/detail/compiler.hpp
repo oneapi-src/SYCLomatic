@@ -44,8 +44,11 @@
 /// PropertySetIO.h
 #define __SYCL_PROPERTY_SET_SPEC_CONST_DEFAULT_VALUES_MAP                      \
   "SYCL/specialization constants default values"
+/// TODO: remove req mask when sycl devicelib online linking path is removed.
 /// PropertySetRegistry::SYCL_DEVICELIB_REQ_MASK defined in PropertySetIO.h
 #define __SYCL_PROPERTY_SET_DEVICELIB_REQ_MASK "SYCL/devicelib req mask"
+/// PropertySetRegistry::SYCL_DEVICELIB_METADATA defined in PropertySetIO.h
+#define __SYCL_PROPERTY_SET_DEVICELIB_METADATA "SYCL/devicelib metadata"
 /// PropertySetRegistry::SYCL_KERNEL_PARAM_OPT_INFO defined in PropertySetIO.h
 #define __SYCL_PROPERTY_SET_KERNEL_PARAM_OPT_INFO "SYCL/kernel param opt"
 /// PropertySetRegistry::SYCL_KERNEL_PROGRAM_METADATA defined in PropertySetIO.h
@@ -54,6 +57,8 @@
 #define __SYCL_PROPERTY_SET_SYCL_MISC_PROP "SYCL/misc properties"
 /// PropertySetRegistry::SYCL_ASSERT_USED defined in PropertySetIO.h
 #define __SYCL_PROPERTY_SET_SYCL_ASSERT_USED "SYCL/assert used"
+/// PropertySetRegistry::SYCL_KERNEL_NAMES defined in PropertySetIO.h
+#define __SYCL_PROPERTY_SET_SYCL_KERNEL_NAMES "SYCL/kernel names"
 /// PropertySetRegistry::SYCL_EXPORTED_SYMBOLS defined in PropertySetIO.h
 #define __SYCL_PROPERTY_SET_SYCL_EXPORTED_SYMBOLS "SYCL/exported symbols"
 /// PropertySetRegistry::SYCL_IMPORTED_SYMBOLS defined in PropertySetIO.h
@@ -115,14 +120,15 @@ struct _sycl_offload_entry_struct {
   inline bool IsNewOffloadEntryType() {
     // Assume this is the new version of the struct.
     auto newStruct = reinterpret_cast<sycl_offload_entry_new>(this);
-
+    // See llvm/include/llvm/Object/OffloadBinary.h
+    // #define OFK_SYCL  (1 << 3)
     // Check if first 64 bits is equal to 0, next 16 bits is equal to 1, next 16
-    // bits is equal to 4 (OK_SYCL), and check if Flags are zero. If all these
+    // bits is equal to 8 (OFK_SYCL), and check if Flags are zero. If all these
     // conditions are met, then this is a newer version of the struct.
     // We can not just rely on checking the first 64 bits, because even for the
     // older version of the struct, the first 64 bits (void* addr) are zero.
     return newStruct->Reserved == 0 && newStruct->Version == 1 &&
-           newStruct->Kind == 4 && newStruct->Flags == 0;
+           newStruct->Kind == 8 && newStruct->Flags == 0;
   }
 
   // Name is the only field that's used in SYCL.

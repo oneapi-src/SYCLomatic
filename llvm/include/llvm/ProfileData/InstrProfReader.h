@@ -18,9 +18,11 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/ProfileSummary.h"
 #include "llvm/Object/BuildID.h"
+#include "llvm/ProfileData/DataAccessProf.h"
 #include "llvm/ProfileData/InstrProf.h"
 #include "llvm/ProfileData/InstrProfCorrelator.h"
 #include "llvm/ProfileData/MemProf.h"
+#include "llvm/ProfileData/MemProfSummary.h"
 #include "llvm/ProfileData/MemProfYAML.h"
 #include "llvm/Support/Endian.h"
 #include "llvm/Support/Error.h"
@@ -708,6 +710,8 @@ private:
   /// The MemProf version.
   memprof::IndexedVersion Version =
       static_cast<memprof::IndexedVersion>(memprof::MinimumSupportedVersion);
+  /// MemProf summary (if available, version >= 4).
+  std::unique_ptr<memprof::MemProfSummary> MemProfSum;
   /// MemProf profile schema (if available).
   memprof::MemProfSchema Schema;
   /// MemProf record profile data on-disk indexed via llvm::md5(FunctionName).
@@ -722,9 +726,13 @@ private:
   const unsigned char *CallStackBase = nullptr;
   // The number of elements in the radix tree array.
   unsigned RadixTreeSize = 0;
+  /// The data access profiles, deserialized from binary data.
+  std::unique_ptr<memprof::DataAccessProfData> DataAccessProfileData;
 
   Error deserializeV2(const unsigned char *Start, const unsigned char *Ptr);
-  Error deserializeV3(const unsigned char *Start, const unsigned char *Ptr);
+  Error deserializeRadixTreeBased(const unsigned char *Start,
+                                  const unsigned char *Ptr,
+                                  memprof::IndexedVersion Version);
 
 public:
   IndexedMemProfReader() = default;
@@ -739,6 +747,8 @@ public:
 
   // Return the entire MemProf profile.
   memprof::AllMemProfData getAllMemProfData() const;
+
+  memprof::MemProfSummary *getSummary() const { return MemProfSum.get(); }
 };
 
 /// Reader for the indexed binary instrprof format.
@@ -899,6 +909,11 @@ public:
       assert(Summary && "No profile summary");
       return *Summary;
     }
+  }
+
+  /// Return the MemProf summary. Will be null if unavailable (version < 4).
+  memprof::MemProfSummary *getMemProfSummary() const {
+    return MemProfReader.getSummary();
   }
 
   Error readBinaryIds(std::vector<llvm::object::BuildID> &BinaryIds) override;

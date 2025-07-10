@@ -468,7 +468,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     }
     auto &Context = dpct::DpctGlobalInfo::getContext();
     auto PP = Context.getPrintingPolicy();
-    PP.PrintCanonicalTypes = 1;
     auto Arg0 = Call->getArg(0);
     auto Arg1 = Call->getArg(1);
 

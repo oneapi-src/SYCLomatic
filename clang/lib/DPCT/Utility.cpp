@@ -4793,11 +4793,11 @@ void PrintFullTemplateName(raw_ostream &OS, const PrintingPolicy &Policy, Templa
     OS << *QTN->getUnderlyingTemplate().getAsTemplateDecl();
   } else if (DependentTemplateName *DTN = Name.getAsDependentTemplateName()) {
     OS << "template ";
-
-    if (DTN->isIdentifier())
-      OS << DTN->getIdentifier()->getName();
+    
+    if (DTN->getName().getOperator() == OO_None)
+      OS << DTN->getName().getIdentifier()->getName();
     else
-      OS << "operator " << getOperatorSpelling(DTN->getOperator());
+      OS << "operator " << getOperatorSpelling(DTN->getName().getOperator());
   } else if (SubstTemplateTemplateParmStorage *subst
                = Name.getAsSubstTemplateTemplateParm()) {
     PrintFullTemplateName(OS, Policy, subst->getReplacement());

@@ -2564,7 +2564,6 @@ void DpctNameGenerator::printName(const FunctionDecl *FD,
 }
 DpctNameGenerator::DpctNameGenerator(ASTContext &Ctx)
     : G(Ctx), PP(Ctx.getPrintingPolicy()) {
-  PP.PrintCanonicalTypes = true;
 }
 std::string DpctNameGenerator::getName(const FunctionDecl *D) {
   std::string Result;
