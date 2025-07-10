@@ -600,7 +600,7 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMipmappedArrayGetLevel | FileCheck %s -check-prefix=CUMIPMAPPEDARRAYGETLEVEL
 // CUMIPMAPPEDARRAYGETLEVEL: CUDA API:
-// CUMIPMAPPEDARRAYGETLEVEL-NEXT:   cuMipmappedArrayGetLevel(&level_arr/*CUarray*/, mmArray/*CUmipmappedArray*/, 1/*level*/);
+// CUMIPMAPPEDARRAYGETLEVEL-NEXT:   cuMipmappedArrayGetLevel(&level_arr/*CUarray **/, mmArray/*CUmipmappedArray*/, 1/*unsigned int*/);
 // CUMIPMAPPEDARRAYGETLEVEL-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
 // CUMIPMAPPEDARRAYGETLEVEL-NEXT:   level_arr = mmArray->get_mip_level(1);
 
@@ -618,7 +618,7 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefGetArray | FileCheck %s -check-prefix=CUTEXREFGETARRAY
 // CUTEXREFGETARRAY: CUDA API:
-// CUTEXREFGETARRAY-NEXT:   cuTexRefGetArray(phArray /*CUarray **/, hTexRef /*CUtexref*/);
+// CUTEXREFGETARRAY-NEXT:   cuTexRefGetArray(&a/*CUarray **/, r/*CUtexref*/);
 // CUTEXREFGETARRAY-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
 // CUTEXREFGETARRAY-NEXT:   a = dpct::experimental::get_img_mem(r);
 

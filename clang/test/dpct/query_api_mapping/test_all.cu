@@ -1501,6 +1501,13 @@
 // CHECK-NEXT: cudaGraphAddDependencies
 // CHECK-NEXT: cudaGraphAddEmptyNode
 // CHECK-NEXT: cudaGraphDestroy
+// CHECK-NEXT: cudaGraphExecDestroy
+// CHECK-NEXT: cudaGraphExecUpdate
+// CHECK-NEXT: cudaGraphGetNodes
+// CHECK-NEXT: cudaGraphGetRootNodes
+// CHECK-NEXT: cudaGraphInstantiate
+// CHECK-NEXT: cudaGraphLaunch
+// CHECK-NEXT: cudaGraphNodeGetType
 // CHECK-NEXT: cudaGraphicsD3D11RegisterResource
 // CHECK-NEXT: cudaGraphicsMapResources
 // CHECK-NEXT: cudaGraphicsResourceGetMappedMipmappedArray
@@ -2439,6 +2446,8 @@
 // CHECK-NEXT: skipahead_subsequence
 // CHECK-NEXT: sqrt
 // CHECK-NEXT: sqrtf
+// CHECK-NEXT: surf1Dread
+// CHECK-NEXT: surf1Dwrite
 // CHECK-NEXT: surf2DLayeredwrite
 // CHECK-NEXT: surf2Dread
 // CHECK-NEXT: surf2Dwrite
@@ -2449,9 +2458,11 @@
 // CHECK-NEXT: tanh
 // CHECK-NEXT: tanhf
 // CHECK-NEXT: tex1D
+// CHECK-NEXT: tex1DLayered
 // CHECK-NEXT: tex1DLod
 // CHECK-NEXT: tex1Dfetch
 // CHECK-NEXT: tex2D
+// CHECK-NEXT: tex2DLayered
 // CHECK-NEXT: tex2DLod
 // CHECK-NEXT: tex3D
 // CHECK-NEXT: tex3DLod
