@@ -46,7 +46,7 @@
 // CUDAGETSYMBOLADDRESS: CUDA API:
 // CUDAGETSYMBOLADDRESS-NEXT:   cudaGetSymbolAddress(pDev /*void ***/, symbol /*const void **/);
 // CUDAGETSYMBOLADDRESS-NEXT: Is migrated to:
-// CUDAGETSYMBOLADDRESS-NEXT:   *(pDev) = symbol.get_ptr();
+// CUDAGETSYMBOLADDRESS-NEXT:   *(pDev) = const_cast<void *>(symbol);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetSymbolSize | FileCheck %s -check-prefix=CUDAGETSYMBOLSIZE
 // CUDAGETSYMBOLSIZE: CUDA API:
