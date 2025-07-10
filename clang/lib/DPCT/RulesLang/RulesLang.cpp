@@ -6817,7 +6817,7 @@ void MemoryMigrationRule::getSymbolAddressMigration(
   const VarDecl *VD = dyn_cast<VarDecl>(Arg->getDecl());
   EA.analyze(C->getArg(1));
   auto StmtStrArg1 = EA.getReplacedString();
-  if (VD->isLocalVarDeclOrParm()) {
+  if (VD && VD->isLocalVarDeclOrParm()) {
     StmtStrArg1 = "const_cast<void *>(" + StmtStrArg1 + ")";
   } else {
     StmtStrArg1 += ".get_ptr()";

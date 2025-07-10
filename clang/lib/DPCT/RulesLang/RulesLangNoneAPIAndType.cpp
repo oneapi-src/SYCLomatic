@@ -218,8 +218,8 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     auto FD = dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(MemVarRef);
     auto CE = dpct::DpctGlobalInfo::findAncestor<CallExpr>(MemVarRef);
-    if (FD &&
-        !dyn_cast<VarDecl>(MemVarRef->getDecl())->isLocalVarDeclOrParm() &&
+    if (auto VD =dyn_cast<VarDecl>(MemVarRef->getDecl()); FD && VD &&
+        !VD->isLocalVarDeclOrParm() &&
         !isGlobalOrDeviceFuncDecl(FD)) {
       if (CE &&
           !DpctGlobalInfo::isInCudaPath(CE->getCalleeDecl()->getBeginLoc()))
