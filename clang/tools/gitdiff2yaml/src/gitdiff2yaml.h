@@ -22,14 +22,6 @@ struct Replacement {
   std::string ReplacementText;
 };
 
-struct HunkContext {
-  unsigned OldCurrentLine = 0;
-  bool InHunk = false;
-  bool FastForward = false;
-  std::string CurrentNewFilePath;
-  std::string CurrentOldFilePath;
-};
-
 std::string execGitCommand(const std::string &CMD);
 std::vector<Replacement> parseDiff(const std::string &diffOutput,
                                    const std::string &RepoRoot);

@@ -29,6 +29,14 @@ bool startsWith(const std::string &Str, const std::string &Prefix) {
          Str.compare(0, Prefix.size(), Prefix) == 0;
 }
 
+struct HunkContext {
+  unsigned OldCurrentLine = 0;
+  bool InHunk = false;
+  bool FastForward = false;
+  std::string CurrentNewFilePath;
+  std::string CurrentOldFilePath;
+};
+
 bool parseHunkHeader(const std::string &Line, HunkContext &HC) {
   const std::string HunkHeaderPrefix = "@@ -";
   if (!startsWith(Line, HunkHeaderPrefix))
@@ -38,14 +46,19 @@ bool parseHunkHeader(const std::string &Line, HunkContext &HC) {
   // @@ -0,0 +1,3 @@
   //        ^
   //        |-- OldEnd
+  // E.g.,
+  // @@ -24 +24 @@
+  //       ^
+  //       |-- OldEnd
   size_t OldEnd = Line.find(' ', HunkHeaderPrefix.size());
   std::string OldPart =
       Line.substr(HunkHeaderPrefix.size(), OldEnd - HunkHeaderPrefix.size());
   size_t Comma = OldPart.find(',');
   if (Comma == std::string::npos) {
-    throw std::runtime_error("Invalid hunk header format: " + Line);
+    HC.OldCurrentLine = std::stoi(OldPart);
+  } else {
+    HC.OldCurrentLine = std::stoi(OldPart.substr(0, Comma));
   }
-  HC.OldCurrentLine = std::stoi(OldPart.substr(0, Comma));
   return true;
 }
 
@@ -68,98 +81,6 @@ std::vector<unsigned> calculateOldOffset(const std::string &OldFileContent) {
   }
 
   return Ret;
-}
-
-// 1. Assume the line ending in the file is '\n'.
-// 2. The pair (---, +++) may occurs multiple times in one hunk, so we use a
-// variable to save the delete (-) operation. The continuous delete operations
-// are treated as one operation.
-// 3. After the delete operation, if the next line is one or more '+'
-// operations, we make them as a replace-replacement. If the next line is a
-// context line, the delete operation is a delete-replacement. Then clear the
-// variable.
-// 4. If we meet insertions ('+') when the variable is empty, we treat it as an
-// insert-replacement.
-void processHunkBody(const std::string &Line, HunkContext &Ctx,
-                     std::vector<Replacement> &Repls,
-                     const std::vector<unsigned> &CurrentOldFileOffset) {
-  static std::optional<
-      std::pair<unsigned /*Delele start line number*/, unsigned /*length*/>>
-      DeleteInfo;
-  static std::optional<
-      std::pair<unsigned /*Add start line number*/, std::string>>
-      AddInfo;
-
-  auto addRepl = [&]() {
-    Replacement R;
-    if (DeleteInfo.has_value() && AddInfo.has_value()) {
-      // replace-replacement
-      R.OldFilePath = Ctx.CurrentOldFilePath;
-      R.NewFilePath = Ctx.CurrentNewFilePath;
-      R.Length = DeleteInfo->second;
-      R.Offset = CurrentOldFileOffset[DeleteInfo->first];
-      R.ReplacementText = AddInfo->second;
-      DeleteInfo.reset();
-      AddInfo.reset();
-    } else if (DeleteInfo.has_value()) {
-      // delete-replacement
-      R.OldFilePath = Ctx.CurrentOldFilePath;
-      R.NewFilePath = Ctx.CurrentNewFilePath;
-      R.Length = DeleteInfo->second;
-      R.Offset = CurrentOldFileOffset[DeleteInfo->first];
-      R.ReplacementText = "";
-      DeleteInfo.reset();
-    } else if (AddInfo.has_value()) {
-      // insert-replacement
-      R.OldFilePath = Ctx.CurrentOldFilePath;
-      R.NewFilePath = Ctx.CurrentNewFilePath;
-      R.Length = 0;
-      R.Offset = CurrentOldFileOffset[AddInfo->first];
-      R.ReplacementText = AddInfo->second;
-      AddInfo.reset();
-    }
-    Repls.push_back(R);
-  };
-
-  // Hunk end
-  if (Line.empty()) {
-    addRepl();
-    Ctx.InHunk = false;
-    return;
-  }
-
-  switch (Line[0]) {
-  case ' ': {
-    addRepl();
-    Ctx.OldCurrentLine++;
-    break;
-  }
-  case '-': {
-    if (!DeleteInfo.has_value()) {
-      auto Item = std::pair<unsigned, unsigned>(
-          Ctx.OldCurrentLine,
-          Line.length()); // +1 for the newline character, -1 for the
-                          // '-' in the line beginng
-      DeleteInfo = Item;
-    } else {
-      DeleteInfo->second +=
-          (Line.length()); // +1 for the newline character, -1 for the
-                           // '-' in the line beginng
-    }
-    Ctx.OldCurrentLine++;
-    break;
-  }
-  case '+': {
-    if (!AddInfo.has_value()) {
-      auto Item = std::pair<unsigned, std::string>(Ctx.OldCurrentLine,
-                                                   Line.substr(1) + LineEnd);
-      AddInfo = Item;
-    } else {
-      AddInfo->second += (Line.substr(1) + LineEnd);
-    }
-    break;
-  }
-  }
 }
 
 struct ModifyHunk {
@@ -356,11 +277,51 @@ std::vector<Replacement> parseDiff(const std::string &diffOutput,
   HunkContext HC;
   std::vector<unsigned> CurrentOldFileOffset;
 
+  std::optional<
+      std::pair<unsigned /*Delele start line number*/, unsigned /*length*/>>
+      DeleteInfo;
+  std::optional<std::pair<unsigned /*Add start line number*/, std::string>>
+      AddInfo;
+
+  auto addRepl = [&]() {
+    Replacement R;
+    if (DeleteInfo.has_value() && AddInfo.has_value()) {
+      // replace-replacement
+      R.OldFilePath = HC.CurrentOldFilePath;
+      R.NewFilePath = HC.CurrentNewFilePath;
+      R.Length = DeleteInfo->second;
+      R.Offset = CurrentOldFileOffset[DeleteInfo->first];
+      R.ReplacementText = AddInfo->second;
+      DeleteInfo.reset();
+      AddInfo.reset();
+    } else if (DeleteInfo.has_value()) {
+      // delete-replacement
+      R.OldFilePath = HC.CurrentOldFilePath;
+      R.NewFilePath = HC.CurrentNewFilePath;
+      R.Length = DeleteInfo->second;
+      R.Offset = CurrentOldFileOffset[DeleteInfo->first];
+      R.ReplacementText = "";
+      DeleteInfo.reset();
+    } else if (AddInfo.has_value()) {
+      // insert-replacement
+      R.OldFilePath = HC.CurrentOldFilePath;
+      R.NewFilePath = HC.CurrentNewFilePath;
+      R.Length = 0;
+      R.Offset = CurrentOldFileOffset[AddInfo->first];
+      R.ReplacementText = AddInfo->second;
+      AddInfo.reset();
+    }
+    replacements.push_back(R);
+  };
+
   // Don't use std::getline as condition of the while loop, because it will
   // return false if the last line only containing EOF.
   while (iss.good()) {
     std::getline(iss, line);
     if (startsWith(line, "diff --git")) {
+      if (HC.InHunk)
+        addRepl();
+      HC.InHunk = false;
       HC.FastForward = false;
       continue;
     }
@@ -368,6 +329,9 @@ std::vector<Replacement> parseDiff(const std::string &diffOutput,
       continue;
 
     if (startsWith(line, "---")) {
+      if (HC.InHunk)
+        addRepl();
+      HC.InHunk = false;
       HC.CurrentOldFilePath =
           line.substr(4) == "/dev/null" ? "/dev/null" : line.substr(6);
       if (HC.CurrentOldFilePath != "/dev/null") {
@@ -383,6 +347,9 @@ std::vector<Replacement> parseDiff(const std::string &diffOutput,
       continue;
     }
     if (startsWith(line, "+++")) {
+      if (HC.InHunk)
+        addRepl();
+      HC.InHunk = false;
       HC.CurrentNewFilePath =
           line.substr(4) == "/dev/null" ? "/dev/null" : line.substr(6);
       if (HC.CurrentOldFilePath == "/dev/null" ||
@@ -397,16 +364,58 @@ std::vector<Replacement> parseDiff(const std::string &diffOutput,
     }
 
     if (parseHunkHeader(line, HC)) {
+      if (HC.InHunk)
+        addRepl();
       // Hunk start
       HC.InHunk = true;
       continue;
     }
 
+    // parse hunk body
+    // 1. Assume the line ending in the file is '\n'.
+    // 2. The pair (---, +++) should occur only once in one hunk, since
+    // --unified=0
+    // 3. We use a variable to save the delete (-) operation. The continuous
+    // delete operations are treated as one operation.
+    // 4. After the delete operation, if the next line is one or more '+'
+    // operations, we make them as a replace-replacement. If the next line is a
+    // context line, the delete operation is a delete-replacement. Then clear
+    // the variable.
+    // 5. If we meet insertions ('+') when the variable is empty, we treat it as
+    // an insert-replacement.
     if (HC.InHunk) {
-      processHunkBody(line, HC, replacements, CurrentOldFileOffset);
+      switch (line[0]) {
+      case '-': {
+        if (!DeleteInfo.has_value()) {
+          auto Item = std::pair<unsigned, unsigned>(
+              HC.OldCurrentLine,
+              line.length()); // +1 for the newline character, -1 for the
+                              // '-' in the line beginng
+          DeleteInfo = Item;
+        } else {
+          DeleteInfo->second +=
+              (line.length()); // +1 for the newline character, -1 for the
+                               // '-' in the line beginng
+        }
+        HC.OldCurrentLine++;
+        break;
+      }
+      case '+': {
+        if (!AddInfo.has_value()) {
+          auto Item = std::pair<unsigned, std::string>(
+              HC.OldCurrentLine, line.substr(1) + LineEnd);
+          AddInfo = Item;
+        } else {
+          AddInfo->second += (line.substr(1) + LineEnd);
+        }
+        break;
+      }
+      }
       continue;
     }
   }
+  if (HC.InHunk)
+    addRepl();
 
   return replacements;
 }

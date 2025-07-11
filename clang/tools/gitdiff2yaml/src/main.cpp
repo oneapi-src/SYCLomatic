@@ -17,6 +17,7 @@
 
 #include "gitdiff2yaml.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Path.h"
 
 #include <cstdio>
 #include <fstream>
@@ -69,7 +70,9 @@ int main(int argc, char *argv[]) {
   RepoRoot = RepoRoot.substr(0, RepoRoot.size() - 1); // Remove the last '\n'
 
   std::string NewCommitID = execGitCommand("git log -1 --format=\"%H\"");
-  std::string DiffOutput = execGitCommand("git diff " + OldCommitID.getValue());
+  std::string DiffOutput =
+      execGitCommand("git diff --diff-algorithm=minimal --unified=0 " +
+                     OldCommitID.getValue());
 
   execGitCommand("git reset --hard " + OldCommitID.getValue());
   std::vector<Replacement> Repls = parseDiff(DiffOutput, RepoRoot);
@@ -82,6 +85,25 @@ int main(int argc, char *argv[]) {
                                        x.Length == 0 &&
                                        x.ReplacementText == "");
                              }),
+              Repls.end());
+
+  // Erase unrelated replacements
+  Repls.erase(std::remove_if(
+                  Repls.begin(), Repls.end(),
+                  [](Replacement x) {
+                    if (x.NewFilePath == "/dev/null")
+                      return false;
+                    llvm::StringRef PathRef = x.NewFilePath;
+                    std::string Ext =
+                        llvm::sys::path::extension(PathRef).substr(1).lower();
+                    if (Ext == "cu" || Ext == "cuh" || Ext == "cpp" ||
+                        Ext == "hpp" || Ext == "cxx" || Ext == "hxx" ||
+                        Ext == "cc" || Ext == "hh" || Ext == "c" ||
+                        Ext == "h") {
+                      return false;
+                    }
+                    return true;
+                  }),
               Repls.end());
 
   if (!OutputFilename.empty()) {

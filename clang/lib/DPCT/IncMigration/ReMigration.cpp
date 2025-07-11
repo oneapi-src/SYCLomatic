@@ -672,8 +672,8 @@ std::vector<TaggedReplacement> mergeC1AndC2(
 //                                                         [SYCL code 2.1]
 //
 // Repl_A: Read from gitdiff2yaml generated files.
-// Repl_B: Curent in-memory migration replacements.
-// Repl C1: Read from MainSourceFiles.yaml (and *.h.yaml) file(s).
+// Repl_B: Current in-memory migration replacements.
+// Repl C1: Read from MainSourceFiles.yaml file.
 // Repl_C2: Read from gitdiff2yaml generated files.
 //
 // Repl_A has 4 parts:
