@@ -76,7 +76,7 @@ cudaEventDestroy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaEventElapsedTime,YES,:ref:`DPCT1012`
 cudaEventQuery,YES,
 cudaEventRecord,YES,:ref:`DPCT1012` / :ref:`DPCT1024`
-cudaEventRecordWithFlags,NO,
+cudaEventRecordWithFlags,YES,:ref:`DPCT1028`
 cudaEventSynchronize,YES,:ref:`DPCT1012`
 cudaDestroyExternalMemory,YES,
 cudaDestroyExternalSemaphore,YES,
@@ -909,10 +909,10 @@ __fdiv_rn,YES,:ref:`DPCT1013`
 __fdiv_ru,YES,:ref:`DPCT1013`
 __fdiv_rz,YES,:ref:`DPCT1013`
 __fdividef,YES,
-__fmaf_ieee_rd,NO,
-__fmaf_ieee_rn,NO,
-__fmaf_ieee_ru,NO,
-__fmaf_ieee_rz,NO,
+__fmaf_ieee_rd,YES,:ref:`DPCT1013`
+__fmaf_ieee_rn,YES,:ref:`DPCT1013`
+__fmaf_ieee_ru,YES,:ref:`DPCT1013`
+__fmaf_ieee_rz,YES,:ref:`DPCT1013`
 __fmaf_rd,YES,:ref:`DPCT1013`
 __fmaf_rn,YES,:ref:`DPCT1013`
 __fmaf_ru,YES,:ref:`DPCT1013`

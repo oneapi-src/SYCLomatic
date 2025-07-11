@@ -9,6 +9,15 @@
 // CUGETERRORSTRING-NEXT:   */
 // CUGETERRORSTRING-NEXT:   *ppc = dpct::get_error_string_dummy(r);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuGetErrorName | FileCheck %s -check-prefix=CUGETERRORNAME
+// CUGETERRORNAME:  CUDA API:
+// CUGETERRORNAME-NEXT:    cuGetErrorName(r /*CUresult*/, pstr /*const char ***/);
+// CUGETERRORNAME-NEXT:  Is migrated to:
+// CUGETERRORNAME-NEXT:    /*
+// CUGETERRORNAME-NEXT:    DPCT1009:0: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CUGETERRORNAME-NEXT:    */
+// CUGETERRORNAME-NEXT:    *pstr = dpct::get_error_string_dummy(r);
+
 /// Initialization
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuInit | FileCheck %s -check-prefix=CUINIT
@@ -441,6 +450,24 @@
 // CUTEXREFGETADDRESSMODE-NEXT:   dpct::image_wrapper_base_p t;
 // CUTEXREFGETADDRESSMODE-NEXT:   *pa = t->get_addressing_mode();
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuArray3DGetDescriptor | FileCheck %s -check-prefix=CUARRAY3DGETDESCRIPTOR
+// CUARRAY3DGETDESCRIPTOR:  CUDA API:
+// CUARRAY3DGETDESCRIPTOR-NEXT:    cuArray3DGetDescriptor(desc /*CUDA_ARRAY3D_DESCRIPTOR **/, array /*CUarray*/);
+// CUARRAY3DGETDESCRIPTOR-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUARRAY3DGETDESCRIPTOR-NEXT:    *desc = array->get_desc();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuArrayGetDescriptor | FileCheck %s -check-prefix=CUARRAYGETDESCRIPTOR
+// CUARRAYGETDESCRIPTOR:  CUDA API:
+// CUARRAYGETDESCRIPTOR-NEXT:    cuArrayGetDescriptor(desc /*CUDA_ARRAY_DESCRIPTOR **/, array /*CUarray*/);
+// CUARRAYGETDESCRIPTOR-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUARRAYGETDESCRIPTOR-NEXT:    *desc = array->get_desc();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMipmappedArrayCreate | FileCheck %s -check-prefix=CUMIPMAPPEDARRAYCREATE
+// CUMIPMAPPEDARRAYCREATE:  CUDA API:
+// CUMIPMAPPEDARRAYCREATE-NEXT:    cuMipmappedArrayCreate(array /*CUmipmappedArray **/, desc /*CUDA_ARRAY3D_DESCRIPTOR **/, levels /*unsigned int*/);
+// CUMIPMAPPEDARRAYCREATE-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUMIPMAPPEDARRAYCREATE-NEXT:    *array = new dpct::experimental::image_mem_wrapper(*desc, levels);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefGetFilterMode | FileCheck %s -check-prefix=CUTEXREFGETFILTERMODE
 // CUTEXREFGETFILTERMODE: CUDA API:
 // CUTEXREFGETFILTERMODE-NEXT:   CUtexref t;
@@ -561,3 +588,48 @@
 // CUDEVICECANACCESSPEER-NEXT:   cuDeviceCanAccessPeer(pi /*int **/, d1 /*CUdevice*/, d2 /*CUdevice*/);
 // CUDEVICECANACCESSPEER-NEXT: Is migrated to:
 // CUDEVICECANACCESSPEER-NEXT:   *pi = dpct::get_device(d1).ext_oneapi_can_access_peer(dpct::get_device(d2));
+
+
+/// Bindless Image
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMipmappedArrayDestroy | FileCheck %s -check-prefix=CUMIPMAPPEDARRAYDESTROY
+// CUMIPMAPPEDARRAYDESTROY: CUDA API:
+// CUMIPMAPPEDARRAYDESTROY-NEXT:   cuMipmappedArrayDestroy(mmArray/*CUmipmappedArray*/);
+// CUMIPMAPPEDARRAYDESTROY-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUMIPMAPPEDARRAYDESTROY-NEXT:   delete mmArray;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMipmappedArrayGetLevel | FileCheck %s -check-prefix=CUMIPMAPPEDARRAYGETLEVEL
+// CUMIPMAPPEDARRAYGETLEVEL: CUDA API:
+// CUMIPMAPPEDARRAYGETLEVEL-NEXT:   cuMipmappedArrayGetLevel(&level_arr/*CUarray **/, mmArray/*CUmipmappedArray*/, 1/*unsigned int*/);
+// CUMIPMAPPEDARRAYGETLEVEL-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUMIPMAPPEDARRAYGETLEVEL-NEXT:   level_arr = mmArray->get_mip_level(1);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefCreate | FileCheck %s -check-prefix=CUTEXREFCREATE
+// CUTEXREFCREATE: CUDA API:
+// CUTEXREFCREATE-NEXT:   cuTexRefCreate(&r/*CUtexref **/);
+// CUTEXREFCREATE-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUTEXREFCREATE-NEXT:   r = new dpct::experimental::bindless_image_wrapper_base();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefDestroy | FileCheck %s -check-prefix=CUTEXREFDESTROY
+// CUTEXREFDESTROY: CUDA API:
+// CUTEXREFDESTROY-NEXT:   cuTexRefDestroy(r/*CUtexref*/);
+// CUTEXREFDESTROY-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUTEXREFDESTROY-NEXT:   delete r;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefGetArray | FileCheck %s -check-prefix=CUTEXREFGETARRAY
+// CUTEXREFGETARRAY: CUDA API:
+// CUTEXREFGETARRAY-NEXT:   cuTexRefGetArray(&a/*CUarray **/, r/*CUtexref*/);
+// CUTEXREFGETARRAY-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUTEXREFGETARRAY-NEXT:   a = dpct::experimental::get_img_mem(r);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefGetMipmapFilterMode | FileCheck %s -check-prefix=CUTEXREFGETMIPMAPFILTERMODE
+// CUTEXREFGETMIPMAPFILTERMODE: CUDA API:
+// CUTEXREFGETMIPMAPFILTERMODE-NEXT:   cuTexRefGetMipmapFilterMode(&fm /*CUfilter_mode **/, texRef /*CUtexref*/);
+// CUTEXREFGETMIPMAPFILTERMODE-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUTEXREFGETMIPMAPFILTERMODE-NEXT:   fm = texRef->get_mip_filtering_mode();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefGetMipmapLevelClamp | FileCheck %s -check-prefix=CUTEXREFGETMIPMAPLEVELCLAMP
+// CUTEXREFGETMIPMAPLEVELCLAMP: CUDA API:
+// CUTEXREFGETMIPMAPLEVELCLAMP-NEXT:   cuTexRefGetMipmapLevelClamp(&min_clamp/*float **/, &max_clamp/*float **/, texRef/*CUtexref*/);
+// CUTEXREFGETMIPMAPLEVELCLAMP-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUTEXREFGETMIPMAPLEVELCLAMP-NEXT:   texRef->get_mip_level_clamp(&min_clamp, &max_clamp);

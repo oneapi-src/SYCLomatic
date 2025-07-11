@@ -80,6 +80,42 @@
 // TEX2DLOD-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
 // TEX2DLOD-NEXT:   sycl::ext::oneapi::experimental::sample_mipmap<T>(t, sycl::float2(f1, f2), f3);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=surf2DLayeredwrite | FileCheck %s -check-prefix=SURF2DLAYEREDWRITE
+// SURF2DLAYEREDWRITE:  CUDA API:
+// SURF2DLAYEREDWRITE-NEXT:    surf2DLayeredwrite<T>(data /*float*/, surf /*cudaSurfaceObject_t*/, x /*int*/,
+// SURF2DLAYEREDWRITE-NEXT:                          y /*int*/, layer /*int*/);
+// SURF2DLAYEREDWRITE-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// SURF2DLAYEREDWRITE-NEXT:    sycl::ext::oneapi::experimental::write_image_array(surf, sycl::int2(x / sizeof(data), y), layer, data);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=surf2Dread | FileCheck %s -check-prefix=SURF2DREAD
+// SURF2DREAD:  CUDA API:
+// SURF2DREAD-NEXT:    data /*float*/ =
+// SURF2DREAD-NEXT:        surf2Dread<T>(surf /*cudaSurfaceObject_t*/, x /*int*/, y /*int*/);
+// SURF2DREAD-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// SURF2DREAD-NEXT:    data /*float*/ =
+// SURF2DREAD-NEXT:        dpct::experimental::fetch_image_by_byte<T>(surf, sycl::int2(x, y));
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=surf2Dwrite | FileCheck %s -check-prefix=SURF2DWRITE
+// SURF2DWRITE:  CUDA API:
+// SURF2DWRITE-NEXT:    surf2Dwrite<T>(data /*float*/, surf /*cudaSurfaceObject_t*/, x /*int*/,
+// SURF2DWRITE-NEXT:                   y /*int*/);
+// SURF2DWRITE-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// SURF2DWRITE-NEXT:    sycl::ext::oneapi::experimental::write_image(surf, sycl::int2(x / sizeof(data), y), data);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=surf3Dread | FileCheck %s -check-prefix=SURF3DREAD
+// SURF3DREAD:  CUDA API:
+// SURF3DREAD-NEXT:    data /*float*/ = surf3Dread<T>(surf /*cudaSurfaceObject_t*/, x /*int*/,
+// SURF3DREAD-NEXT:                                   y /*int*/, z /*int*/);
+// SURF3DREAD-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// SURF3DREAD-NEXT:    data /*float*/ = dpct::experimental::fetch_image_by_byte<T>(surf, sycl::int3(x, y, z));
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=surf3Dwrite | FileCheck %s -check-prefix=SURF3DWRITE
+// SURF3DWRITE:  CUDA API:
+// SURF3DWRITE-NEXT:    surf3Dwrite<T>(data /*float*/, surf /*cudaSurfaceObject_t*/, x /*int*/,
+// SURF3DWRITE-NEXT:                   y /*int*/, z /*int*/);
+// SURF3DWRITE-NEXT:  Is migrated to (with the option --use-experimental-features=bindless_images):
+// SURF3DWRITE-NEXT:    sycl::ext::oneapi::experimental::write_image(surf, sycl::int3(x / sizeof(data), y, z), data);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=tex3D | FileCheck %s -check-prefix=TEX3D
 // TEX3D: CUDA API:
 // TEX3D-NEXT:   tex3D<T>(t /*cudaTextureObject_t*/, f1 /*float*/, f2 /*float*/, f3 /*float*/);

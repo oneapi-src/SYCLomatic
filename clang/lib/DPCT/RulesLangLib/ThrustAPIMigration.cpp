@@ -188,7 +188,7 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   // thrust::count, thrust::equal) called in device function , should be
   // migrated to oneapi::dpl APIs without a policy on the SYCL side
   if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
-    if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
+    if (isGlobalOrDeviceFuncDecl(FD)) {
       if (hasExecutionPolicy) {
         emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
       }

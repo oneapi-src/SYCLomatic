@@ -783,6 +783,11 @@ bool isCudaMemoryAllocation(const DeclRefExpr *Arg, const CallExpr *CE) {
   return false;
 }
 
+bool isGlobalOrDeviceFuncDecl(const FunctionDecl *FD) {
+  if (FD->hasAttr<CUDADeviceAttr>() || FD->hasAttr<CUDAGlobalAttr>())
+    return true;
+  return false;
+}
 /// This function traverses all the nodes in the AST represented by \param Root
 /// in a depth-first manner, until the node \param Sentinal is reached, to check
 /// if the pointer \param Arg to a piece of memory is used as lvalue after the

@@ -41,7 +41,7 @@ griddepcontrol,NO,
 isspacep,NO,
 istypep,NO,
 ld,YES, Partial
-ldmatrix,YES,Partial
+ldmatrix,YES, Partial
 ldu,NO,
 lg2,YES,
 lop3,YES,
@@ -89,7 +89,7 @@ sqrt,YES,
 st,YES, Partial
 stackrestore,NO,
 stacksave,NO,
-stmatrix,YES,Partial
+stmatrix,YES, Partial
 sub,YES, Partial
 subc,NO,
 suld,NO,

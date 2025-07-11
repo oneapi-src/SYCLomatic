@@ -526,6 +526,7 @@ bool isTypeInAnalysisScope(const clang::Type *TypePtr);
 bool isCubVar(const clang::VarDecl *VD);
 bool isCubTempStorageType(QualType T);
 bool isCubCollectiveRecordType(QualType T);
+bool isGlobalOrDeviceFuncDecl(const FunctionDecl *FD);
 bool isExprUsed(const clang::Expr *E, bool &Result);
 bool isUserDefinedDecl(const clang::Decl *D);
 bool isLambda(const clang::FunctionDecl *FD);

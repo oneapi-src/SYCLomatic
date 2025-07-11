@@ -213,8 +213,7 @@ inline auto IsDirectCallerPureHost = [](const CallExpr *C) -> bool {
   }
   if (!ContextFD)
     return false;
-  if (!ContextFD->getAttr<CUDADeviceAttr>() &&
-      !ContextFD->getAttr<CUDAGlobalAttr>()) {
+  if (!isGlobalOrDeviceFuncDecl(ContextFD)) {
     return true;
   }
   return false;

@@ -5020,8 +5020,7 @@ void DeviceFunctionDeclRule::runRule(
 
   // We need skip lambda in host code, but cannot skip lambda in device code.
   if (const FunctionDecl *OuterMostFD = findTheOuterMostFunctionDecl(FD);
-      OuterMostFD && (!OuterMostFD->hasAttr<CUDADeviceAttr>() &&
-                      !OuterMostFD->hasAttr<CUDAGlobalAttr>()))
+      OuterMostFD && !isGlobalOrDeviceFuncDecl(OuterMostFD))
     return;
 
   if (FD->isVariadic()) {
@@ -6813,9 +6812,17 @@ void MemoryMigrationRule::getSymbolAddressMigration(
   ExprAnalysis EA;
   EA.analyze(C->getArg(0));
   auto StmtStrArg0 = EA.getReplacedString();
+  const DeclRefExpr *Arg =
+      dyn_cast<DeclRefExpr>(C->getArg(1)->IgnoreImplicitAsWritten());
+  const VarDecl *VD = dyn_cast<VarDecl>(Arg->getDecl());
   EA.analyze(C->getArg(1));
   auto StmtStrArg1 = EA.getReplacedString();
-  Replacement = "*(" + StmtStrArg0 + ")" + " = " + StmtStrArg1 + ".get_ptr()";
+  if (VD && VD->isLocalVarDeclOrParm()) {
+    StmtStrArg1 = "const_cast<void *>(" + StmtStrArg1 + ")";
+  } else {
+    StmtStrArg1 += ".get_ptr()";
+  }
+  Replacement = "*(" + StmtStrArg0 + ")" + " = " + StmtStrArg1;
   requestFeature(HelperFeatureEnum::device_ext);
   emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
 }

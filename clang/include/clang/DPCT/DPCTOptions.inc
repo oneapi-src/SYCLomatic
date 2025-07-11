@@ -807,7 +807,7 @@ DPCT_ENUM_OPTION(
         DPCT_OPTION_ENUM_VALUE(
             "device_global", int(ExperimentalFeatures::Exp_DeviceGlobal),
             "Experimental extension that allows device scoped memory "
-            "allocations into SYCL that can\n"
+            "allocations into SYCL that can "
             "be accessed within a kernel using syntax similar to C++ global "
             "variables.\n",
             false),

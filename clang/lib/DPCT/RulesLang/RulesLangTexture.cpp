@@ -589,6 +589,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexRefDestroy",
       "cuSurfRefSetArray",
       "cuSurfRefGetArray",
+      "cuTexRefGetArray",
       "cuTexRefSetArray",
       "cuTexRefSetFormat",
       "cuTexRefSetAddressMode",
@@ -761,7 +762,7 @@ const Expr *TextureRule::getAssignedBO(const Expr *E, ASTContext &Context) {
 bool TextureRule::processTexVarDeclInDevice(const VarDecl *VD) {
   if (auto FD =
           dyn_cast_or_null<FunctionDecl>(VD->getParentFunctionOrMethod())) {
-    if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
+    if (isGlobalOrDeviceFuncDecl(FD)) {
       auto Tex = DpctGlobalInfo::getInstance().insertTextureInfo(VD);
 
       auto DataType = Tex->getType()->getDataType();
@@ -1008,8 +1009,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
     if (auto FD = DpctGlobalInfo::getParentFunction(TL)) {
-      if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
-          !DpctGlobalInfo::useExtBindlessImages()) {
+      if (isGlobalOrDeviceFuncDecl(FD) && !DpctGlobalInfo::useExtBindlessImages()) {
         return;
       }
     }

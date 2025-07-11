@@ -406,7 +406,7 @@ void run_foo4(dim3 c, dim3 d) {
 //CHECK-NEXT:          my_kernel(result_acc_ct0.get_raw_pointer(), resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
-//CHECK-NEXT:  printf("%f ", result[10]);
+//CHECK-NEXT:  printf("%f ", result.get_ptr()[10]);
 //CHECK-NEXT:}
  __managed__ float result[32];
 __global__ void my_kernel(float* result) {
@@ -432,7 +432,7 @@ int run_foo5 () {
 //CHECK-NEXT:          my_kernel(result2_acc_ct0.get_raw_pointer(), resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
-//CHECK-NEXT:  printf("%f ", result2[10]);
+//CHECK-NEXT:  printf("%f ", result2.get_ptr()[10]);
 //CHECK-NEXT:}
  __managed__ float result2[32];
 int run_foo6 () {
@@ -453,7 +453,7 @@ int run_foo6 () {
 //CHECK-NEXT:          my_kernel(result3_acc_ct0.get_raw_pointer(), resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
-//CHECK-NEXT:  printf("%f ", result3[0]);
+//CHECK-NEXT:  printf("%f ", result3.get_ptr()[0]);
 //CHECK-NEXT:}
 __managed__ float result3;
 int run_foo7 () {
@@ -482,7 +482,7 @@ int run_foo7 () {
 //CHECK-NEXT:          my_kernel2(in_ct0, out_acc_ct1.get_raw_pointer());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
-//CHECK-NEXT:  printf("%f ", out[0]);
+//CHECK-NEXT:  printf("%f ", out.get_ptr()[0]);
 //CHECK-NEXT:}
 
 __managed__ float in;

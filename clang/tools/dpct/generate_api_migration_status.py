@@ -173,7 +173,9 @@ def do_update(args):
         warnings.warn("output path is not exist")
         return False
     lib_names = ['Runtime_and_Driver', 'CUB', 'cuBLAS', 'cuDNN', 'cuFFT', 'nvGRAPH', 'ASM',
-                 'cuRAND', 'cuSOLVER', 'cuSPARSE', 'NCCL', 'nvJPEG', 'NVML', 'thrust', 'wmma', 'nvSHMEM']
+                 'cuRAND', 'cuSOLVER', 'cuSPARSE', 'NCCL', 'nvJPEG', 'NVML', 'thrust', 'wmma',
+                 'nvSHMEM', 'cudnn_frontend']
+
     # lib file name = APINames_$(libname).inc
     for lib_name in lib_names:
         if lib_name == 'Runtime_and_Driver':

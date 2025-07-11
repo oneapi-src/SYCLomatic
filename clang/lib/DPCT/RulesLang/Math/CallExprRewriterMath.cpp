@@ -63,14 +63,12 @@ std::string MathFuncNameRewriter::getNewFuncName() {
 
     auto ContextFD = getImmediateOuterFuncDecl(Call);
     if (NamespaceStr == "std" && ContextFD &&
-        !ContextFD->hasAttr<CUDADeviceAttr>() &&
-        !ContextFD->hasAttr<CUDAGlobalAttr>()) {
+        !isGlobalOrDeviceFuncDecl(ContextFD)) {
       return "";
     }
     // For device functions
     else if ((FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAHostAttr>()) ||
-             (ContextFD && (ContextFD->hasAttr<CUDADeviceAttr>() ||
-                            ContextFD->hasAttr<CUDAGlobalAttr>()))) {
+             (ContextFD && isGlobalOrDeviceFuncDecl(ContextFD))) {
       if (SourceCalleeName == "abs") {
         // further check the type of the args.
         if (!Call->getArg(0)->getType()->isIntegerType()) {
@@ -333,15 +331,12 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
   }
 
   auto ContextFD = getImmediateOuterFuncDecl(Call);
-  if (NamespaceStr == "std" && ContextFD &&
-      !ContextFD->hasAttr<CUDADeviceAttr>() &&
-      !ContextFD->hasAttr<CUDAGlobalAttr>()) {
+  if (NamespaceStr == "std" && ContextFD && !isGlobalOrDeviceFuncDecl(ContextFD)) {
     return {};
   }
 
   if (!FD->hasAttr<CUDADeviceAttr>() && ContextFD &&
-      !ContextFD->hasAttr<CUDADeviceAttr>() &&
-      !ContextFD->hasAttr<CUDAGlobalAttr>())
+      !isGlobalOrDeviceFuncDecl(ContextFD))
     return Base::rewrite();
 
   // Do not need to report warnings for pow, funnelshift, or drcp migrations
