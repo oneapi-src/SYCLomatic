@@ -1554,10 +1554,11 @@ protected:
       N = "8";
       K = "16";
 
-      // Only f16/s8 types are supported for A and B matrices of m16n8k16
-      if (AType->getKind() == InlineAsmBuiltinType::f16) {
-        InMatrixType[0] = "uint32_t"; // A type is .f16x2
-        InMatrixType[1] = "uint32_t"; // B type is .f16x2
+      // Only f16/s8/bf16 types are supported for A and B matrices of m16n8k16
+      if (AType->getKind() == InlineAsmBuiltinType::f16 || 
+          AType->getKind() == InlineAsmBuiltinType::bf16) {
+        InMatrixType[0] = "uint32_t"; // A type is .f16/.bf16x2
+        InMatrixType[1] = "uint32_t"; // B type is .f16/.bf16x2
 
         // If A matrix type is f16, then C&D matrix types can only be f32
         if (CType->getKind() == InlineAsmBuiltinType::f32) {

@@ -2394,7 +2394,7 @@ template <typename T> struct MMAType {
 /// - m8n8k4 (f32.f16.f16.f32)
 /// - m8n8k16 (s32.s8.s8.s32)
 /// - m16n8k8 (f32.f16.f16.f32 & f32.bf16.bf16.f32)
-/// - m16n8k16 (f32.f16.f16.f32 & s32.s8.s8.s32)
+/// - m16n8k16 (f32.f16.f16.f32 & f32.bf16.bf16.f32 & s32.s8.s8.s32)
 /// - m16n8k32 (s32.s8.s8.s32)
 /// Here, m, n & k define the shapes of A, B & C matrices respectively
 /// (A = [m x k], B = [k x n], C = [m x n]).
