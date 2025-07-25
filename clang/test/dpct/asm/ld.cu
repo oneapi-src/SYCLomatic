@@ -6,6 +6,13 @@
 
 // clang-format off
 #include <cuda_runtime.h>
+#include <cuda_bf16.h>
+#include <stdint.h>
+#include <stdio.h>
+
+using bf16 = __nv_bfloat16;
+using bf16_2 = __nv_bfloat162;
+using half_2 = __half2;
 
 /*
 .ss =                       { .const, .global, .local, .param, .shared };
@@ -92,5 +99,202 @@ __device__ __forceinline__ int ld_flag_acquire(int* flag_addr) {
   asm volatile("ld.volatile.global.u32 %0, [%1];" : "=r"(flag) : "l"(flag_addr));
   return flag;
 }
+
+ // CHECK: static inline void lds(bf16& dst, uint32_t src) {
+ // CHECK-NEXT:       *(uint16_t*)&dst = *((uint16_t *)(uintptr_t)src);
+ // CHECK-NEXT: }
+ __device__ static inline void lds(bf16& dst, uint32_t src) {
+        asm volatile("ld.shared.b16 %0, [%1];" : "=h"(*(uint16_t*)&dst) : "r"(src));
+ }
+
+// CHECK: static inline void sts(uint32_t dst, const bf16& src) {
+// CHECK-NEXT:    *((uint16_t *)(uintptr_t)dst) = *(uint16_t*)&src;
+// CHECK-NEXT: }
+__device__ static inline void sts(uint32_t dst, const bf16& src) {
+    asm volatile("st.shared.b16 [%1], %0;\n" : : "h"(*(uint16_t*)&src), "r"(dst));
+}
+
+// CHECK: static inline void ldg(bf16& dst, bf16* src) {
+// CHECK-NEXT:     *(uint16_t*)&dst = *((uint16_t *)(uintptr_t)src);
+// CHECK-NEXT: }    
+__device__ static inline void ldg(bf16& dst, bf16* src) {
+    asm volatile("ld.global.b16 %0, [%1];\n" : "=h"(*(uint16_t*)&dst) : "l"(src));
+}
+
+// CHECK: static inline void stg(bf16* dst, const bf16& src) {
+// CHECK-NEXT:     *((uint16_t *)(uintptr_t)dst) = *(uint16_t*)&src;
+// CHECK-NEXT: }
+__device__ static inline void stg(bf16* dst, const bf16& src) {
+    asm volatile("st.global.b16 [%1], %0;\n" : : "h"(*(uint16_t*)&src), "l"(dst));
+}
+
+// CHECK: static inline void lds(sycl::half& dst, uint32_t src) {
+// CHECK-NEXT:     *(uint16_t*)&dst = *((uint16_t *)(uintptr_t)src);
+// CHECK-NEXT: }    
+__device__ static inline void lds(half& dst, uint32_t src) {
+    asm volatile("ld.shared.b16 %0, [%1];\n" : "=h"(*(uint16_t*)&dst) : "r"(src));
+}
+
+// CHECK: static inline void sts(uint32_t dst, const sycl::half& src) {
+// CHECK-NEXT:     *((uint16_t *)(uintptr_t)dst) = *(uint16_t*)&src;
+// CHECK-NEXT: }
+__device__ static inline void sts(uint32_t dst, const half& src) {
+    asm volatile("st.shared.b16 [%1], %0;\n" : : "h"(*(uint16_t*)&src), "r"(dst));
+}
+
+// CHECK: static inline void ldg(sycl::half& dst, sycl::half* src) {
+// CHECK-NEXT:     *(uint16_t*)&dst = *((uint16_t *)(uintptr_t)src);
+// CHECK-NEXT: }
+__device__ static inline void ldg(half& dst, half* src) {
+    asm volatile("ld.global.b16 %0, [%1];\n" : "=h"(*(uint16_t*)&dst) : "l"(src));
+}
+
+// CHECK: static inline void stg(sycl::half* dst, const sycl::half& src) {
+// CHECK-NEXT:     *((uint16_t *)(uintptr_t)dst) = *(uint16_t*)&src;
+// CHECK-NEXT: }
+__device__ static inline void stg(half* dst, const half& src) {
+    asm volatile("st.global.b16 [%1], %0;\n" : : "h"(*(uint16_t*)&src), "l"(dst));
+}
+
+// CHECK: static inline void lds(float& dst, uint32_t src) {
+// CHECK-NEXT:     dst = *((float *)(uintptr_t)src);
+// CHECK-NEXT: }
+__device__ static inline void lds(float& dst, uint32_t src) {
+    asm volatile("ld.shared.f32 %0, [%1];\n" : "=f"(dst) : "r"(src));
+}
+
+// CHECK: static inline void sts(uint32_t dst, const float& src) {
+// CHECK-NEXT:     *((float *)(uintptr_t)dst) = src;
+// CHECK-NEXT: }
+__device__ static inline void sts(uint32_t dst, const float& src) {
+    asm volatile("st.shared.f32 [%1], %0;\n" : : "f"(src), "r"(dst));
+}
+
+// CHECK: static inline void ldg(float& dst, float* src) {
+// CHECK-NEXT:     dst = *src;
+// CHECK-NEXT: }
+__device__ static inline void ldg(float& dst, float* src) {
+    asm volatile("ld.global.f32 %0, [%1];\n" : "=f"(dst) : "l"(src));
+}
+
+// CHECK: static inline void stg(float* dst, const float& src) {
+// CHECK-NEXT:     *dst = src;
+// CHECK-NEXT: }
+__device__ static inline void stg(float* dst, const float& src) {
+    asm volatile("st.global.f32 [%1], %0;\n" : : "f"(src), "l"(dst));
+}
+
+// CHECK: static inline void lds(bf16_2& dst, uint32_t src) {
+// CHECK-NEXT:     *(uint32_t*)&dst = *((uint32_t *)(uintptr_t)src);
+// CHECK-NEXT: }
+__device__ static inline void lds(bf16_2& dst, uint32_t src) {
+    asm volatile("ld.shared.b32 %0, [%1];\n" : "=r"(*(uint32_t*)&dst) : "r"(src));
+}
+
+// CHECK: static inline void sts(uint32_t dst, const bf16_2& src) {
+// CHECK-NEXT:     *((uint32_t *)(uintptr_t)dst) = (*(uint32_t*)&src);
+// CHECK-NEXT: }
+__device__ static inline void sts(uint32_t dst, const bf16_2& src) {
+    asm volatile("st.shared.b32 [%1], %0;\n" : : "r"(*(uint32_t*)&src), "r"(dst));
+}
+
+// CHECK: static inline void ldg(bf16_2& dst, bf16_2* src) {
+// CHECK-NEXT:     *(uint32_t*)&dst = *((uint32_t *)(uintptr_t)src);
+// CHECK-NEXT: }
+__device__ static inline void ldg(bf16_2& dst, bf16_2* src) {
+    asm volatile("ld.global.b32 %0, [%1];\n" : "=r"(*(uint32_t*)&dst) : "l"(src));
+}
+
+// CHECK: static inline void stg(bf16_2* dst, const bf16_2& src) {
+// CHECK-NEXT:     *((uint32_t *)(uintptr_t)dst) = (*(uint32_t*)&src);
+// CHECK-NEXT: }
+__device__ static inline void stg(bf16_2* dst, const bf16_2& src) {
+    asm volatile("st.global.b32 [%1], %0;\n" : : "r"(*(uint32_t*)&src), "l"(dst));
+}
+
+// CHECK: static inline void lds(half_2& dst, uint32_t src) {
+// CHECK-NEXT:     *(uint32_t*)&dst = *((uint32_t *)(uintptr_t)src);
+// CHECK-NEXT: }
+__device__ static inline void lds(half_2& dst, uint32_t src) {
+    asm volatile("ld.shared.b32 %0, [%1];\n" : "=r"(*(uint32_t*)&dst) : "r"(src));
+}
+
+// CHECK: static inline void sts(uint32_t dst, const half_2& src) {
+// CHECK-NEXT:     *((uint32_t *)(uintptr_t)dst) = (*(uint32_t*)&src);
+// CHECK-NEXT: }
+__device__ static inline void sts(uint32_t dst, const half_2& src) {
+    asm volatile("st.shared.b32 [%1], %0;\n" : : "r"(*(uint32_t*)&src), "r"(dst));
+}
+
+// CHECK: static inline void ldg(half_2& dst, half_2* src) {
+// CHECK-NEXT:     *(uint32_t*)&dst = *((uint32_t *)(uintptr_t)src);
+// CHECK-NEXT: }
+__device__ static inline void ldg(half_2& dst, half_2* src) {
+    asm volatile("ld.global.b32 %0, [%1];\n" : "=r"(*(uint32_t*)&dst) : "l"(src));
+}
+
+// CHECK: static inline void stg(half_2* dst, const half_2& src) {
+// CHECK-NEXT:     *((uint32_t *)(uintptr_t)dst) = (*(uint32_t*)&src);
+// CHECK-NEXT: }
+__device__ static inline void stg(half_2* dst, const half_2& src) {
+    asm volatile("st.global.b32 [%1], %0;\n" : : "r"(*(uint32_t*)&src), "l"(dst));
+}
+
+// CHECK: static inline void lds(sycl::float2& dst, uint32_t src) {
+// CHECK-NEXT:     {dst.x(), dst.y()} = *((float *)(uintptr_t)src);
+// CHECK-NEXT: }
+__device__ static inline void lds(float2& dst, uint32_t src) {
+    asm volatile("ld.shared.v2.f32 {%0, %1}, [%2];\n" : "=f"(dst.x), "=f"(dst.y) : "r"(src));
+}
+
+// CHECK: static inline void sts(uint32_t dst, const sycl::float2& src) {
+// CHECK-NEXT:     *((float *)(uintptr_t)dst) = {src.x(), src.y()};
+// CHECK-NEXT: }
+__device__ static inline void sts(uint32_t dst, const float2& src) {
+    asm volatile("st.shared.v2.f32 [%2], {%0, %1};\n" : : "f"(src.x), "f"(src.y), "r"(dst));
+}
+
+// CHECK: static inline void ldg(sycl::float2& dst, sycl::float2* src) {
+// CHECK-NEXT:     {dst.x(), dst.y()} = *((float *)(uintptr_t)src);
+// CHECK-NEXT: }
+__device__ static inline void ldg(float2& dst, float2* src) {
+    asm volatile("ld.global.v2.f32 {%0, %1}, [%2];\n" : "=f"(dst.x), "=f"(dst.y) : "l"(src));
+}
+
+// CHECK: static inline void stg(sycl::float2* dst, const sycl::float2& src) {
+// CHECK-NEXT:     *((float *)(uintptr_t)dst) = {src.x(), src.y()};
+// CHECK-NEXT: }
+__device__ static inline void stg(float2* dst, const float2& src) {
+    asm volatile("st.global.v2.f32 [%2], {%0, %1};\n" : : "f"(src.x), "f"(src.y), "l"(dst));
+}
+
+// CHECK: static inline void lds(sycl::float4& dst, uint32_t src) {
+// CHECK-NEXT:     {dst.x(), dst.y(), dst.z(), dst.w()} = *((float *)(uintptr_t)src);
+// CHECK-NEXT: }
+__device__ static inline void lds(float4& dst, uint32_t src) {
+    asm volatile("ld.shared.v4.f32 {%0, %1, %2, %3}, [%4];\n" : "=f"(dst.x), "=f"(dst.y), "=f"(dst.z), "=f"(dst.w) : "r"(src));
+}
+
+// CHECK: static inline void sts(uint32_t dst, const sycl::float4& src) {
+// CHECK-NEXT:     *((float *)(uintptr_t)dst) = {src.x(), src.y(), src.z(), src.w()};
+// CHECK-NEXT: }
+__device__ static inline void sts(uint32_t dst, const float4& src) {
+    asm volatile("st.shared.v4.f32 [%4], {%0, %1, %2, %3};\n" : : "f"(src.x), "f"(src.y), "f"(src.z), "f"(src.w), "r"(dst));
+}
+
+// CHECK: static inline void ldg(sycl::float4& dst, sycl::float4* src) {
+// CHECK-NEXT:     {dst.x(), dst.y(), dst.z(), dst.w()} = *((float *)(uintptr_t)src);
+// CHECK-NEXT: }
+__device__ static inline void ldg(float4& dst, float4* src) {
+    asm volatile("ld.global.v4.f32 {%0, %1, %2, %3}, [%4];\n" : "=f"(dst.x), "=f"(dst.y), "=f"(dst.z), "=f"(dst.w) : "l"(src));
+}
+
+// CHECK: static inline void stg(sycl::float4* dst, const sycl::float4& src) {
+// CHECK-NEXT:     *((float *)(uintptr_t)dst) = {src.x(), src.y(), src.z(), src.w()};
+// CHECK-NEXT: }
+__device__ static inline void stg(float4* dst, const float4& src) {
+    asm volatile("st.global.v4.f32 [%4], {%0, %1, %2, %3};\n" : : "f"(src.x), "f"(src.y), "f"(src.z), "f"(src.w), "l"(dst));
+}
+   
 
 // clang-format on
