@@ -100,6 +100,24 @@ __global__ void mma_kernel_m16n8k8(int *a, int *b, float *fc, float *fd) {
         "f"(fc[0]), "f"(fc[1]), "f"(fc[2]), "f"(fc[3]));
 }
 
+__global__ void mma_kernel_m16n8k16(int *a, int *b, int *c, int *d) {
+  // CHECK: {
+  // CHECK-NEXT:   volatile void *d_mat_frag_ct1[4] = { &fc[0], &fc[1]};
+  // CHECK-NEXT:   sycl::vec<uint32_t, 4> a_mat_frag_ct1(a[0], a[1], a[2], a[3]);
+  // CHECK-NEXT:   sycl::vec<uint32_t, 2> b_mat_frag_ct1(b[0], b[1]);
+  // CHECK-NEXT:   sycl::vec<uint32, 4> c_mat_frag_ct1(fc[0], fc[1]);
+  // CHECK-NEXT:   dpct::experimental::matrix::mma<16, 8, 16, sycl::half, sycl::half>(reinterpret_cast<volatile void **>(d_mat_frag_ct1), &a_mat_frag_ct1, &b_mat_frag_ct1, &c_mat_frag_ct1);
+  // CHECK-NEXT: }
+  asm("mma.sync.aligned.m16n8k16.row.col.f16.f16.f16.f16 "
+        " { %0, %1 }, "
+        " { %2, %3, %4, %5 }, "
+        " { %6, %7 }, "
+        " { %0, %1 };"
+        : "+r"(c[0]), "+r"(c[1])
+        : "r"(a[0]), "r"(a[1]), "r"(a[2]), "r"(a[3]),
+          "r"(d[0]), "r"(d[1]));
+}
+
 __global__ void mma_kernel_m16n8k16(int *a, int *b, int *c, float *fc, int *d) {
   // CHECK: {
   // CHECK-NEXT:   volatile void *d_mat_frag_ct1[4] = { &fc[0], &fc[1], &fc[2], &fc[3] };

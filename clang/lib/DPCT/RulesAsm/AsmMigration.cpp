@@ -1560,13 +1560,21 @@ protected:
         InMatrixType[0] = "uint32_t"; // A type is .f16/.bf16x2
         InMatrixType[1] = "uint32_t"; // B type is .f16/.bf16x2
 
-        // If A matrix type is f16, then C&D matrix types can only be f32
+        // If A matrix type is f16, then C&D matrix types can be f32
         if (CType->getKind() == InlineAsmBuiltinType::f32) {
           NumVecElements[0] = 4; // A
           NumVecElements[1] = 2; // B
           NumVecElements[2] = 4; // C
           NumVecElements[3] = 4; // D
-        } else
+        } 
+        // C &D matrix types can be f16.
+        else if (CType->getKind() == InlineAsmBuiltinType::f16) {
+          NumVecElements[0] = 4; // A
+          NumVecElements[1] = 2; // B
+          NumVecElements[2] = 2; // C
+          NumVecElements[3] = 2; // D
+        }
+        else
           return SYCLGenError();
       } else if (AType->getKind() == InlineAsmBuiltinType::s8) {
         InMatrixType[0] = "uint32_t"; // A type is .s8x4
