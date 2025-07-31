@@ -2673,10 +2673,14 @@ void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
       }
     } else if constexpr (std::is_same_v<CDType, sycl::half>) {
       // Init D matrix fragment with C matrix fragment
-      *const_cast<sycl::half *>(d[0]) = c[0];
-      *const_cast<sycl::half *>(d[1]) = c[1];
-      *const_cast<sycl::half *>(d[2]) = c[2];
-      *const_cast<sycl::half *>(d[3]) = c[3];
+      sycl::half *d0 = const_cast<sycl::half *>(d[0]);
+      sycl::half *d1 = d0 + 1;
+      sycl::half *d2 = const_cast<sycl::half *>(d[1]);
+      sycl::half *d3 = d2 + 1;
+      *d0 = c[0];
+      *d1 = c[1];
+      *d2 = c[2];
+      *d3 = c[3];
 
       // Each sub-group is responsible for computing a fragment size of 16*8
       // elements of matrix D.
@@ -2731,10 +2735,10 @@ void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
         //             static_cast<CDType>(rb[j + 4]);
 
         for (int j = 0; j < 4; j++) {
-          *const_cast<sycl::half *>(d[0]) += ra[j] * rb[j];
-          *const_cast<sycl::half *>(d[1]) += ra[j] * rb[j + 4];
-          *const_cast<sycl::half *>(d[2]) += ra[j + 4] * rb[j];
-          *const_cast<sycl::half *>(d[3]) += ra[j + 4] * rb[j + 4];
+          *d0 += ra[j] * rb[j];
+          *d1 += ra[j] * rb[j + 4];
+          *d2 += ra[j + 4] * rb[j];
+          *d3 += ra[j + 4] * rb[j + 4];
         }
       }
     } else if constexpr (std::is_integral_v<ABType>) {

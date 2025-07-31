@@ -19,7 +19,8 @@ m8n8k16         .s8          .s8          .s32
 m16n8k8       .f16/.bf16  .f16/.bf16      .f32    
 m16n8k16        .f16         .f16         .f32
                 .bf16        .bf16        .f32
-                .s8          .s8          .s32    
+                .s8          .s8          .s32  
+                .f16         .f16         .f16     
 m16n8k32        .s8          .s8          .s32    
 
 Except for m8n8k4, all other shapes are supported for row/col layout of A/B matrices respectively.
