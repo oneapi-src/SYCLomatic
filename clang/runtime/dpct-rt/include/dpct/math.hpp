@@ -2718,22 +2718,12 @@ void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
         auto ra = reinterpret_cast<ABType *>(recv_a);
         auto rb = reinterpret_cast<ABType *>(recv_b);
 
-        // Each work item calculates a partial product of A & B matrix
-        // fragments and adds it to the corresponding D matrix fragment d0
-        // += row0{ a0, a1, a2, a3 } * col0{ b0, b1, b2, b3 } d1 += row0{
-        // a0, a1, a2, a3 } * col1{ b0, b1, b2, b3 } d2 += row1{ a0, a1,
-        // a2, a3 } * col0{ b0, b1, b2, b3 } d3 += row1{ a0, a1, a2, a3 } *
-        // col1{ b0, b1, b2, b3 }
-        // for (int j = 0; j < 4; j++) {
-        //    *d[0] +=
-        //        static_cast<CDType>(ra[j]) * static_cast<CDType>(rb[j]);
-        //    *d[1] += static_cast<CDType>(ra[j]) *
-        //             static_cast<CDType>(rb[j + 4]);
-        //    *d[2] += static_cast<CDType>(ra[j + 4]) *
-        //             static_cast<CDType>(rb[j]);
-        //    *d[3] += static_cast<CDType>(ra[j + 4]) *
-        //             static_cast<CDType>(rb[j + 4]);
-
+        // Each work item calculates a partial product of A & B matrix fragments
+        // and adds it to the corresponding D matrix fragment
+        // d0 += row0{ a0, a1, a2, a3 } * col0{ b0, b1, b2, b3 }
+        // d1 += row0{ a0, a1, a2, a3 } * col1{ b0, b1, b2, b3 }
+        // d2 += row1{ a0, a1, a2, a3 } * col0{ b0, b1, b2, b3 }
+        // d3 += row1{ a0, a1, a2, a3 } * col1{ b0, b1, b2, b3 }
         for (int j = 0; j < 4; j++) {
           *d0 += ra[j] * rb[j];
           *d1 += ra[j] * rb[j + 4];

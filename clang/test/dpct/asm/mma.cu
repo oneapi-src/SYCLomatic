@@ -103,10 +103,10 @@ __global__ void mma_kernel_m16n8k8(int *a, int *b, float *fc, float *fd) {
 
 __global__ void mma_kernel_m16n8k16(int *a, int *b, int *c, int *d) {
   // CHECK: {
-  // CHECK-NEXT:   volatile void *d_mat_frag_ct1[4] = { &d[0], &d[1]};
+  // CHECK-NEXT:   volatile void *d_mat_frag_ct1[2] = { &d[0], &d[1] };
   // CHECK-NEXT:   sycl::vec<uint32_t, 4> a_mat_frag_ct1(a[0], a[1], a[2], a[3]);
   // CHECK-NEXT:   sycl::vec<uint32_t, 2> b_mat_frag_ct1(b[0], b[1]);
-  // CHECK-NEXT:   sycl::vec<uint32, 4> c_mat_frag_ct1(fc[0], fc[1]);
+  // CHECK-NEXT:   sycl::vec<uint32_t, 2> c_mat_frag_ct1(c[0], c[1]);
   // CHECK-NEXT:   dpct::experimental::matrix::mma<16, 8, 16, sycl::half, sycl::half>(reinterpret_cast<volatile void **>(d_mat_frag_ct1), &a_mat_frag_ct1, &b_mat_frag_ct1, &c_mat_frag_ct1);
   // CHECK-NEXT: }
   asm("mma.sync.aligned.m16n8k16.row.col.f16.f16.f16.f16 "
