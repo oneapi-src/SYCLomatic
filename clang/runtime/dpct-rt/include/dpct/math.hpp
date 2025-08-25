@@ -2799,6 +2799,37 @@ void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
   }
 }
 
+/// Transpose 1 8x8 b16 (128 bytes) matrix per sub-group. Requires the sub-group
+/// size of kernel calling this function to be 32.
+/// \param [output] output: The register to store the transposed matrix fragment. It refers to 2
+/// b16 type elements.
+/// \param [in] input: The register to store the matrix fragment. It refers to 2 b16
+/// type elements.
+void movmatrix(uint32_t &output, uint32_t &input) {
+  auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
+  int laneid = sg.get_local_linear_id();
+
+  int elm0_row = laneid / 4;
+  int elm0_col = (laneid % 4) * 2;
+  int elm1_row = elm0_row;
+  int elm1_col = elm0_col + 1;
+  int src0_row = elm0_col;
+  int src0_col = elm0_row;
+  int src1_row = elm1_col;
+  int src1_col = elm1_row;
+  int src0_laneid = src0_row * 4 + src0_col / 2;
+  int src0_pos = src0_col % 2;
+  int src1_laneid = src1_row * 4 + src1_col / 2;
+  int src1_pos = src1_col % 2;
+
+  auto recv0 = dpct::select_from_sub_group(sg, *(uint32_t *)(&input), src0_laneid);
+  auto recv1 = dpct::select_from_sub_group(sg, *(uint32_t *)(&input), src1_laneid);
+
+  auto ptr_out = reinterpret_cast<sycl::half *>(&output);
+  ptr_out[0] =  reinterpret_cast<sycl::half *>(&recv0)[src0_pos];
+  ptr_out[1] =  reinterpret_cast<sycl::half *>(&recv1)[src1_pos];
+}
+
 } // namespace matrix
 } // namespace experimental
 

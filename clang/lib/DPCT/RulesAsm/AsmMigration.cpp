@@ -3516,6 +3516,34 @@ protected:
     endstmt();
     return SYCLGenSuccess();
   }
+
+
+  bool handle_movmatrix(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+
+    const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
+
+    if (!Type || Type->getKind() != InlineAsmBuiltinType::b16)
+      return SYCLGenError();
+
+    OS() << MapNames::getDpctNamespace() << "experimental::matrix::movmatrix(";
+
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    OS() << ", ";
+
+    if (emitStmt(Inst->getInputOperand(0)))
+      return SYCLGenError();
+    
+    OS() << ");";
+
+    endstmt();
+
+    return SYCLGenSuccess();
+  }
 };
 
 /// Clean the special character in identifier.
