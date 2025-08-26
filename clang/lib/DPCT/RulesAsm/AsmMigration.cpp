@@ -3538,7 +3538,7 @@ protected:
     if (emitStmt(Inst->getInputOperand(0)))
       return SYCLGenError();
     
-    OS() << ");";
+    OS() << ")";
 
     endstmt();
 
