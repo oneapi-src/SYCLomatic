@@ -632,7 +632,7 @@ DPCT_ENUM_OPTION(
             "syclcompat", int(clang::dpct::ExplicitNamespace::EN_SYCLCompat),
             "Generate code with syclcompat:: namespace.", false)),
     llvm::cl::desc("Define the namespaces to use explicitly in generated "
-                   "code. The <value> is a comma\n"
+                   "code. (Will deprecate in Intel(R)DPC++ Compiler 2025.3) The <value> is a comma\n"
                    "separated list. Default: dpct/syclcompat, sycl.\n"
                    "Possible values are:"),
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
@@ -1019,7 +1019,7 @@ DPCT_FLAG_OPTION(
     "use-syclcompat",
     llvm::cl::desc(
         "Use SYCLcompat header-only library (syclcompat:: namespace) to assist "
-        "the migration of input source code.\nDefault: off.\n"),
+        "the migration of input source code. (Will deprecate in Intel(R)DPC++ Compiler 2025.3) \nDefault: off.\n"),
     llvm::cl::cat(CtHelpCatCodeGen), llvm::cl::cat(CtHelpCatAll))
 
 DPCT_FLAG_OPTION(
