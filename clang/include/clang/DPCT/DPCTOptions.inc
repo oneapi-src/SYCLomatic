@@ -630,9 +630,9 @@ DPCT_ENUM_OPTION(
             false),
         DPCT_OPTION_ENUM_VALUE(
             "syclcompat", int(clang::dpct::ExplicitNamespace::EN_SYCLCompat),
-            "Generate code with syclcompat:: namespace.", false)),
+            "DEPRECATED (Intel(R) DPC++ Compiler 2025.3 is deprecating SYCLCompat and will remove it in next release). Generate code with syclcompat:: namespace.", false)),
     llvm::cl::desc("Define the namespaces to use explicitly in generated "
-                   "code. (Will deprecate in Intel(R)DPC++ Compiler 2025.3) The <value> is a comma\n"
+                   "code.  The <value> is a comma\n"
                    "separated list. Default: dpct/syclcompat, sycl.\n"
                    "Possible values are:"),
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
@@ -1018,8 +1018,8 @@ DPCT_FLAG_OPTION(
                         clang::dpct::DpctActionKind::DAK_Query),
     "use-syclcompat",
     llvm::cl::desc(
-        "Use SYCLcompat header-only library (syclcompat:: namespace) to assist "
-        "the migration of input source code. (Will deprecate in Intel(R)DPC++ Compiler 2025.3) \nDefault: off.\n"),
+        "DEPRECATED (Intel(R) DPC++ Compiler 2025.3 is deprecating SYCLCompat and will remove it in next release). Use SYCLcompat header-only library (syclcompat:: namespace) to assist "
+        "the migration of input source code. \nDefault: off.\n"),
     llvm::cl::cat(CtHelpCatCodeGen), llvm::cl::cat(CtHelpCatAll))
 
 DPCT_FLAG_OPTION(
