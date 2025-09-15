@@ -157,14 +157,14 @@ int foo(int aaaaa){
 
   //CHECK: std::shared_ptr<dpct::sparse::optimize_info> info;
   //CHECK-NEXT: info = std::make_shared<dpct::sparse::optimize_info>();
-  //CHECK-NEXT: dpct::sparse::optimize_csrsv(handle->get_queue(), transA, m, descrA, csrValA, csrRowPtrA, csrColIndA, info);
+  //CHECK-NEXT: dpct::sparse::optimize_csrsv(handle->get_queue(), transA, m, nnz, descrA, csrValA, csrRowPtrA, csrColIndA, info);
   //CHECK-NEXT: info.reset();
   cusparseSolveAnalysisInfo_t info;
   cusparseCreateSolveAnalysisInfo(&info);
   cusparseDcsrsv_analysis(handle, transA, m, nnz, descrA, csrValA, csrRowPtrA, csrColIndA, info);
   cusparseDestroySolveAnalysisInfo(info);
 
-  //CHECK: dpct::sparse::optimize_csrsv(handle->get_queue(), transA, m, descrA, csrValA_Z, csrRowPtrA, csrColIndA, info);
+  //CHECK: dpct::sparse::optimize_csrsv(handle->get_queue(), transA, m, nnz, descrA, csrValA_Z, csrRowPtrA, csrColIndA, info);
   cusparseZcsrsv_analysis(handle, transA, m, nnz, descrA, csrValA_Z, csrRowPtrA, csrColIndA, info);
 
   //CHECK: /*

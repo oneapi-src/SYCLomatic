@@ -28,10 +28,10 @@ RewriterMap dpct::createDeviceSpmvRewriterMap() {
                       "cub::DeviceSpmv::CsrMV",
                       CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                            STREAM(10), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                           ARG(7), ARG(8))),
+                           ARG(7), ARG(8), ARG(9))),
                   CALL_FACTORY_ENTRY(
                       "cub::DeviceSpmv::CsrMV",
                       CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                            QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                           ARG(7), ARG(8)))))))};
+                           ARG(7), ARG(8), ARG(9)))))))};
 }
