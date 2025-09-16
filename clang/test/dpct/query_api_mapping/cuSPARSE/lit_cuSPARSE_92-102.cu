@@ -150,7 +150,7 @@
 // cusparseCsrsv_analysisEx-NEXT:       col_idx /*const int **/, info /*cusparseSolveAnalysisInfo_t*/,
 // cusparseCsrsv_analysisEx-NEXT:       exec_type /*cudaDataType*/);
 // cusparseCsrsv_analysisEx-NEXT: Is migrated to:
-// cusparseCsrsv_analysisEx-NEXT:   dpct::sparse::optimize_csrsv(handle->get_queue(), trans, m, desc, value, value_type, row_ptr, col_idx, info);
+// cusparseCsrsv_analysisEx-NEXT:   dpct::sparse::optimize_csrsv(handle->get_queue(), trans, m, nnz, desc, value, value_type, row_ptr, col_idx, info);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseScsrsv_solve | FileCheck %s -check-prefix=cusparseScsrsv_solve
 // cusparseScsrsv_solve: CUDA API:

@@ -502,7 +502,7 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseZcsrsv2_bufferSizeExt",
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseCsrsv_analysisEx",
     CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsv",
-         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(4), ARG(5),
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
          ARG(6), ARG(7), ARG(8), ARG(9))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseCsrsv_solveEx",
