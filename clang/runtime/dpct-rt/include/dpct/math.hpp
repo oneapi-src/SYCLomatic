@@ -2088,7 +2088,7 @@ public:
 /// \param [in] trans Indicates whether the matrix to be loaded transposed
 /// \param [in] mat The matrix index to be loaded
 template <typename T>
-void ldmatrix(uintptr_t addr, T *m, bool trans = false, unsigned mat = 0) {
+inline void ldmatrix(uintptr_t addr, T *m, bool trans = false, unsigned mat = 0) {
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int lane = sg.get_local_linear_id();
 
@@ -2165,7 +2165,7 @@ void ldmatrix(uintptr_t addr, T *m, bool trans = false, unsigned mat = 0) {
 /// to 2 b16 type elements.
 /// \param [in] trans Indicates whether the matrix to be loaded transposed
 template <typename T>
-void ldmatrix(uintptr_t addr, T *m1, T *m2, bool trans = false) {
+inline void ldmatrix(uintptr_t addr, T *m1, T *m2, bool trans = false) {
   // Load 1st matrix
   ldmatrix(addr, m1, trans, 0);
   // Load 2nd matrix
@@ -2207,7 +2207,7 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, bool trans = false) {
 /// to 2 b16 type elements.
 /// \param [in] trans Indicates whether the matrix to be loaded transposed
 template <typename T>
-void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
+inline void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
   // Load 1st matrix
   ldmatrix(addr, m1, trans, 0);
   // Load 2nd matrix
@@ -2248,7 +2248,7 @@ void ldmatrix(uintptr_t addr, T *m1, T *m2, T *m3, T *m4, bool trans = false) {
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 /// \param [in] mat The matrix index to be stored
 template <typename T>
-void stmatrix(uintptr_t addr, T m, bool trans = false, unsigned mat = 0) {
+inline void stmatrix(uintptr_t addr, T m, bool trans = false, unsigned mat = 0) {
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int lane = sg.get_local_linear_id();
 
@@ -2325,7 +2325,7 @@ void stmatrix(uintptr_t addr, T m, bool trans = false, unsigned mat = 0) {
 /// to 2 b16 type elements.
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 template <typename T>
-void stmatrix(uintptr_t addr, T m1, T m2, bool trans = false) {
+inline void stmatrix(uintptr_t addr, T m1, T m2, bool trans = false) {
   // Store 1st matrix
   stmatrix(addr, m1, trans, 0);
   // Store 2nd matrix
@@ -2367,7 +2367,7 @@ void stmatrix(uintptr_t addr, T m1, T m2, bool trans = false) {
 /// to 2 b16 type elements.
 /// \param [in] trans Indicates whether the matrix to be stored transposed
 template <typename T>
-void stmatrix(uintptr_t addr, T m1, T m2, T m3, T m4, bool trans = false) {
+inline void stmatrix(uintptr_t addr, T m1, T m2, T m3, T m4, bool trans = false) {
   // Store 1st matrix
   stmatrix(addr, m1, trans, 0);
   // Store 2nd matrix
@@ -2412,7 +2412,7 @@ template <typename T> struct MMAType {
 /// \param [in] c_mat_frag The fragment of the input matrix C to be added with
 /// the result of A * B fragments
 template <int M, int N, int K, typename ABType, typename CDType>
-void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
+inline void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
          void *c_mat_frag) {
   auto d = reinterpret_cast<volatile CDType **>(d_mat_frag);
   auto a = reinterpret_cast<typename MMAType<ABType>::PackType *>(a_mat_frag);
@@ -2865,7 +2865,7 @@ void mma(volatile void **d_mat_frag, void *a_mat_frag, void *b_mat_frag,
 /// b16 type elements.
 /// \param [in] input: The register to store the matrix fragment. It refers to 2 b16
 /// type elements.
-void movmatrix(uint32_t &output, uint32_t &input) {
+inline void movmatrix(uint32_t &output, uint32_t &input) {
   auto sg = sycl::ext::oneapi::this_work_item::get_sub_group();
   int laneid = sg.get_local_linear_id();
 
