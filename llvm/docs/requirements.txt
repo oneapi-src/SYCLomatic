@@ -7,4 +7,4 @@ sphinx-bootstrap-theme==0.8.1
 sphinxcontrib-applehelp==2.0.0
 sphinx-reredirects==1.1.0
 furo==2025.12.19
-myst-parser==4.0.1
+myst-parser==5.0.0
