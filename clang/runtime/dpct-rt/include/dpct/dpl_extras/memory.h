@@ -640,7 +640,6 @@ public:
 
   device_iterator &get_buffer() { return *this; } // required
 
-  std::size_t size() const { return idx; }
 };
 #endif
 
