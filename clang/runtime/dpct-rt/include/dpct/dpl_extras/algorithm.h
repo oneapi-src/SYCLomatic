@@ -1428,8 +1428,8 @@ template <typename Policy, typename Iter1, typename Iter2, typename T,
 histogram_even(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
                int num_levels, T lower_level, T upper_level, Size num_samples) {
   oneapi::dpl::histogram(::std::forward<Policy>(policy), d_samples,
-                                     d_samples + num_samples, num_levels - 1,
-                                     lower_level, upper_level, d_histogram);
+                         d_samples + num_samples, num_levels - 1, lower_level,
+                         upper_level, d_histogram);
 }
 
 // Evenly Divided Histogram of a 2-D ROI in a flattened 2-D array
@@ -1524,8 +1524,8 @@ template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
 histogram_range(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
                 int num_levels, Iter3 d_levels, Size num_samples) {
   oneapi::dpl::histogram(::std::forward<Policy>(policy), d_samples,
-                                     d_samples + num_samples, d_levels,
-                                     d_levels + num_levels, d_histogram);
+                         d_samples + num_samples, d_levels,
+                         d_levels + num_levels, d_histogram);
 }
 
 // Custom Range Histogram of a 2-D ROI in a flattened 2-D Array
