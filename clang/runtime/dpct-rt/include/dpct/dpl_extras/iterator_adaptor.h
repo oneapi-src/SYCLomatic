@@ -36,7 +36,12 @@ protected:
 public:
   // It is the user's responsibility to ensure extra data is available on the
   // device if they want to use this iterator with device execution policies
-  using is_passed_directly = ::std::true_type;
+  // TODO: consider deferring this indirectly device accessible check to the
+  // base iterator, rather than returning true
+  friend auto is_onedpl_indirectly_device_accessible(iterator_adaptor)
+      -> ::std::true_type {
+    return {};
+  }
   using iterator_category = ::std::random_access_iterator_tag;
 
   iterator_adaptor() {}

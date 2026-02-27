@@ -233,7 +233,6 @@ public:
   using reference = value_type &;
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::true_type; // required
-  using is_passed_directly = std::false_type;
   static constexpr sycl::access_mode mode = Mode; // required
 
   device_pointer(sycl::buffer<value_type, 1> in, std::size_t i = 0)
@@ -280,7 +279,6 @@ public:
   using reference = T &;
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::true_type; // required
-  using is_passed_directly = std::false_type;
   static constexpr sycl::access_mode mode = Mode; // required
 
   device_pointer(sycl::buffer<T, 1> in, std::size_t i = 0) : base_type(in, i) {}
@@ -376,8 +374,11 @@ public:
   using reference = value_type &;
   using const_reference = const value_type &;
   using iterator_category = std::random_access_iterator_tag;
-  using is_hetero = std::false_type;         // required
-  using is_passed_directly = std::true_type; // required
+  using is_hetero = std::false_type; // required
+  friend auto is_onedpl_indirectly_device_accessible(device_pointer)
+      -> std::true_type {
+    return {};
+  }
 
   device_pointer(void *p) : base_type(static_cast<value_type *>(p)) {}
   // needed for malloc_device, count is number of bytes to allocate
@@ -420,8 +421,11 @@ public:
   using reference = T &;
   using const_reference = const T &;
   using iterator_category = std::random_access_iterator_tag;
-  using is_hetero = std::false_type;         // required
-  using is_passed_directly = std::true_type; // required
+  using is_hetero = std::false_type; // required
+  friend auto is_onedpl_indirectly_device_accessible(device_pointer)
+      -> std::true_type {
+    return {};
+  }
 
   device_pointer(T *p) : base_type(p) {}
   // needed for malloc_device, count is number of bytes to allocate
@@ -469,7 +473,6 @@ public:
   using reference = T &;
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::true_type;                // required
-  using is_passed_directly = std::false_type;      // required
   static constexpr sycl::access_mode mode = Mode; // required
 
   device_iterator() : Base() {}
@@ -563,8 +566,11 @@ public:
   using pointer = typename Base::pointer;
   using reference = typename Base::reference;
   using iterator_category = std::random_access_iterator_tag;
-  using is_hetero = std::false_type;         // required
-  using is_passed_directly = std::true_type; // required
+  using is_hetero = std::false_type; // required
+  friend auto is_onedpl_indirectly_device_accessible(device_iterator)
+      -> std::true_type {
+    return {};
+  }
   static constexpr sycl::access_mode mode =
       sycl::access_mode::read_write; // required
 
@@ -730,7 +736,10 @@ public:
   using reference = T &;
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = ::std::false_type;
-  using is_passed_directly = std::true_type;
+  friend auto is_onedpl_indirectly_device_accessible(tagged_pointer)
+      -> std::true_type {
+    return {};
+  }
 
   tagged_pointer() : m_ptr(nullptr) {}
   tagged_pointer(T *ptr) : m_ptr(ptr) {}
