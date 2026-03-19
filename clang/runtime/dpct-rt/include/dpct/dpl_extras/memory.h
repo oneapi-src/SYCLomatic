@@ -638,8 +638,6 @@ public:
 
   std::size_t get_idx() const { return idx; } // required
 
-  device_iterator &get_buffer() { return *this; } // required
-
 };
 #endif
 
