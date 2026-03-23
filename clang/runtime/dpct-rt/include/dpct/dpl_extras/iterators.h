@@ -78,7 +78,10 @@ oneapi::dpl::counting_iterator<T> make_counting_iterator(const T &input) {
 template <typename _Tp> class constant_iterator {
 public:
   typedef std::false_type is_hetero;
-  typedef std::true_type is_passed_directly;
+  friend auto is_onedpl_indirectly_device_accessible(constant_iterator)
+      -> std::true_type {
+    return {};
+  }
   typedef std::ptrdiff_t difference_type;
   typedef _Tp value_type;
   typedef _Tp *pointer;
