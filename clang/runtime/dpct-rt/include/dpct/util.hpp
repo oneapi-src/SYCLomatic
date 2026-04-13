@@ -602,11 +602,21 @@ T shift_sub_group_left(sycl::sub_group sg, T input, int delta, int last_item,
   return result;
 #else
   if ((1U << sg.get_local_linear_id()) & member_mask) {
+#if defined(__INTEL_LLVM_COMPILER) && __INTEL_LLVM_COMPILER < 20260000
+    auto inner = sycl::ext::oneapi::experimental::get_tangle_group(sg);
+#else
     auto inner = sycl::ext::oneapi::experimental::entangle(sg);
+#endif
     sycl::group_barrier(inner);
   }
+#if defined(__INTEL_LLVM_COMPILER) && __INTEL_LLVM_COMPILER < 20260000
+  auto partition =
+      sycl::ext::oneapi::experimental::get_fixed_size_group<LogicSubGroupSize>(
+          sg);
+#else
   auto partition =
       sycl::ext::oneapi::experimental::chunked_partition<LogicSubGroupSize>(sg);
+#endif
   int id = partition.get_local_linear_id();
   T result = sycl::shift_group_left(partition, input, delta);
   if ((id + delta) > last_item)
@@ -639,11 +649,21 @@ T shift_sub_group_right(sycl::sub_group sg, T input, int delta, int first_item,
   return result;
 #else
   if ((1U << sg.get_local_linear_id()) & member_mask) {
+#if defined(__INTEL_LLVM_COMPILER) && __INTEL_LLVM_COMPILER < 20260000
+    auto inner = sycl::ext::oneapi::experimental::get_tangle_group(sg);
+#else
     auto inner = sycl::ext::oneapi::experimental::entangle(sg);
+#endif
     sycl::group_barrier(inner);
   }
+#if defined(__INTEL_LLVM_COMPILER) && __INTEL_LLVM_COMPILER < 20260000
+  auto partition =
+      sycl::ext::oneapi::experimental::get_fixed_size_group<LogicSubGroupSize>(
+          sg);
+#else
   auto partition =
       sycl::ext::oneapi::experimental::chunked_partition<LogicSubGroupSize>(sg);
+#endif
   int id = sg.get_local_linear_id();
   T result = sycl::shift_group_right(partition, input, delta);
   if ((id - first_item) < delta)
