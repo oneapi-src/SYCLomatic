@@ -79,7 +79,7 @@ using namespace clang::tooling;
 using namespace llvm::cl;
 
 extern bool isDPCT;
-
+extern bool ReMigrationReady;
 namespace clang {
 namespace tooling {
 UnifiedPath getFormatSearchPath();
@@ -516,7 +516,7 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath YamlFilePath) {
   if (!llvm::sys::fs::exists(YamlFilePath.getCanonicalPath()))
     return;
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
-  if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
+  if (loadTUFromYaml(YamlFilePath, *PreTU) != 0) {
     llvm::errs() << getLoadYamlFailWarning();
   }
   DpctGlobalInfo::setMainSourceYamlTUR(PreTU);
@@ -804,6 +804,7 @@ int runDPCT(int argc, const char **argv) {
   CudaIncludePath = CudaInclude;
   SDKPath = SDKPathOpt;
 
+  DpctGlobalInfo::setReMigration(ReMigration);
   loadMainSrcFileInfo(OutRootPath.getCanonicalPath() + "/MainSourceFiles.yaml");
 
   std::transform(
@@ -1390,6 +1391,8 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationBuildScriptCompleted);
     dpctExit(MigrationSucceeded, false);
   }
+
+  ReMigrationReady = tryLoadingUpstreamChangesAndUserChanges();
 
   ReplTy ReplCUDA, ReplSYCL;
   volatile int RunCount = 0;

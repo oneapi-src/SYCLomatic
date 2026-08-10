@@ -959,6 +959,12 @@ DPCT_FLAG_OPTION(
     llvm::cl::cat(CtHelpCatAll), llvm::cl::cat(CtHelpCatCodeGen))
 
 DPCT_FLAG_OPTION(
+    ReMigration, clang::dpct::DpctOptionClass::OC_Attribute,
+    DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
+    "remigration", llvm::cl::desc("Enable remigration. Default: off."),
+    llvm::cl::cat(CtHelpCatAll), llvm::cl::cat(CtHelpCatCodeGen))
+
+DPCT_FLAG_OPTION(
     PathToHelperFunction, clang::dpct::DpctOptionClass::OC_Action,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Help),
     "helper-function-dir",

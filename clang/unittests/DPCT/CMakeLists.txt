@@ -1,0 +1,12 @@
+add_clang_unittest(DpctTests
+  ReMigrationTest.cpp
+  CLANG_LIBS
+  DPCT
+  clangBasic
+  clangFrontend
+  clangRewrite
+  clangTooling
+  clangToolingCore
+  LLVM_COMPONENTS
+  Support
+  )

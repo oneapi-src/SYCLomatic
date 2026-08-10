@@ -106,6 +106,7 @@ All DPCT options
                                             to the --out-root directory. The --in-root option should be explicitly specified.
                                             Default: off.
   --query-api-mapping=<api>               - Query functionally compatible SYCL API to migrate CUDA API.
+  --remigration                           - Enable remigration. Default: off.
   --report-file-prefix=<prefix>           - Specify the prefix for the migration report file names. The full file name will have a suffix derived
                                             from the report-type, and an extension derived from the report-format. For
                                             example: <prefix>.apis.csv or <prefix>.stats.log. If this option is not

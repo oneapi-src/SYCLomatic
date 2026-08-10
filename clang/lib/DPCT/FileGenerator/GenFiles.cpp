@@ -48,6 +48,8 @@ extern DpctOption<clang::dpct::opt, bool> ProcessAll;
 extern DpctOption<dpct::opt, std::string> BuildScriptFile;
 extern DpctOption<dpct::opt, bool> GenBuildScript;
 extern std::map<std::string, uint64_t> ErrorCnt;
+bool ReMigrationReady = false;
+extern std::set<std::string> MainSrcFilesHasCudaSyntex;
 
 namespace clang {
 namespace tooling {
@@ -188,18 +190,10 @@ bool rewriteCanonicalDir(clang::tooling::UnifiedPath &FilePath,
   return Result;
 }
 
-void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
-  rewriteFileName(FileName, FileName);
-}
-
-void rewriteFileName(clang::tooling::UnifiedPath &FileName,
-                     const clang::tooling::UnifiedPath &FullPathName) {
-  std::string FilePath = FileName.getPath().str();
-  rewriteFileName(FilePath, FullPathName.getPath().str());
-  FileName = FilePath;
-}
-
-void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
+static void
+rewriteFileName(std::string &FileName, const std::string &FullPathName,
+                std::function<bool(tooling::UnifiedPath)> HasCUDASyntax =
+                    DpctGlobalInfo::hasCUDASyntax) {
   SmallString<512> CanonicalPathStr(FullPathName);
   const auto Extension = path::extension(CanonicalPathStr);
   SourceProcessType FileType = GetSourceFileType(FullPathName);
@@ -210,8 +204,7 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
     if (FileType & SPT_CudaSource) {
       path::replace_extension(CanonicalPathStr,
                               DpctGlobalInfo::getSYCLSourceExtension());
-    } else if ((FileType & SPT_CppSource) &&
-               DpctGlobalInfo::hasCUDASyntax(FileName)) {
+    } else if ((FileType & SPT_CppSource) && HasCUDASyntax(FileName)) {
       path::replace_extension(CanonicalPathStr,
                               Extension +
                                   DpctGlobalInfo::getSYCLSourceExtension());
@@ -222,6 +215,17 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
     }
   }
   FileName = CanonicalPathStr.c_str();
+}
+
+void rewriteFileName(clang::tooling::UnifiedPath &FileName,
+                     const clang::tooling::UnifiedPath &FullPathName) {
+  std::string FilePath = FileName.getPath().str();
+  rewriteFileName(FilePath, FullPathName.getPath().str());
+  FileName = FilePath;
+}
+
+void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
+  rewriteFileName(FileName, FileName);
 }
 
 static std::vector<std::string> FilesNotInCompilationDB;
@@ -506,7 +510,7 @@ static void getReplsFromTUR(const std::string &FilePath,
 }
 
 int writeReplacementsToFiles(
-    ReplTy &Replset, Rewriter &Rewrite, const std::string &Folder,
+    ReplTy &Replset2, Rewriter &Rewrite, const std::string &Folder,
     clang::tooling::UnifiedPath &InRoot,
     std::unordered_map<std::string, bool> &MainSrcFileMap,
     std::vector<clang::tooling::Replacement> &AllFilesRepls,
@@ -519,6 +523,48 @@ int writeReplacementsToFiles(
 
   volatile ProcessStatus status = MigrationSucceeded;
   clang::tooling::UnifiedPath OutPath;
+
+  ReplTy Replset;
+  if (ReMigrationReady) {
+    std::vector<clang::tooling::Replacement> Repl_B;
+    std::vector<clang::tooling::Replacement> Repl_C1;
+    for (const auto &Entry : Replset2) {
+      for (const auto &Repl : Entry.second) {
+        Repl_B.push_back(Repl);
+      }
+    }
+    for (const auto &Repl : clang::dpct::getLastMigration()->Replacements) {
+      Repl_C1.push_back(Repl);
+    }
+
+    std::map<std::string /*SYCL name*/, std::string /*CUDA name*/> FileNameMap;
+    auto hasCUDASyntax = [](tooling::UnifiedPath Path) -> bool {
+      if (MainSrcFilesHasCudaSyntex.find(Path.getCanonicalPath().str()) !=
+          MainSrcFilesHasCudaSyntex.end())
+        return true;
+      return false;
+    };
+    for (const auto &Entry : Repl_C1) {
+      std::string CUDAFilePath = Entry.getFilePath().str();
+      std::string SYCLFilePath;
+      rewriteFileName(SYCLFilePath, CUDAFilePath, hasCUDASyntax);
+      FileNameMap[SYCLFilePath] = CUDAFilePath;
+    }
+    std::map<std::string, std::vector<clang::tooling::Replacement>> Result =
+        clang::dpct::reMigrationMerge(clang::dpct::getUpstreamChanges(), Repl_B,
+                                      Repl_C1, clang::dpct::getUserChanges(),
+                                      FileNameMap);
+    for (const auto &Entry : Result) {
+      clang::tooling::Replacements Repls;
+      for (const auto &Repl : Entry.second) {
+        llvm::cantFail(Repls.add(Repl));
+      }
+      Replset.insert(std::make_pair(Entry.first, Repls));
+    }
+  } else {
+    // If not re-migration, just use the original Replset.
+    Replset = Replset2;
+  }
 
   for (auto &Entry : Replset) {
     OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
@@ -633,6 +679,7 @@ int writeReplacementsToFiles(
     // We have written a migrated file; Update the output file path info
     OutFilePath2InFilePath[OutPath.getCanonicalPath().str()] = Entry.first;
   }
+  Replset2 = Replset;
   return status;
 }
 

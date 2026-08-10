@@ -95,6 +95,7 @@ list(APPEND CLANG_TEST_DEPS
   dpct-codepin-report-files
   scan-build-py
   pattern-rewriter-binary
+  gitdiff2yaml-binary
   )
 
 if(CLANG_ENABLE_CIR)

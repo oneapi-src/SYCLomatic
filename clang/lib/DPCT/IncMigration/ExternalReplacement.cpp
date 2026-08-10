@@ -10,19 +10,19 @@
 //   -Load replacement from external (disk file)
 //   -Merge replacement in current migration with previous migration.
 
+#include "ExternalReplacement.h"
 #include "AnalysisInfo.h"
+#include "IncMigration/IncrementalMigrationUtility.h"
 #include "Utility.h"
+
+#include "clang/Tooling/Core/Diagnostic.h"
 #include "clang/Tooling/Core/Replacement.h"
+#include "clang/Tooling/Refactoring.h"
+#include "clang/Tooling/ReplacementsYaml.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
-
-#include "ExternalReplacement.h"
-#include "IncMigration/IncrementalMigrationUtility.h"
-#include "clang/Tooling/Core/Diagnostic.h"
-#include "clang/Tooling/Refactoring.h"
-#include "clang/Tooling/ReplacementsYaml.h"
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/raw_os_ostream.h"
 
@@ -77,8 +77,8 @@ int save2Yaml(
   return 0;
 }
 
-int loadFromYaml(const clang::tooling::UnifiedPath &Input,
-                 clang::tooling::TranslationUnitReplacements &TU) {
+template <class T>
+static int loadFromYaml(const clang::tooling::UnifiedPath &Input, T &Content) {
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
       llvm::MemoryBuffer::getFile(Input.getCanonicalPath());
   if (!Buffer) {
@@ -86,9 +86,20 @@ int loadFromYaml(const clang::tooling::UnifiedPath &Input,
                  << Buffer.getError().message() << "\n";
     return -1;
   }
-
   llvm::yaml::Input YAMLIn(Buffer.get()->getBuffer());
-  YAMLIn >> TU;
+  YAMLIn >> Content;
+  if (YAMLIn.error()) {
+    Content = T();
+    return -1;
+  }
+  return 0;
+}
+
+int loadTUFromYaml(const clang::tooling::UnifiedPath &Input,
+                   clang::tooling::TranslationUnitReplacements &TU) {
+  int Status = loadFromYaml(Input, TU);
+  if (Status)
+    return Status;
 
   bool IsSrcFileChanged = false;
   for (const auto &digest : TU.MainSourceFilesDigest) {
@@ -100,13 +111,23 @@ int loadFromYaml(const clang::tooling::UnifiedPath &Input,
     }
   }
 
-  if (IsSrcFileChanged || YAMLIn.error()) {
+  if (IsSrcFileChanged && !DpctGlobalInfo::useReMigration()) {
     // File doesn't appear to be a header change description. Ignore it.
     TU = clang::tooling::TranslationUnitReplacements();
     return -1;
   }
 
   return 0;
+}
+
+void loadGDCFromYaml(const clang::tooling::UnifiedPath &Input,
+                     clang::dpct::GitDiffChanges &GDC) {
+  int status = loadFromYaml(Input, GDC);
+  if (status) {
+    llvm::errs() << "Failed to load git diff Changes from "
+                 << Input.getCanonicalPath() << "\n";
+    GDC = clang::dpct::GitDiffChanges();
+  }
 }
 
 void mergeAndUniqueReps(
