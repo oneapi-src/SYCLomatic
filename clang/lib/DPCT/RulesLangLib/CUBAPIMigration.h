@@ -113,7 +113,7 @@ private:
   void processCubFuncCall(const CallExpr *CE, bool FuncCallUsed = false);
   void processCubMemberCall(const CXXMemberCallExpr *MC);
   void processTypeLoc(const TypeLoc *TL);
-
+  void processFiledDecl(const FieldDecl *FD);
   void processThreadLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processBlockLevelMemberCall(const CXXMemberCallExpr *MC);

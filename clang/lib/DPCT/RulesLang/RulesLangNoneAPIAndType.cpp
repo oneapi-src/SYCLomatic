@@ -688,6 +688,10 @@ void MemVarMigrationRule::processTypeDeclaredLocal(
     std::string Ret;
     llvm::raw_string_ostream OS(Ret);
     OS << getNL(DS->getEndLoc().isMacroID()) << getIndent(InsertSL, SM);
+    if (DpctGlobalInfo::useGroupLocalMemory()) {
+      OS << Info->getDeclarationReplacement(MemVar);
+      return OS.str();
+    }
     OS << TypeName << ' ';
     if (IsReference)
       OS << '&';
@@ -727,8 +731,7 @@ void MemVarMigrationRule::processTypeDeclaredLocal(
     emplaceTransformation(new InsertText(InsertSL, GenDeclStmt(NewTypeName)));
   } else if (DS) {
     // remove var decl
-    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-        MemVar, Info->getDeclarationReplacement(MemVar)));
+    emplaceTransformation(new ReplaceVarDecl(MemVar, ""));
 
     Info->setLocalTypeName(Info->getType()->getBaseName());
     emplaceTransformation(
@@ -739,7 +742,8 @@ void MemVarMigrationRule::processTypeDeclaredLocal(
 void MemVarMigrationRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
-    if (isCubVar(MemVar) || MemVar->hasAttr<CUDAConstantAttr>()) {
+    if ((isCubVar(MemVar) && !isPreserveCubVar(MemVar->getType())) ||
+        MemVar->hasAttr<CUDAConstantAttr>()) {
       return;
     }
     std::string CanonicalType =
@@ -795,7 +799,7 @@ void MemVarAnalysisRule::registerMatcher(MatchFinder &MF) {
 
 void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
-    if (isCubVar(MemVar)) {
+    if (isCubVar(MemVar) && !isPreserveCubVar(MemVar->getType())) {
       return;
     }
     std::string CanonicalType =
