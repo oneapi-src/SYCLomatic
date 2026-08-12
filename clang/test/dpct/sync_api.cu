@@ -109,9 +109,12 @@ int main() {
   // CHECK: {
   // CHECK-NEXT:  auto exp_props = sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::experimental::use_root_sync};
   // CHECK-EMPTY:
-  // CHECK-NEXT:  dpct::get_in_order_queue().parallel_for(
-  // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
-  // CHECK-NEXT:  exp_props,     [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:  sycl::ext::oneapi::experimental::nd_launch(
+  // CHECK-NEXT:    dpct::get_in_order_queue(),
+  // CHECK-NEXT:    sycl::ext::oneapi::experimental::launch_config(
+  // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)), 
+  // CHECK-NEXT:      exp_props),
+  // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:      kernel();
   // CHECK-NEXT:    });
   // CHECK-NEXT: }
@@ -193,12 +196,14 @@ int foo3() {
   // CHECK-NEXT:  auto exp_props = sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::experimental::use_root_sync};
   // CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_in_order_queue().get_device(), {sycl::aspect::fp64});
   // CHECK-EMPTY:
-  // CHECK-NEXT:  dpct::get_in_order_queue().parallel_for(
-  // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:  exp_props,     [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
-  // CHECK-NEXT:       foo2();
-  // CHECK-NEXT:     });
-  //  CHECK-NEXT: }
+  // CHECK-NEXT:  sycl::ext::oneapi::experimental::nd_launch(
+  // CHECK-NEXT:    dpct::get_in_order_queue(),
+  // CHECK-NEXT:    sycl::ext::oneapi::experimental::launch_config(
+  // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:      exp_props),
+  // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {{\[\[}}sycl::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:      foo2();
+  // CHECK-NEXT:    });
   foo2<<<1,1>>>();
   return 0;
 }

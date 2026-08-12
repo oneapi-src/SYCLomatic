@@ -5902,7 +5902,6 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << "*" << getEvent() << " = ";
   }
 
-  printStreamBase(Printer);
   if (isDefaultStream()) {
     SubmitStmts.DefaultStreamFlag = true;
   }
@@ -5911,8 +5910,12 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     SubmitStmts.ImplicitSyncFlag = true;
   }
   if (SubmitStmts.empty()) {
+    if (ExecutionConfig.Properties.empty()) {
+      printStreamBase(Printer);
+    }
     printParallelFor(Printer, false);
   } else {
+    printStreamBase(Printer);
     (Printer << "submit(").newLine();
     printSubmitLambda(Printer);
   }
@@ -5944,12 +5947,20 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
       }
     }
   }
+  bool UseEnqueueFunctions = !ExecutionConfig.Properties.empty();
   if (IsInSubmit) {
-    Printer.indent() << "cgh.";
+    Printer.indent();
+    if (!UseEnqueueFunctions) {
+      Printer << "cgh.";
+    }
   }
   if (!SubmitStmts.NdRangeList.empty() && DpctGlobalInfo::isCommentsEnabled())
     Printer.line("// run the kernel within defined ND range");
-  Printer << "parallel_for";
+  if (UseEnqueueFunctions) {
+    Printer << MapNames::getExpNamespace() << "nd_launch";
+  } else {
+    Printer << "parallel_for";
+  }
   if (DpctGlobalInfo::isSyclNamedLambda()) {
     Printer << "<dpct_kernel_name<class " << getName() << "_"
             << LocInfo.LocHash;
@@ -5960,6 +5971,11 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   }
   (Printer << "(").newLine();
   auto B = Printer.block();
+  std::unique_ptr<KernelPrinter::Block> LaunchConfigBlock;
+  if (UseEnqueueFunctions) {
+    (Printer.indent() << (IsInSubmit ? "cgh" : ExecutionConfig.Stream) << ",")
+        .newLine();
+  }
   static std::string CanIgnoreRangeStr3D =
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 3) +
       "(1, 1, 1)";
@@ -5967,9 +5983,14 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 1) +
       "(1)";
   if (ExecutionConfig.NdRange != "") {
+    if (UseEnqueueFunctions) {
+      Printer.line(MapNames::getExpNamespace() + "launch_config(");
+      LaunchConfigBlock = std::move(Printer.block());
+    }
     Printer.line(ExecutionConfig.NdRange + ",");
-    if (!ExecutionConfig.Properties.empty()) {
-      Printer << ExecutionConfig.Properties << ", ";
+    if (UseEnqueueFunctions) {
+      Printer.line(ExecutionConfig.Properties + "),");
+      LaunchConfigBlock.reset();
     }
     Printer.line("[=](", MapNames::getClNamespace(), "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
@@ -5979,6 +6000,10 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
              MemVarMap::getHeadWithoutPathCompression(
                  &(getFuncInfo()->getVarMap()))
                      ->Dim == 1) {
+    if (UseEnqueueFunctions) {
+      Printer.line(MapNames::getExpNamespace() + "launch_config(");
+      LaunchConfigBlock = std::move(Printer.block());
+    }
     DpctGlobalInfo::printCtadClass(Printer.indent(),
                                    MapNames::getClNamespace() + "nd_range", 1)
         << "(";
@@ -5993,12 +6018,17 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSizeFor1D;
     (Printer << "), ").newLine();
-    if (!ExecutionConfig.Properties.empty()) {
-      Printer << ExecutionConfig.Properties << ", ";
+    if (UseEnqueueFunctions) {
+      Printer.line(ExecutionConfig.Properties + "),");
+      LaunchConfigBlock.reset();
     }
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
+    if (UseEnqueueFunctions) {
+      Printer.line(MapNames::getExpNamespace() + "launch_config(");
+      LaunchConfigBlock = std::move(Printer.block());
+    }
     Printer.indent();
     Printer << MapNames::getClNamespace() + "nd_range<3>(";
     if (ExecutionConfig.GroupSize == CanIgnoreRangeStr3D) {
@@ -6012,8 +6042,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSize;
     (Printer << "), ").newLine();
-    if (!ExecutionConfig.Properties.empty()) {
-      Printer << ExecutionConfig.Properties << ", ";
+    if (UseEnqueueFunctions) {
+      Printer.line(ExecutionConfig.Properties + "),");
+      LaunchConfigBlock.reset();
     }
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
