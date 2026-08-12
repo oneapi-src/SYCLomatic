@@ -1827,6 +1827,10 @@ inline auto UseExtLevelZero = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExtLevelZero();
 };
 
+inline auto UseExtAsyncAlloc = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExtAsyncAlloc();
+};
+
 inline auto UseExtGraph = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExtGraph();
 };

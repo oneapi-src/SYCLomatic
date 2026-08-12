@@ -52,6 +52,8 @@ STD_HEADER(DL, "<dlfcn.h>")
 #endif
 STD_HEADER(SHMEM, "<ishmem.h>")
 STD_HEADER(SHMEMX, "<ishmemx.h>")
+STD_HEADER(AsyncAlloc,
+           "<sycl/ext/oneapi/experimental/async_alloc/async_alloc.hpp>")
 
 ONEDPL_HEADER(Algorithm, "<oneapi/dpl/algorithm>")
 ONEDPL_HEADER(Execution, "<oneapi/dpl/execution>")
