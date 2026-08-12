@@ -128,18 +128,18 @@ class matrix_handle_manager
 public:
   using handle_manager<oneapi::mkl::sparse::matrix_handle_t>::handle_manager;
   template <typename Ty>
-  void set_matrix_data(const int rows, const int cols,
+  void set_matrix_data(const int rows, const int cols, const int nnz,
                        oneapi::mkl::index_base base, const void *row_ptr,
                        const void *col_ind, const void *val) {
 #ifdef DPCT_USM_LEVEL_NONE
     _row_ptr_buf = dpct::detail::get_memory<int>((int *)row_ptr);
     _col_ind_buf = dpct::detail::get_memory<int>((int *)col_ind);
     _val_buf = dpct::detail::get_memory<Ty>((Ty *)val);
-    oneapi::mkl::sparse::set_csr_data(*_q, get_handle(), rows, cols, base,
+    oneapi::mkl::sparse::set_csr_data(*_q, get_handle(), rows, cols, nnz, base,
                                       _row_ptr_buf, _col_ind_buf,
                                       std::get<sycl::buffer<Ty>>(_val_buf));
 #else
-    oneapi::mkl::sparse::set_csr_data(*_q, get_handle(), rows, cols, base,
+    oneapi::mkl::sparse::set_csr_data(*_q, get_handle(), rows, cols, nnz, base,
                                       (int *)row_ptr, (int *)col_ind,
                                       (Ty *)val);
 #endif
@@ -171,6 +171,41 @@ private:
 #endif
 
 template <typename T> struct optimize_csrsv_impl {
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col, int nnz,
+                  const std::shared_ptr<matrix_info> info, const void *val,
+                  const int *row_ptr, const int *col_ind,
+                  std::shared_ptr<optimize_info> optimize_info) {
+    using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
+    auto temp_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+    auto temp_col_ind = dpct::detail::get_memory<int>(col_ind);
+    auto temp_val = dpct::detail::get_memory<Ty>(val);
+#ifdef DPCT_USM_LEVEL_NONE
+    optimize_info->_row_ptr_buf = temp_row_ptr;
+    optimize_info->_col_ind_buf = temp_col_ind;
+    optimize_info->_val_buf = temp_val;
+    auto &data_row_ptr = optimize_info->_row_ptr_buf;
+    auto &data_col_ind = optimize_info->_col_ind_buf;
+    auto &data_val = std::get<sycl::buffer<Ty>>(optimize_info->_val_buf);
+#else
+    auto data_row_ptr = temp_row_ptr;
+    auto data_col_ind = temp_col_ind;
+    auto data_val = temp_val;
+#endif
+    oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
+                                      row_col, row_col, nnz, info->get_index_base(),
+                                      data_row_ptr, data_col_ind, data_val);
+    if (info->get_matrix_type() != matrix_info::matrix_type::tr)
+      throw std::runtime_error("dpct::sparse::optimize_csrsv_impl()(): "
+                               "oneapi::mkl::sparse::optimize_trsv "
+                               "only accept triangular matrix.");
+    SPARSE_CALL(oneapi::mkl::sparse::optimize_trsv(
+                    queue, info->get_uplo(), trans, info->get_diag(),
+                    optimize_info->get_matrix_handle()),
+                optimize_info);
+  }
+};
+
+template <typename T> struct optimize_csrsv_impl_deprecated {
   void operator()(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
                   const std::shared_ptr<matrix_info> info, const void *val,
                   const int *row_ptr, const int *col_ind,
@@ -204,6 +239,7 @@ template <typename T> struct optimize_csrsv_impl {
                 optimize_info);
   }
 };
+
 template <typename T> struct csrsv_impl {
   void operator()(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
                   const void *alpha, const std::shared_ptr<matrix_info> info,
@@ -224,6 +260,46 @@ template <typename T> struct csrsv_impl {
 };
 
 template <typename T> struct optimize_csrsm_impl {
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose transa,
+                  oneapi::mkl::transpose transb, int row_col, int nrhs, int nnz,
+                  const std::shared_ptr<matrix_info> info, const void *val,
+                  const int *row_ptr, const int *col_ind,
+                  std::shared_ptr<optimize_info> optimize_info) {
+    using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
+    auto temp_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+    auto temp_col_ind = dpct::detail::get_memory<int>(col_ind);
+    auto temp_val = dpct::detail::get_memory<Ty>(val);
+#ifdef DPCT_USM_LEVEL_NONE
+    optimize_info->_row_ptr_buf = temp_row_ptr;
+    optimize_info->_col_ind_buf = temp_col_ind;
+    optimize_info->_val_buf = temp_val;
+    auto &data_row_ptr = optimize_info->_row_ptr_buf;
+    auto &data_col_ind = optimize_info->_col_ind_buf;
+    auto &data_val = std::get<sycl::buffer<Ty>>(optimize_info->_val_buf);
+#else
+    auto data_row_ptr = temp_row_ptr;
+    auto data_col_ind = temp_col_ind;
+    auto data_val = temp_val;
+#endif
+    oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
+                                      row_col, row_col, nnz, info->get_index_base(),
+                                      data_row_ptr, data_col_ind, data_val);
+    if (info->get_matrix_type() != matrix_info::matrix_type::tr)
+      throw std::runtime_error("dpct::sparse::optimize_csrsv_impl()(): "
+                               "oneapi::mkl::sparse::optimize_trsm "
+                               "only accept triangular matrix.");
+    SPARSE_CALL(oneapi::mkl::sparse::optimize_trsm(
+                    queue,
+                    transb == oneapi::mkl::transpose::nontrans
+                        ? oneapi::mkl::layout::col_major
+                        : oneapi::mkl::layout::row_major,
+                    info->get_uplo(), transa, info->get_diag(),
+                    optimize_info->get_matrix_handle(), nrhs),
+                optimize_info);
+  }
+};
+
+template <typename T> struct optimize_csrsm_impl_deprecated {
   void operator()(sycl::queue &queue, oneapi::mkl::transpose transa,
                   oneapi::mkl::transpose transb, int row_col, int nrhs,
                   const std::shared_ptr<matrix_info> info, const void *val,
@@ -262,6 +338,7 @@ template <typename T> struct optimize_csrsm_impl {
                 optimize_info);
   }
 };
+
 template <typename T> struct csrsm_impl {
   void operator()(sycl::queue &queue, oneapi::mkl::transpose transa,
                   oneapi::mkl::transpose transb, int row_col, int nrhs,
@@ -470,10 +547,10 @@ template <typename T> struct csr2csc_impl {
           ::dpct::cs::malloc(sizeof(Ty) * nnz, ::dpct::cs::get_default_queue());
     }
     auto data_to_val = dpct::detail::get_memory<Ty>(new_to_value);
-    oneapi::mkl::sparse::set_csr_data(queue, from_handle, m, n, base,
+    oneapi::mkl::sparse::set_csr_data(queue, from_handle, m, n, nnz, base,
                                       data_from_row_ptr, data_from_col_ind,
                                       data_from_val);
-    oneapi::mkl::sparse::set_csr_data(queue, to_handle, n, m, base,
+    oneapi::mkl::sparse::set_csr_data(queue, to_handle, n, m, nnz, base,
                                       data_to_col_ptr, data_to_row_ind,
                                       data_to_val);
     sycl::event e1 = oneapi::mkl::sparse::omatcopy(
@@ -514,6 +591,73 @@ inline void spblas_shim(library_data_t type, args_t &&...args) {
 }
 
 template <typename T> struct csrmv_impl {
+  void operator()(sycl::queue &queue, oneapi::mkl::transpose trans,
+                  int num_rows, int num_cols, int nnz, const void *alpha,
+                  const std::shared_ptr<matrix_info> info, const void *val,
+                  const int *row_ptr, const int *col_ind, const void *x,
+                  const void *beta, void *y) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
+    using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
+    auto alpha_value =
+        dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
+    auto beta_value =
+        dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
+
+    oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
+        new oneapi::mkl::sparse::matrix_handle_t;
+    oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
+    auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+    auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
+    auto data_val = dpct::detail::get_memory<Ty>(val);
+    oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, num_rows,
+                                      num_cols, nnz, info->get_index_base(),
+                                      data_row_ptr, data_col_ind, data_val);
+
+    auto data_x = dpct::detail::get_memory<Ty>(x);
+    auto data_y = dpct::detail::get_memory<Ty>(y);
+    switch (info->get_matrix_type()) {
+    case matrix_info::matrix_type::ge: {
+      oneapi::mkl::sparse::optimize_gemv(queue, trans, *sparse_matrix_handle);
+      oneapi::mkl::sparse::gemv(queue, trans, alpha_value,
+                                *sparse_matrix_handle, data_x, beta_value,
+                                data_y);
+      break;
+    }
+    case matrix_info::matrix_type::sy: {
+      oneapi::mkl::sparse::symv(queue, info->get_uplo(), alpha_value,
+                                *sparse_matrix_handle, data_x, beta_value,
+                                data_y);
+      break;
+    }
+    case matrix_info::matrix_type::tr: {
+      oneapi::mkl::sparse::optimize_trmv(queue, info->get_uplo(), trans,
+                                         info->get_diag(),
+                                         *sparse_matrix_handle);
+      oneapi::mkl::sparse::trmv(
+          queue, info->get_uplo(), trans, info->get_diag(), alpha_value,
+          *sparse_matrix_handle, data_x, beta_value, data_y);
+      break;
+    }
+    default:
+      throw std::runtime_error(
+          "the spmv does not support matrix_info::matrix_type::he");
+    }
+
+    sycl::event e =
+        oneapi::mkl::sparse::release_matrix_handle(queue, sparse_matrix_handle);
+    queue.submit([&](sycl::handler &cgh) {
+      cgh.depends_on(e);
+      cgh.host_task([=] { delete sparse_matrix_handle; });
+    });
+#endif
+  }
+};
+
+template <typename T> struct csrmv_impl_deprecated {
   void operator()(sycl::queue &queue, oneapi::mkl::transpose trans,
                   int num_rows, int num_cols, const void *alpha,
                   const std::shared_ptr<matrix_info> info, const void *val,

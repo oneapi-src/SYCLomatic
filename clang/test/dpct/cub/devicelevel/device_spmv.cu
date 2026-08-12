@@ -41,7 +41,7 @@ int main() {
                          d_vector_y, num_rows, num_cols, num_nonzeros);
 
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: dpct::sparse::csrmv(q_ct1, d_values, d_row_offsets, d_column_indices, d_vector_x, d_vector_y, num_rows, num_cols);
+  // CHECK: dpct::sparse::csrmv(q_ct1, d_values, d_row_offsets, d_column_indices, d_vector_x, d_vector_y, num_rows, num_cols, num_nonzeros);
   cub::DeviceSpmv::CsrMV(d_temp_storage, temp_storage_bytes, d_values,
                          d_row_offsets, d_column_indices, d_vector_x,
                          d_vector_y, num_rows, num_cols, num_nonzeros);
@@ -60,7 +60,7 @@ int main() {
                          d_vector_y, num_rows, num_cols, num_nonzeros, S);
 
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CHECK: dpct::sparse::csrmv(*S, d_values, d_row_offsets, d_column_indices, d_vector_x, d_vector_y, num_rows, num_cols);
+  // CHECK: dpct::sparse::csrmv(*S, d_values, d_row_offsets, d_column_indices, d_vector_x, d_vector_y, num_rows, num_cols, num_nonzeros);
   cub::DeviceSpmv::CsrMV(d_temp_storage, temp_storage_bytes, d_values,
                          d_row_offsets, d_column_indices, d_vector_x,
                          d_vector_y, num_rows, num_cols, num_nonzeros, S);

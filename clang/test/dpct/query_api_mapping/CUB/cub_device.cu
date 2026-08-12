@@ -526,4 +526,4 @@
 // CHECK_DEVICESPMV_CSRMV:    cudaMalloc(&d_temp_storage, temp_storage_bytes);
 // CHECK_DEVICESPMV_CSRMV:    cub::DeviceSpmv::CsrMV(d_temp_storage/*void **/, temp_storage_bytes/*size_t*/, d_values/*float **/, d_row_offsets/*int **/, d_column_indices/*int **/, d_vector_x/*float **/, d_vector_y/*float **/, num_rows/*int*/, num_cols/*int*/, num_nonzeros/*int*/);
 // CHECK_DEVICESPMV_CSRMV:  Is migrated to:
-// CHECK_DEVICESPMV_CSRMV:    dpct::sparse::csrmv(q_ct1, d_values, d_row_offsets, d_column_indices, d_vector_x, d_vector_y, num_rows, num_cols);
+// CHECK_DEVICESPMV_CSRMV:    dpct::sparse::csrmv(q_ct1, d_values, d_row_offsets, d_column_indices, d_vector_x, d_vector_y, num_rows, num_cols, num_nonzeros);

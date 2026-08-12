@@ -74,28 +74,28 @@ FEATURE_REQUEST_FACTORY(
     ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
         "cusparseScsrsv_analysis",
         CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsv",
-             MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(4),
+             MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(3), ARG(4),
              ARG(5), ARG(6), ARG(7), ARG(8)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
         "cusparseDcsrsv_analysis",
         CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsv",
-             MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(4),
+             MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(3), ARG(4),
              ARG(5), ARG(6), ARG(7), ARG(8)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
         "cusparseCcsrsv_analysis",
         CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsv",
-             MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(4),
+             MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(3), ARG(4),
              ARG(5), ARG(6), ARG(7), ARG(8)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
         "cusparseZcsrsv_analysis",
         CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsv",
-             MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(4),
+             MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(3), ARG(4),
              ARG(5), ARG(6), ARG(7), ARG(8)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -103,28 +103,28 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseScsrmv",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(5), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseDcsrmv",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(5), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseCcsrmv",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(5), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseZcsrmv",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(5), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -132,28 +132,28 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseScsrmv_mp",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(5), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseDcsrmv_mp",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(5), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseCcsrmv_mp",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(5), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseZcsrmv_mp",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(5), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12)))))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCsrmvEx_bufferSize", DEREF(20),
@@ -163,7 +163,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseCsrmvEx",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmv",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2),
-                                 ARG(3), ARG(4), ARG(6), ARG(7), ARG(8), ARG(9),
+                                 ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
                                  ARG(10), ARG(11), ARG(12), ARG(13), ARG(14),
                                  ARG(15), ARG(16), ARG(17), ARG(18)))))
 
@@ -172,7 +172,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseScsrmm",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmm",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(4), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
                                  ARG(14), ARG(15)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -180,7 +180,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseDcsrmm",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmm",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(4), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
                                  ARG(14), ARG(15)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -188,7 +188,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseCcsrmm",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmm",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(4), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
                                  ARG(14), ARG(15)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -196,7 +196,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseZcsrmm",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmm",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(4), ARG(6), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
                                  ARG(14), ARG(15)))))
 
@@ -205,7 +205,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseScsrmm2",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmm",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
                                  ARG(14), ARG(15), ARG(16)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -213,7 +213,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseDcsrmm2",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmm",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
                                  ARG(14), ARG(15), ARG(16)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -221,7 +221,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseCcsrmm2",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmm",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
                                  ARG(14), ARG(15), ARG(16)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -229,7 +229,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cusparseZcsrmm2",
                             CALL(MapNames::getLibraryHelperNamespace() + "sparse::csrmm",
                                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1),
-                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(7), ARG(8),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
                                  ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
                                  ARG(14), ARG(15), ARG(16)))))
 
@@ -451,22 +451,22 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseZcsrsv2_bufferSize", DEREF(9),
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseScsrsv2_analysis",
     CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsv",
-         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(4), ARG(5),
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
          ARG(6), ARG(7), ARG(8))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseDcsrsv2_analysis",
     CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsv",
-         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(4), ARG(5),
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
          ARG(6), ARG(7), ARG(8))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseCcsrsv2_analysis",
     CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsv",
-         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(4), ARG(5),
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
          ARG(6), ARG(7), ARG(8))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseZcsrsv2_analysis",
     CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsv",
-         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(4), ARG(5),
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
          ARG(6), ARG(7), ARG(8))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
@@ -502,7 +502,7 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseZcsrsv2_bufferSizeExt",
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseCsrsv_analysisEx",
     CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsv",
-         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(4), ARG(5),
+         MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
          ARG(6), ARG(7), ARG(8), ARG(9))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseCsrsv_solveEx",
@@ -537,22 +537,22 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseScsrsm2_analysis",
     CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsm",
          MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
-         ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
+         ARG(6), ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseDcsrsm2_analysis",
     CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsm",
          MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
-         ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
+         ARG(6), ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseCcsrsm2_analysis",
     CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsm",
          MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
-         ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
+         ARG(6), ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseZcsrsm2_analysis",
     CALL(MapNames::getLibraryHelperNamespace() + "sparse::optimize_csrsm",
          MEMBER_CALL(ARG(0), true, "get_queue"), ARG(2), ARG(3), ARG(4), ARG(5),
-         ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
+         ARG(6), ARG(8), ARG(9), ARG(10), ARG(11), ARG(14))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseScsrsm2_solve",

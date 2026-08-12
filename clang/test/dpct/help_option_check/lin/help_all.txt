@@ -180,8 +180,8 @@ All DPCT options
     =sycl                                 -   Generate code with sycl:: namespace. Cannot be used with cl or sycl-math values.
     =sycl-math                            -   Generate code with sycl:: namespace, applied only for SYCL math functions.
                                               Cannot be used with cl or sycl values.
-    =syclcompat                           -   Generate code with syclcompat:: namespace.
-  --use-syclcompat                        - Use SYCLcompat header-only library (syclcompat:: namespace) to assist the migration of input source code.
+    =syclcompat                           -   DEPRECATED (Intel(R) DPC++ Compiler 2025.3 is deprecating SYCLCompat and will remove it in next release). Generate code with syclcompat:: namespace.
+  --use-syclcompat                        - DEPRECATED (Intel(R) DPC++ Compiler 2025.3 is deprecating SYCLCompat and will remove it in next release). Use SYCLcompat header-only library (syclcompat:: namespace) to assist the migration of input source code.
                                             Default: off.
   --usm-level=<value>                     - Set the Unified Shared Memory (USM) level to use in source code generation.
     =none                                 -   Uses helper functions from DPCT header files for memory management migration.

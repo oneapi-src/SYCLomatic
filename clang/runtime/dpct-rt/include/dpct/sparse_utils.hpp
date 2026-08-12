@@ -26,16 +26,21 @@ public:
   auto get_diag() const { return _diag; }
   auto get_uplo() const { return _uplo; }
   auto get_index_base() const { return _index_base; }
+  /// Only used for csrgemm_nnz and csrgemm
+  auto get_nnz() const { return _nnz; }
   void set_matrix_type(matrix_type mt) { _matrix_type = mt; }
   void set_diag(oneapi::mkl::diag d) { _diag = d; }
   void set_uplo(oneapi::mkl::uplo u) { _uplo = u; }
   void set_index_base(oneapi::mkl::index_base ib) { _index_base = ib; }
+  /// Only used for csrgemm_nnz and csrgemm
+  auto set_nnz(int nnz) { _nnz = nnz; }
 
 private:
   matrix_type _matrix_type = matrix_type::ge;
   oneapi::mkl::diag _diag = oneapi::mkl::diag::nonunit;
   oneapi::mkl::uplo _uplo = oneapi::mkl::uplo::upper;
   oneapi::mkl::index_base _index_base = oneapi::mkl::index_base::zero;
+  int _nnz = 0; // Only used for csrgemm_nnz and csrgemm
 };
 
 /// Sparse matrix data format
@@ -50,7 +55,9 @@ enum class conversion_scope : int { index = 0, index_and_value };
 // Forward declaration
 namespace detail {
 template <typename T> struct optimize_csrsv_impl;
+template <typename T> struct optimize_csrsv_impl_deprecated;
 template <typename T> struct optimize_csrsm_impl;
+template <typename T> struct optimize_csrsm_impl_deprecated;
 }
 
 /// Saving the optimization information for solving a system of linear
@@ -75,7 +82,9 @@ public:
   }
 #ifdef DPCT_USM_LEVEL_NONE
   template <typename T> friend struct detail::optimize_csrsv_impl;
+  template <typename T> friend struct detail::optimize_csrsv_impl_deprecated;
   template <typename T> friend struct detail::optimize_csrsm_impl;
+  template <typename T> friend struct detail::optimize_csrsm_impl_deprecated;
 #endif
 
 private:
@@ -353,7 +362,7 @@ private:
     if (_data_format == matrix_format::csr)
       oneapi::mkl::sparse::set_csr_data(
           ::dpct::cs::get_default_queue(), _matrix_handle, _row_num, _col_num,
-          _base, std::get<data_index_t>(_data_row_ptr),
+          _nnz, _base, std::get<data_index_t>(_data_row_ptr),
           std::get<data_index_t>(_data_col_ind),
           std::get<data_value_t>(_data_value));
     else
@@ -593,6 +602,7 @@ using descriptor_ptr = descriptor *;
 /// \param [in] trans The operation applied to the matrix A.
 /// \param [in] num_rows Number of rows of the matrix A.
 /// \param [in] num_cols Number of columns of the matrix A.
+/// \param [in] nnz NNZ of the matrix A.
 /// \param [in] alpha Scaling factor for the matrix A.
 /// \param [in] info Matrix info of the matrix A.
 /// \param [in] val An array containing the non-zero elements of the matrix A.
@@ -604,12 +614,66 @@ using descriptor_ptr = descriptor *;
 /// \param [in, out] y Data of the vector y.
 template <typename T>
 void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
+           int num_cols, int nnz, const T *alpha,
+           const std::shared_ptr<matrix_info> info, const T *val,
+           const int *row_ptr, const int *col_ind, const T *x, const T *beta,
+           T *y) {
+  detail::csrmv_impl<T>()(queue, trans, num_rows, num_cols, nnz, alpha, info, val,
+                          row_ptr, col_ind, x, beta, y);
+}
+
+/// Computes a CSR format sparse matrix-dense vector product.
+/// y = alpha * op(A) * x + beta * y
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans The operation applied to the matrix A.
+/// \param [in] num_rows Number of rows of the matrix A.
+/// \param [in] num_cols Number of columns of the matrix A.
+/// \param [in] alpha Scaling factor for the matrix A.
+/// \param [in] info Matrix info of the matrix A.
+/// \param [in] val An array containing the non-zero elements of the matrix A.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [in] x Data of the vector x.
+/// \param [in] beta Scaling factor for the vector x.
+/// \param [in, out] y Data of the vector y.
+template <typename T>
+[[deprecated("Use dpct::sparse::csrmv(queue, trans, num_rows, "
+             "num_cols, nnz, ...) instead.")]]
+void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            int num_cols, const T *alpha,
            const std::shared_ptr<matrix_info> info, const T *val,
            const int *row_ptr, const int *col_ind, const T *x, const T *beta,
            T *y) {
-  detail::csrmv_impl<T>()(queue, trans, num_rows, num_cols, alpha, info, val,
-                          row_ptr, col_ind, x, beta, y);
+  detail::csrmv_impl_deprecated<T>()(queue, trans, num_rows, num_cols, alpha,
+                                     info, val, row_ptr, col_ind, x, beta, y);
+}
+
+/// Computes a CSR format sparse matrix-dense vector product. y = A * x
+///
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] values An array containing the non-zero elements of the matrix.
+/// \param [in] row_offsets An array of length \p num_rows + 1.
+/// \param [in] column_indices An array containing the column indices in
+/// index-based numbering.
+/// \param [in] vector_x Data of the vector x.
+/// \param [in, out] vector_y Data of the vector y.
+/// \param [in] num_rows Number of rows of the matrix A.
+/// \param [in] num_cols Number of columns of the matrix A.
+/// \param [in] nnz NNZ of the matrix A.
+template <typename T>
+void csrmv(sycl::queue &queue, const T *values, const int *row_offsets,
+           const int *column_indices, const T *vector_x, T *vector_y,
+           int num_rows, int num_cols, int nnz) {
+  T alpha{1}, beta{0};
+  auto matrix_info = std::make_shared<dpct::sparse::matrix_info>();
+  matrix_info->set_index_base(oneapi::mkl::index_base::zero);
+  matrix_info->set_matrix_type(dpct::sparse::matrix_info::matrix_type::ge);
+  detail::csrmv_impl<T>()(queue, oneapi::mkl::transpose::nontrans, num_rows,
+                          num_cols, &alpha, matrix_info, values, row_offsets,
+                          column_indices, vector_x, &beta, vector_y, nnz);
 }
 
 /// Computes a CSR format sparse matrix-dense vector product. y = A * x
@@ -625,6 +689,9 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
 /// \param [in] num_rows Number of rows of the matrix A.
 /// \param [in] num_cols Number of columns of the matrix A.
 template <typename T>
+[[deprecated(
+  "Use dpct::sparse::csrmv(queue, values, row_offsets, "
+  "column_indices, vector_x, vector_y, num_rows, num_cols, nnz) instead.")]]
 void csrmv(sycl::queue &queue, const T *values, const int *row_offsets,
            const int *column_indices, const T *vector_x, T *vector_y,
            int num_rows, int num_cols) {
@@ -632,9 +699,45 @@ void csrmv(sycl::queue &queue, const T *values, const int *row_offsets,
   auto matrix_info = std::make_shared<dpct::sparse::matrix_info>();
   matrix_info->set_index_base(oneapi::mkl::index_base::zero);
   matrix_info->set_matrix_type(dpct::sparse::matrix_info::matrix_type::ge);
-  detail::csrmv_impl<T>()(queue, oneapi::mkl::transpose::nontrans, num_rows,
-                          num_cols, &alpha, matrix_info, values, row_offsets,
-                          column_indices, vector_x, &beta, vector_y);
+  detail::csrmv_impl_deprecated<T>()(queue, oneapi::mkl::transpose::nontrans,
+                                     num_rows, num_cols, &alpha, matrix_info,
+                                     values, row_offsets, column_indices,
+                                     vector_x, &beta, vector_y);
+}
+
+/// Computes a CSR format sparse matrix-dense vector product.
+/// y = alpha * op(A) * x + beta * y
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans The operation applied to the matrix A.
+/// \param [in] num_rows Number of rows of the matrix A.
+/// \param [in] num_cols Number of columns of the matrix A.
+/// \param [in] nnz NNZ of the matrix A.
+/// \param [in] alpha Scaling factor for the matrix A.
+/// \param [in] alpha_type Data type of \p alpha .
+/// \param [in] info Matrix info of the matrix A.
+/// \param [in] val An array containing the non-zero elements of the matrix A.
+/// \param [in] val_type Data type of \p val .
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [in] x Data of the vector x.
+/// \param [in] x_type Data type of \p x .
+/// \param [in] beta Scaling factor for the vector x.
+/// \param [in] beta_type Data type of \p beta .
+/// \param [in, out] y Data of the vector y.
+/// \param [in] y_type Data type of \p y .
+inline void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans,
+                  int num_rows, int num_cols, int nnz, const void *alpha,
+                  library_data_t alpha_type,
+                  const std::shared_ptr<matrix_info> info, const void *val,
+                  library_data_t val_type, const int *row_ptr,
+                  const int *col_ind, const void *x, library_data_t x_type,
+                  const void *beta, library_data_t beta_type, void *y,
+                  library_data_t y_type) {
+  detail::spblas_shim<detail::csrmv_impl>(val_type, queue, trans, num_rows,
+                                          num_cols, alpha, info, val, row_ptr,
+                                          col_ind, x, beta, y);
 }
 
 /// Computes a CSR format sparse matrix-dense vector product.
@@ -658,17 +761,97 @@ void csrmv(sycl::queue &queue, const T *values, const int *row_offsets,
 /// \param [in] beta_type Data type of \p beta .
 /// \param [in, out] y Data of the vector y.
 /// \param [in] y_type Data type of \p y .
-inline void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans,
-                  int num_rows, int num_cols, const void *alpha,
-                  library_data_t alpha_type,
-                  const std::shared_ptr<matrix_info> info, const void *val,
-                  library_data_t val_type, const int *row_ptr,
-                  const int *col_ind, const void *x, library_data_t x_type,
-                  const void *beta, library_data_t beta_type, void *y,
-                  library_data_t y_type) {
-  detail::spblas_shim<detail::csrmv_impl>(val_type, queue, trans, num_rows,
-                                          num_cols, alpha, info, val, row_ptr,
-                                          col_ind, x, beta, y);
+[[deprecated("Use dpct::sparse::csrmv(queue, trans, num_rows, "
+             "num_cols, nnz, ...) instead.")]]
+inline void
+csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
+      int num_cols, const void *alpha, library_data_t alpha_type,
+      const std::shared_ptr<matrix_info> info, const void *val,
+      library_data_t val_type, const int *row_ptr, const int *col_ind,
+      const void *x, library_data_t x_type, const void *beta,
+      library_data_t beta_type, void *y, library_data_t y_type) {
+  detail::spblas_shim<detail::csrmv_impl_deprecated>(
+      val_type, queue, trans, num_rows, num_cols, alpha, info, val, row_ptr,
+      col_ind, x, beta, y);
+}
+
+/// Computes a CSR format sparse matrix-dense matrix product.
+/// C = alpha * op(A) * op(B) + beta * C
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a The operation applied to the matrix A.
+/// \param [in] trans_b The operation applied to the matrix B.
+/// \param [in] sparse_rows Number of rows of the matrix A.
+/// \param [in] dense_cols Number of columns of the matrix B or C.
+/// \param [in] sparse_cols Number of columns of the matrix A.
+/// \param [in] nnz NNZ of the matrix A.
+/// \param [in] alpha Scaling factor for the matrix A.
+/// \param [in] info Matrix info of the matrix A.
+/// \param [in] val An array containing the non-zero elements of the matrix A.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [in] b Data of the matrix B.
+/// \param [in] ldb Leading dimension of the matrix B.
+/// \param [in] beta Scaling factor for the matrix B.
+/// \param [in, out] c Data of the matrix C.
+/// \param [in] ldc Leading dimension of the matrix C.
+template <typename T>
+void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans_a,
+           oneapi::mkl::transpose trans_b, int sparse_rows, int dense_cols,
+           int sparse_cols, int nnz, const T *alpha,
+           const std::shared_ptr<matrix_info> info, const T *val,
+           const int *row_ptr, const int *col_ind, const T *b, int ldb,
+           const T *beta, T *c, int ldc) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
+  auto alpha_value =
+      dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
+  auto beta_value =
+      dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
+
+  oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
+      new oneapi::mkl::sparse::matrix_handle_t;
+  oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
+  auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
+  auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
+  auto data_val = dpct::detail::get_memory<Ty>(val);
+  oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, sparse_rows,
+                                    sparse_cols, nnz, info->get_index_base(),
+                                    data_row_ptr, data_col_ind, data_val);
+
+  auto data_b = dpct::detail::get_memory<Ty>(b);
+  auto data_c = dpct::detail::get_memory<Ty>(c);
+  sycl::event gemm_event;
+  switch (info->get_matrix_type()) {
+  case matrix_info::matrix_type::ge: {
+#ifndef DPCT_USM_LEVEL_NONE
+    gemm_event =
+#endif
+        oneapi::mkl::sparse::gemm(queue, oneapi::mkl::layout::col_major,
+                                  trans_a, trans_b, alpha_value,
+                                  *sparse_matrix_handle, data_b, dense_cols,
+                                  ldb, beta_value, data_c, ldc);
+    break;
+  }
+  default:
+    throw std::runtime_error(
+        "the csrmm does not support matrix_info::matrix_type::sy, "
+        "matrix_info::matrix_type::tr and matrix_info::matrix_type::he");
+  }
+#ifdef DPCT_USM_LEVEL_NONE
+  queue.wait();
+#endif
+  sycl::event e = oneapi::mkl::sparse::release_matrix_handle(
+      queue, sparse_matrix_handle, {gemm_event});
+  queue.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] { delete sparse_matrix_handle; });
+  });
+#endif
 }
 
 /// Computes a CSR format sparse matrix-dense matrix product.
@@ -692,6 +875,8 @@ inline void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans,
 /// \param [in, out] c Data of the matrix C.
 /// \param [in] ldc Leading dimension of the matrix C.
 template <typename T>
+[[deprecated("Use dpct::sparse::csrmm(queue, trans_a, trans_b, sparse_rows, "
+             "dense_cols, sparse_cols, nnz, ...) instead.")]]
 void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans_a,
            oneapi::mkl::transpose trans_b, int sparse_rows, int dense_cols,
            int sparse_cols, const T *alpha,
@@ -757,6 +942,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans_a,
 /// \param [in] sparse_rows Number of rows of the matrix A.
 /// \param [in] dense_cols Number of columns of the matrix op(B) or C.
 /// \param [in] sparse_cols Number of columns of the matrix A.
+/// \param [in] nnz NNZ of the matrix A.
 /// \param [in] alpha Scaling factor for the matrix A.
 /// \param [in] info Matrix info of the matrix A.
 /// \param [in] val An array containing the non-zero elements of the matrix A.
@@ -769,6 +955,38 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans_a,
 /// \param [in, out] c Data of the matrix C.
 /// \param [in] ldc Leading dimension of the matrix C.
 template <typename T>
+void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
+           int dense_cols, int sparse_cols, int nnz, const T *alpha,
+           const std::shared_ptr<matrix_info> info, const T *val,
+           const int *row_ptr, const int *col_ind, const T *b, int ldb,
+           const T *beta, T *c, int ldc) {
+  csrmm<T>(queue, trans, oneapi::mkl::transpose::nontrans, sparse_rows,
+           dense_cols, sparse_cols, nnz, alpha, info, val, row_ptr, col_ind, b,
+           ldb, beta, c, ldc);
+}
+
+/// Computes a CSR format sparse matrix-dense matrix product.
+/// C = alpha * op(A) * B + beta * C
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans The operation applied to the matrix A.
+/// \param [in] sparse_rows Number of rows of the matrix A.
+/// \param [in] dense_cols Number of columns of the matrix op(B) or C.
+/// \param [in] sparse_cols Number of columns of the matrix A.
+/// \param [in] alpha Scaling factor for the matrix A.
+/// \param [in] info Matrix info of the matrix A.
+/// \param [in] val An array containing the non-zero elements of the matrix A.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [in] b Data of the matrix B.
+/// \param [in] ldb Leading dimension of the matrix B.
+/// \param [in] beta Scaling factor for the matrix B.
+/// \param [in, out] c Data of the matrix C.
+/// \param [in] ldc Leading dimension of the matrix C.
+template <typename T>
+[[deprecated("Use dpct::sparse::csrmm(queue, trans, sparse_rows, "
+             "dense_cols, sparse_cols, nnz, ...) instead.")]]
 void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
            int dense_cols, int sparse_cols, const T *alpha,
            const std::shared_ptr<matrix_info> info, const T *val,
@@ -786,6 +1004,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
 /// have the in_order property when using the USM mode.
 /// \param [in] trans The operation applied to the sparse matrix.
 /// \param [in] row_col Number of rows of the sparse matrix.
+/// \param [in] nnz NNZ of the sparse matrix.
 /// \param [in] info Matrix info of the sparse matrix.
 /// \param [in] val An array containing the non-zero elements of the sparse matrix.
 /// \param [in] row_ptr An array of length \p num_rows + 1.
@@ -794,19 +1013,55 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
 /// \param [out] optimize_info The result of the optimizations.
 template <typename T>
 void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
+                    int row_col, int nnz,
+                    const std::shared_ptr<matrix_info> info, const T *val,
+                    const int *row_ptr, const int *col_ind,
+                    std::shared_ptr<optimize_info> optimize_info) {
+  detail::optimize_csrsv_impl<T>()(queue, trans, row_col, nnz, info, val,
+                                   row_ptr, col_ind, optimize_info);
+}
+
+/// Performs internal optimizations for solving a system of linear equations for
+/// a CSR format sparse matrix.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans The operation applied to the sparse matrix.
+/// \param [in] row_col Number of rows of the sparse matrix.
+/// \param [in] info Matrix info of the sparse matrix.
+/// \param [in] val An array containing the non-zero elements of the sparse matrix.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [out] optimize_info The result of the optimizations.
+template <typename T>
+[[deprecated("Use oneapi::mkl::sparse::optimize_csrsv(queue, trans, "
+             "row_col, nnz, ...) instead.")]]
+void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     int row_col, const std::shared_ptr<matrix_info> info,
                     const T *val, const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
-  detail::optimize_csrsv_impl<T>()(queue, trans, row_col, info, val, row_ptr,
-                                   col_ind, optimize_info);
+  detail::optimize_csrsv_impl_deprecated<T>()(queue, trans, row_col, info, val,
+                                              row_ptr, col_ind, optimize_info);
 }
 
+inline void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
+                           int row_col, int nnz, const std::shared_ptr<matrix_info> info,
+                           const void *val, library_data_t val_type,
+                           const int *row_ptr, const int *col_ind,
+                           std::shared_ptr<optimize_info> optimize_info) {
+  detail::spblas_shim<detail::optimize_csrsv_impl>(
+      val_type, queue, trans, row_col, nnz, info, val, row_ptr, col_ind,
+      optimize_info);
+}
+
+[[deprecated("Use oneapi::mkl::sparse::optimize_csrsv(queue, trans, "
+             "row_col, nnz, ...) instead.")]]
 inline void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                            int row_col, const std::shared_ptr<matrix_info> info,
                            const void *val, library_data_t val_type,
                            const int *row_ptr, const int *col_ind,
                            std::shared_ptr<optimize_info> optimize_info) {
-  detail::spblas_shim<detail::optimize_csrsv_impl>(
+  detail::spblas_shim<detail::optimize_csrsv_impl_deprecated>(
       val_type, queue, trans, row_col, info, val, row_ptr, col_ind,
       optimize_info);
 }
@@ -841,6 +1096,7 @@ inline void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
 /// \param [in] transb The operation applied to B and X.
 /// \param [in] row_col Number of rows and columns of A.
 /// \param [in] nrhs Number of columns op_b(B).
+/// \param [in] nnz NNZ of the matrix A.
 /// \param [in] info Matrix info of A.
 /// \param [in] val An array containing the non-zero elements of A.
 /// \param [in] row_ptr An array of length \p num_rows + 1.
@@ -849,12 +1105,40 @@ inline void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
 /// \param [out] optimize_info The result of the optimizations.
 template <typename T>
 void optimize_csrsm(sycl::queue &queue, oneapi::mkl::transpose transa,
+                    oneapi::mkl::transpose transb, int row_col, int nrhs, int nnz,
+                    const std::shared_ptr<matrix_info> info, const T *val,
+                    const int *row_ptr, const int *col_ind,
+                    std::shared_ptr<optimize_info> optimize_info) {
+  detail::optimize_csrsm_impl<T>()(queue, transa, transb, row_col, nrhs, nnz, info,
+                                   val, row_ptr, col_ind, optimize_info);
+}
+
+/// Performs internal optimizations for dpct::sparse::csrsm by analyzing
+/// the provided matrix structure and operation parameters. The matrix A must be
+/// a triangular sparse matrix with the CSR format.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] transa The operation applied to A.
+/// \param [in] transb The operation applied to B and X.
+/// \param [in] row_col Number of rows and columns of A.
+/// \param [in] nrhs Number of columns op_b(B).
+/// \param [in] info Matrix info of A.
+/// \param [in] val An array containing the non-zero elements of A.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [out] optimize_info The result of the optimizations.
+template <typename T>
+[[deprecated("Use oneapi::mkl::sparse::optimize_csrsm(queue, transa, transb, "
+             "row_col, nrhs, nnz, ...) instead.")]]
+void optimize_csrsm(sycl::queue &queue, oneapi::mkl::transpose transa,
                     oneapi::mkl::transpose transb, int row_col, int nrhs,
                     const std::shared_ptr<matrix_info> info, const T *val,
                     const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
-  detail::optimize_csrsm_impl<T>()(queue, transa, transb, row_col, nrhs, info,
-                                   val, row_ptr, col_ind, optimize_info);
+  detail::optimize_csrsm_impl_deprecated<T>()(queue, transa, transb, row_col,
+                                              nrhs, info, val, row_ptr, col_ind,
+                                              optimize_info);
 }
 
 /// Solves the sparse triangular system op_a(A) * op_b(X) = alpha * op_b(B).
@@ -1298,14 +1582,14 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
     int cols_b = (trans_b == oneapi::mkl::transpose::nontrans) ? n : k;
 
     info.matrix_handle_a.set_matrix_data<Ty>(
-        rows_a, cols_a, info_a->get_index_base(), row_ptr_a, col_ind_a, val_a);
+        rows_a, cols_a, nnz_a, info_a->get_index_base(), row_ptr_a, col_ind_a, val_a);
     info.matrix_handle_b.set_matrix_data<Ty>(
-        rows_b, cols_b, info_b->get_index_base(), row_ptr_b, col_ind_b, val_b);
+        rows_b, cols_b, nnz_b, info_b->get_index_base(), row_ptr_b, col_ind_b, val_b);
     // In the future, oneMKL will allow nullptr to be passed in for row_ptr_c in
     // the initial calls before matmat. But currently, it needs an array of
     // length row_number + 1.
     info.matrix_handle_c.set_matrix_data<Ty>(
-        rows_c, cols_c, info_c->get_index_base(), row_ptr_c, nullptr, nullptr);
+        rows_c, cols_c, 0, info_c->get_index_base(), row_ptr_c, nullptr, nullptr);
 
     oneapi::mkl::sparse::set_matmat_data(
         info.matmat_desc.get_handle(),
@@ -1345,6 +1629,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   nnz_c_int = *nnz_c;
 #endif
 
+  info_c->set_nnz(nnz_c_int);
   if (nnz_host_ptr) {
     *nnz_host_ptr = nnz_c_int;
   }
@@ -1396,7 +1681,7 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   int rows_c = m;
   int cols_c = n;
   info.matrix_handle_c.set_matrix_data<Ty>(
-      rows_c, cols_c, info_c->get_index_base(), row_ptr_c, col_ind_c, val_c);
+      rows_c, cols_c, info_c->get_nnz(), info_c->get_index_base(), row_ptr_c, col_ind_c, val_c);
   sycl::event e;
 #ifndef DPCT_USM_LEVEL_NONE
   e =
@@ -1424,6 +1709,7 @@ class csrgemm2_info {
   void *row_ptr_axb = nullptr;
   void *col_ind_axb = nullptr;
   void *val_axb = nullptr;
+  int c_nnz = 0;
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<std::int64_t, 1> *temp_buffer_1_size;
   sycl::buffer<std::int64_t, 1> *temp_buffer_2_size;
@@ -1555,15 +1841,15 @@ void csrgemm2_get_buffer_size(
   info->row_ptr_axb = (int *)::dpct::cs::malloc((m + 1) * sizeof(int), queue);
   info->init(&queue);
 
-  info->matrix_handle_a.set_matrix_data<Ty>(m, k, info_a->get_index_base(),
+  info->matrix_handle_a.set_matrix_data<Ty>(m, k, nnz_a, info_a->get_index_base(),
                                             row_ptr_a, col_ind_a, nullptr);
-  info->matrix_handle_b.set_matrix_data<Ty>(k, n, info_b->get_index_base(),
+  info->matrix_handle_b.set_matrix_data<Ty>(k, n, nnz_b, info_b->get_index_base(),
                                             row_ptr_b, col_ind_b, nullptr);
   info->matrix_handle_axb.set_matrix_data<Ty>(
-      m, n, oneapi::mkl::index_base::zero, info->row_ptr_axb, nullptr, nullptr);
-  info->matrix_handle_d.set_matrix_data<Ty>(m, n, info_d->get_index_base(),
+      m, n, 0, oneapi::mkl::index_base::zero, info->row_ptr_axb, nullptr, nullptr);
+  info->matrix_handle_d.set_matrix_data<Ty>(m, n, nnz_d, info_d->get_index_base(),
                                             row_ptr_d, col_ind_d, nullptr);
-  info->matrix_handle_c.set_matrix_data<Ty>(m, n, oneapi::mkl::index_base::zero,
+  info->matrix_handle_c.set_matrix_data<Ty>(m, n, 0, oneapi::mkl::index_base::zero,
                                             nullptr, nullptr, nullptr);
 
   oneapi::mkl::sparse::set_matmat_data(
@@ -1628,7 +1914,7 @@ void csrgemm2_get_buffer_size(
   info->col_ind_axb = (int *)::dpct::cs::malloc(nnz_axb * sizeof(int), queue);
   info->val_axb = (Ty *)::dpct::cs::malloc(nnz_axb * sizeof(Ty), queue);
   info->matrix_handle_axb.set_matrix_data<Ty>(
-      m, n, oneapi::mkl::index_base::zero, info->row_ptr_axb, info->col_ind_axb,
+      m, n, nnz_axb, oneapi::mkl::index_base::zero, info->row_ptr_axb, info->col_ind_axb,
       info->val_axb);
 
   __MATMAT(finalize_structure, nullptr, nullptr);
@@ -1682,19 +1968,19 @@ inline void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
   sycl::queue &queue = desc->get_queue();
   if (info->matrix_c_datatype ==
       csrgemm2_info::matrix_c_datatype_t::mcd_float) {
-    info->matrix_handle_c.set_matrix_data<float>(m, n, info_c->get_index_base(),
+    info->matrix_handle_c.set_matrix_data<float>(m, n, 0, info_c->get_index_base(),
                                                  nullptr, nullptr, nullptr);
   } else if (info->matrix_c_datatype ==
              csrgemm2_info::matrix_c_datatype_t::mcd_double) {
     info->matrix_handle_c.set_matrix_data<double>(
-        m, n, info_c->get_index_base(), nullptr, nullptr, nullptr);
+        m, n, 0, info_c->get_index_base(), nullptr, nullptr, nullptr);
   } else if (info->matrix_c_datatype ==
              csrgemm2_info::matrix_c_datatype_t::mcd_float2) {
     info->matrix_handle_c.set_matrix_data<std::complex<float>>(
-        m, n, info_c->get_index_base(), nullptr, nullptr, nullptr);
+        m, n, 0, info_c->get_index_base(), nullptr, nullptr, nullptr);
   } else {
     info->matrix_handle_c.set_matrix_data<std::complex<double>>(
-        m, n, info_c->get_index_base(), nullptr, nullptr, nullptr);
+        m, n, 0, info_c->get_index_base(), nullptr, nullptr, nullptr);
   }
   auto data_buffer = dpct::detail::get_memory<std::uint8_t>(buffer);
   oneapi::mkl::sparse::omatadd_analyze(
@@ -1719,6 +2005,7 @@ inline void csrgemm2_nnz(descriptor_ptr desc, int m, int n, int k,
 
   assert((nnz_c >= INT_MIN && nnz_c <= INT_MAX) && "nnz_c is out of range.");
   int nnz_c_int = nnz_c;
+  info->nnz_c = nnz_c_int;
   if (nnz_ptr)
     ::dpct::cs::memcpy(queue, nnz_ptr, &nnz_c_int, sizeof(int)).wait();
   int row_ptr_c_0 =
@@ -1780,16 +2067,16 @@ void csrgemm2(descriptor_ptr desc, int m, int n, int k, const T *alpha,
   auto beta_value =
       dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
 
-  info->matrix_handle_a.set_matrix_data<Ty>(m, k, info_a->get_index_base(),
+  info->matrix_handle_a.set_matrix_data<Ty>(m, k, nnz_a, info_a->get_index_base(),
                                             row_ptr_a, col_ind_a, val_a);
-  info->matrix_handle_b.set_matrix_data<Ty>(k, n, info_b->get_index_base(),
+  info->matrix_handle_b.set_matrix_data<Ty>(k, n, nnz_b, info_b->get_index_base(),
                                             row_ptr_b, col_ind_b, val_b);
   __MATMAT(compute, nullptr, nullptr);
   __MATMAT(finalize, nullptr, nullptr);
 
-  info->matrix_handle_d.set_matrix_data<Ty>(m, n, info_d->get_index_base(),
+  info->matrix_handle_d.set_matrix_data<Ty>(m, n, nnz_d, info_d->get_index_base(),
                                             row_ptr_d, col_ind_d, val_d);
-  info->matrix_handle_c.set_matrix_data<Ty>(m, n, info_c->get_index_base(),
+  info->matrix_handle_c.set_matrix_data<Ty>(m, n, info_c->nnz_c, info_c->get_index_base(),
                                             row_ptr_c, col_ind_c, val_c);
 
   sycl::event e;
