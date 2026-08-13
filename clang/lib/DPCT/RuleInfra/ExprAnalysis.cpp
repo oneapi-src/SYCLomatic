@@ -412,7 +412,27 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
 }
 
 void StringReplacements::replaceString() {
-  SourceStr.reserve(SourceStr.length() + ShiftLength);
+  for (auto &TDR : TDRs2) {
+    // Find items in ReplMap whose offset <= TDR.first.
+    // Then check length, is there is overlap, ignore this insertion.
+    // Finally calculate the shift length.
+    int Shift = 0;
+    auto UpperBound = ReplMap.upper_bound(TDR.first);
+    for (auto It = ReplMap.begin(); It != UpperBound; ++It) {
+      if ((It->first + It->second->getLength()) > TDR.first) {
+        // overlap
+        continue;
+      }
+      Shift +=
+          (It->second->getReplacedText().length() - It->second->getLength());
+    }
+    auto NewTDR = std::make_shared<TemplateDependentReplacement>(
+        TDR.second->getSourceStr(), TDR.first, TDR.second->getLength(),
+        TDR.second->getTemplateIndex());
+    NewTDR->shift(Shift);
+    TDRs.insert(std::make_pair(TDR.first + Shift, NewTDR));
+  }
+
   auto Itr = ReplMap.rbegin();
   while (Itr != ReplMap.rend()) {
     Itr->second->replaceString();
@@ -571,7 +591,16 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   }
   if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
     addReplacement(DRE, TemplateDecl->getIndex());
-  else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
+  else if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl());
+           VD && VD->isConstexpr() && IsAnalyzingCtTypeInfo) {
+    if (VD->getInit() && VD->getInit()->getBeginLoc().isValid() &&
+        (VD->getInit()->getDependence() != ExprDependence::None)) {
+      ExprAnalysis EA(VD->getInit());
+      auto TDSI = EA.getTemplateDependentStringInfo();
+      auto LocInfo = getOffsetAndLength(DRE);
+      addReplacement(LocInfo.first, LocInfo.second, TDSI);
+    }
+  } else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
     std::unordered_set<std::string> targetStr = {
         "thread_scope_system",  "thread_scope_device",  "thread_scope_block",
         "memory_order_relaxed", "memory_order_acq_rel", "memory_order_release",

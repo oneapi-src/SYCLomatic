@@ -4,11 +4,12 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/sharedmem_var_static %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_static/sharedmem_var_static.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/sharedmem_var_static/sharedmem_var_static.dp.cpp -o %T/sharedmem_var_static/sharedmem_var_static.dp.o %}
-#ifndef NO_BUILD_TEST
+
 #include <stdio.h>
 #include <complex>
 #define SIZE 64
 
+#ifndef NO_BUILD_TEST
 class TestObject{
 public:
   // CHECK: static void run(int *in, int *out, int &a0) {
@@ -224,3 +225,15 @@ void fooh() {
   fook<SZ><<<1, 1>>>();
 }
 #endif
+
+constexpr int kWarpSize = 32;
+
+template <int ThreadsPerBlock, int NumWarpQ, int ccc> __global__ void kerfunc() {
+  constexpr int kNumWarps = (2 * ThreadsPerBlock / kWarpSize * ccc);
+  __shared__ int smem[kNumWarps * NumWarpQ];
+}
+
+void foo2() {
+  // CHECK: sycl::local_accessor<int, 1> smem_acc_ct1(sycl::range<1>((2 * 128 / kWarpSize * 16) * 8), cgh);
+  kerfunc<128, 8, 16><<<32, 32>>>();
+}

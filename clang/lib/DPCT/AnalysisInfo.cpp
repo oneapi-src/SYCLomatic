@@ -2826,11 +2826,12 @@ void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
                               bool NeedSizeFold) {
   ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   ExprAnalysis EA;
+  EA.IsAnalyzingCtTypeInfo = true;
   EA.analyze(TL.getSizeExpr());
   auto TDSI = EA.getTemplateDependentStringInfo();
   if (TDSI->containsTemplateDependentMacro())
     TemplateDependentMacro = true;
-  Range.emplace_back(EA.getTemplateDependentStringInfo());
+  Range.emplace_back(TDSI);
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
 }
 void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
