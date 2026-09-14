@@ -1339,6 +1339,9 @@ public:
   static bool useExtLevelZero() {
     return getUsingExperimental<ExperimentalFeatures::Exp_LevelZero>();
   }
+  static bool useExtAsyncAlloc() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_AsyncAlloc>();
+  }
   static bool useExtPrefetch() {
     return getUsingExperimental<ExperimentalFeatures::Exp_Prefetch>();
   }
