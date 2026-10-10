@@ -45,10 +45,10 @@ void foo() {
   cusparseCcsrsm2_bufferSizeExt(handle, 0, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, m, nrhs, nnz, &alpha_c, descrA, val_c, row_ptr, col_ind, b_c, nrhs, info, policy, &buffer_size);
   cusparseZcsrsm2_bufferSizeExt(handle, 0, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, m, nrhs, nnz, &alpha_z, descrA, val_z, row_ptr, col_ind, b_z, nrhs, info, policy, &buffer_size);
 
-  // CHECK: dpct::sparse::optimize_csrsm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, m, nrhs, descrA, val_s, row_ptr, col_ind, info);
-  // CHECK-NEXT: dpct::sparse::optimize_csrsm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, m, nrhs, descrA, val_d, row_ptr, col_ind, info);
-  // CHECK-NEXT: dpct::sparse::optimize_csrsm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, m, nrhs, descrA, val_c, row_ptr, col_ind, info);
-  // CHECK-NEXT: dpct::sparse::optimize_csrsm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, m, nrhs, descrA, val_z, row_ptr, col_ind, info);
+  // CHECK: dpct::sparse::optimize_csrsm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, m, nrhs, nnz, descrA, val_s, row_ptr, col_ind, info);
+  // CHECK-NEXT: dpct::sparse::optimize_csrsm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, m, nrhs, nnz, descrA, val_d, row_ptr, col_ind, info);
+  // CHECK-NEXT: dpct::sparse::optimize_csrsm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, m, nrhs, nnz, descrA, val_c, row_ptr, col_ind, info);
+  // CHECK-NEXT: dpct::sparse::optimize_csrsm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, m, nrhs, nnz, descrA, val_z, row_ptr, col_ind, info);
   cusparseScsrsm2_analysis(handle, 0, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, m, nrhs, nnz, &alpha_s, descrA, val_s, row_ptr, col_ind, b_s, nrhs, info, policy, buffer);
   cusparseDcsrsm2_analysis(handle, 0, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, m, nrhs, nnz, &alpha_d, descrA, val_d, row_ptr, col_ind, b_d, nrhs, info, policy, buffer);
   cusparseCcsrsm2_analysis(handle, 0, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, m, nrhs, nnz, &alpha_c, descrA, val_c, row_ptr, col_ind, b_c, nrhs, info, policy, buffer);
