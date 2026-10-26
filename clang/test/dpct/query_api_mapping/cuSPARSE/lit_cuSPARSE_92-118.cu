@@ -78,7 +78,7 @@
 // cusparseScsrsm2_analysis-NEXT:       ldb /*int*/, info /*csrsm2Info_t*/, policy /*cusparseSolvePolicy_t*/,
 // cusparseScsrsm2_analysis-NEXT:       buffer /*void **/);
 // cusparseScsrsm2_analysis-NEXT: Is migrated to:
-// cusparseScsrsm2_analysis-NEXT:   dpct::sparse::optimize_csrsm(handle->get_queue(), trans_a, trans_b, m, nrhs, descr, value, row_ptr, col_ind, info);
+// cusparseScsrsm2_analysis-NEXT:   dpct::sparse::optimize_csrsm(handle->get_queue(), trans_a, trans_b, m, nrhs, nnz, descr, value, row_ptr, col_ind, info);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseDcsrsm2_analysis | FileCheck %s -check-prefix=cusparseDcsrsm2_analysis
 // cusparseDcsrsm2_analysis: CUDA API:
@@ -91,7 +91,7 @@
 // cusparseDcsrsm2_analysis-NEXT:       ldb /*int*/, info /*csrsm2Info_t*/, policy /*cusparseSolvePolicy_t*/,
 // cusparseDcsrsm2_analysis-NEXT:       buffer /*void **/);
 // cusparseDcsrsm2_analysis-NEXT: Is migrated to:
-// cusparseDcsrsm2_analysis-NEXT:   dpct::sparse::optimize_csrsm(handle->get_queue(), trans_a, trans_b, m, nrhs, descr, value, row_ptr, col_ind, info);
+// cusparseDcsrsm2_analysis-NEXT:   dpct::sparse::optimize_csrsm(handle->get_queue(), trans_a, trans_b, m, nrhs, nnz, descr, value, row_ptr, col_ind, info);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCcsrsm2_analysis | FileCheck %s -check-prefix=cusparseCcsrsm2_analysis
 // cusparseCcsrsm2_analysis: CUDA API:
@@ -104,7 +104,7 @@
 // cusparseCcsrsm2_analysis-NEXT:       ldb /*int*/, info /*csrsm2Info_t*/, policy /*cusparseSolvePolicy_t*/,
 // cusparseCcsrsm2_analysis-NEXT:       buffer /*void **/);
 // cusparseCcsrsm2_analysis-NEXT: Is migrated to:
-// cusparseCcsrsm2_analysis-NEXT:   dpct::sparse::optimize_csrsm(handle->get_queue(), trans_a, trans_b, m, nrhs, descr, value, row_ptr, col_ind, info);
+// cusparseCcsrsm2_analysis-NEXT:   dpct::sparse::optimize_csrsm(handle->get_queue(), trans_a, trans_b, m, nrhs, nnz, descr, value, row_ptr, col_ind, info);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseZcsrsm2_analysis | FileCheck %s -check-prefix=cusparseZcsrsm2_analysis
 // cusparseZcsrsm2_analysis: CUDA API:
@@ -117,7 +117,7 @@
 // cusparseZcsrsm2_analysis-NEXT:       b /*const cuDoubleComplex **/, ldb /*int*/, info /*csrsm2Info_t*/,
 // cusparseZcsrsm2_analysis-NEXT:       policy /*cusparseSolvePolicy_t*/, buffer /*void **/);
 // cusparseZcsrsm2_analysis-NEXT: Is migrated to:
-// cusparseZcsrsm2_analysis-NEXT:   dpct::sparse::optimize_csrsm(handle->get_queue(), trans_a, trans_b, m, nrhs, descr, value, row_ptr, col_ind, info);
+// cusparseZcsrsm2_analysis-NEXT:   dpct::sparse::optimize_csrsm(handle->get_queue(), trans_a, trans_b, m, nrhs, nnz, descr, value, row_ptr, col_ind, info);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseScsrsm2_solve | FileCheck %s -check-prefix=cusparseScsrsm2_solve
 // cusparseScsrsm2_solve: CUDA API:
